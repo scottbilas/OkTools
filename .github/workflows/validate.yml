@@ -1,5 +1,5 @@
 name: validate
-on: [push]
+on: push
 
 jobs:
   validate:
