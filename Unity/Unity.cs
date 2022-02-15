@@ -1,8 +1,11 @@
-﻿namespace OkTools.Unity;
+namespace OkTools.Unity;
 
 [PublicAPI]
 public static class UnityConstants
 {
+    public const string UnityExeName = "unity.exe";
+    public const string ProjectVersionName = "ProjectVersion.txt";
+
     public static string MonoDllRelativePath => MonoDllRelativeNPath;
     public static string HubInstalledToolchainPathSpec => HubInstalledToolchainNPathSpec;
     public static string ManuallyInstalledToolchainsPathSpec => ManuallyInstalledToolchainsNPathSpec;
@@ -33,7 +36,7 @@ public static class Unity
     // TODO: consider if we should auto-add common subpaths like 'Editor' or for build like 'build/*Editor*/*/*'
     // but probably have a pathspec prefix option to disable this automation, if it's not opt-in..
     static IEnumerable<UnityToolchain> FindToolchains(IEnumerable<NPath> pathSpecs, UnityToolchainOrigin? origin) => pathSpecs
-        .SelectMany(p => Globbing.Find(p, "unity.exe"))
+        .SelectMany(p => Globbing.Find(p, UnityConstants.UnityExeName))
         .Select(p => UnityToolchain.TryCreateFromPath(p.Parent, origin)) // drop filename for TryCreateFromPath, which will add it back (see Globbing.Find for why we must do this hack)
         .WhereNotNull();
 

@@ -83,12 +83,11 @@ public sealed class UnityToolchain
         TryCreateFromPath(pathToUnityBuild.ToNPath(), origin);
     internal static UnityToolchain? TryCreateFromPath(NPath pathToUnityBuild, UnityToolchainOrigin? origin = null)
     {
-        if (!pathToUnityBuild.FileName.Equals("unity.exe", StringComparison.OrdinalIgnoreCase))
-            pathToUnityBuild = pathToUnityBuild.Combine("unity.exe");
+        if (!pathToUnityBuild.FileName.EqualsIgnoreCase(UnityConstants.UnityExeName))
+            pathToUnityBuild = pathToUnityBuild.Combine(UnityConstants.UnityExeName);
 
         return pathToUnityBuild.FileExists() ? new UnityToolchain(pathToUnityBuild, origin) : null;
     }
-
 }
 
 [PublicAPI]

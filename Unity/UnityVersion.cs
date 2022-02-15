@@ -246,7 +246,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
 
     public static UnityVersion FromUnityBuildFolder(string pathToUnityBuild)
     {
-        return FromUnityExe(pathToUnityBuild.ToNPath().Combine("unity.exe"));
+        return FromUnityExe(pathToUnityBuild.ToNPath().Combine(UnityConstants.UnityExeName));
     }
 
     public static UnityVersion FromUnityProjectVersionTxt(string pathToVersionTxt)
