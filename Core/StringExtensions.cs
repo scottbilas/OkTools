@@ -14,6 +14,8 @@ public static class StringExtensions
     public static bool IsEmpty(this string @this) => @this.Length == 0;
     public static bool Any(this string @this) => @this.Length != 0;
 
+    public static bool EqualsIgnoreCase(this string @this, string other) => @this.Equals(other, StringComparison.OrdinalIgnoreCase);
+
     // left/mid/right are BASIC-inspired names, and never throw except for a clear programming error
 
     public static string Left(this string @this, int maxChars) =>
