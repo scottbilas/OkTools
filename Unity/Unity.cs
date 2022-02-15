@@ -1,4 +1,4 @@
-namespace OkTools.Unity;
+﻿namespace OkTools.Unity;
 
 [PublicAPI]
 public static class UnityConstants
@@ -13,18 +13,6 @@ public static class UnityConstants
     internal static readonly NPath MonoDllRelativeNPath = "Data/MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll".ToNPath();
     internal static readonly NPath HubInstalledToolchainNPathSpec = NPath.ProgramFilesDirectory.Combine("Unity/Hub/Editor/*/Editor");
     internal static readonly NPath ManuallyInstalledToolchainsNPathSpec = NPath.ProgramFilesDirectory.Combine("Unity*/Editor");
-}
-
-public class ConfigUnityToolchains
-{
-
-}
-
-public class ConfigUnity
-{
-//    public ConfigUnity(
-
-    public readonly ConfigUnityToolchains Toolchains = new ConfigUnityToolchains();
 }
 
 /// <summary>
