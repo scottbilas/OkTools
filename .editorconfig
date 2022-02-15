@@ -1,0 +1,20 @@
+# see http://editorconfig.org/ for docs on this file
+
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+; standardize all os's including windows on lf by default
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# trailing whitespace is significant in markdown (bad choice, bad!)
+[*.{md,markdown}]
+trim_trailing_whitespace = false
+indent_size = 2
+
+[*.{csproj,targets,yml,yaml}]
+indent_size = 2

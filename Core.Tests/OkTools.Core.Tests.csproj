@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\_Include\Defaults.Tests.targets" />
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\OkTools.Core.csproj" />
+    <ProjectReference Include="..\NiceIO\NiceIO.csproj" />
+    <ProjectReference Include="..\TestUtils\OkTools.TestUtils.csproj" />
+  </ItemGroup>
+
+</Project>
