@@ -1,9 +1,6 @@
-﻿using System.Text.Json;
-using System.Text.Json.Serialization;
-using DocoptNet;
+﻿using DocoptNet;
 using DotNetConfig;
 using OkTools.Core;
-using OkTools.Unity;
 
 public class Program
 {
@@ -38,7 +35,7 @@ options:
 ";
 
     const string k_docUsageInfo =
-@"usage: okunity info [THING...]
+@"usage: okunity info [--json] [THING]...
 
   THING  The thing to extract as much unity-related info from as possible.
          Defaults to '.' (the current directory). Currently supported:
@@ -62,7 +59,11 @@ options:
             if (args.Length == 0) throw new DocoptExitException(k_docUsageGlobal);
             var optGlobal = ParseOpt(k_docUsageGlobal);
 
-            switch (optGlobal["COMMAND"].Value)
+            // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
+            // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
+
+            var command = optGlobal["COMMAND"].Value;
+            switch (command)
             {
                 case "help":
                     if (args.Length == 1) throw new DocoptExitException(k_docUsageHelp);
@@ -83,54 +84,15 @@ options:
                     break;
 
                 case "toolchains":
-
-                    // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
-                    // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
-
-                    var optToolchains = ParseOpt(k_docUsageToolchains);
-                    var config = Config.Build();
-
-                    var toolchains = Enumerable.Empty<UnityToolchain>();
-
-                    // optionally start with defaults
-                    if (config.GetBoolean("toolchains", null, "no-defaults") != true &&
-                        !optToolchains["--no-defaults"].IsTrue)
-                    {
-                        toolchains = toolchains
-                            .Concat(Unity.FindHubInstalledToolchains())
-                            .Concat(Unity.FindManuallyInstalledToolchains());
-                    }
-
-                    // add in any custom paths
-                    toolchains = toolchains
-                        .Concat(Unity.FindCustomToolchains(config.GetAll("toolchains", null, "include").Select(v => v.GetString())))
-                        .Concat(Unity.FindCustomToolchains(optToolchains["--include"].AsList.Cast<string>()));
-
-                    // there may be dupes in the list, so filter. and we want the defaults to come first, because
-                    // they will have the correct origin.
-                    toolchains = toolchains.DistinctBy(t => t.Path).ToList();
-
-                    if (optToolchains["--json"].IsTrue)
-                    {
-                        var serializeOptions = new JsonSerializerOptions
-                        {
-                            WriteIndented = true,
-                            IncludeFields = true,
-                            Converters = { new ToStringConverter<UnityVersion>(), new JsonStringEnumConverter() }
-                        };
-                        Console.WriteLine(JsonSerializer.Serialize(toolchains, serializeOptions));
-                    }
-                    else
-                    {
-                        foreach (var toolchain in toolchains)
-                            Console.WriteLine(toolchain);
-                    }
+                    Commands.Toolchains(ParseOpt(k_docUsageToolchains), Config.Build());
                     break;
 
                 case "info":
-                    //var optInfo = ParseOpt(k_docUsageInfo);
-                    throw new NotImplementedException("Info not ready!");
-                    //break;
+                    Commands.Info(ParseOpt(k_docUsageInfo), Config.Build());
+                    break;
+
+                default:
+                    throw new DocoptInputErrorException($"Unknown command '{command}'");
             }
         }
         catch (DocoptInputErrorException x)
@@ -144,19 +106,6 @@ options:
             Console.WriteLine(x.Message);
             return (int)CliExitCode.Help;
         }
-
-        /*
-        if (parsed["info"].IsTrue)
-        {
-            var things = parsed["THING"].AsList.Cast<string>().ToList();
-            if (things.Count == 0)
-                things.Add(".");
-
-            foreach (var thing in things)
-            {
-
-            }
-        }*/
 
         return 0;
     }
