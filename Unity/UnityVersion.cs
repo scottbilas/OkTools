@@ -1,12 +1,18 @@
 ﻿using System.Diagnostics;
 using System.Text.RegularExpressions;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace OkTools.Unity;
 
 public class UnityVersionFormatException : Exception
 {
+    static string MakeMessage(string versionText) =>
+        $"Unexpected Unity version format: '{versionText}'";
+
+    public UnityVersionFormatException(string versionText, Exception innerException)
+        : base(MakeMessage(versionText), innerException) {}
     public UnityVersionFormatException(string versionText)
-        : base($"Unexpected Unity version format: '{versionText}'") {}
+        : base(MakeMessage(versionText)) {}
 }
 
 // this is a 'fuzzy' version class. all fields except the major are optional.
@@ -264,4 +270,39 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         return new UnityVersion($"{match.Groups["ver"]}_{match.Groups["hash"]}");
 
     }
+
+    public static IEnumerable<UnityVersion> FromEditorsYml(string pathToEditorsYml)
+    {
+        using var reader = new StreamReader(pathToEditorsYml);
+
+        var editorsYml = new YamlDotNet.Serialization.DeserializerBuilder()
+            .WithNamingConvention(UnderscoredNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build()
+            .Deserialize<EditorsYml>(reader);
+
+        // TODO: figure out how to ignore extra stuff in .yml (IgnoreUnmatchedProperties) but WITHOUT losing the ability
+        // to have the yml parser ensure every field in the deserialized class is filled out.
+        if (editorsYml.EditorVersions == null ||
+            editorsYml.EditorVersions.Values.Any(v => v.Version == null || v.Revision == null))
+        {
+            throw new UnityVersionFormatException($"Failure parsing yml in '{pathToEditorsYml}'");
+        }
+
+        foreach (var editorVersion in editorsYml.EditorVersions.Values)
+            yield return new UnityVersion($"{editorVersion.Version}_{editorVersion.Revision}");
+    }
+
+    #pragma warning disable CS0649
+    class EditorsYml
+    {
+        public Dictionary<string, EditorVersion>? EditorVersions;
+
+        // ReSharper disable once ClassNeverInstantiated.Local
+        public class EditorVersion
+        {
+            public string? Version, Revision;
+        }
+    }
+    #pragma warning restore CS0649
 }

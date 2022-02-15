@@ -64,7 +64,7 @@ static class Commands
             {
                 if (nthing.FileName.EqualsIgnoreCase(UnityConstants.UnityExeName))
                     return UnityVersion.FromUnityExe(nthing);
-                if (nthing.FileName.EqualsIgnoreCase(UnityConstants.ProjectVersionName))
+                if (nthing.FileName.EqualsIgnoreCase(UnityConstants.ProjectVersionTxtFileName))
                     return UnityVersion.FromUnityProjectVersionTxt(nthing);
 
                 return $"File is not a Unity-related thing: {thing}";

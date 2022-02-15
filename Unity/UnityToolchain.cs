@@ -1,7 +1,7 @@
 ﻿namespace OkTools.Unity;
 
 [PublicAPI]
-public sealed class UnityToolchain
+public class UnityToolchain
 {
     readonly NPath _editorExePath, _monoDllPath;
 
@@ -67,26 +67,23 @@ public sealed class UnityToolchain
         };
     }
 
-    public override string ToString()
-    {
-        return $"{NPath}: {Version} ({EditorBuildConfig}, {Origin})";
-    }
+    public override string ToString() => $"{NPath}: {Version} ({EditorBuildConfig}, {Origin})";
 
     /// <summary>
     /// Look in the given path for a Unity toolchain and return it if found.
     /// </summary>
-    /// <param name="pathToUnityBuild">The path to look for a Unity toolchain. Can point at the toolchain folder or at
+    /// <param name="pathToUnityToolchain">The path to look for a Unity toolchain. Can point at the toolchain folder or at
     /// a unity.exe in the folder.</param>
     /// <returns>If a toolchain is found, returns a `UnityToolchain` object, otherwise null. May throw if it finds
     /// an incomplete or corrupt toolchain.</returns>
-    public static UnityToolchain? TryCreateFromPath(string pathToUnityBuild, UnityToolchainOrigin? origin = null) =>
-        TryCreateFromPath(pathToUnityBuild.ToNPath(), origin);
-    internal static UnityToolchain? TryCreateFromPath(NPath pathToUnityBuild, UnityToolchainOrigin? origin = null)
+    public static UnityToolchain? TryCreateFromPath(string pathToUnityToolchain, UnityToolchainOrigin? origin = null) =>
+        TryCreateFromPath(pathToUnityToolchain.ToNPath(), origin);
+    internal static UnityToolchain? TryCreateFromPath(NPath pathToUnityToolchain, UnityToolchainOrigin? origin = null)
     {
-        if (!pathToUnityBuild.FileName.EqualsIgnoreCase(UnityConstants.UnityExeName))
-            pathToUnityBuild = pathToUnityBuild.Combine(UnityConstants.UnityExeName);
+        if (!pathToUnityToolchain.FileName.EqualsIgnoreCase(UnityConstants.UnityExeName))
+            pathToUnityToolchain = pathToUnityToolchain.Combine(UnityConstants.UnityExeName);
 
-        return pathToUnityBuild.FileExists() ? new UnityToolchain(pathToUnityBuild, origin) : null;
+        return pathToUnityToolchain.FileExists() ? new UnityToolchain(pathToUnityToolchain, origin) : null;
     }
 }
 

@@ -1,0 +1,26 @@
+# this is some comments
+#
+# and some more
+editor_version_names:
+- 2020.3_foo_bar
+- 2021.4_wat
+- 2022.1_staggering
+
+
+# comments
+editor_versions:
+  2020.3_foo_bar:
+    branch: 2020.3/foo/bar
+    display_name: 2020.3 foo bar
+    revision: 7017b5c35b8551b61dce495c0a8f1423f06f1234
+    version: 2020.3.25f1-foo
+  2021.4_wat:
+    branch: 2021.4/wat
+    display_name: 2021.4 wat
+    revision: 2341b5c35b8551b61dce495c0a8f1423f06f1234
+    version: 2021.4
+  2022.1_staggering:
+    branch: 2022.1/staggering
+    display_name: 2022.1 staggering
+    revision: af8db9678d926d6ba95d2c4b8e69356ef9461234
+    version: 2022.1.0b2

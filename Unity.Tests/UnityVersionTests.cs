@@ -1,6 +1,7 @@
 class UnityVersionTests : TestFixtureBase
 {
-    NPath VersionTxt(string name) => TestFiles.Combine("ProjectVersionTxt", name).FileMustExist();
+    NPath ProjectVersionTxt(string name) => TestFiles.Combine("ProjectVersionTxt", name).FileMustExist();
+    NPath EditorYml(string name) => TestFiles.Combine("EditorYml", name).FileMustExist();
 
     // TODO: comparisons and equality
 
@@ -126,20 +127,47 @@ class UnityVersionTests : TestFixtureBase
     [Test]
     public void FromUnityProjectVersionTxt_WithValid_ReturnsParsedVersion()
     {
-        var version = UnityVersion.FromUnityProjectVersionTxt(VersionTxt("Valid.txt"));
+        var version = UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Valid.txt"));
         version.ShouldBe(new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0"));
     }
 
     [Test]
     public void FromUnityProjectVersionTxt_WithValidOldStyle_ReturnsParsedVersion()
     {
-        var version = UnityVersion.FromUnityProjectVersionTxt(VersionTxt("ValidOldStyle.txt"));
+        var version = UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("ValidOldStyle.txt"));
         version.ShouldBe(new UnityVersion(2020, 3, 14, 'f', 1));
     }
 
     [Test]
     public void FromUnityProjectVersionTxt_WithInvalid_Throws()
     {
-        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromUnityProjectVersionTxt(VersionTxt("Invalid.txt")));
+        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Invalid.txt")));
+    }
+
+    [Test]
+    public void FromEditorsYml_WithMultiple_ReturnsParsedVersions()
+    {
+        var versions = UnityVersion.FromEditorsYml(EditorYml("Multiple.yml")).ToArray();
+        versions.ShouldBe(new[]
+        {
+            new UnityVersion(2020, 3, 25, 'f', 1, "foo", "7017b5c35b85"),
+            new UnityVersion(2021, 4, hash: "2341b5c35b85"),
+            new UnityVersion(2022, 1, 0, 'b', 2, hash: "af8db9678d92"),
+        });
+    }
+
+    [Test]
+    public void FromEditorsYml_WithSingle_ReturnsParsedVersion()
+    {
+        var versions = UnityVersion.FromEditorsYml(EditorYml("Single.yml")).ToArray();
+        versions.Length.ShouldBe(1);
+        versions[0].ShouldBe(new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85"));
+    }
+
+    [Test]
+    public void FromEditorsYml_WithInvalid_Throws()
+    {
+        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromEditorsYml(EditorYml("InvalidOuter.yml")).ToArray());
+        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromEditorsYml(EditorYml("InvalidInner.yml")).ToArray());
     }
 }

@@ -5,6 +5,7 @@
   <ItemGroup>
     <PackageReference Include="DotNetConfig" Version="1.0.6" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="6.0.2-mauipre.1.22054.8" />
+    <PackageReference Include="YamlDotNet" Version="11.2.1" />
   </ItemGroup>
 
   <ItemGroup>

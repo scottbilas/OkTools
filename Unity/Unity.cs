@@ -4,7 +4,12 @@
 public static class UnityConstants
 {
     public const string UnityExeName = "unity.exe";
-    public const string ProjectVersionName = "ProjectVersion.txt";
+    public const string ProjectAssetsFolderName = "Assets";
+    public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
+    public const string EditorsYmlFileName = "editors.yml";
+
+    public static NPath ProjectVersionRelativePath => ProjectVersionRelativeNPath;
+    internal static readonly NPath ProjectVersionRelativeNPath = new NPath("ProjectSettings").Combine(ProjectVersionTxtFileName);
 
     public static string MonoDllRelativePath => MonoDllRelativeNPath;
     public static string HubInstalledToolchainPathSpec => HubInstalledToolchainNPathSpec;
