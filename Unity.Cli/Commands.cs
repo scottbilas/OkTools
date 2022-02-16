@@ -40,7 +40,10 @@ options:
 
         // there may be dupes in the list, so filter. and we want the defaults to come first, because
         // they will have the correct origin.
-        toolchains = toolchains.DistinctBy(t => t.Path).ToList();
+        toolchains = toolchains
+            .DistinctBy(t => t.Path)
+            .OrderByDescending(t => t.Version) // nice to have newest stuff first
+            .ToList();
 
         Output(toolchains, opt);
     }
