@@ -1,7 +1,7 @@
 ﻿namespace OkTools.Unity;
 
 [PublicAPI]
-public class UnityToolchain
+public class UnityToolchain : IStructuredOutput
 {
     readonly NPath _editorExePath, _monoDllPath;
 
@@ -24,8 +24,8 @@ public class UnityToolchain
 
     UnityToolchain(NPath unityEditorExePath, UnityToolchainOrigin? origin)
     {
-        _editorExePath = unityEditorExePath.FileMustExist();
-        _monoDllPath = NPath.Combine(UnityConstants.MonoDllRelativeNPath).FileMustExist();
+        _editorExePath = unityEditorExePath.MakeAbsolute().FileMustExist();
+        _monoDllPath = NPath.Combine(UnityConstants.MonoDllRelativeNPath).MakeAbsolute().FileMustExist();
         Version = UnityVersion.FromUnityExe(_editorExePath);
 
         // TODO: ideally we'd be detecting whether it's hub-managed or manually-installed _here_, without needing to be
@@ -67,7 +67,24 @@ public class UnityToolchain
         };
     }
 
-    public override string ToString() => $"{NPath}: {Version} ({EditorBuildConfig}, {Origin})";
+    public override string ToString() => $"{Version} ({EditorBuildConfig}, {Origin}):\n  {NPath}";
+
+    public dynamic Output(StructuredOutputLevel level)
+    {
+        var output = Expando.From(new
+        {
+            Path,
+            Version = Version.ToString(),
+            EditorBuildConfig,
+        });
+
+        if (level >= StructuredOutputLevel.Typical)
+            Expando.Add(output, new { Origin, MonoDllPath, MonoBuildConfig });
+        if (level >= StructuredOutputLevel.Full)
+            Expando.Add(output, new { VersionFull = Version, EditorExePath });
+
+        return output;
+    }
 
     /// <summary>
     /// Look in the given path for a Unity toolchain and return it if found.

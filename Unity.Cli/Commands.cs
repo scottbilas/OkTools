@@ -1,13 +1,25 @@
-﻿using System.Text.Json;
+﻿using System.Dynamic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using DocoptNet;
 using DotNetConfig;
 using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
 static class Commands
 {
+    public const string DocUsageToolchains =
+@"usage: okunity toolchains [-n] [-i SPEC]... [--json --yaml] [--level LEVEL]
+
+options:
+  -n, --no-defaults   Don't look in the default-install locations for toolchains
+  -i, --include SPEC  Add a pathspec to the search (supports '*' and '**' glob style wildcards)
+  --level LEVEL       Can be one of minimal, typical, full, or debug, [default: typical]
+";
+
     public static void Toolchains(IDictionary<string, ValueObject> opt, Config config)
     {
         var toolchains = Enumerable.Empty<UnityToolchain>();
@@ -33,6 +45,16 @@ static class Commands
         Output(toolchains, opt);
     }
 
+    public const string DocUsageInfo =
+@"usage: okunity info [--json --yaml] [THING]...
+
+  THING  The thing to extract as much unity-related info from as possible.
+         Defaults to '.' (the current directory). Currently supported:
+
+         * Path to a folder or file (globs supported)
+         * A text version number
+";
+
     public static void Info(IDictionary<string, ValueObject> opt, Config config)
     {
         var things = opt["THING"].AsStrings().ToArray();
@@ -53,7 +75,11 @@ static class Commands
                 if (toolchain != null)
                     return toolchain;
 
-                // is it a project folder
+                var project = UnityProject.TryCreateFromProjectRoot(nthing);
+                if (project != null)
+                    return project;
+
+                // TODO: what else???
 
                 return nthing.MakeAbsolute() == NPath.CurrentDirectory
                     ? "Current directory contains no Unity-related things"
@@ -66,6 +92,8 @@ static class Commands
                     return UnityVersion.FromUnityExe(nthing);
                 if (nthing.FileName.EqualsIgnoreCase(UnityConstants.ProjectVersionTxtFileName))
                     return UnityVersion.FromUnityProjectVersionTxt(nthing);
+                if (nthing.FileName.EqualsIgnoreCase(UnityConstants.EditorsYmlFileName))
+                    return UnityVersion.FromEditorsYml(nthing);
 
                 return $"File is not a Unity-related thing: {thing}";
             }
@@ -80,22 +108,44 @@ static class Commands
 
     static void Output(IEnumerable<object> things, IDictionary<string, ValueObject> opt)
     {
-        if (opt["--json"].IsTrue)
+        var json = opt["--json"].IsTrue;
+        var yaml = opt["--yaml"].IsTrue;
+
+        if (json || yaml)
         {
-            var serializeOptions = new JsonSerializerOptions
+            var levelText = opt["--level"].ToString();
+            var level = EnumUtility.TryParseNoCaseOr<StructuredOutputLevel>(levelText)
+                ?? throw new DocoptInputErrorException($"Illegal LEVEL '{levelText}'");
+
+            things = things.Select(t =>
+            {
+                if (t is IStructuredOutput o)
+                    return o.Output(level);
+                return t;
+            });
+        }
+
+        things = things.UnDefer();
+
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(things, new JsonSerializerOptions
             {
                 WriteIndented = true,
                 IncludeFields = true,
-                Converters =
-                {
-                    new ToStringConverter<UnityVersion>(),
-                    new ToStringConverter<Exception> { ExactTypeMatch = false },
-                    new JsonStringEnumConverter()
-                }
-            };
-            Console.WriteLine(JsonSerializer.Serialize(things, serializeOptions));
+                Converters = { new JsonStringEnumConverter() }
+            }));
         }
-        else
+
+        if (yaml)
+        {
+            Console.WriteLine(new YamlSerializerBuilder()
+                .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                .Build()
+                .Serialize(things));
+        }
+
+        if (!json && !yaml)
         {
             foreach (var thing in things)
                 Console.WriteLine(thing);
@@ -116,4 +166,20 @@ class ExceptionalThing
 
     public override string ToString() =>
         $"Getting info for thing '{Thing}' resulted in {Exception.GetType().Name} ({Exception.Message})";
+}
+
+public static class StructuredOutput
+{
+    public static dynamic From(Exception exception, StructuredOutputLevel level)
+    {
+        dynamic output = new ExpandoObject();
+        output.Message = exception.Message;
+
+        if (level >= StructuredOutputLevel.Full)
+            output.Type = exception.GetType().FullName!;
+        if (level >= StructuredOutputLevel.Debug && exception.StackTrace != null)
+            output.StackTrace = exception.StackTrace;
+
+        return output;
+    }
 }

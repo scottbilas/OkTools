@@ -7,7 +7,8 @@ public class Program
     const string k_docName = "okunity, the Unity CLI toolbox";
     const string k_docVersion = "0.1";
 
-    const string k_docUsageGlobal = k_docName + @"
+    const string k_docUsageGlobal =
+$@"{k_docName}
 
 usage:
   okunity COMMAND [ARG...]
@@ -23,25 +24,6 @@ commands:
 @"usage: okunity help COMMAND
 
 Print help for COMMAND.
-";
-
-    const string k_docUsageToolchains =
-@"usage: okunity toolchains [-n] [-i SPEC]... [--json]
-
-options:
-  -n, --no-defaults   Don't look in the default-install locations for toolchains
-  -i, --include SPEC  Add a pathspec to the search (supports '*' and '**' glob style wildcards)
-  --json              Write full results as a JSON array
-";
-
-    const string k_docUsageInfo =
-@"usage: okunity info [--json] [THING]...
-
-  THING  The thing to extract as much unity-related info from as possible.
-         Defaults to '.' (the current directory). Currently supported:
-
-         * Path to a folder or file (globs supported)
-         * A text version number
 ";
 
     public static int Main(string[] args)
@@ -75,20 +57,20 @@ options:
                         case "help":
                             break;
                         case "toolchains":
-                            throw new DocoptExitException(k_docUsageToolchains);
+                            throw new DocoptExitException(Commands.DocUsageToolchains);
                         case "info":
-                            throw new DocoptExitException(k_docUsageInfo);
+                            throw new DocoptExitException(Commands.DocUsageInfo);
                         default:
                             throw new DocoptInputErrorException($"Unknown command '{helpCommand}'");
                     }
                     break;
 
                 case "toolchains":
-                    Commands.Toolchains(ParseOpt(k_docUsageToolchains), Config.Build());
+                    Commands.Toolchains(ParseOpt(Commands.DocUsageToolchains), Config.Build());
                     break;
 
                 case "info":
-                    Commands.Info(ParseOpt(k_docUsageInfo), Config.Build());
+                    Commands.Info(ParseOpt(Commands.DocUsageInfo), Config.Build());
                     break;
 
                 default:
