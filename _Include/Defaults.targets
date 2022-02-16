@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0-eap2" />
+    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0-eap3" />
     <!--PackageReference Include="Meziantou.Analyzer" Version="1.0.688" /  NOT READY FOR THIS YET -->
 
     <Compile Include="..\_Include\GlobalUsings.cs">
