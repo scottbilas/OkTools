@@ -1,7 +1,0 @@
-[toolchains]
-include=c:/builds/editor/*
-include=c:/work/unity*/build/*editor/*/*
-include=d:/work/unity*/build/*editor/*/*
-; older build style
-include=c:/work/unity*/build/*editor
-include=d:/work/unity*/build/*editor
