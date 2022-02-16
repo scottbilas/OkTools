@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using JetBrains.Annotations;
 
 // ReSharper disable StringLiteralTypo CommentTypo IdentifierTypo
 // ReSharper disable FieldCanBeMadeReadOnly.Local

@@ -74,6 +74,7 @@ public class UnityToolchain
     /// </summary>
     /// <param name="pathToUnityToolchain">The path to look for a Unity toolchain. Can point at the toolchain folder or at
     /// a unity.exe in the folder.</param>
+    /// <param name="origin">Optional origin to assign, otherwise it will try to autodetect.</param>
     /// <returns>If a toolchain is found, returns a `UnityToolchain` object, otherwise null. May throw if it finds
     /// an incomplete or corrupt toolchain.</returns>
     public static UnityToolchain? TryCreateFromPath(string pathToUnityToolchain, UnityToolchainOrigin? origin = null) =>

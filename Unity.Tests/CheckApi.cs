@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-class CheckApi
+﻿class CheckApi
 {
     [Test]
     public void ValidateExports()

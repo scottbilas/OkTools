@@ -1,5 +1,3 @@
-using System.IO;
-
 namespace OkTools.Core;
 
 // TODO: merge into NiceIO

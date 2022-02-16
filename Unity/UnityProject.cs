@@ -1,6 +1,4 @@
-﻿using YamlDotNet.Serialization.NamingConventions;
-
-namespace OkTools.Unity;
+﻿namespace OkTools.Unity;
 
 [PublicAPI]
 public class UnityProject
