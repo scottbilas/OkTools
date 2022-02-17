@@ -1,3 +1,5 @@
+// ReSharper disable StringLiteralTypo
+
 class UnityVersionTests : TestFixtureBase
 {
     NPath ProjectVersionTxt(string name) => TestFiles.Combine("ProjectVersionTxt", name).FileMustExist();
@@ -5,36 +7,42 @@ class UnityVersionTests : TestFixtureBase
 
     // TODO: comparisons and equality
 
-    [Test]
-    public void Ctor_WithEmptyString_Throws()
+    static void CheckTextThrows(string versionText)
     {
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion(""));
+        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromText(versionText));
+        UnityVersion.TryFromText(versionText).ShouldBeNull();
+    }
+
+    [Test]
+    public void FromText_WithEmptyString_Throws()
+    {
+        CheckTextThrows("");
     }
 
     static void CheckParse(string versionText, UnityVersion expected)
     {
-        var version = new UnityVersion(versionText);
+        var version = UnityVersion.FromText(versionText);
         version.ShouldBe(expected);
         version.ToString().ShouldBe(versionText);
     }
 
     [Test]
-    public void Ctor_WithFullVersionString_ReturnsFilledVersionClass()
+    public void FromText_WithFullVersionString_ReturnsFilledVersionClass()
     {
         CheckParse("2020.3.24f1-dots_a675c7af6899", new UnityVersion(2020, 3, 24, 'f', 1, "dots", "a675c7af6899"));
     }
 
     [Test]
-    public void Ctor_WithOldStyleProductVersion_ReturnsFilledVersionClass()
+    public void FromText_WithOldStyleProductVersion_ReturnsFilledVersionClass()
     {
-        var version = new UnityVersion("2018.1.6.5753908", UnityVersion.NormalizeLegacy.Yes);
+        var version = UnityVersion.FromText("2018.1.6.5753908", UnityVersion.NormalizeLegacy.Yes);
         var expected = new UnityVersion(2018, 1, 6, hash: "57cc34");
         version.ShouldBe(expected);
         version.ToString().ShouldBe("2018.1.6_57cc34");
     }
 
     [Test]
-    public void Ctor_WithPartialVersionString_ReturnsPartialFilledClass()
+    public void FromText_WithPartialVersionString_ReturnsPartialFilledClass()
     {
         CheckParse("2020.3.25", new UnityVersion(2020, 3, 25));
         CheckParse("2020.3.25f1", new UnityVersion(2020, 3, 25, 'f', 1));
@@ -47,7 +55,7 @@ class UnityVersionTests : TestFixtureBase
     }
 
     [Test]
-    public void Ctor_OptionalParts()
+    public void FromText_OptionalParts()
     {
         CheckParse("123", new UnityVersion(123));
         CheckParse("123_badf00d12345", new UnityVersion(123, hash:"badf00d12345"));
@@ -64,46 +72,46 @@ class UnityVersionTests : TestFixtureBase
     }
 
     [Test]
-    public void Ctor_WithNullVsDefault_ReturnsDifferentVersions()
+    public void FromText_WithNullVsDefault_ReturnsDifferentVersions()
     {
-        new UnityVersion("2020.3.24f1").Branch.ShouldBeNull();
-        new UnityVersion("2020.3.24f0").Incremental.ShouldBe(0);
-        new UnityVersion("2020.3.24f").Incremental.ShouldBeNull();
-        new UnityVersion("2020.3.24").ReleaseType.ShouldBeNull();
-        new UnityVersion("2020.3.0").Revision.ShouldBe(0);
-        new UnityVersion("2020.3").Revision.ShouldBeNull();
-        new UnityVersion("2020.0").Minor.ShouldBe(0);
-        new UnityVersion("2020").Minor.ShouldBeNull();
+        UnityVersion.FromText("2020.3.24f1").Branch.ShouldBeNull();
+        UnityVersion.FromText("2020.3.24f0").Incremental.ShouldBe(0);
+        UnityVersion.FromText("2020.3.24f").Incremental.ShouldBeNull();
+        UnityVersion.FromText("2020.3.24").ReleaseType.ShouldBeNull();
+        UnityVersion.FromText("2020.3.0").Revision.ShouldBe(0);
+        UnityVersion.FromText("2020.3").Revision.ShouldBeNull();
+        UnityVersion.FromText("2020.0").Minor.ShouldBe(0);
+        UnityVersion.FromText("2020").Minor.ShouldBeNull();
     }
 
     [Test]
-    public void Ctor_WithFullLengthHash_ReturnsTruncatedHash()
+    public void FromText_WithFullLengthHash_ReturnsTruncatedHash()
     {
-        var version = new UnityVersion("2020.3.24f1-dots_a675c7af6899afe3fa4ab5acd");
+        var version = UnityVersion.FromText("2020.3.24f1-dots_a675c7af6899afe3fa4ab5acd");
         version.ShouldBe(new UnityVersion(2020, 3, 24, 'f', 1, "dots", "a675c7af6899"));
         version.ToString().ShouldBe("2020.3.24f1-dots_a675c7af6899");
     }
 
     [Test]
-    public void Ctor_WithIllegalHash_Throws()
+    public void FromText_WithIllegalHash_Throws()
     {
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24f1-dots_a675c7af6899xoxoafe3f"));
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24f1-dots_"));
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24f1_"));
+        CheckTextThrows("2020.3.24f1-dots_a675c7af6899xoxoafe3f");
+        CheckTextThrows("2020.3.24f1-dots_");
+        CheckTextThrows("2020.3.24f1_");
     }
 
     [Test]
-    public void Ctor_WithIllegalBranch_Throws()
+    public void FromText_WithIllegalBranch_Throws()
     {
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24f1-"));
+        CheckTextThrows("2020.3.24f1-");
     }
 
     [Test]
-    public void Ctor_WithIllegalReleaseType_Throws()
+    public void FromText_WithIllegalReleaseType_Throws()
     {
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24\0"));
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24#"));
-        Should.Throw<UnityVersionFormatException>(() => new UnityVersion("2020.3.24ff"));
+        CheckTextThrows("2020.3.24\0");
+        CheckTextThrows("2020.3.24#");
+        CheckTextThrows("2020.3.24ff");
     }
 
     [Test]

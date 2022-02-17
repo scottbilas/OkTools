@@ -28,62 +28,6 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
     public readonly string? Branch;
     public readonly string? Hash;
 
-    public enum NormalizeLegacy { No, Yes }
-
-    public UnityVersion(string version, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No)
-    {
-        var m = Regex.Match(version, @"^(?imnx-s)
-            (?<Major>\d+)
-            (\.(?<Minor>\d+)
-             (\.(?<Revision>\d+)
-              ((?<ReleaseType>[a-z])
-               (?<Incremental>\d+)?
-            )?)?)?
-            (-(?<Branch>[^_]+))?
-            (_(?<Hash>[a-f0-9]{12,}))?$");
-        if (m.Success)
-        {
-            string? Get(string name)
-            {
-                var g = m.Groups[name];
-                return g.Success ? g.Value : null;
-            }
-
-            T? Parse<T>(string name, Func<string, T> convert) where T : struct
-            {
-                var str = Get(name);
-                return str != null ? convert(str) : null;
-            }
-
-            Major       = int.Parse(m.Groups["Major"].Value);
-            Minor       = Parse("Minor", int.Parse);
-            Revision    = Parse("Revision", int.Parse);
-            ReleaseType = Parse("ReleaseType", s => s[0]);
-            Incremental = Parse("Incremental", int.Parse);
-            Branch      = Get("Branch");
-            Hash        = Get("Hash");
-
-            if (Hash is { Length: > 12 })
-                Hash = Hash[..12];
-        }
-        else if (normalizeLegacy == NormalizeLegacy.Yes)
-        {
-            m = Regex.Match(version, @"^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Revision>\d+)\.(?<Hash>\d+)$");
-            if (m.Success)
-            {
-                // it's an older code, sir, but it checks out
-
-                Major    = int.Parse(m.Groups["Major"].Value);
-                Minor    = int.Parse(m.Groups["Minor"].Value);
-                Revision = int.Parse(m.Groups["Revision"].Value);
-                Hash     = int.Parse(m.Groups["Hash"].Value).ToString("x6"); // old style is hg hash as decimal
-            }
-        }
-
-        if (!m.Success)
-            throw new UnityVersionFormatException(version);
-    }
-
     public UnityVersion(
         int     major,
         int?    minor       = null,
@@ -236,24 +180,75 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
 
     // Static ctors
 
+    public enum NormalizeLegacy { No, Yes }
+
+    public static UnityVersion FromText(string versionText, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No) =>
+        TryFromText(versionText, normalizeLegacy) ?? throw new UnityVersionFormatException(versionText);
+
+    public static UnityVersion? TryFromText(string versionText, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No)
+    {
+        var m = Regex.Match(versionText, @"^(?imnx-s)
+            (?<Major>\d+)
+            (\.(?<Minor>\d+)
+             (\.(?<Revision>\d+)
+              ((?<ReleaseType>[a-z])
+               (?<Incremental>\d+)?
+            )?)?)?
+            (-(?<Branch>[^_]+))?
+            (_(?<Hash>[a-f0-9]{12,}))?$");
+        if (m.Success)
+        {
+            string? Get(string name)
+            {
+                var g = m.Groups[name];
+                return g.Success ? g.Value : null;
+            }
+
+            T? Parse<T>(string name, Func<string, T> convert) where T : struct
+            {
+                var str = Get(name);
+                return str != null ? convert(str) : null;
+            }
+
+            return new UnityVersion(
+                int.Parse(m.Groups["Major"].Value),
+                Parse("Minor", int.Parse),
+                Parse("Revision", int.Parse),
+                Parse("ReleaseType", s => s[0]),
+                Parse("Incremental", int.Parse),
+                Get("Branch"),
+                Get("Hash"));
+        }
+
+        if (normalizeLegacy != NormalizeLegacy.Yes)
+            return null;
+
+        m = Regex.Match(versionText, @"^(?<Major>\d+)\.(?<Minor>\d+)\.(?<Revision>\d+)\.(?<Hash>\d+)$");
+        if (!m.Success)
+            return null;
+
+        // it's an older code, sir, but it checks out
+        return new UnityVersion(
+            int.Parse(m.Groups["Major"].Value),
+            int.Parse(m.Groups["Minor"].Value),
+            int.Parse(m.Groups["Revision"].Value),
+            hash: int.Parse(m.Groups["Hash"].Value).ToString("x6")); // old style is hg hash as decimal
+    }
+
     public static UnityVersion FromFileVersionInfo(FileVersionInfo fileVersionInfo)
     {
         if (fileVersionInfo.ProductVersion == null)
             throw new ArgumentException("Expected ProductVersion is missing", nameof(fileVersionInfo));
 
         // because we're using ProductVersion, we may run across old style version number encoding. enable that.
-        return new UnityVersion(fileVersionInfo.ProductVersion, NormalizeLegacy.Yes);
+        return FromText(fileVersionInfo.ProductVersion, NormalizeLegacy.Yes);
     }
 
-    public static UnityVersion FromUnityExe(string pathToUnityExe)
-    {
-        return FromFileVersionInfo(FileVersionInfo.GetVersionInfo(pathToUnityExe));
-    }
+    public static UnityVersion FromUnityExe(string pathToUnityExe) =>
+        FromFileVersionInfo(FileVersionInfo.GetVersionInfo(pathToUnityExe));
 
-    public static UnityVersion FromUnityBuildFolder(string pathToUnityBuild)
-    {
-        return FromUnityExe(pathToUnityBuild.ToNPath().Combine(UnityConstants.UnityExeName));
-    }
+    public static UnityVersion FromUnityBuildFolder(string pathToUnityBuild) =>
+        FromUnityExe(pathToUnityBuild.ToNPath().Combine(UnityConstants.UnityExeName));
 
     public static UnityVersion FromUnityProjectVersionTxt(string pathToVersionTxt)
     {
@@ -264,11 +259,10 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
             .ToDictionary(l => l[0].Trim(), l => l[1].Trim());
 
         if (!projectVersionDb.TryGetValue("m_EditorVersionWithRevision", out var versionTxt))
-            return new UnityVersion(projectVersionDb["m_EditorVersion"]);
+            return FromText(projectVersionDb["m_EditorVersion"]);
 
         var match = Regex.Match(versionTxt, @"(?<ver>\S+)\s*\((?<hash>[^)]+)\)");
-        return new UnityVersion($"{match.Groups["ver"]}_{match.Groups["hash"]}");
-
+        return FromText($"{match.Groups["ver"]}_{match.Groups["hash"]}");
     }
 
     public static IEnumerable<UnityVersion> FromEditorsYml(string pathToEditorsYml)
@@ -290,7 +284,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         }
 
         foreach (var editorVersion in editorsYml.EditorVersions.Values)
-            yield return new UnityVersion($"{editorVersion.Version}_{editorVersion.Revision}");
+            yield return FromText($"{editorVersion.Version}_{editorVersion.Revision}");
     }
 
     #pragma warning disable CS0649
