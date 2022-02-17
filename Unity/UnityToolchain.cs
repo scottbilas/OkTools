@@ -69,7 +69,7 @@ public class UnityToolchain : IStructuredOutput
 
     public override string ToString() => $"{Version} ({EditorBuildConfig}, {Origin}):\n  {NPath}";
 
-    public dynamic Output(StructuredOutputLevel level)
+    public dynamic Output(StructuredOutputDetail detail)
     {
         var output = Expando.From(new
         {
@@ -78,9 +78,9 @@ public class UnityToolchain : IStructuredOutput
             EditorBuildConfig,
         });
 
-        if (level >= StructuredOutputLevel.Typical)
+        if (detail >= StructuredOutputDetail.Typical)
             Expando.Add(output, new { Origin, MonoDllPath, MonoBuildConfig });
-        if (level >= StructuredOutputLevel.Full)
+        if (detail >= StructuredOutputDetail.Full)
             Expando.Add(output, new { VersionFull = Version, EditorExePath });
 
         return output;

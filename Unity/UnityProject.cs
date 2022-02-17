@@ -1,7 +1,9 @@
-﻿namespace OkTools.Unity;
+﻿using System.Dynamic;
+
+namespace OkTools.Unity;
 
 [PublicAPI]
-public class UnityProject
+public class UnityProject : IStructuredOutput
 {
     readonly NPath _projectRoot;
 
@@ -14,6 +16,26 @@ public class UnityProject
     }
 
     public override string ToString() => $"{NPath}: {GetProjectUnityVersion()}";
+
+    public dynamic Output(StructuredOutputDetail detail)
+    {
+        var output = Expando.From(new
+        {
+            Path,
+            ProjectUnityVersion = GetProjectUnityVersion().ToString()
+        });
+
+        if (detail >= StructuredOutputDetail.Typical)
+            output.TestableUnityVersions = GetTestableUnityVersions().SelectToStrings().ToArray();
+
+        if (detail >= StructuredOutputDetail.Full)
+        {
+            output.ProjectUnityVersionFull = GetProjectUnityVersion();
+            output.TestableUnityVersions = GetTestableUnityVersions().ToArray();
+        }
+
+        return output;
+    }
 
     public UnityVersion GetProjectUnityVersion()
     {

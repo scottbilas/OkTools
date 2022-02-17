@@ -12,12 +12,14 @@ using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 static class Commands
 {
     public const string DocUsageToolchains =
-@"usage: okunity toolchains [-n] [-i SPEC]... [--json --yaml] [--level LEVEL]
+@"usage: okunity toolchains [-n] [-i SPEC]... [--json --yaml] [--detail DETAIL]
 
 options:
   -n, --no-defaults   Don't look in the default-install locations for toolchains
   -i, --include SPEC  Add a pathspec to the search (supports '*' and '**' glob style wildcards)
-  --level LEVEL       Can be one of minimal, typical, full, or debug, [default: typical]
+  --json              Output as JSON
+  --yaml              Output as yaml
+  --detail DETAIL     Tune output detail; can be one of minimal, typical, full, or debug, [default: typical]
 ";
 
     public static void Toolchains(IDictionary<string, ValueObject> opt, Config config)
@@ -49,13 +51,18 @@ options:
     }
 
     public const string DocUsageInfo =
-@"usage: okunity info [--json --yaml] [THING]...
+@"usage: okunity info [--json --yaml] [--detail DETAIL] [THING]...
 
-  THING  The thing to extract as much unity-related info from as possible.
-         Defaults to '.' (the current directory). Currently supported:
+Extract as much unity-related info from THING(s) as possible.
+Defaults to '.' (the current directory). Currently supported:
 
-         * Path to a folder or file (globs supported)
-         * A text version number
+  * Path to a folder or file
+  * A text version number
+
+options:
+  --json           Output as JSON
+  --yaml           Output as yaml
+  --detail DETAIL  Tune output detail; can be one of minimal, typical, full, or debug, [default: typical]
 ";
 
     public static void Info(IDictionary<string, ValueObject> opt, Config config)
@@ -71,6 +78,10 @@ options:
     {
         try
         {
+            var version = UnityVersion.TryFromText(thing);
+            if (version != null)
+                return version;
+
             var nthing = thing.ToNPath();
             if (nthing.DirectoryExists())
             {
@@ -114,18 +125,14 @@ options:
         var json = opt["--json"].IsTrue;
         var yaml = opt["--yaml"].IsTrue;
 
+        things = things.Flatten();
+
         if (json || yaml)
         {
-            var levelText = opt["--level"].ToString();
-            var level = EnumUtility.TryParseNoCaseOr<StructuredOutputLevel>(levelText)
-                ?? throw new DocoptInputErrorException($"Illegal LEVEL '{levelText}'");
-
-            things = things.Select(t =>
-            {
-                if (t is IStructuredOutput o)
-                    return o.Output(level);
-                return t;
-            });
+            var detailText = opt["--detail"].ToString();
+            var detail = EnumUtility.TryParseNoCaseOr<StructuredOutputDetail>(detailText)
+                ?? throw new DocoptInputErrorException($"Illegal DETAIL '{detailText}'");
+            things = things.Select(thing => thing is IStructuredOutput so ? so.Output(detail) : thing);
         }
 
         things = things.UnDefer();
@@ -173,14 +180,14 @@ class ExceptionalThing
 
 public static class StructuredOutput
 {
-    public static dynamic From(Exception exception, StructuredOutputLevel level)
+    public static dynamic From(Exception exception, StructuredOutputDetail detail)
     {
         dynamic output = new ExpandoObject();
         output.Message = exception.Message;
 
-        if (level >= StructuredOutputLevel.Full)
+        if (detail >= StructuredOutputDetail.Full)
             output.Type = exception.GetType().FullName!;
-        if (level >= StructuredOutputLevel.Debug && exception.StackTrace != null)
+        if (detail >= StructuredOutputDetail.Debug && exception.StackTrace != null)
             output.StackTrace = exception.StackTrace;
 
         return output;

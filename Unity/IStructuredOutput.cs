@@ -2,12 +2,12 @@
 
 namespace OkTools.Unity;
 
-public enum StructuredOutputLevel
+public enum StructuredOutputDetail
 {
     Minimal, Typical, Full, Debug
 }
 
 public interface IStructuredOutput
 {
-    dynamic Output(StructuredOutputLevel level);
+    dynamic Output(StructuredOutputDetail detail);
 }
