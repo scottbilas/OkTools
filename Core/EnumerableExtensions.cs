@@ -1,3 +1,5 @@
+using System.Collections;
+
 namespace OkTools.Core;
 
 [PublicAPI]
@@ -75,6 +77,23 @@ public static class EnumerableExtensions
 
     public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> @this) =>
         @this.SelectMany(_ => _);
+
+    public static IEnumerable<T> Flatten<T>(this IEnumerable @this)
+    {
+        foreach (var item in @this)
+        {
+            if (item is IEnumerable items)
+            {
+                foreach (var child in Flatten<T>(items))
+                    yield return child;
+            }
+            else
+                yield return (T)item;
+        }
+    }
+
+    public static IEnumerable<object> Flatten(this IEnumerable @this) =>
+        @this.Flatten<object>();
 
     public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> @this) =>
         @this.Select((item, index) => (item, index));

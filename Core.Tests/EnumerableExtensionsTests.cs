@@ -82,4 +82,15 @@ class EnumerableExtensionsTests
         var items = new[] { (1, "one"), (1, "two") };
         Should.Throw<Exception>(() => items.ToDictionary());
     }
+
+    [Test]
+    public void Flatten()
+    {
+        new[] { 1, 2, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
+        new[] { 1 }.Flatten<int>().ShouldBe(new[] { 1 });
+        Array.Empty<int>().Flatten<int>().ShouldBeEmpty();
+
+        new object[] { new[] { 1 }, 2, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
+        new object[] { new object[] { 1, new[] { 2 } }, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
+    }
 }
