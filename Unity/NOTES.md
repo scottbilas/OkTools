@@ -46,6 +46,7 @@ Problems:
 * No support for inline markup, such as "trim before here" or "this is a wrap point" or color/bold/etc. codes.
 * Impossible to debug when there's a grammar problem. You just hack over and over trying to get the right brackets and ... and options specs, then look at the dictionary that comes back.. A dump grammar can be a stopgap until codegen types are implemented.
 * No support for a flag set to false vs a default (missing) flag. (For example `--flag` -> `true`, `--flag:false` (also `0` or `n` or `f` in place of `false`) -> `false`, (missing) -> `null`) otherwise cannot override a default set in a config file
+* No information in any given param on where it came from - its arg index, its position in the args string, etc. This is needed if you want to mess with the args list (say remove certain params and sub/re-parse).
 
 Nice:
 

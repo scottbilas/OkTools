@@ -1,34 +1,53 @@
 ﻿using System.Dynamic;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DocoptNet;
 using DotNetConfig;
 using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
-using YamlDotNet.Serialization.NamingConventions;
-using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
-static class Commands
+class CommandContext
+{
+    public readonly IDictionary<string, ValueObject> Options;
+    public readonly Config Config;
+    public readonly bool Debug;
+
+    public CommandContext(IDictionary<string, ValueObject> options, Config config, bool debug)
+    {
+        Options = options;
+        Config = config;
+        Debug = debug;
+    }
+}
+
+static partial class Commands
 {
     public const string DocUsageToolchains =
-@"usage: okunity toolchains [-n] [-i SPEC]... [--json --yaml] [--detail DETAIL]
+@"Usage: okunity toolchains [options] [SPEC]...
 
-options:
-  -n, --no-defaults   Don't look in the default-install locations for toolchains
-  -i, --include SPEC  Add a pathspec to the search (supports '*' and '**' glob style wildcards)
-  --json              Output as JSON
-  --yaml              Output as yaml
-  --detail DETAIL     Tune output detail; can be one of minimal, typical, full, or debug, [default: typical]
+Description:
+  Get info on all found toolchains, which are searched for in the following locations:
+
+  - Paths known to Unity Hub
+  - Toolchains installed with a downloadable installer
+  - Glob pathspecs in config toolchains.spec (supports multi-entry)
+  - Glob SPEC command line argument(s)
+
+  Pathspecs support '*' and '**' globbing.
+
+Options:
+  -n, --no-defaults  Don't look in the default-install locations for toolchains
+  -j, --json         Output as JSON
+  -y, --yaml         Output as yaml
+  -d, --detailed     Include additional info for JSON/yaml output
 ";
 
-    public static void Toolchains(IDictionary<string, ValueObject> opt, Config config)
+    public static void Toolchains(CommandContext context)
     {
         var toolchains = Enumerable.Empty<UnityToolchain>();
 
         // optionally start with defaults
-        if (config.GetBoolean("toolchains", null, "no-defaults") != true &&
-            !opt["--no-defaults"].IsTrue)
+        if (context.Config.GetBoolean("toolchains", null, "no-defaults") != true &&
+            !context.Options["--no-defaults"].IsTrue)
         {
             toolchains = toolchains
                 .Concat(Unity.FindHubInstalledToolchains())
@@ -37,41 +56,73 @@ options:
 
         // add in any custom paths
         toolchains = toolchains
-            .Concat(Unity.FindCustomToolchains(config.GetAll("toolchains", null, "include").Select(v => v.GetString())))
-            .Concat(Unity.FindCustomToolchains(opt["--include"].AsStrings()));
+            .Concat(Unity.FindCustomToolchains(context.Config.GetAll("toolchains", null, "spec").Select(v => v.GetString()), false))
+            .Concat(Unity.FindCustomToolchains(context.Options["SPEC"].AsStrings(), true));
 
         // there may be dupes in the list, so filter. and we want the defaults to come first, because
         // they will have the correct origin.
         toolchains = toolchains
             .DistinctBy(t => t.Path)
-            .OrderByDescending(t => t.Version) // nice to have newest stuff first
-            .ToList();
+            .OrderByDescending(t => t.Version); // nice to have newest stuff first
 
-        Output(toolchains, opt);
+        Output(toolchains, context);
+    }
+
+    public const string DocUsageProjects =
+@"Usage: okunity projects [options] [SPEC]...
+
+Description:
+  Get info on all projects found at SPEC (supports '*' and '**' globbing).
+  If no SPEC is given, it defaults to the current directory.
+
+Options:
+  -j, --json         Output as JSON
+  -y, --yaml         Output as yaml
+  -d, --detailed     Include additional info for JSON/yaml output
+";
+
+    public static void Projects(CommandContext context)
+    {
+        var projects = Enumerable.Empty<UnityProject>();
+/*
+        projects = projects
+            .Concat(Unity.FindProjects(config.GetAll("projects", null, "include").Select(v => v.GetString())))
+            .Concat(Unity.FindProjects(opt["--include"].AsStrings()));
+
+        // there may be dupes in the list, so filter. and we want the defaults to come first, because
+        // they will have the correct origin.
+        projects = projects
+            .DistinctBy(t => t.Path)
+            .OrderByDescending(t => t.Version); // nice to have newest stuff first
+
+        Output(toolchains, opt);*/
     }
 
     public const string DocUsageInfo =
-@"usage: okunity info [--json --yaml] [--detail DETAIL] [THING]...
+@"Usage: okunity info [options] [THING]...
 
-Extract as much unity-related info from THING(s) as possible.
-Defaults to '.' (the current directory). Currently supported:
+Description:
+  Extract as much unity-related info from THING(s) as possible.
+  Defaults to '.' (current directory).
 
-  * Path to a folder or file
-  * A text version number
+  Currently supported:
 
-options:
-  --json           Output as JSON
-  --yaml           Output as yaml
-  --detail DETAIL  Tune output detail; can be one of minimal, typical, full, or debug, [default: typical]
+  - Path to a folder or file
+  - A text version number
+
+Options:
+  -j, --json         Output as JSON
+  -y, --yaml         Output as yaml
+  -d, --detailed     Include additional info for JSON/yaml output
 ";
 
-    public static void Info(IDictionary<string, ValueObject> opt, Config config)
+    public static void Info(CommandContext context)
     {
-        var things = opt["THING"].AsStrings().ToArray();
+        var things = context.Options["THING"].AsStrings().ToArray();
         if (things.Length == 0)
             things = new[] { "." };
 
-        Output(things.Select(Info), opt);
+        Output(things.Select(Info), context);
     }
 
     static object Info(string thing)
@@ -119,76 +170,32 @@ options:
 
         return $"Unknown thing: {thing}";
     }
-
-    static void Output(IEnumerable<object> things, IDictionary<string, ValueObject> opt)
-    {
-        var json = opt["--json"].IsTrue;
-        var yaml = opt["--yaml"].IsTrue;
-
-        things = things.Flatten();
-
-        if (json || yaml)
-        {
-            var detailText = opt["--detail"].ToString();
-            var detail = EnumUtility.TryParseNoCaseOr<StructuredOutputDetail>(detailText)
-                ?? throw new DocoptInputErrorException($"Illegal DETAIL '{detailText}'");
-            things = things.Select(thing => thing is IStructuredOutput so ? so.Output(detail) : thing);
-        }
-
-        things = things.UnDefer();
-
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(things, new JsonSerializerOptions
-            {
-                WriteIndented = true,
-                IncludeFields = true,
-                Converters = { new JsonStringEnumConverter() }
-            }));
-        }
-
-        if (yaml)
-        {
-            Console.WriteLine(new YamlSerializerBuilder()
-                .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                .Build()
-                .Serialize(things));
-        }
-
-        if (!json && !yaml)
-        {
-            foreach (var thing in things)
-                Console.WriteLine(thing);
-        }
-    }
 }
 
-class ExceptionalThing
+class ExceptionalThing  : IStructuredOutput
 {
-    public readonly string Thing;
-    public readonly Exception Exception;
+    readonly string _thing;
+    readonly Exception _exception;
 
     public ExceptionalThing(string thing, Exception exception)
     {
-        Thing = thing;
-        Exception = exception;
+        _thing = thing;
+        _exception = exception;
     }
 
     public override string ToString() =>
-        $"Getting info for thing '{Thing}' resulted in {Exception.GetType().Name} ({Exception.Message})";
-}
+        $"Getting info for thing '{_thing}' resulted in {_exception.GetType().Name} ({_exception.Message})";
 
-public static class StructuredOutput
-{
-    public static dynamic From(Exception exception, StructuredOutputDetail detail)
+    public object Output(StructuredOutputLevel level, bool debug)
     {
         dynamic output = new ExpandoObject();
-        output.Message = exception.Message;
+        output.Thing = _thing;
+        output.Message = _exception.Message;
 
-        if (detail >= StructuredOutputDetail.Full)
-            output.Type = exception.GetType().FullName!;
-        if (detail >= StructuredOutputDetail.Debug && exception.StackTrace != null)
-            output.StackTrace = exception.StackTrace;
+        if (level >= StructuredOutputLevel.Detailed || debug)
+            output.Type = _exception.GetType().FullName!;
+        if (debug && _exception.StackTrace != null)
+            output.StackTrace = _exception.StackTrace;
 
         return output;
     }

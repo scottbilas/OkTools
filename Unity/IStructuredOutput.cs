@@ -1,13 +1,13 @@
-﻿using System.Dynamic;
+﻿namespace OkTools.Unity;
 
-namespace OkTools.Unity;
-
-public enum StructuredOutputDetail
+[PublicAPI]
+public enum StructuredOutputLevel
 {
-    Minimal, Typical, Full, Debug
+    Flat, Normal, Detailed
 }
 
+[PublicAPI]
 public interface IStructuredOutput
 {
-    dynamic Output(StructuredOutputDetail detail);
+    object Output(StructuredOutputLevel level, bool debug);
 }

@@ -17,7 +17,7 @@ public class UnityProject : IStructuredOutput
 
     public override string ToString() => $"{NPath}: {GetProjectUnityVersion()}";
 
-    public dynamic Output(StructuredOutputDetail detail)
+    public object Output(StructuredOutputLevel level, bool debug)
     {
         var output = Expando.From(new
         {
@@ -25,14 +25,17 @@ public class UnityProject : IStructuredOutput
             ProjectUnityVersion = GetProjectUnityVersion().ToString()
         });
 
-        if (detail >= StructuredOutputDetail.Typical)
+        if (level >= StructuredOutputLevel.Normal)
             output.TestableUnityVersions = GetTestableUnityVersions().SelectToStrings().ToArray();
 
-        if (detail >= StructuredOutputDetail.Full)
+        if (level >= StructuredOutputLevel.Detailed)
         {
             output.ProjectUnityVersionFull = GetProjectUnityVersion();
             output.TestableUnityVersions = GetTestableUnityVersions().ToArray();
         }
+
+        // TODO: some kind of last-write timestamp
+        // TODO: git info (root, branch at least, anything that's instant and doesn't require file walking)
 
         return output;
     }

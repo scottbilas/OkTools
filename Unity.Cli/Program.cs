@@ -10,14 +10,18 @@ public class Program
     const string k_docUsageGlobal =
 $@"{k_docName}
 
-usage:
-  okunity COMMAND [ARG...]
+Usage:
+  okunity [options] COMMAND [ARG]...
   okunity --version
 
-commands:
+Commands:
   help        Print help for a command
-  toolchains  Get info on known toolchains installed locally
+  toolchains  Get info on Unity toolchains
+  projects    Get info on Unity projects
   info        Extract Unity-related info from args
+
+Global Options:
+  --debug     Enable extra debug features
 ";
 
     const string k_docUsageHelp =
@@ -28,18 +32,24 @@ Print help for COMMAND.
 
     public static int Main(string[] args)
     {
+        var debugMode = false;
+
         try
         {
             var first = true; // required for COMMAND [ARG...] to work
             IDictionary<string, ValueObject> ParseOpt(string usage)
             {
-                var opt = new Docopt().Apply(usage, args, version: $"{k_docName} {k_docVersion}", optionsFirst: first, help: false);
+                // skip global options when parsing for commands, as they are applied before the command
+                var offset = first ? 0 : args.IndexOf(a => a[0] != '-');
+
+                var opt = new Docopt().Apply(usage, args[offset..], version: $"{k_docName} {k_docVersion}", optionsFirst: first, help: false);
                 first = false;
                 return opt;
             }
 
             if (args.Length == 0) throw new DocoptExitException(k_docUsageGlobal);
             var optGlobal = ParseOpt(k_docUsageGlobal);
+            debugMode = optGlobal["--debug"].IsTrue;
 
             // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
             // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
@@ -66,11 +76,11 @@ Print help for COMMAND.
                     break;
 
                 case "toolchains":
-                    Commands.Toolchains(ParseOpt(Commands.DocUsageToolchains), Config.Build());
+                    Commands.Toolchains(new CommandContext(ParseOpt(Commands.DocUsageToolchains), Config.Build(), debugMode));
                     break;
 
                 case "info":
-                    Commands.Info(ParseOpt(Commands.DocUsageInfo), Config.Build());
+                    Commands.Info(new CommandContext(ParseOpt(Commands.DocUsageInfo), Config.Build(), debugMode));
                     break;
 
                 default:
@@ -87,6 +97,13 @@ Print help for COMMAND.
         {
             Console.WriteLine(x.Message);
             return (int)CliExitCode.Help;
+        }
+        catch (Exception x)
+        {
+            if (debugMode)
+                throw;
+
+            Console.Error.WriteLine($"Internal error: {x.Message}");
         }
 
         return 0;

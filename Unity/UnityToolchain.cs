@@ -69,19 +69,27 @@ public class UnityToolchain : IStructuredOutput
 
     public override string ToString() => $"{Version} ({EditorBuildConfig}, {Origin}):\n  {NPath}";
 
-    public dynamic Output(StructuredOutputDetail detail)
+    public object Output(StructuredOutputLevel level, bool debug)
     {
+        var lastWrite = _editorExePath.FileInfo.LastWriteTime;
+
         var output = Expando.From(new
         {
             Path,
             Version = Version.ToString(),
             EditorBuildConfig,
+            Age = (DateTime.Now - lastWrite).ToNiceAge(),
+            Origin,
         });
 
-        if (detail >= StructuredOutputDetail.Typical)
-            Expando.Add(output, new { Origin, MonoDllPath, MonoBuildConfig });
-        if (detail >= StructuredOutputDetail.Full)
-            Expando.Add(output, new { VersionFull = Version, EditorExePath });
+        if (level >= StructuredOutputLevel.Normal)
+            Expando.Add(output, new { MonoDllPath, MonoBuildConfig });
+        if (level >= StructuredOutputLevel.Detailed)
+            Expando.Add(output, new { VersionFull = Version, EditorExePath, EditorExeLastWrite = lastWrite });
+
+        // TODO: some kind of last-write timestamp
+        // TODO: if custom build, add git info like with UnityProject
+        // TODO: check whether it's in a folder that has a version in it, and if so, whether it matches the actual version
 
         return output;
     }
