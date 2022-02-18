@@ -26,7 +26,7 @@ public static class EnumUtility
         return (IReadOnlyList<T>)found;
     }
 
-    public static T TryParseNoCase<T>(string enumName, T defaultValue = default)
+    public static T TryParseIgnoreCase<T>(string enumName, T defaultValue = default)
         where T: struct, Enum =>
         Enum.TryParse(enumName, true, out T value) ? value : defaultValue;
 
@@ -34,7 +34,7 @@ public static class EnumUtility
         where T: struct, Enum =>
         Enum.TryParse(enumName, false, out T value) ? value : defaultValue;
 
-    public static T? TryParseNoCaseOr<T>(string enumName)
+    public static T? TryParseIgnoreCaseOr<T>(string enumName)
         where T: struct, Enum =>
         Enum.TryParse(enumName, true, out T value) ? value : null;
 

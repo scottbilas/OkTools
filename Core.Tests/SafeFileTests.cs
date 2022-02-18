@@ -78,4 +78,31 @@ class SafeFileTests : TestFileSystemFixture
         (path + SafeFile.TmpExtension).ToNPath().FileExists().ShouldBeFalse();
         (path + SafeFile.BakExtension).ToNPath().FileExists().ShouldBeFalse();
     }
+
+    class TestException : Exception {}
+
+    [Test]
+    public void AtomicWrite_WithTmpFileThatCannotCleanup_DoesNotThrow()
+    {
+        FileStream? file = null;
+
+        try
+        {
+            var path = BaseDir.CreateFile("test.txt");
+            SafeFile.AtomicWrite(path, tmpPath =>
+            {
+                file = File.Open(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+                Should.Throw<IOException>(() => File.Delete(tmpPath));
+
+                throw new TestException();
+            });
+        }
+        catch (TestException)
+        {
+            // this is ok. failure case would be if we got an IOException for the tmp file deletion attempt (validated in the lambda above)
+
+            file?.Close();
+        }
+    }
 }

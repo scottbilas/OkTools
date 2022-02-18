@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using NUnit.Framework.Interfaces;
+using NUnit.Framework.Internal;
+using NUnit.Framework.Internal.Builders;
 
 namespace OkTools.TestUtils;
 
@@ -75,4 +78,32 @@ public abstract class TestFileSystemFixture
 
     protected NPath WriteAllLines(NPath path, IEnumerable<string> lines) =>
         path.WriteAllText(lines.Append("").StringJoin(Eol));
+}
+
+// https://stackoverflow.com/a/43339950/14582
+[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
+public class TestCaseGenericAttribute : TestCaseAttribute, ITestBuilder
+{
+    public TestCaseGenericAttribute(params object[] arguments)
+        : base(arguments)
+    {
+    }
+
+    public Type[]? TypeArguments { get; set; }
+
+    IEnumerable<TestMethod> ITestBuilder.BuildFrom(IMethodInfo method, Test? suite)
+    {
+        if (!method.IsGenericMethodDefinition)
+            return base.BuildFrom(method, suite);
+
+        if (TypeArguments == null || TypeArguments.Length != method.GetGenericArguments().Length)
+        {
+            var parms = new TestCaseParameters { RunState = RunState.NotRunnable };
+            parms.Properties.Set("_SKIPREASON", $"{nameof(TypeArguments)} should have {method.GetGenericArguments().Length} elements");
+            return new[] { new NUnitTestCaseBuilder().BuildTestMethod(method, suite, parms) };
+        }
+
+        var genMethod = method.MakeGenericMethod(TypeArguments);
+        return base.BuildFrom(genMethod, suite);
+    }
 }
