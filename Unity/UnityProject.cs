@@ -1,6 +1,4 @@
-﻿using System.Dynamic;
-
-namespace OkTools.Unity;
+﻿namespace OkTools.Unity;
 
 [PublicAPI]
 public class UnityProject : IStructuredOutput

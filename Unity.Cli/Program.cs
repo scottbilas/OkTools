@@ -68,6 +68,8 @@ Print help for COMMAND.
                             break;
                         case "toolchains":
                             throw new DocoptExitException(Commands.DocUsageToolchains);
+                        case "projects":
+                            throw new DocoptExitException(Commands.DocUsageProjects);
                         case "info":
                             throw new DocoptExitException(Commands.DocUsageInfo);
                         default:
@@ -77,6 +79,10 @@ Print help for COMMAND.
 
                 case "toolchains":
                     Commands.Toolchains(new CommandContext(ParseOpt(Commands.DocUsageToolchains), Config.Build(), debugMode));
+                    break;
+
+                case "projects":
+                    Commands.Projects(new CommandContext(ParseOpt(Commands.DocUsageProjects), Config.Build(), debugMode));
                     break;
 
                 case "info":
