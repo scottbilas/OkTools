@@ -1,6 +1,24 @@
 ﻿namespace OkTools.Unity;
 
 [PublicAPI]
+public enum UnityEditorBuildConfig
+{
+    Debug, Release
+}
+
+[PublicAPI]
+public enum MonoBuildConfig
+{
+    Debug, Release
+}
+
+[PublicAPI]
+public enum UnityToolchainOrigin
+{
+    Unknown, LocallyBuilt, UnityDownloader, UnityHub, ManuallyInstalled
+}
+
+[PublicAPI]
 public class UnityToolchain : IStructuredOutput
 {
     readonly NPath _editorExePath, _monoDllPath;
@@ -111,22 +129,4 @@ public class UnityToolchain : IStructuredOutput
 
         return pathToUnityToolchain.FileExists() ? new UnityToolchain(pathToUnityToolchain, origin) : null;
     }
-}
-
-[PublicAPI]
-public enum UnityEditorBuildConfig
-{
-    Debug, Release
-}
-
-[PublicAPI]
-public enum MonoBuildConfig
-{
-    Debug, Release
-}
-
-[PublicAPI]
-public enum UnityToolchainOrigin
-{
-    Unknown, LocallyBuilt, UnityDownloader, UnityHub, ManuallyInstalled
 }
