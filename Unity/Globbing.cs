@@ -4,7 +4,8 @@ namespace OkTools.Unity;
 
 static class Globbing
 {
-    // TODO: add support for searching with Everything if found to be installed
+    // TODO: TESTS
+    // TODO: consider adding support for searching with Everything if found to be installed..if given certain option
     // (lib can use a configvar to tune whether this is enabled..in this case we'd also
     // want exclusion patterns)
 
@@ -14,7 +15,7 @@ static class Globbing
     // limitations:
     // - fails on something like "c:/build*/**" (some problem with root)
     //
-    internal static IEnumerable<NPath> Find(NPath pathSpec, string fileName)
+    internal static IEnumerable<NPath> Find(NPath pathSpec, string fileName, bool throwOnInvalidPathSpec)
     {
         if (fileName.Contains('*'))
             throw new ArgumentException("Wildcards not allowed", nameof(fileName));
@@ -26,12 +27,18 @@ static class Globbing
         if (wild < 0)
         {
             // just an ordinary path to a folder
-            return pathSpec.FileExists()
-                ? pathSpec.WrapInEnumerable()
-                : Enumerable.Empty<NPath>();
+            if (pathSpec.FileExists())
+                return pathSpec.WrapInEnumerable();
+
+            if (throwOnInvalidPathSpec)
+                throw new DirectoryNotFoundException($"Invalid glob pathspec, filename does not exist: {pathSpec}");
+
+            return Enumerable.Empty<NPath>();
         }
 
         var (basePath, matchPath) = pathSpec.SplitAtElement(wild);
+        if (throwOnInvalidPathSpec && !basePath.DirectoryExists())
+            throw new DirectoryNotFoundException($"Invalid glob pathspec, base path does not exist: {pathSpec}");
 
         var matcher = new Matcher();
         matcher.AddInclude(matchPath);
