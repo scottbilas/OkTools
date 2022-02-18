@@ -5,17 +5,15 @@ public static class TimeSpanExtensions
 {
     public static string ToNiceAge(this TimeSpan @this)
     {
-        // TODO !! TESTS
-
         var days = @this.TotalDays;
         switch (days)
         {
             case > 365*2:
                 return (days/365f).ToString("0.0yr");
             case > 30*2:
-                return (days/30f).ToString("0mo");
+                return (days/30f).ToString("0.0mo");
             case > 7*2:
-                return (days/7f).ToString("0wk");
+                return (days/7f).ToString("0.0wk");
         }
 
         if (@this.Days > 0)
@@ -27,8 +25,11 @@ public static class TimeSpanExtensions
         if (@this.Minutes > 0)
             return $"{@this.Minutes}m{@this.Seconds}s";
 
-        if (@this.Seconds > 0)
+        if (@this.Seconds > 10)
             return $"{@this.TotalSeconds:0.0}s";
+
+        if (@this.TotalSeconds > 0)
+            return $"{@this.TotalSeconds:0.00}s";
 
         return "now";
     }
