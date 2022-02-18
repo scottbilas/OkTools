@@ -96,7 +96,7 @@ static partial class Commands
             if (type == typeof(UnityEditorBuildConfig))
             {
                 tableBuilder
-                    .AddColumn(name.ToUpper()).RowFormatter<UnityEditorBuildConfig>(value =>
+                    .AddColumn("CONFIG").RowFormatter<UnityEditorBuildConfig>(value =>
                         value == UnityEditorBuildConfig.Debug
                             ? value.ToString().ForegroundColor(Color.Salmon)
                             : value.ToString().ForegroundColor(Color.Aquamarine))
