@@ -30,6 +30,8 @@ public class UnityProject : IStructuredOutput
         {
             output.ProjectUnityVersionFull = GetProjectUnityVersion();
             output.TestableUnityVersions = GetTestableUnityVersions().ToArray();
+
+            LibGit2Sharp.
         }
 
         // TODO: some kind of last-write timestamp
@@ -37,6 +39,8 @@ public class UnityProject : IStructuredOutput
 
         return output;
     }
+
+    // TODO: project last opened, project last modified (SourceAssetDB, ArtifactDB..?)
 
     public UnityVersion GetProjectUnityVersion()
     {

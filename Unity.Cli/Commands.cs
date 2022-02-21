@@ -144,7 +144,7 @@ Options:
                 if (project != null)
                     return project;
 
-                // TODO: what else???
+                // TODO: what else??? check git? use git to do a fast ls-files for ProjectVersion.txt and unity.exe and so on?
 
                 return nthing.MakeAbsolute() == NPath.CurrentDirectory
                     ? "Current directory contains no Unity-related things"

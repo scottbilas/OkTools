@@ -105,8 +105,7 @@ public class UnityToolchain : IStructuredOutput
         if (level >= StructuredOutputLevel.Detailed)
             Expando.Add(output, new { VersionFull = Version, EditorExePath, EditorExeLastWrite = lastWrite });
 
-        // TODO: some kind of last-write timestamp
-        // TODO: if custom build, add git info like with UnityProject
+        // TODO: if git discovered, add info like with UnityProject
         // TODO: check whether it's in a folder that has a version in it, and if so, whether it matches the actual version
 
         return output;
