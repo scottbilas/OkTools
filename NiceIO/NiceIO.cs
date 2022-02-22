@@ -531,6 +531,21 @@ namespace NiceIO
             return HomeDirectory.Combine(_elements.Skip(1));
         }
 
+        public NPath TildeCollapse()
+        {
+            var thisAbs = MakeAbsolute();
+            var homeDir = HomeDirectory;
+
+            if (!thisAbs.IsChildOf(HomeDirectory))
+                return this;
+
+            var relative = thisAbs.RelativeTo(homeDir);
+            if (relative.Depth == 0)
+                return "~";
+
+            return new NPath("~").Combine(relative);
+        }
+
         #endregion
 
         #region filesystem writing operations
@@ -750,16 +765,10 @@ namespace NiceIO
 
         #region special paths
 
-        public static NPath CurrentDirectory
-        {
-            get
-            {
-                return new NPath(Directory.GetCurrentDirectory());
-            }
-        }
-
+        public static NPath CurrentDirectory => new(Directory.GetCurrentDirectory());
         public static NPath HomeDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         public static NPath ProgramFilesDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+        public static NPath LocalAppDataDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
         public static NPath SystemTempDirectory => new(Path.GetTempPath());
 
         #endregion
