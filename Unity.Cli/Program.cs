@@ -2,7 +2,7 @@
 using DotNetConfig;
 using OkTools.Core;
 
-public class Program
+public static class Program
 {
     const string k_docName = "okunity, the Unity CLI toolbox";
     const string k_docVersion = "0.1";
@@ -16,8 +16,9 @@ Usage:
 
 Commands:
   help        Print help for a command
+  unity       Run Unity to open a project
   toolchains  Get info on Unity toolchains
-  projects    Get info on Unity projects
+  projects$$  Get info on Unity projects ($$ not currently implemented)
   info        Extract Unity-related info from args
 
 Global Options:
@@ -66,10 +67,12 @@ Print help for COMMAND.
                     {
                         case "help":
                             break;
+                        case "unity":
+                            throw new DocoptExitException(Commands.DocUsageUnity);
                         case "toolchains":
                             throw new DocoptExitException(Commands.DocUsageToolchains);
-                        case "projects":
-                            throw new DocoptExitException(Commands.DocUsageProjects);
+                        //case "projects":
+                            //throw new DocoptExitException(Commands.DocUsageProjects);
                         case "info":
                             throw new DocoptExitException(Commands.DocUsageInfo);
                         default:
@@ -77,17 +80,17 @@ Print help for COMMAND.
                     }
                     break;
 
-                case "toolchains":
-                    Commands.Toolchains(new CommandContext(ParseOpt(Commands.DocUsageToolchains), Config.Build(), debugMode));
-                    break;
+                case "unity":
+                    return (int)Commands.RunUnity(new CommandContext(ParseOpt(Commands.DocUsageUnity), Config.Build(), debugMode));
 
-                case "projects":
-                    Commands.Projects(new CommandContext(ParseOpt(Commands.DocUsageProjects), Config.Build(), debugMode));
-                    break;
+                case "toolchains":
+                    return (int)Commands.RunToolchains(new CommandContext(ParseOpt(Commands.DocUsageToolchains), Config.Build(), debugMode));
+
+                //case "projects":
+                    //return Commands.Projects(new CommandContext(ParseOpt(Commands.DocUsageProjects), Config.Build(), debugMode));
 
                 case "info":
-                    Commands.Info(new CommandContext(ParseOpt(Commands.DocUsageInfo), Config.Build(), debugMode));
-                    break;
+                    return (int)Commands.RunInfo(new CommandContext(ParseOpt(Commands.DocUsageInfo), Config.Build(), debugMode));
 
                 default:
                     throw new DocoptInputErrorException($"Unknown command '{command}'");

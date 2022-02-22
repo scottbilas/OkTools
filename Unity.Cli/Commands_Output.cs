@@ -34,12 +34,12 @@ static partial class Commands
 
     static void Output(object thingObject, CommandContext context)
     {
-        var json = context.Options["--json"].IsTrue;
-        var yaml = context.Options["--yaml"].IsTrue;
+        var json = context.CommandLine["--json"].IsTrue;
+        var yaml = context.CommandLine["--yaml"].IsTrue;
 
         var level = StructuredOutputLevel.Flat;
         if (json || yaml)
-            level = context.Options["--detailed"].IsTrue ? StructuredOutputLevel.Detailed : StructuredOutputLevel.Normal;
+            level = context.CommandLine["--detailed"].IsTrue ? StructuredOutputLevel.Detailed : StructuredOutputLevel.Normal;
 
         var things = (thingObject is IEnumerable e ? e.Flatten() : thingObject.WrapInEnumerable())
             .Select(t => t is IStructuredOutput so ? so.Output(level, context.Debug) : t)

@@ -7,13 +7,13 @@ using OkTools.Unity;
 
 class CommandContext
 {
-    public readonly IDictionary<string, ValueObject> Options;
+    public readonly IDictionary<string, ValueObject> CommandLine;
     public readonly Config Config;
     public readonly bool Debug;
 
     public CommandContext(IDictionary<string, ValueObject> options, Config config, bool debug)
     {
-        Options = options;
+        CommandLine = options;
         Config = config;
         Debug = debug;
     }
@@ -21,6 +21,48 @@ class CommandContext
 
 static partial class Commands
 {
+    public const string DocUsageUnity =
+@"Usage: okunity unity [options] [PROJECT]
+
+Description:
+  Run Unity to open the given PROJECT (defaults to '.'). Uses the project version given to find the matching
+  Unity toolchain; see `okunity help toolchains` for how toolchains are discovered.
+
+Options:
+  --attach-debugger   Unity will pause with a dialog and so you can attach a managed debugger
+  --rider             Open Rider after the project opens in Unity
+  --no-local-log      Disable local log feature; Unity will go back to using user-global Editor.log
+  --no-burst          Completely disable Burst
+  --verbose-upm-logs  Tell Unity Package Manager to write verbose logs
+
+  All of these options will only apply to the new Unity session being launched.
+";
+
+    public static CliExitCode RunUnity(CommandContext context)
+    {
+        // get a valid unity project
+
+        var projectPath = new NPath(context.CommandLine["PROJECT"].Value?.ToString() ?? ".");
+        if (!projectPath.DirectoryExists())
+        {
+            Console.Error.WriteLine($"Could not find directory '{projectPath}'");
+            return CliExitCode.ErrorNoInput;
+        }
+
+        var project = UnityProject.TryCreateFromProjectRoot(projectPath);
+        if (project == null)
+        {
+            Console.Error.WriteLine($"Directory is not a Unity project '{projectPath}'");
+            return CliExitCode.ErrorNoInput;
+        }
+
+        // find a matching toolchain
+
+        var version = project.GetProjectUnityVersion();
+
+        return CliExitCode.Success;
+    }
+
     public const string DocUsageToolchains =
 @"Usage: okunity toolchains [options] [SPEC]...
 
@@ -41,13 +83,13 @@ Options:
   -d, --detailed     Include additional info for JSON/yaml output
 ";
 
-    public static void Toolchains(CommandContext context)
+    public static CliExitCode RunToolchains(CommandContext context)
     {
         var toolchains = Enumerable.Empty<UnityToolchain>();
 
         // optionally start with defaults
         if (context.Config.GetBoolean("toolchains", null, "no-defaults") != true &&
-            !context.Options["--no-defaults"].IsTrue)
+            !context.CommandLine["--no-defaults"].IsTrue)
         {
             toolchains = toolchains
                 .Concat(Unity.FindHubInstalledToolchains())
@@ -57,7 +99,7 @@ Options:
         // add in any custom paths
         toolchains = toolchains
             .Concat(Unity.FindCustomToolchains(context.Config.GetAll("toolchains", null, "spec").Select(v => v.GetString()), false))
-            .Concat(Unity.FindCustomToolchains(context.Options["SPEC"].AsStrings(), true));
+            .Concat(Unity.FindCustomToolchains(context.CommandLine["SPEC"].AsStrings(), true));
 
         // there may be dupes in the list, so filter. and we want the defaults to come first, because
         // they will have the correct origin.
@@ -66,6 +108,7 @@ Options:
             .OrderByDescending(t => t.Version); // nice to have newest stuff first
 
         Output(toolchains, context);
+        return CliExitCode.Success;
     }
 
     public const string DocUsageProjects =
@@ -81,7 +124,7 @@ Options:
   -d, --detailed     Include additional info for JSON/yaml output
 ";
 
-    public static void Projects(CommandContext context)
+    public static CliExitCode DoProjects(CommandContext context)
     {
         var projects = Enumerable.Empty<UnityProject>();
 /*
@@ -96,6 +139,8 @@ Options:
             .OrderByDescending(t => t.Version); // nice to have newest stuff first
 
         Output(toolchains, opt);*/
+
+        return CliExitCode.ErrorUnavailable;
     }
 
     public const string DocUsageInfo =
@@ -116,9 +161,9 @@ Options:
   -d, --detailed     Include additional info for JSON/yaml output
 ";
 
-    public static void Info(CommandContext context)
+    public static CliExitCode RunInfo(CommandContext context)
     {
-        var things = context.Options["THING"].AsStrings().ToArray();
+        var things = context.CommandLine["THING"].AsStrings().ToArray();
         if (things.Length == 0)
             things = new[] { "." };
 
@@ -128,7 +173,7 @@ Options:
         {
             //if (!thing.Contains('*'))
             {
-                outputs.Add(Info(thing));
+                outputs.Add(RunInfo(thing));
                 //continue;
             }
 
@@ -139,9 +184,12 @@ Options:
         }
 
         Output(outputs, context);
+
+        // TODO: what about a partial failure
+        return CliExitCode.Success;
     }
 
-    static object Info(string thing)
+    static object RunInfo(string thing)
     {
         try
         {
@@ -162,6 +210,10 @@ Options:
 
                 // TODO: what else??? check git? use git to do a fast ls-files for ProjectVersion.txt and unity.exe and so on?
 
+                // TODO: need a better way to communicate this as an error than just "return string"
+                // json/yaml will want to wrap and return as a sort of header
+                // flat will want to print console error
+                // either will want to ensure nonzero CLI return
                 return nthing.MakeAbsolute() == NPath.CurrentDirectory
                     ? "Current directory contains no Unity-related things"
                     : $"Directory contains no Unity-related things: {thing}";
