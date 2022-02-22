@@ -59,95 +59,87 @@ static partial class Commands
     {
         var unique = new HashSet<string>();
         var fields = new List<(string name, Type type)>();
-        var allDicts = true;
-
-        foreach (var thing in things)
-        {
-            if (thing is IDictionary<string, object> dict)
-            {
-                foreach (var (key, value) in dict)
-                {
-                    if (unique.Add(key))
-                        fields.Add((key, value.GetType()));
-                }
-            }
-            else
-                allDicts = false;
-        }
-
-        // special: just output plain strings, no need for a table
-        if (fields.Count == 0)
-        {
-            foreach (var thing in things)
-                Console.WriteLine(thing.ToString());
-            return;
-        }
-
-        if (!allDicts)
-            fields.Insert(0, ("(unnamed)", typeof(string)));
 
         var tableBuilder = new TableBuilder(TableConfig.Simple());
         var headerFormat = new CellFormat(fontStyle:FontStyleExt.Underline);
+        var wroteStrings = false;
 
-        foreach (var (name, type) in fields)
+        foreach (var thing in things)
         {
-            // TODO: find a better/safer way to annotate structured output for better pretty printing
+            if (thing is not IDictionary<string, object> dict)
+            {
+                Console.WriteLine(thing);
+                wroteStrings = true;
+                continue;
+            }
 
-            if (type == typeof(UnityEditorBuildConfig))
+            foreach (var (name, value) in dict)
             {
-                tableBuilder
-                    .AddColumn("CONFIG").RowFormatter<UnityEditorBuildConfig>(value =>
-                        value == UnityEditorBuildConfig.Debug
-                            ? value.ToString().ForegroundColor(Color.Salmon)
-                            : value.ToString().ForegroundColor(Color.Aquamarine))
-                    .HeaderFormat(headerFormat);
-            }
-            else if (name == "Version") // type is probably string
-            {
-                tableBuilder
-                    .AddColumn(name.ToUpper()).RowFormatter<string>(value =>
-                    {
-                        var version = UnityVersion.TryFromText(value);
-                        if (version != null)
+                if (!unique.Add(name))
+                    continue;
+
+                var valueType = value.GetType();
+                fields.Add((name, valueType));
+
+                // TODO: find a better/safer way to annotate structured output for better pretty printing
+
+                if (valueType == typeof(UnityEditorBuildConfig))
+                {
+                    tableBuilder
+                        .AddColumn("CONFIG").RowFormatter<UnityEditorBuildConfig>(v =>
+                            v == UnityEditorBuildConfig.Debug
+                                ? v.ToString().ForegroundColor(Color.Salmon)
+                                : v.ToString().ForegroundColor(Color.Aquamarine))
+                        .HeaderFormat(headerFormat);
+                }
+                else if (name == "Version") // type is probably string
+                {
+                    tableBuilder
+                        .AddColumn(name.ToUpper()).RowFormatter<string>(v =>
                         {
-                            var year = DateTime.Now.Year;
-                            if (version.Major == year)
-                                return value.ForegroundColor(Color.Aquamarine);
-                            if (version.Major == year - 2)
-                                return value.ForegroundColor(Color.Salmon);
-                        }
-                        return value;
-                    })
-                    .HeaderFormat(headerFormat);
-            }
-            else
-            {
-                tableBuilder
-                    .AddColumn(name.ToUpper())
-                    .HeaderFormat(headerFormat);
+                            var version = UnityVersion.TryFromText(v);
+                            if (version != null)
+                            {
+                                var year = DateTime.Now.Year;
+                                if (version.Major == year)
+                                    return v.ForegroundColor(Color.Aquamarine);
+                                if (version.Major == year - 2)
+                                    return v.ForegroundColor(Color.Salmon);
+                            }
+                            return v;
+                        })
+                        .HeaderFormat(headerFormat);
+                }
+                else
+                {
+                    tableBuilder
+                        .AddColumn(name.ToUpper())
+                        .HeaderFormat(headerFormat);
+                }
             }
         }
 
         var table = tableBuilder.Build();
         table.Config.hasHeaderRow = false;
+        var hasRows = false;
 
         foreach (var thing in things)
         {
-            if (thing is IDictionary<string, object> dict)
-            {
-                var cells = fields
-                    .Select(field =>
-                    {
-                        dict.TryGetValue(field.name, out var value);
-                        return value ?? "";
-                    });
-                if (!allDicts)
-                    cells = cells.Prepend("");
-                table.AddRow(cells.ToArray());
-            }
-            else
-                table.AddRow(thing.ToString());
+            if (thing is not IDictionary<string, object> dict)
+                continue;
+
+            var cells = fields
+                .Select(field =>
+                {
+                    dict.TryGetValue(field.name, out var value);
+                    return value ?? "";
+                });
+            table.AddRow(cells.ToArray());
+            hasRows = true;
         }
+
+        if (wroteStrings && hasRows)
+            Console.WriteLine();
 
         Console.WriteLine(table);
     }
