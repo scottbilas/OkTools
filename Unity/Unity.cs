@@ -3,6 +3,8 @@
 [PublicAPI]
 public static class UnityConstants
 {
+    // TODO: platform!
+
     public const string UnityExeName = "unity.exe";
     public const string ProjectAssetsFolderName = "Assets";
     public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
@@ -22,6 +24,12 @@ public static class UnityConstants
 
     internal static readonly NPath ManuallyInstalledToolchainsNPathSpec = NPath.ProgramFilesDirectory.Combine("Unity*/Editor");
     public static readonly string ManuallyInstalledToolchainsPathSpec = ManuallyInstalledToolchainsNPathSpec;
+
+    internal static readonly NPath UnityEditorDefaultLogNPath = NPath.LocalAppDataDirectory.Combine("Unity/Editor/Editor.log");
+    public static readonly string UnityEditorDefaultLogPath = UnityEditorDefaultLogNPath;
+
+    internal static readonly NPath UpmLogNPath = NPath.LocalAppDataDirectory.Combine("Unity/Editor/upm.log");
+    public static readonly string UpmLogPath = UpmLogNPath;
 }
 
 /// <summary>

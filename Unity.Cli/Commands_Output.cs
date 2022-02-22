@@ -14,9 +14,10 @@ using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
 static partial class Commands
 {
-    static void OutputJson(IEnumerable<object> things)
+    static void OutputJson(IEnumerable<object> things, TextWriter where)
     {
-        Console.WriteLine(JsonSerializer.Serialize(things, new JsonSerializerOptions
+        // json expects a newline, so use WriteLine() here
+        where.WriteLine(JsonSerializer.Serialize(things, new JsonSerializerOptions
         {
             WriteIndented = true,
             IncludeFields = true,
@@ -24,52 +25,72 @@ static partial class Commands
         }));
     }
 
-    static void OutputYaml(IEnumerable<object> things)
+    static void OutputYaml(IEnumerable<object> things, TextWriter where)
     {
-        Console.WriteLine(new YamlSerializerBuilder()
+        // yaml writes its own newline, so use Write() here
+        where.Write(new YamlSerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .Build()
             .Serialize(things));
     }
 
-    static void Output(object thingObject, CommandContext context)
+    [Flags]
+    enum OutputFlags
     {
-        var json = context.CommandLine["--json"].IsTrue;
-        var yaml = context.CommandLine["--yaml"].IsTrue;
+        Json = 1 << 0, Yaml = 1 << 1, Detail = 1 << 2, Debug = 1 << 3,
+    }
+
+    static void Output(object thingObject, OutputFlags flags, TextWriter? where = null)
+    {
+        where ??= Console.Out;
+
+        var json = (flags & OutputFlags.Json) != 0;
+        var yaml = (flags & OutputFlags.Yaml) != 0;
 
         var level = StructuredOutputLevel.Flat;
         if (json || yaml)
-            level = context.CommandLine["--detailed"].IsTrue ? StructuredOutputLevel.Detailed : StructuredOutputLevel.Normal;
+            level = (flags & OutputFlags.Detail) != 0 ? StructuredOutputLevel.Detailed : StructuredOutputLevel.Normal;
 
         var things = (thingObject is IEnumerable e ? e.Flatten() : thingObject.WrapInEnumerable())
-            .Select(t => t is IStructuredOutput so ? so.Output(level, context.Debug) : t)
+            .Select(t => t is IStructuredOutput so ? so.Output(level, (flags & OutputFlags.Debug) != 0) : t)
             .ToArray();
 
         if (json)
-            OutputJson(things);
+            OutputJson(things, where);
 
         if (yaml)
-            OutputYaml(things);
+            OutputYaml(things, where);
 
         if (!json && !yaml)
-            OutputFlat(things);
+            OutputFlat(things, where);
     }
 
-    static void OutputFlat(IReadOnlyList<object> things)
+    static void Output(object thingObject, CommandContext context, TextWriter? where = null)
+    {
+        var flags = default(OutputFlags);
+        if (context.CommandLine["--json"].IsTrue)
+            flags |= OutputFlags.Json;
+        if (context.CommandLine["--yaml"].IsTrue)
+            flags |= OutputFlags.Yaml;
+        if (context.CommandLine["--detailed"].IsTrue)
+            flags |= OutputFlags.Debug;
+
+        Output(thingObject, flags, where);
+    }
+
+    static void OutputFlat(IReadOnlyList<object> things, TextWriter where)
     {
         var unique = new HashSet<string>();
         var fields = new List<(string name, Type type)>();
 
         var tableBuilder = new TableBuilder(TableConfig.Simple());
         var headerFormat = new CellFormat(fontStyle:FontStyleExt.Underline);
-        var wroteStrings = false;
 
         foreach (var thing in things)
         {
             if (thing is not IDictionary<string, object> dict)
             {
-                Console.WriteLine(thing);
-                wroteStrings = true;
+                where.WriteLine(thing);
                 continue;
             }
 
@@ -121,7 +142,6 @@ static partial class Commands
 
         var table = tableBuilder.Build();
         table.Config.hasHeaderRow = false;
-        var hasRows = false;
 
         foreach (var thing in things)
         {
@@ -135,12 +155,11 @@ static partial class Commands
                     return value ?? "";
                 });
             table.AddRow(cells.ToArray());
-            hasRows = true;
         }
 
-        if (wroteStrings && hasRows)
-            Console.WriteLine();
+        // TODO: if it's just one row, print out vertical block
 
-        Console.WriteLine(table);
+        where.WriteLine();
+        where.WriteLine(table.ToString().TrimEnd());
     }
 }

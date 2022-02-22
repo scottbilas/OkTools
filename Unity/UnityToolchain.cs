@@ -89,7 +89,7 @@ public class UnityToolchain : IStructuredOutput
 
     public object Output(StructuredOutputLevel level, bool debug)
     {
-        var lastWrite = _editorExePath.FileInfo.LastWriteTime;
+        var lastWrite = GetInstallTime();
 
         var output = Expando.From(new
         {
@@ -109,6 +109,11 @@ public class UnityToolchain : IStructuredOutput
         // TODO: check whether it's in a folder that has a version in it, and if so, whether it matches the actual version
 
         return output;
+    }
+
+    public DateTime GetInstallTime()
+    {
+        return _editorExePath.FileInfo.LastWriteTime;
     }
 
     /// <summary>

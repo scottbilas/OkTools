@@ -10,7 +10,7 @@ public class UnityProject : IStructuredOutput
 
     UnityProject(NPath projectRoot)
     {
-        _projectRoot = projectRoot;
+        _projectRoot = projectRoot.MakeAbsolute();
     }
 
     public override string ToString() => $"{NPath}: {GetProjectUnityVersion()}";
