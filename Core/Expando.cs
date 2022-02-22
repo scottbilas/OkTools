@@ -1,8 +1,9 @@
 ﻿using System.Dynamic;
 
-namespace OkTools.Unity;
+namespace OkTools.Core;
 
-static class Expando
+[PublicAPI]
+public static class Expando
 {
     public static dynamic From(object obj)
     {
