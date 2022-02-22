@@ -96,7 +96,7 @@ public class UnityToolchain : IStructuredOutput
             Path,
             Version = Version.ToString(),
             EditorBuildConfig,
-            Age = (DateTime.Now - lastWrite).ToNiceAge(),
+            Installed = lastWrite.ToNiceAge(true),
             Origin,
         });
 

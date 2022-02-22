@@ -20,7 +20,9 @@ public class UnityProject : IStructuredOutput
         var output = Expando.From(new
         {
             Path,
-            ProjectUnityVersion = GetProjectUnityVersion().ToString()
+            ProjectUnityVersion = GetProjectUnityVersion().ToString(),
+            Created = GetCreationTime().ToNiceAge(true),
+            LastOpened = GetLastOpenedTime()?.ToNiceAge(true) ?? "never",
         });
 
         if (level >= StructuredOutputLevel.Normal)
@@ -31,7 +33,7 @@ public class UnityProject : IStructuredOutput
             output.ProjectUnityVersionFull = GetProjectUnityVersion();
             output.TestableUnityVersions = GetTestableUnityVersions().ToArray();
 
-            LibGit2Sharp.
+            //$$$LibGit2Sharp.
         }
 
         // TODO: some kind of last-write timestamp
@@ -62,6 +64,21 @@ public class UnityProject : IStructuredOutput
             if (version != projectVersion)
                 yield return version;
         }
+    }
+
+    // returns null if never opened
+    public DateTime? GetLastOpenedTime()
+    {
+        var artifactDb = _projectRoot.Combine(UnityConstants.ArtifactDbRelativeNPath);
+        if (!artifactDb.FileExists())
+            return null;
+
+        return artifactDb.FileInfo.LastWriteTime;
+    }
+
+    public DateTime GetCreationTime()
+    {
+        return _projectRoot.Combine(UnityConstants.ProjectAssetsFolderName).FileInfo.CreationTime;
     }
 
     public static UnityProject? TryCreateFromProjectRoot(string pathToUnityProject) =>

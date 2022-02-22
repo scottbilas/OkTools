@@ -122,7 +122,23 @@ Options:
         if (things.Length == 0)
             things = new[] { "." };
 
-        Output(things.Select(Info), context);
+        var outputs = new List<object>();
+
+        foreach (var thing in things)
+        {
+            //if (!thing.Contains('*'))
+            {
+                outputs.Add(Info(thing));
+                //continue;
+            }
+
+            // TODO: try it as a glob
+            // can't really do this without upgrading the globbing to support dir-based matching. currently the dumb
+            // thing only works if you have a target filename.
+            // also want to support abs or relative globbing.
+        }
+
+        Output(outputs, context);
     }
 
     static object Info(string thing)

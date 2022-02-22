@@ -82,7 +82,8 @@ public static class EnumerableExtensions
     {
         foreach (var item in @this)
         {
-            if (item is IEnumerable items)
+            // IComparable items are probably primitives that also happen to be enumerable (like string), and we don't want to flatten them
+            if (item is not IComparable && item is IEnumerable items)
             {
                 foreach (var child in Flatten<T>(items))
                     yield return child;

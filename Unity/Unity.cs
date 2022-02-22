@@ -8,16 +8,20 @@ public static class UnityConstants
     public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
     public const string EditorsYmlFileName = "editors.yml";
 
-    public static NPath ProjectVersionRelativePath => ProjectVersionRelativeNPath;
     internal static readonly NPath ProjectVersionRelativeNPath = new NPath("ProjectSettings").Combine(ProjectVersionTxtFileName);
+    public static readonly string ProjectVersionRelativePath = ProjectVersionRelativeNPath;
 
-    public static string MonoDllRelativePath => MonoDllRelativeNPath;
-    public static string HubInstalledToolchainPathSpec => HubInstalledToolchainNPathSpec;
-    public static string ManuallyInstalledToolchainsPathSpec => ManuallyInstalledToolchainsNPathSpec;
+    internal static readonly NPath ArtifactDbRelativeNPath = new("Library/ArtifactDB");
+    public static readonly string ArtifactDbRelativePath = ArtifactDbRelativeNPath;
 
     internal static readonly NPath MonoDllRelativeNPath = "Data/MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll".ToNPath();
+    public static readonly string MonoDllRelativePath = MonoDllRelativeNPath;
+
     internal static readonly NPath HubInstalledToolchainNPathSpec = NPath.ProgramFilesDirectory.Combine("Unity/Hub/Editor/*/Editor");
+    public static readonly string HubInstalledToolchainPathSpec = HubInstalledToolchainNPathSpec;
+
     internal static readonly NPath ManuallyInstalledToolchainsNPathSpec = NPath.ProgramFilesDirectory.Combine("Unity*/Editor");
+    public static readonly string ManuallyInstalledToolchainsPathSpec = ManuallyInstalledToolchainsNPathSpec;
 }
 
 /// <summary>
@@ -53,4 +57,20 @@ public static class Unity
 
     public static IEnumerable<UnityToolchain> FindCustomToolchains(IEnumerable<string> pathSpecs, bool throwOnInvalidPathSpec) =>
         FindToolchains(pathSpecs.ToNPath(), null, throwOnInvalidPathSpec);
+
+    #if NOTYET
+    public static bool TryParseUnityHubUrl(string unityHubUrl)
+    {
+        // example: unityhub://2020.3.25f1-foo/123456789ab << last part is the hash, first part is the build
+
+        // what the hub does..
+        // 1. download "https://download.unity3d.com/download_unity/123456789ab/Windows64EditorInstaller/UnitySetup64-2020.3.25f1-foo.exe"
+        //    to "C:\Users\scott\AppData\Local\Temp\unityhub-62a10bf0-9324-11ec-8e36-fd2c0e80f6f8\UnitySetup64-2020.3.25f1-foo.exe"
+        // 1a. additional modules have custom installers like "UnitySetup-WebGL-Support-for-Editor-2020.3.25f1-foo.exe" or a zip like "UnityDocumentation.zip"
+        //     and they will go to peer guid-named folders
+        // 2. run that exe with "/S /D=C:\Program Files\Unity\Hub\Editor\2020.3.25f1-foo"
+        //    ^ this causes problems when we have different hashes but otherwise same versions
+        // 3. installer runs (it will do an unnecessary UAC popup if path is to a user-controlled folder) and hub waits for it to complete
+    }
+    #endif
 }

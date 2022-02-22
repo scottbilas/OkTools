@@ -979,6 +979,7 @@ namespace NiceIO
             return self.Select(p => p.InQuotes(forward));
         }
 
+        [DebuggerStepThrough]
         public static NPath ToNPath(this string path) =>
             new(path);
         public static IEnumerable<NPath> ToNPath(this IEnumerable<string> @this) =>
