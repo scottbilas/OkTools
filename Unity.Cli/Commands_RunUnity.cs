@@ -44,30 +44,15 @@ Options:
 
         // find a matching toolchain
 
-        var versions = project.GetTestableUnityVersions().Memoize();
-        var toolchains = FindAllToolchains(context.Config, false).Memoize();
+        var testableVersions = project.GetTestableUnityVersions().Memoize();
+        var foundToolchains = FindAllToolchains(context.Config, false).Memoize();
 
-        UnityToolchain? Match()
-        {
-            foreach (var (version, index) in versions.WithIndex())
-            {
-                foreach (var toolchain in toolchains)
-                {
-                    if (toolchain.Version == version)
-                    {
-                        Console.WriteLine(index == 0
-                            ? $"Found exact match for project version {version} at {toolchain.Path}"
-                            : $"Found compatible match for project version {version} (from {UnityConstants.EditorsYmlFileName}) at {toolchain.Path}");
-                        return toolchain;
-                    }
-                }
-            }
+        var match = testableVersions
+            .WithIndex()
+            .SelectMany(v => foundToolchains.Select(t => (version: v.item, vindex: v.index, toolchain: t)))
+            .FirstOrDefault(i => i.toolchain.Version == i.version);
 
-            return null;
-        }
-
-        var matchingToolchain = Match();
-        if (matchingToolchain == null)
+        if (match == default)
         {
             Console.Error.WriteLine("Could not find a compatible toolchain :(");
             Console.Error.WriteLine();
@@ -76,9 +61,18 @@ Options:
             Output(project, OutputFlags.Yaml, Console.Error);
             Console.Error.WriteLine();
             Console.Error.WriteLine("Available toolchains:");
-            Output(toolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
+            Output(foundToolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
             return CliExitCode.ErrorUnavailable;
+
         }
+
+        Console.WriteLine(match.vindex == 0
+            ? $"Found exact match for project version {match.version} at {match.toolchain.Path}"
+            : $"Found compatible match for project version {match.version} (from {UnityConstants.EditorsYmlFileName}) at {match.toolchain.Path}");
+
+        // build up cli
+
+        
 
         // TODO: build up cli, dryrun, proc launching
         // TODO: -vvv style verbose level logging support
