@@ -5,14 +5,16 @@ using PInvoke;
 class NativeWindowsTests
 {
     [Test]
-    public void GetProcessCurrentDirectory_WithValidProcessId_ReturnsCurrentDirectory()
+    public void XGetProcessCurrentDirectory_WithValidProcessId_ReturnsCurrentDirectory()
     {
         // we're using npaths to normalize trailing slashes
 
         var expected = Directory.GetCurrentDirectory().ToNPath();
-        var actual = NativeWindows.GetProcessCurrentDirectory(Process.GetCurrentProcess().Id)!.ToNPath();
+        var actual0 = NativeWindows.GetProcessCurrentDirectory(Process.GetCurrentProcess().Id)!.ToNPath();
+        var actual1 = NativeWindows.SafeGetProcessCurrentDirectory(Process.GetCurrentProcess().Id)!.ToNPath();
 
-        actual.ShouldBe(expected);
+        actual0.ShouldBe(expected);
+        actual1.ShouldBe(expected);
     }
 
     // can't use Environment.CommandLine as it has been processed by .net and won't match
@@ -20,12 +22,14 @@ class NativeWindowsTests
     static extern IntPtr GetCommandLine();
 
     [Test]
-    public void GetProcessCommandLine_WithValidProcessId_ReturnsCommandLine()
+    public void XGetProcessCommandLine_WithValidProcessId_ReturnsCommandLine()
     {
         var expected = Marshal.PtrToStringAuto(GetCommandLine());
-        var actual = NativeWindows.GetProcessCommandLine(Process.GetCurrentProcess().Id);
+        var actual0 = NativeWindows.GetProcessCommandLine(Process.GetCurrentProcess().Id);
+        var actual1 = NativeWindows.SafeGetProcessCommandLine(Process.GetCurrentProcess().Id);
 
-        actual.ShouldBe(expected);
+        actual0.ShouldBe(expected);
+        actual1.ShouldBe(expected);
     }
 
     [TestCase(0), TestCase(int.MaxValue)]
@@ -46,5 +50,21 @@ class NativeWindowsTests
             .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_ACCESS_DENIED);
         Should.Throw<Win32Exception>(() => NativeWindows.GetProcessCommandLine(process.Id))
             .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_ACCESS_DENIED);
+    }
+
+    [TestCase(0), TestCase(int.MaxValue)]
+    public void SafeGetProcessX_WithInvalidProcessId_ReturnsNull(int pid)
+    {
+        NativeWindows.SafeGetProcessCurrentDirectory(pid).ShouldBeNull();
+        NativeWindows.SafeGetProcessCommandLine(pid).ShouldBeNull();
+    }
+
+    [Test]
+    public void SafeGetProcessX_WithSystemProcessId_ReturnsNull()
+    {
+        using var process = Process.GetProcessesByName("csrss")[0];
+
+        NativeWindows.SafeGetProcessCurrentDirectory(process.Id).ShouldBeNull();
+        NativeWindows.SafeGetProcessCommandLine(process.Id).ShouldBeNull();
     }
 }
