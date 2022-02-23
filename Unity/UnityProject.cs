@@ -5,6 +5,7 @@ public class UnityProject : IStructuredOutput
 {
     readonly NPath _projectRoot;
 
+    public string Name => _projectRoot.FileName;
     public string Path => _projectRoot;
     internal NPath NPath => _projectRoot;
 
@@ -13,25 +14,25 @@ public class UnityProject : IStructuredOutput
         _projectRoot = projectRoot.MakeAbsolute();
     }
 
-    public override string ToString() => $"{NPath}: {GetProjectUnityVersion()}";
+    public override string ToString() => $"{NPath}: {GetVersion()}";
 
     public object Output(StructuredOutputLevel level, bool debug)
     {
         var output = Expando.From(new
         {
             Path,
-            ProjectUnityVersion = GetProjectUnityVersion().ToString(),
+            Version = GetVersion().ToString(),
             Created = GetCreationTime().ToNiceAge(true),
             LastOpened = GetLastOpenedTime()?.ToNiceAge(true) ?? "never",
         });
 
         if (level >= StructuredOutputLevel.Normal)
-            output.TestableUnityVersions = GetTestableUnityVersions().SelectToStrings().ToArray();
+            output.TestableUnityVersions = GetTestableVersions().SelectToStrings().ToArray();
 
         if (level >= StructuredOutputLevel.Detailed)
         {
-            output.ProjectUnityVersionFull = GetProjectUnityVersion();
-            output.TestableUnityVersions = GetTestableUnityVersions().ToArray();
+            output.VersionFull = GetVersion();
+            output.TestableVersions = GetTestableVersions().ToArray();
 
             //$$$LibGit2Sharp.
         }
@@ -44,15 +45,15 @@ public class UnityProject : IStructuredOutput
 
     // TODO: project last opened, project last modified (SourceAssetDB, ArtifactDB..?)
 
-    public UnityVersion GetProjectUnityVersion()
+    public UnityVersion GetVersion()
     {
         var projectVersionNPath = _projectRoot.Combine(UnityConstants.ProjectVersionRelativeNPath);
         return UnityVersion.FromUnityProjectVersionTxt(projectVersionNPath);
     }
 
-    public IEnumerable<UnityVersion> GetTestableUnityVersions()
+    public IEnumerable<UnityVersion> GetTestableVersions()
     {
-        var projectVersion = GetProjectUnityVersion();
+        var projectVersion = GetVersion();
         yield return projectVersion;
 
         var editorsYml = _projectRoot.ParentContaining(UnityConstants.EditorsYmlFileName, true);

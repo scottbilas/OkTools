@@ -7,6 +7,7 @@ public static class UnityConstants
 
     public const string UnityExeName = "unity.exe";
     public const string ProjectAssetsFolderName = "Assets";
+    public const string ProjectLogsFolderName = "Logs";
     public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
     public const string EditorsYmlFileName = "editors.yml";
 

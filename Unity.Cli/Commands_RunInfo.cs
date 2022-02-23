@@ -62,6 +62,8 @@ Options:
             var nthing = thing.ToNPath();
             if (nthing.DirectoryExists())
             {
+                // TODO: have a way to name the table too
+
                 var toolchain = UnityToolchain.TryCreateFromPath(nthing);
                 if (toolchain != null)
                     return toolchain;

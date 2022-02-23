@@ -8,7 +8,7 @@
         var project = UnityProject.TryCreateFromProjectRoot(Project("RepoWithEditorYml", "ProjectWithSame"));
         project.ShouldNotBeNull();
 
-        var versions = project.GetTestableUnityVersions().ToArray();
+        var versions = project.GetTestableVersions().ToArray();
         versions.ShouldBe(new[]
         {
             new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85"),
@@ -21,7 +21,7 @@
         var project = UnityProject.TryCreateFromProjectRoot(Project("RepoWithEditorYml", "ProjectWithUnique"));
         project.ShouldNotBeNull();
 
-        var versions = project.GetTestableUnityVersions().ToArray();
+        var versions = project.GetTestableVersions().ToArray();
         versions.ShouldBe(new[]
         {
             new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0"),
@@ -36,7 +36,7 @@
         var project = UnityProject.TryCreateFromProjectRoot(Project("RepoWithNoEditorYml", "Project"));
         project.ShouldNotBeNull();
 
-        var versions = project.GetTestableUnityVersions().ToArray();
+        var versions = project.GetTestableVersions().ToArray();
         versions.ShouldBe(new[]
         {
             new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0")
