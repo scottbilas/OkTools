@@ -6,6 +6,7 @@ using DocoptNet;
 //
 // note that this site is helpful: http://try.docopt.org/
 
+#if DEBUG
 class DocOptNetTests
 {
     [TestCaseSource(nameof(Usages))]
@@ -80,3 +81,4 @@ class DocOptNetTests
         opt["-n"].IsTrue.ShouldBeTrue();
     }
 }
+#endif
