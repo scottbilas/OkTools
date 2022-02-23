@@ -1,12 +1,27 @@
-﻿using NiceIO;
+﻿using System.Diagnostics;
+using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
 
 static partial class Commands
 {
     // TODO: partial matches (like ignore hash and go with most recent install)
-    // TODO: --toolchain that forces (but will also warn if not match) use of a certain toolchain
-    // TODO: --version-override that will override the GetTestableVersions() query with the given value
+
+/*
+    * Choose an EXE
+        * Match something I already have on my machine (latest beta or released, or give me a chooser)
+        * Warnings about debug vs release, or mismatched project causing an upgrade (does Unity do this already? or was it the Hub?)
+    * Set env and command line etc.
+        * Standard flags I always set, like mixed stacks and log output
+        * Make Unity's flags visible with tab completion (something like Crescendo would do..except Crescendo doesn't seem to support parameterized exe location..)
+        * Support an individual project's extensions to tab completion for any command line flags the project supports
+        * PSReadLine support for tabbing through matching discovered unity versions
+    * Support the exe run
+        * [probably posh-only] Start separate job watching unity.exe and monitoring pmip files from it, holding handle open and copy on process exit
+        * Hub killing
+        * Log rotation
+        * Automatic bringing to front of an existing Unity (avoid Unity's stupid handling of this)
+*/
 
     public static readonly string DocUsageUnity =
 @$"Usage: okunity unity [options] [PROJECT]
@@ -42,6 +57,15 @@ Options:
         {
             Console.Error.WriteLine($"Directory is not a Unity project '{projectPath}'");
             return CliExitCode.ErrorNoInput;
+        }
+
+        // check if unity is already running on that project
+
+        foreach (var unity in Process.GetProcessesByName(UnityConstants.UnityProcessName))
+        {
+            //var cl = unity.
+
+            //unity.Dispose();
         }
 
         // find a matching toolchain
@@ -114,7 +138,7 @@ Options:
             // TODO: give format config for rotation name
             /*
             if (logPath.FileExists())
-            {
+        
                 var targetBase = logPath.ChangeExtension($"{project.Name}-editor_{logPath.FileInfo.LastWriteTime:yyyyMMdd_HHMMss}");
                 Move-Item $logFile "$targetBase.log"
             }
