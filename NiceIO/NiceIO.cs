@@ -221,9 +221,29 @@ namespace NiceIO
             ThrowIfRoot();
 
             var newElements = (string[])_elements.Clone();
-            newElements[newElements.Length - 1] = Path.ChangeExtension(_elements[_elements.Length - 1], WithDot(extension));
+            newElements[^1] = Path.ChangeExtension(_elements[^1], WithDot(extension));
             if (extension == string.Empty)
-                newElements[newElements.Length - 1] = newElements[newElements.Length - 1].TrimEnd('.');
+                newElements[^1] = newElements[^1].TrimEnd('.');
+            return new NPath(newElements, _isRelative, _driveLetter);
+        }
+
+        public NPath ChangeFilename(string filename)
+        {
+            ThrowIfRoot();
+
+            string[] newElements;
+            if (filename == string.Empty)
+            {
+                newElements = new string[_elements.Length - 1];
+                Array.Copy(_elements, newElements, newElements.Length);
+            }
+            else
+            {
+                newElements = new string[_elements.Length];
+                Array.Copy(_elements, newElements, newElements.Length - 1);
+                newElements[^1] = filename;
+            }
+
             return new NPath(newElements, _isRelative, _driveLetter);
         }
         #endregion construction
