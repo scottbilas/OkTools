@@ -1,4 +1,6 @@
-﻿namespace OkTools.Unity;
+﻿using System.Diagnostics;
+
+namespace OkTools.Unity;
 
 /// <summary>
 /// The entry point to Unity-related queries.
@@ -33,6 +35,42 @@ public static class Unity
 
     public static IEnumerable<UnityToolchain> FindCustomToolchains(IEnumerable<string> pathSpecs, bool throwOnInvalidPathSpec) =>
         FindToolchains(pathSpecs.ToNPath(), null, throwOnInvalidPathSpec);
+
+    public static IReadOnlyList<Process> FindUnityProcessesForProject(string projectPath)
+        => FindUnityProcessesForProject(projectPath.ToNPath());
+    internal static IReadOnlyList<Process> FindUnityProcessesForProject(NPath projectPath)
+    {
+        var matches = new List<Process>();
+
+        foreach (var unityProcess in Process.GetProcessesByName(UnityConstants.UnityProcessName))
+        {
+            var workingDir = NativeWindows.SafeGetProcessCurrentDirectory(unityProcess.Id)?.ToNPath();
+            if (workingDir == projectPath)
+                matches.Add(unityProcess);
+            else
+                unityProcess.Dispose();
+        }
+
+        return matches;
+    }
+
+    public static Process? TryFindMainUnityProcess(IEnumerable<Process> unityProcesses)
+    {
+        foreach (var unityProcess in unityProcesses.Where(p => p.MainWindowHandle != IntPtr.Zero))
+        {
+            var unityCommandLine = NativeWindows.SafeGetProcessCommandLine(unityProcess.Id);
+            if (unityCommandLine == null)
+                continue;
+
+            var unityArgs = CliUtility.ParseCommandLineArgs(unityCommandLine);
+            if (unityArgs.Any(a => a.EqualsIgnoreCase("-batchmode") || a.EqualsIgnoreCase("-ump")))
+                continue;
+
+            return unityProcess;
+        }
+
+        return null;
+    }
 
     #if NOTYET
     public static bool TryParseUnityHubUrl(string unityHubUrl)

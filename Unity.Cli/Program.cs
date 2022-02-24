@@ -7,6 +7,8 @@ public static class Program
     const string k_docName = "okunity, the Unity CLI toolbox";
     const string k_docVersion = "0.1";
 
+    // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
+
     const string k_docUsageGlobal =
 $@"{k_docName}
 

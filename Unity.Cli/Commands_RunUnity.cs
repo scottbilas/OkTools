@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using NiceIO;
 using OkTools.Core;
-using OkTools.Native;
 using OkTools.Unity;
 
 static partial class Commands
@@ -13,7 +13,6 @@ static partial class Commands
         * Match something I already have on my machine (latest beta or released, or give me a chooser)
         * Warnings about debug vs release, or mismatched project causing an upgrade (does Unity do this already? or was it the Hub?)
     * Set env and command line etc.
-        * Standard flags I always set, like mixed stacks and log output
         * Make Unity's flags visible with tab completion (something like Crescendo would do..except Crescendo doesn't seem to support parameterized exe location..)
         * Support an individual project's extensions to tab completion for any command line flags the project supports
         * PSReadLine support for tabbing through matching discovered unity versions
@@ -25,15 +24,17 @@ static partial class Commands
 */
 
     public static readonly string DocUsageUnity =
-@$"Usage: okunity unity [options] [PROJECT]
+@$"Usage: okunity unity [options] [PROJECT] [-- EXTRA...]
 
 Description:
   Run Unity to open the given PROJECT (defaults to '.'). Uses the project version given to find the matching
   Unity toolchain; see `okunity help toolchains` for how toolchains are discovered.
 
+  Any arguments given in EXTRA will be passed along to the newly launched Unity process.
+
 Options:
   --dry-run           Don't change anything, only print out what would happen instead
-  --attach-debugger   Unity will pause with a dialog and so you can attach a managed debugger
+  --attach-debugger   Unity will pause with a dialog so you can attach a managed debugger
   --rider             Open Rider after the project opens in Unity
   --no-local-log      Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst          Completely disable Burst
@@ -44,6 +45,8 @@ Options:
 
     public static CliExitCode RunUnity(CommandContext context)
     {
+        var doit = !context.CommandLine["--dry-run"].IsTrue;
+
         // TODO: move this into OkTools.Unity once we get a decent (typesafe) config-overlay system. that way, the CLI
         // can just overlay the config with whatever cl options it wants to support and keep all the logic in the lib.
         // posh cmdlet can do exact same thing, with no serious duplicated logic.
@@ -55,159 +58,195 @@ Options:
 
         // get a valid unity project
 
-        var projectPath = new NPath(context.CommandLine["PROJECT"].Value?.ToString() ?? ".");
-        if (!projectPath.DirectoryExists())
-        {
-            Console.Error.WriteLine($"Could not find directory '{projectPath}'");
-            return CliExitCode.ErrorNoInput;
-        }
+        UnityProject? unityProject;
 
-        var project = UnityProject.TryCreateFromProjectRoot(projectPath);
-        if (project == null)
+        // scope
         {
-            Console.Error.WriteLine($"Directory is not a Unity project '{projectPath}'");
-            return CliExitCode.ErrorNoInput;
+            var projectPath = new NPath(context.CommandLine["PROJECT"].Value?.ToString() ?? ".");
+            if (!projectPath.DirectoryExists())
+            {
+                Console.Error.WriteLine($"Could not find directory '{projectPath}'");
+                return CliExitCode.ErrorNoInput;
+            }
+
+            unityProject = UnityProject.TryCreateFromProjectRoot(projectPath);
+            if (unityProject == null)
+            {
+                Console.Error.WriteLine($"Directory is not a Unity project '{projectPath}'");
+                return CliExitCode.ErrorNoInput;
+            }
         }
 
         // check if unity is already running on that project
 
-        var unityAlreadyRunning = new List<Process>();
-        try
-        {
-            foreach (var unityProcess in Process.GetProcessesByName(UnityConstants.UnityProcessName))
-            {
-                var workingDir = NativeWindows.SafeGetProcessCurrentDirectory(unityProcess.Id)?.ToNPath();
-                if (workingDir == project.Path)
-                    unityAlreadyRunning.Add(unityProcess);
-                else
-                    unityProcess.Dispose();
-            }
-
-            if (unityAlreadyRunning.Any())
-            {
-                Console.WriteLine("Unity already detected running on project with process id "
-                                  + unityAlreadyRunning.Select(p => p.Id).StringJoin(", "));
-                //var unityWnd = unityAlreadyRunning.
-            }
-        }
-        finally
-        {
-            foreach (var process in unityAlreadyRunning)
-                process.Dispose();
-            unityAlreadyRunning.Clear();
-        }
-
+        var existingUnityRc = TryActivateExistingUnity(unityProject, doit);
+        if (existingUnityRc != null)
+            return existingUnityRc.Value;
 
         // find a matching toolchain
 
-        var testableVersions = project.GetTestableVersions().Memoize();
+        var testableVersions = unityProject.GetTestableVersions().Memoize();
         var foundToolchains = FindAllToolchains(context.Config, false).Memoize();
 
-        var match = testableVersions
+        var unityToolchain = testableVersions
             .WithIndex()
             .SelectMany(v => foundToolchains.Select(t => (version: v.item, vindex: v.index, toolchain: t)))
             .FirstOrDefault(i => i.toolchain.Version == i.version);
 
-        if (match == default)
+        if (unityToolchain == default)
         {
             Console.Error.WriteLine("Could not find a compatible toolchain :(");
             Console.Error.WriteLine();
             Console.Error.WriteLine("Project:");
             Console.Error.WriteLine();
-            Output(project, OutputFlags.Yaml, Console.Error);
+            Output(unityProject, OutputFlags.Yaml, Console.Error);
             Console.Error.WriteLine();
             Console.Error.WriteLine("Available toolchains:");
             Output(foundToolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
             return CliExitCode.ErrorUnavailable;
-
         }
 
-        Console.WriteLine(match.vindex == 0
-            ? $"Found exact match for project version {match.version} at {match.toolchain.Path}"
-            : $"Found compatible match for project version {match.version} (from {UnityConstants.EditorsYmlFileName}) at {match.toolchain.Path}");
+        Console.WriteLine(unityToolchain.vindex == 0
+            ? $"Found exact match for project version {unityToolchain.version} at {unityToolchain.toolchain.Path}"
+            : $"Found compatible match for project version {unityToolchain.version} (from {UnityConstants.EditorsYmlFileName}) at {unityToolchain.toolchain.Path}");
 
-        // build up cli
+        // build up cli and environment
 
-        var args = new List<string>();
+        var unityArgs = new List<string> { "-projectPath", unityProject.Path };
+        var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} };
+
+        if (context.GetConfigBool("unity", "attach-debugger"))
+        {
+            //TODO status "Will wait for debugger on Unity startup"
+            unityEnv.Add("UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER", 1);
+        }
 
         if (context.GetConfigBool("unity", "rider"))
         {
             //TODO status "Opening Rider on {slnname} after project open in Unity"
-            args.Add(@"-executeMethod");
-            args.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
+            unityArgs.Add(@"-executeMethod");
+            unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }
 
         if (context.GetConfigBool("unity", "no-burst"))
         {
             //TODO status "Disabling Burst"
-            args.Add("--burst-disable-compilation");
+            unityArgs.Add("--burst-disable-compilation");
         }
 
         if (context.GetConfigBool("unity", "verbose-upm-logs"))
         {
             //TODO status "Turning on extra debug logging for UPM ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})"
-            args.Add("-enablePackageManagerTraces");
+            unityArgs.Add("-enablePackageManagerTraces");
         }
 
         if (context.GetConfigBool("unity", "no-local-log"))
         {
             //TODO status "Debug logging to default ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})"
+
         }
         else
         {
             //TODO status "Debug logging to %path"
-
             //TODO make log pathspec configurable
-            var logPath = project.Path.ToNPath()
+
+            var logPath = unityProject.Path.ToNPath()
                 .Combine(UnityConstants.ProjectLogsFolderName)
                 .EnsureDirectoryExists()
-                .Combine($"{project.Name}-editor.log");
+                .Combine($"{unityProject.Name}-editor.log");
 
             // rotate old log
             // TODO: give option to cap by size and/or file count the logs
             // TODO: give format config for rotation name
-            /*
             if (logPath.FileExists())
-
-                var targetBase = logPath.ChangeExtension($"{project.Name}-editor_{logPath.FileInfo.LastWriteTime:yyyyMMdd_HHMMss}");
-                Move-Item $logFile "$targetBase.log"
+            {
+                var targetPath = logPath.ChangeFilename($"{unityProject.Name}-editor_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.log");
+                if (doit)
+                    File.Move(logPath, targetPath);
+                else
+                    Console.WriteLine($"[dryrun] Rotating previous log file {logPath.RelativeTo(unityProject.Path)} to {targetPath.RelativeTo(unityProject.Path)}");
             }
-            var logFile = Get-Item -ea:silent $logPath
 
-
-            $unityArgs += '-logFile', $logPath*/
+            unityArgs.Add("-logFile");
+            unityArgs.Add(logPath);
         }
 
-        // TODO: build up cli, dryrun, proc launching
+        if (context.Config.TryGetString("unity", null, "extra-args", out var extraArgs))
+            unityArgs.AddRange(CliUtility.ParseCommandLineArgs(extraArgs));
+        unityArgs.AddRange(context.CommandLine["EXTRA"].AsStrings());
+
         // TODO: -vvv style verbose level logging support
 
-        /*
-        # TODO: check to see if a unity already running for that path. either activate if identical to the one we want (and command line we want)
-        # or abort if different with warnings.
+        if (doit)
+        {
+            var unityStartInfo = new ProcessStartInfo
+            {
+                FileName = unityToolchain.toolchain.EditorExePath,
+                WorkingDirectory = unityProject.Path,
+            };
 
-        if ($PSCmdlet.ShouldProcess("$($info.UnityExe) $unityArgs", "Running Unity")) {
-            $oldAttach = $Env:UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER
-            $oldMixed = $Env:UNITY_MIXED_CALLSTACK
-            $oldExtLog = $Env:UNITY_EXT_LOGGING
-            try {
-                if ($AttachDebugger) {
-                    $Env:UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER = 1
-                }
+            foreach (var arg in unityArgs)
+                unityStartInfo.ArgumentList.Add(arg);
+            foreach (var (envName, envValue) in unityEnv)
+                unityStartInfo.Environment[envName] = envValue.ToString();
 
-                # always want these features
-                $Env:UNITY_MIXED_CALLSTACK = 1
-                $Env:UNITY_EXT_LOGGING = 1
+            var unityProcess = Process.Start(unityStartInfo);
+            if (unityProcess == null)
+                throw new Exception($"Unexpected failure to start process '{unityStartInfo.FileName}'");
 
-                & $info.UnityExe @unityArgs
-            }
-            finally {
-                $Env:UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER = $oldAttach
-                $Env:UNITY_MIXED_CALLSTACK = $oldMixed
-                $Env:UNITY_EXT_LOGGING = $oldExtLog
-            }
+            Console.WriteLine("Launched Unity as pid " + unityProcess.Id);
         }
-        */
+        else
+        {
+            Console.WriteLine("[dryrun] Executing Unity with:");
+            Console.WriteLine("[dryrun]   path        | " + unityToolchain.toolchain.EditorExePath);
+            Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs));
+            Console.WriteLine("[dryrun]   environment | " + unityEnv.Select(kvp => $"{kvp.Key}={kvp.Value}").StringJoin("; "));
+        }
 
         return CliExitCode.Success;
+    }
+
+    [DllImport("user32.dll")]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    static CliExitCode? TryActivateExistingUnity(UnityProject project, bool doit)
+    {
+        var unityProcesses = Unity.FindUnityProcessesForProject(project.Path);
+        if (!unityProcesses.Any())
+            return null;
+
+        try
+        {
+            Console.WriteLine("Unity already running on project with process id "
+                              + unityProcesses.Select(p => p.Id).StringJoin(", "));
+
+            var mainUnity = Unity.TryFindMainUnityProcess(unityProcesses);
+            if (mainUnity == null)
+            {
+                Console.Error.WriteLine("Unable to find Unity main process window, best we just abort while you sort it out..");
+                return CliExitCode.ErrorUnavailable;
+            }
+
+            Console.WriteLine($"Main Unity process ({mainUnity.Id}) discovered with title \"{mainUnity.MainWindowTitle}\"");
+
+            if (!mainUnity.Responding)
+            {
+                Console.Error.WriteLine("Process is not responding, best we just abort while you sort it out..");
+                return CliExitCode.ErrorUnavailable;
+            }
+
+            Console.WriteLine("Process is responding, activating and bringing to the front!");
+
+            if (doit)
+                SetForegroundWindow(mainUnity.MainWindowHandle);
+
+            return CliExitCode.Success;
+        }
+        finally
+        {
+            foreach (var unityProcess in unityProcesses)
+                unityProcess.Dispose();
+        }
     }
 }
