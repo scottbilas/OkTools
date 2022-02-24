@@ -14,10 +14,10 @@ using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
 static partial class Commands
 {
-    static void OutputJson(IEnumerable<object> things, TextWriter where)
+    static void OutputJson(object thing, TextWriter where)
     {
         // json expects a newline, so use WriteLine() here
-        where.WriteLine(JsonSerializer.Serialize(things, new JsonSerializerOptions
+        where.WriteLine(JsonSerializer.Serialize(thing, new JsonSerializerOptions
         {
             WriteIndented = true,
             IncludeFields = true,
@@ -25,13 +25,13 @@ static partial class Commands
         }));
     }
 
-    static void OutputYaml(IEnumerable<object> things, TextWriter where)
+    static void OutputYaml(object thing, TextWriter where)
     {
         // yaml writes its own newline, so use Write() here
         where.Write(new YamlSerializerBuilder()
             .WithNamingConvention(UnderscoredNamingConvention.Instance)
             .Build()
-            .Serialize(things));
+            .Serialize(thing));
     }
 
     [Flags]
