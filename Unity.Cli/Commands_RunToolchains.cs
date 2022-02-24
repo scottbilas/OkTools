@@ -31,6 +31,7 @@ Options:
                 context.Config,
                 context.CommandLine["--no-defaults"].IsTrue) // TODO: have the cli add an override layer to the config, then just pass in config)
             .Concat(Unity.FindCustomToolchains(context.CommandLine["SPEC"].AsStrings(), true))
+            // TODO: have this whole distinct-orderby chain in OkTools.Unity, with an outer function that decides using passed overlay-config
             .DistinctBy(t => t.Path)            // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
             .OrderByDescending(t => t.Version); // nice to have newest stuff first
 

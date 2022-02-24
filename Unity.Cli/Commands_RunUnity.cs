@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using NiceIO;
 using OkTools.Core;
+using OkTools.Native;
 using OkTools.Unity;
 
 static partial class Commands
@@ -43,6 +44,15 @@ Options:
 
     public static CliExitCode RunUnity(CommandContext context)
     {
+        // TODO: move this into OkTools.Unity once we get a decent (typesafe) config-overlay system. that way, the CLI
+        // can just overlay the config with whatever cl options it wants to support and keep all the logic in the lib.
+        // posh cmdlet can do exact same thing, with no serious duplicated logic.
+        //
+        // idea: major util funcs in OkTools.Unity (like RunUnity) would receive an explicit config type. caller has to
+        // produce this. cli and posh cmdlet args would be manually converted, but need some kind of DotNetConfig
+        // defaults-provider support. maybe leave the dotnetconfig in the utility function. if the config types track
+        // when they are overridden, then the dotnetconfig can be used as a default-provider "underlay".
+
         // get a valid unity project
 
         var projectPath = new NPath(context.CommandLine["PROJECT"].Value?.ToString() ?? ".");
@@ -61,12 +71,32 @@ Options:
 
         // check if unity is already running on that project
 
-        foreach (var unity in Process.GetProcessesByName(UnityConstants.UnityProcessName))
+        var unityAlreadyRunning = new List<Process>();
+        try
         {
-            //var cl = unity.
+            foreach (var unityProcess in Process.GetProcessesByName(UnityConstants.UnityProcessName))
+            {
+                var workingDir = NativeWindows.SafeGetProcessCurrentDirectory(unityProcess.Id)?.ToNPath();
+                if (workingDir == project.Path)
+                    unityAlreadyRunning.Add(unityProcess);
+                else
+                    unityProcess.Dispose();
+            }
 
-            //unity.Dispose();
+            if (unityAlreadyRunning.Any())
+            {
+                Console.WriteLine("Unity already detected running on project with process id "
+                                  + unityAlreadyRunning.Select(p => p.Id).StringJoin(", "));
+                //var unityWnd = unityAlreadyRunning.
+            }
         }
+        finally
+        {
+            foreach (var process in unityAlreadyRunning)
+                process.Dispose();
+            unityAlreadyRunning.Clear();
+        }
+
 
         // find a matching toolchain
 
@@ -138,7 +168,7 @@ Options:
             // TODO: give format config for rotation name
             /*
             if (logPath.FileExists())
-        
+
                 var targetBase = logPath.ChangeExtension($"{project.Name}-editor_{logPath.FileInfo.LastWriteTime:yyyyMMdd_HHMMss}");
                 Move-Item $logFile "$targetBase.log"
             }

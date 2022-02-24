@@ -40,6 +40,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\OkTools.Core.csproj" />
+    <ProjectReference Include="..\Native\OkTools.Native.csproj" />
     <ProjectReference Include="..\Unity\OkTools.Unity.csproj" />
   </ItemGroup>
 

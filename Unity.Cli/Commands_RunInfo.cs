@@ -55,6 +55,8 @@ Options:
     {
         try
         {
+            // TODO: move the bulk of this into OkTools.Unity
+
             var version = UnityVersion.TryFromText(thing);
             if (version != null)
                 return version;
