@@ -157,9 +157,12 @@ static partial class Commands
             table.AddRow(cells.ToArray());
         }
 
-        // TODO: if it's just one row, print out vertical block
+        if (table.Rows.Any())
+        {
+            // TODO: if it's just one row, print out vertical block (?)
 
-        where.WriteLine();
-        where.WriteLine(table.ToString().TrimEnd());
+            where.WriteLine();
+            where.WriteLine(table.ToString().TrimEnd());
+        }
     }
 }
