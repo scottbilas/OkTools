@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using PInvoke;
 
-namespace OkTools.Native;
+namespace OkTools.Core;
 
 [PublicAPI]
 public static class NativeWindows

@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // ReSharper disable MemberCanBePrivate.Local
 // ReSharper disable InconsistentNaming
 
-namespace OkTools.Native;
+namespace OkTools.Core;
 
 // $ do not use #if's for platforms. keep the binaries universal so we can build and post just
 //   one set of them to the package for CLI usage.

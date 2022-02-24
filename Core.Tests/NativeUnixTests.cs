@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 
-class NativeTests : TestFileSystemFixture
+class NativeUnixTests : TestFileSystemFixture
 {
     [Test]
     public void Permissions_Basics([ValueSource(nameof(PermissionScenarios))] NativeUnix.UnixFilePermissions permission)
