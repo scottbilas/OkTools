@@ -443,14 +443,14 @@ namespace NiceIO
             return true;
         }
 
-        public static bool operator ==(NPath a, NPath b)
+        public static bool operator ==(NPath? a, NPath? b)
         {
             // If both are null, or both are same instance, return true.
             if (ReferenceEquals(a, b))
                 return true;
 
             // If one is null, but not both, return false.
-            if (((object)a == null) || ((object)b == null))
+            if (a is null || b is null)
                 return false;
 
             // Return true if the fields match:
@@ -481,7 +481,7 @@ namespace NiceIO
             return ToString().CompareTo(((NPath)obj).ToString());
         }
 
-        public static bool operator !=(NPath a, NPath b)
+        public static bool operator !=(NPath? a, NPath? b)
         {
             return !(a == b);
         }
