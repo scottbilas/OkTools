@@ -1,10 +1,27 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
 
 [PublicAPI]
 public static class CliUtility
 {
+    public static IEnumerable<string> ParseCommandLineArgs(string commandLine) => Regex
+        .Matches(commandLine, @"""(?<c>[^""]+)""|(?<c>[^\s""]+)")
+        .Select(r => r.Groups["c"].Value);
+
+    public static string CommandLineArgsToString(IEnumerable<string> args) => args
+        .Select(a =>
+        {
+            if (a.IsNullOrWhiteSpace())
+                return "";
+            if (a.Contains(' '))
+                return '"' + a + '"';
+            return a;
+        })
+        .StringJoin(" ")
+        .Trim();
+
     public static IEnumerable<string> SelectStdinLines()
     {
         for (;;)
