@@ -8,6 +8,8 @@ public static class Program
     const string k_docVersion = "0.1";
 
     // TODO: add --config prefix before command
+    // TODO: make this pluggable by scanning dll's and using attrs to get the Run function, command name, short and long docs.
+    // (don't do git-style fork process because startup costs)
 
     static readonly string k_docUsageGlobal;
 
