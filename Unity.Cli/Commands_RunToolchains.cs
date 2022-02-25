@@ -1,4 +1,5 @@
 ﻿using DotNetConfig;
+using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
 
@@ -26,14 +27,16 @@ Options:
 
     public static CliExitCode RunToolchains(CommandContext context)
     {
-        var toolchains =
-            FindAllToolchains(
-                context.Config,
-                context.CommandLine["--no-defaults"].IsTrue) // TODO: have the cli add an override layer to the config, then just pass in config)
-            .Concat(Unity.FindCustomToolchains(context.CommandLine["SPEC"].AsStrings(), true))
+        // TODO: have the cli add an override layer to the config, then just pass in config)
+        var toolchains = FindAllToolchains(context.Config, context.CommandLine["--no-defaults"].IsTrue);
+
+        toolchains = toolchains
+            .Concat(context.CommandLine["SPEC"]
+                .AsStrings()
+                .SelectMany(spec => Unity.FindCustomToolchains(spec, true)))
             // TODO: have this whole distinct-orderby chain in OkTools.Unity, with an outer function that decides using passed overlay-config
-            .DistinctBy(t => t.Path)            // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
-            .OrderByDescending(t => t.Version); // nice to have newest stuff first
+            .DistinctBy(toolchain => toolchain.Path)            // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
+            .OrderByDescending(toolchain => toolchain.Version); // nice to have newest stuff first
 
         Output(toolchains, context);
 
@@ -44,14 +47,21 @@ Options:
     {
         var toolchains = Enumerable.Empty<UnityToolchain>();
 
-        if (!noDefaults && config.GetBoolean("toolchains", null, "no-defaults") != true)
+        if (!noDefaults && config.GetBoolean("toolchains", "no-defaults") != true)
         {
             toolchains = toolchains
                 .Concat(Unity.FindHubInstalledToolchains())
                 .Concat(Unity.FindManuallyInstalledToolchains());
         }
 
-        return toolchains.Concat(Unity.FindCustomToolchains(
-            config.GetAll("toolchains", null, "spec").Select(v => v.GetString()), false));
+        var installRoot = config.GetNPath("install", "root");
+        if (installRoot != null)
+            toolchains = toolchains.Concat(Unity.FindCustomToolchains(installRoot.Combine("*"), true));
+
+        toolchains = toolchains.Concat(config
+            .GetAllStrings("toolchains", "spec")
+            .SelectMany(spec => Unity.FindCustomToolchains(spec, false)));
+
+        return toolchains;
     }
 }

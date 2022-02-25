@@ -21,7 +21,7 @@ Options:
         var projects = Enumerable.Empty<UnityProject>();
 /*
         projects = projects
-            .Concat(Unity.FindProjects(config.GetAll("projects", null, "include").Select(v => v.GetString())))
+            .Concat(Unity.FindProjects(config.GetAllStrings("projects", "include")))
             .Concat(Unity.FindProjects(opt["--include"].AsStrings()));
 
         // there may be dupes in the list, so filter. and we want the defaults to come first, because

@@ -15,6 +15,8 @@ static class Globbing
     // limitations:
     // - fails on something like "c:/build*/**" (some problem with root)
     //
+    // TODO: throwOnInvalidPathSpec isn't great on its own - the user won't know where the path came from. needs some kind
+    // of source/origin passed in as well. either that, or have caller catch and rethrow, attaching more context..
     internal static IEnumerable<NPath> Find(NPath pathSpec, string fileName, bool throwOnInvalidPathSpec)
     {
         if (fileName.Contains('*'))

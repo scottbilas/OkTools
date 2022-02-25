@@ -10,8 +10,8 @@ public static class Unity
 {
     // TODO: consider if we should auto-add common subpaths like 'Editor' or for build like 'build/*Editor*/*/*'
     // but probably have a pathspec prefix option to disable this automation, if it's not opt-in..
-    static IEnumerable<UnityToolchain> FindToolchains(IEnumerable<NPath> pathSpecs, UnityToolchainOrigin? origin, bool throwOnInvalidPathSpec) => pathSpecs
-        .SelectMany(p => Globbing.Find(p, UnityConstants.UnityExeName, throwOnInvalidPathSpec))
+    static IEnumerable<UnityToolchain> FindToolchains(NPath pathSpec, UnityToolchainOrigin? origin, bool throwOnInvalidPathSpec) => Globbing
+        .Find(pathSpec, UnityConstants.UnityExeName, throwOnInvalidPathSpec)
         .Select(p => UnityToolchain.TryCreateFromPath(p.Parent, origin)) // drop filename for TryCreateFromPath, which will add it back (see Globbing.Find for why we must do this hack)
         .WhereNotNull();
 
@@ -26,15 +26,15 @@ public static class Unity
     // TODO: include Hub-known custom installs
     //   * %APPDATA%\Roaming\UnityHub\editors.json contains all installs manually added to Hub
     public static IEnumerable<UnityToolchain> FindHubInstalledToolchains() =>
-        FindToolchains(UnityConstants.HubInstalledToolchainNPathSpec.WrapInEnumerable(), UnityToolchainOrigin.UnityHub, false);
+        FindToolchains(UnityConstants.HubInstalledToolchainNPathSpec, UnityToolchainOrigin.UnityHub, false);
 
     // this just walks the default install dir
     // TODO: go walk the installer stuff in the registry and discover all manually installations that way.
     public static IEnumerable<UnityToolchain> FindManuallyInstalledToolchains() =>
-        FindToolchains(UnityConstants.ManuallyInstalledToolchainsNPathSpec.WrapInEnumerable(), UnityToolchainOrigin.ManuallyInstalled, false);
+        FindToolchains(UnityConstants.ManuallyInstalledToolchainsNPathSpec, UnityToolchainOrigin.ManuallyInstalled, false);
 
-    public static IEnumerable<UnityToolchain> FindCustomToolchains(IEnumerable<string> pathSpecs, bool throwOnInvalidPathSpec) =>
-        FindToolchains(pathSpecs.ToNPath(), null, throwOnInvalidPathSpec);
+    public static IEnumerable<UnityToolchain> FindCustomToolchains(string pathSpec, bool throwOnInvalidPathSpec) =>
+        FindToolchains(pathSpec.ToNPath(), null, throwOnInvalidPathSpec);
 
     public static IReadOnlyList<Process> FindUnityProcessesForProject(string projectPath)
         => FindUnityProcessesForProject(projectPath.ToNPath());
