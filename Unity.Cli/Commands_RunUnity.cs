@@ -143,7 +143,6 @@ Options:
         if (context.GetConfigBool("unity", "no-local-log"))
         {
             //TODO status "Debug logging to default ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})"
-
         }
         else
         {

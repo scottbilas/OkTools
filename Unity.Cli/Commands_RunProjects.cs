@@ -1,5 +1,4 @@
 ﻿using OkTools.Core;
-using OkTools.Unity;
 
 static partial class Commands
 {
@@ -18,8 +17,8 @@ Options:
 
     public static CliExitCode RunProjects(CommandContext context)
     {
-        var projects = Enumerable.Empty<UnityProject>();
 /*
+        var projects = Enumerable.Empty<UnityProject>();
         projects = projects
             .Concat(Unity.FindProjects(config.GetAllStrings("projects", "include")))
             .Concat(Unity.FindProjects(opt["--include"].AsStrings()));
@@ -32,6 +31,7 @@ Options:
 
         Output(toolchains, opt);*/
 
+        Console.Error.WriteLine("NOT IMPLEMENTED YET");
         return CliExitCode.ErrorUnavailable;
     }
 }
