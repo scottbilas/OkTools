@@ -8,9 +8,17 @@ public static class Program
     const string k_docVersion = "0.1";
 
     // TODO: add --config prefix before command
-    // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
 
-    const string k_docUsageGlobal =
+    static readonly string k_docUsageGlobal;
+
+    static Program()
+    {
+        var minWidth = k_commandSpecs.Select(s => s.Name.Length).Max();
+        var docUsageCommands = k_commandSpecs
+            .Select(s => $"  {s.Name.PadRight(minWidth)}  {s.ShortDoc}")
+            .StringJoin('\n');
+
+        k_docUsageGlobal =
 $@"{k_docName}
 
 Usage:
@@ -18,21 +26,31 @@ Usage:
   okunity --version
 
 Commands:
-  help        Print help for a command
-  unity       Run Unity to open a project
-  toolchains  Get info on Unity toolchains
-  projects$$  Get info on Unity projects ($$ not currently implemented)
-  info        Extract Unity-related info from args
+{docUsageCommands}
 
 Global Options:
   --debug     Enable extra debug features
 ";
+    }
 
     const string k_docUsageHelp =
 @"usage: okunity help COMMAND
 
 Print help for COMMAND.
 ";
+
+    readonly record struct CommandSpec(string Name, string ShortDoc, string FullDoc, Func<CommandContext, CliExitCode> RunAction);
+
+    static readonly CommandSpec[] k_commandSpecs =
+    {
+        new("help",       "Print help for a command",             k_docUsageHelp, _ => throw new DocoptExitException(k_docUsageHelp)),
+        new("unity",      "Run Unity to open a project",          Commands.DocUsageUnity, Commands.RunUnity),
+        new("install",    "Install a Unity toolchain",            Commands.DocUsageInstall, Commands.RunInstall),
+        new("toolchains", "Get info on Unity toolchains",         Commands.DocUsageToolchains, Commands.RunToolchains),
+        new("projects",   "Get info on Unity projects",           Commands.DocUsageProjects, Commands.RunProjects),
+        new("info",       "Extract Unity-related info from args", Commands.DocUsageInfo, Commands.RunInfo),
+        //new("purge", // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
+    };
 
     public static int Main(string[] args)
     {
@@ -51,53 +69,32 @@ Print help for COMMAND.
                 return opt;
             }
 
-            if (args.Length == 0) throw new DocoptExitException(k_docUsageGlobal);
+            if (args.Length == 0)
+                throw new DocoptExitException(k_docUsageGlobal);
+
             var optGlobal = ParseOpt(k_docUsageGlobal);
             debugMode = optGlobal["--debug"].IsTrue;
 
             // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
             // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
 
-            var command = optGlobal["COMMAND"].Value;
-            switch (command)
+            var mainCommand = optGlobal["COMMAND"].Value.ToString();
+            if (!k_commandSpecs.TryFirst(s => s.Name == mainCommand, out var mainFound))
+                throw new DocoptInputErrorException($"Unknown command '{mainCommand}'"); // TODO: "did you mean ...?" :)
+
+            if (mainCommand == "help")
             {
-                case "help":
-                    if (args.Length == 1) throw new DocoptExitException(k_docUsageHelp);
-                    var optHelp = ParseOpt(k_docUsageHelp);
+                if (args.Length == 1)
+                    throw new DocoptExitException(k_docUsageHelp);
 
-                    var helpCommand = optHelp["COMMAND"].Value;
-                    switch (helpCommand)
-                    {
-                        case "help":
-                            break;
-                        case "unity":
-                            throw new DocoptExitException(Commands.DocUsageUnity);
-                        case "toolchains":
-                            throw new DocoptExitException(Commands.DocUsageToolchains);
-                        //case "projects":
-                            //throw new DocoptExitException(Commands.DocUsageProjects);
-                        case "info":
-                            throw new DocoptExitException(Commands.DocUsageInfo);
-                        default:
-                            throw new DocoptInputErrorException($"Unknown command '{helpCommand}'");
-                    }
-                    break;
-
-                case "unity":
-                    return (int)Commands.RunUnity(new CommandContext(ParseOpt(Commands.DocUsageUnity), Config.Build(), debugMode));
-
-                case "toolchains":
-                    return (int)Commands.RunToolchains(new CommandContext(ParseOpt(Commands.DocUsageToolchains), Config.Build(), debugMode));
-
-                //case "projects":
-                    //return Commands.Projects(new CommandContext(ParseOpt(Commands.DocUsageProjects), Config.Build(), debugMode));
-
-                case "info":
-                    return (int)Commands.RunInfo(new CommandContext(ParseOpt(Commands.DocUsageInfo), Config.Build(), debugMode));
-
-                default:
-                    throw new DocoptInputErrorException($"Unknown command '{command}'");
+                var helpCommand = ParseOpt(k_docUsageHelp)["COMMAND"].Value.ToString()!;
+                throw k_commandSpecs.TryFirst(s => s.Name == helpCommand, out var helpFound)
+                    ? new DocoptExitException(helpFound.FullDoc)
+                    : new DocoptInputErrorException($"Unknown command '{helpCommand}'");
             }
+
+            var commandContext = new CommandContext(ParseOpt(mainFound.FullDoc), Config.Build(), debugMode);
+            return (int)mainFound.RunAction(commandContext);
         }
         catch (DocoptInputErrorException x)
         {
