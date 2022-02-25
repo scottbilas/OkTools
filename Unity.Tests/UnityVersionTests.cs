@@ -29,7 +29,7 @@ class UnityVersionTests : TestFixtureBase
     [Test]
     public void FromText_WithFullVersionString_ReturnsFilledVersionClass()
     {
-        CheckParse("2020.3.24f1-dots_a675c7af6899", new UnityVersion(2020, 3, 24, 'f', 1, "dots", "a675c7af6899"));
+        CheckParse("2020.3.24f1-foo_2675c7af6899", new UnityVersion(2020, 3, 24, 'f', 1, "foo", "2675c7af6899"));
     }
 
     [Test]
@@ -46,9 +46,9 @@ class UnityVersionTests : TestFixtureBase
     {
         CheckParse("2020.3.25", new UnityVersion(2020, 3, 25));
         CheckParse("2020.3.25f1", new UnityVersion(2020, 3, 25, 'f', 1));
-        CheckParse("2020.3.25f1-c07b56b34d4b", new UnityVersion(2020, 3, 25, 'f', 1, "c07b56b34d4b"));
-        CheckParse("2020.3.25f1_c07b56b34d4b", new UnityVersion(2020, 3, 25, 'f', 1, null, "c07b56b34d4b"));
-        CheckParse("2020.3.24f1-dots_a675c7af6899", new UnityVersion(2020, 3, 24, 'f', 1, "dots", "a675c7af6899"));
+        CheckParse("2020.3.25f1-f07b56b34d4b", new UnityVersion(2020, 3, 25, 'f', 1, "f07b56b34d4b"));
+        CheckParse("2020.3.25f1_f07b56b34d4b", new UnityVersion(2020, 3, 25, 'f', 1, null, "f07b56b34d4b"));
+        CheckParse("2020.3.24f1-foo_2675c7af6899", new UnityVersion(2020, 3, 24, 'f', 1, "foo", "2675c7af6899"));
         CheckParse("2017.2.1", new UnityVersion(2017, 2, 1));
         CheckParse("2017", new UnityVersion(2017));
         CheckParse("2017.3", new UnityVersion(2017, 3));
@@ -87,16 +87,26 @@ class UnityVersionTests : TestFixtureBase
     [Test]
     public void FromText_WithFullLengthHash_ReturnsTruncatedHash()
     {
-        var version = UnityVersion.FromText("2020.3.24f1-dots_a675c7af6899afe3fa4ab5acd");
-        version.ShouldBe(new UnityVersion(2020, 3, 24, 'f', 1, "dots", "a675c7af6899"));
-        version.ToString().ShouldBe("2020.3.24f1-dots_a675c7af6899");
+        var version = UnityVersion.FromText("2020.3.24f1-foo_2675c7af6899afe3fa4ab5acd");
+        version.ShouldBe(new UnityVersion(2020, 3, 24, 'f', 1, "foo", "2675c7af6899"));
+        version.ToString().ShouldBe("2020.3.24f1-foo_2675c7af6899");
+    }
+
+    [Test]
+    public void FromText_WithShortHash_ReturnsShortHash()
+    {
+        var version = UnityVersion.FromText("2020.3.24f1-foo_2675c7");
+        version.ShouldBe(new UnityVersion(2020, 3, 24, 'f', 1, "foo", "2675c7"));
+        version.ToString().ShouldBe("2020.3.24f1-foo_2675c7");
     }
 
     [Test]
     public void FromText_WithIllegalHash_Throws()
     {
-        CheckTextThrows("2020.3.24f1-dots_a675c7af6899xoxoafe3f");
-        CheckTextThrows("2020.3.24f1-dots_");
+        CheckTextThrows("2020.3.24f1-foo_2675c7af6899xoxoafe3f");
+        CheckTextThrows("2020.3.24f1-foo_12345");
+        CheckTextThrows("2020.3.24f1-foo_g12345");
+        CheckTextThrows("2020.3.24f1-foo_");
         CheckTextThrows("2020.3.24f1_");
     }
 
@@ -136,7 +146,7 @@ class UnityVersionTests : TestFixtureBase
     public void FromUnityProjectVersionTxt_WithValid_ReturnsParsedVersion()
     {
         var version = UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Valid.txt"));
-        version.ShouldBe(new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0"));
+        version.ShouldBe(new UnityVersion(2020, 3, 14, 'f', 1, "foo", "86b16565e3c0"));
     }
 
     [Test]
@@ -169,7 +179,7 @@ class UnityVersionTests : TestFixtureBase
     {
         var versions = UnityVersion.FromEditorsYml(EditorYml("Single.yml")).ToArray();
         versions.Length.ShouldBe(1);
-        versions[0].ShouldBe(new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85"));
+        versions[0].ShouldBe(new UnityVersion(2020, 3, 25, 'f', 1, "foo", "7017b5c35b85"));
     }
 
     [Test]

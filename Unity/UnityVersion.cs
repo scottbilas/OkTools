@@ -195,7 +195,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
                (?<Incremental>\d+)?
             )?)?)?
             (-(?<Branch>[^_]+))?
-            (_(?<Hash>[a-f0-9]{12,}))?$");
+            (_(?<Hash>[a-f0-9]{6,}))?$");
         if (m.Success)
         {
             string? Get(string name)

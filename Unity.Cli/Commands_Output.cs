@@ -124,7 +124,7 @@ static partial class Commands
                                 var year = DateTime.Now.Year;
                                 if (version.Major == year)
                                     return v.ForegroundColor(Color.Aquamarine);
-                                if (version.Major == year - 2)
+                                if (version.Major < year - 2)
                                     return v.ForegroundColor(Color.Salmon);
                             }
                             return v;

@@ -3,4 +3,4 @@ editor_versions:
     branch: 2020.3/foo/bar
     display_name: 2020.3 foo bar
     revision: 7017b5c35b8551b61dce495c0a8f1423f06f1234
-    version: 2020.3.25f1-dots
+    version: 2020.3.25f1-foo
