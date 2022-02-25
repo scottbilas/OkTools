@@ -41,6 +41,30 @@ class EnumerableExtensionsTests
     }
 
     [Test]
+    public void TryFirst_WithNoMatch_ReturnsFalseDefault()
+    {
+        Array.Empty<string>().TryFirst(out var result1).ShouldBeFalse();
+        result1.ShouldBe(default);
+
+        Array.Empty<string>().TryFirst(_ => false, out var result2).ShouldBeFalse();
+        result2.ShouldBe(default);
+        new[] { "a", "b" }.TryFirst(_ => false, out var result3).ShouldBeFalse();
+        result3.ShouldBe(default);
+    }
+
+    [Test]
+    public void TryFirst_WithMatch_ReturnsTrueFound()
+    {
+        var arr = new[] { "a", "b" };
+
+        arr.TryFirst(out var result1).ShouldBeTrue();
+        result1.ShouldBe("a");
+
+        arr.TryFirst(s => s[0] > 'a', out var result2).ShouldBeTrue();
+        result2.ShouldBe("b");
+    }
+
+    [Test]
     public void WhereNotNull_WithItemsWithNulls_ReturnsFilteredForNull()
     {
         var dummy1 = Enumerable.Empty<float>();

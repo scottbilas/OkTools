@@ -44,6 +44,33 @@ public static class EnumerableExtensions
         return value;
     }
 
+    public static bool TryFirst<T>(this IEnumerable<T> @this, out T? found)
+    {
+        foreach (var element in @this)
+        {
+            found = element;
+            return true;
+        }
+
+        found = default;
+        return false;
+    }
+
+    public static bool TryFirst<T>(this IEnumerable<T> @this, Func<T, bool> predicate, out T? found)
+    {
+        foreach (var element in @this)
+        {
+            if (predicate(element))
+            {
+                found = element;
+                return true;
+            }
+        }
+
+        found = default;
+        return false;
+    }
+
     // filtering and searching
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: class =>
