@@ -14,6 +14,29 @@ class UnityVersionTests : TestFixtureBase
     }
 
     [Test]
+    public void Ctor_WithEmptyHash_ReturnsVersionWithNullHash()
+    {
+        var version = new UnityVersion(1, hash: "");
+        version.Hash.ShouldBeNull();
+    }
+
+    [TestCase("abcd", "abc", true)]
+    [TestCase("abcd", "abce", false)]
+    [TestCase("abcde", "abce", false)]
+    [TestCase(null, "abce", false)]
+    [TestCase(null, null, true)]
+    [TestCase("", "abce", false)]
+    [TestCase("", "", true)]
+    public void Equals_WithDifferingHashes_ReturnsTrue(string a, string b, bool equals)
+    {
+        var va = new UnityVersion(1, hash: a);
+        var vb = new UnityVersion(1, hash: b);
+
+        va.Equals(vb).ShouldBe(equals);
+        vb.Equals(va).ShouldBe(equals);
+    }
+
+    [Test]
     public void FromText_WithEmptyString_Throws()
     {
         CheckTextThrows("");

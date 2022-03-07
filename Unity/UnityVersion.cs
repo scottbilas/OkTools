@@ -19,6 +19,15 @@ public class UnityVersionFormatException : Exception
 [PublicAPI]
 public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>, IComparable
 {
+    // a note on hash length.. it varies.
+    //
+    // * sometimes we're given a complete hash (long)
+    // * typically people work with nicer 12-char hashes, so we use that for our string rep
+    // * old hg-based versions of unity have shorter (6-char, also in decimal) hashes
+    // * newer versions of unity use 9-char hashes (not sure if this is by design, asked in slack to see)
+
+    const int k_niceHashLength = 12;
+
     // fields from Runtime/Utilities/UnityVersion.h
 
     public readonly int     Major;
@@ -50,13 +59,8 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         if (hash == "")
             hash = null;
 
-        if (hash != null)
-        {
-            if (Regex.IsMatch(hash, @"[^a-fA-F0-9]"))
-                throw new ArgumentException($"Hash '{hash}' contains invalid characters", nameof(hash));
-            if (hash.Length > 12)
-                hash = hash[..12];
-        }
+        if (hash != null && Regex.IsMatch(hash, @"[^a-fA-F0-9]"))
+            throw new ArgumentException($"Hash '{hash}' contains invalid characters", nameof(hash));
 
         Hash = hash;
     }
@@ -84,14 +88,26 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         if (!string.IsNullOrEmpty(Branch))
             str += $"-{Branch}";
         if (!string.IsNullOrEmpty(Hash))
-            str += $"_{Hash}";
+            str += $"_{Hash.Left(k_niceHashLength)}";
 
         return str;
     }
 
+    static bool IsHashSame(string? a, string? b)
+    {
+        if (a is null && b is null)
+            return true;
+        if (a is null || b is null)
+            return false;
+
+        return a.Length > b.Length
+            ? a.StartsWith(b, StringComparison.OrdinalIgnoreCase)
+            : b.StartsWith(a, StringComparison.OrdinalIgnoreCase);
+    }
+
     public bool Equals(UnityVersion? other)
     {
-        if (ReferenceEquals(null, other)) return false;
+        if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
 
         return Major == other.Major
@@ -100,35 +116,26 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
             && ReleaseType == other.ReleaseType
             && Incremental == other.Incremental
             && string.Equals(Branch, other.Branch, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(Hash, other.Hash, StringComparison.OrdinalIgnoreCase);
+            && IsHashSame(Hash, other.Hash);
     }
 
     public override bool Equals(object? obj)
     {
-        if (ReferenceEquals(null, obj)) return false;
+        if (obj is null) return false;
         if (ReferenceEquals(this, obj)) return true;
 
-        return obj.GetType() == GetType()
-        && Equals((UnityVersion)obj);
+        return obj.GetType() == GetType() && Equals((UnityVersion)obj);
     }
 
-    public override int GetHashCode()
-    {
-        var hashCode = new HashCode();
-        hashCode.Add(Major);
-        hashCode.Add(Minor);
-        hashCode.Add(Revision);
-        hashCode.Add(ReleaseType);
-        hashCode.Add(Incremental);
-        hashCode.Add(Branch, StringComparer.OrdinalIgnoreCase);
-        hashCode.Add(Hash, StringComparer.OrdinalIgnoreCase);
-        return hashCode.ToHashCode();
-    }
+    // Because Equals() uses IsHashSame we risk separate UnityVersions getting different hashcodes but comparing
+    // equal. The caller needs to figure out how to handle this, can't have an automatic solution here.
+    public override int GetHashCode() =>
+        throw new NotSupportedException("Must hash explicitly");
 
     public int CompareTo(UnityVersion? other)
     {
         if (ReferenceEquals(this, other)) return 0;
-        if (ReferenceEquals(null, other)) return 1;
+        if (other is null) return 1;
 
         var majorComparison = Major.CompareTo(other.Major);
         if (majorComparison != 0) return majorComparison;
@@ -142,6 +149,8 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         if (incrementalComparison != 0) return incrementalComparison;
         var branchComparison = string.Compare(Branch, other.Branch, StringComparison.OrdinalIgnoreCase);
         if (branchComparison != 0) return branchComparison;
+
+        if (IsHashSame(Hash, other.Hash)) return 0;
         return string.Compare(Hash, other.Hash, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -164,7 +173,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         if (ReleaseType.HasValue && other.ReleaseType.HasValue && ReleaseType.Value != other.ReleaseType.Value) return false;
         if (Incremental.HasValue && other.Incremental.HasValue && Incremental.Value != other.Incremental.Value) return false;
         if (Branch != null && other.Branch != null && string.Compare(Branch, other.Branch, StringComparison.OrdinalIgnoreCase) != 0) return false;
-        if (Hash != null && other.Hash != null && string.Compare(Hash, other.Hash, StringComparison.OrdinalIgnoreCase) != 0) return false;
+        if (Hash != null && other.Hash != null && !IsHashSame(Hash, other.Hash)) return false;
 
         return true;
     }
