@@ -106,9 +106,15 @@ Options:
             return CliExitCode.ErrorUnavailable;
         }
 
-        Console.WriteLine(unityToolchain.vindex == 0
-            ? $"Found exact match for project version {unityToolchain.version} at {unityToolchain.toolchain.Path}"
-            : $"Found compatible match for project version {unityToolchain.version} (from {UnityConstants.EditorsYmlFileName}) at {unityToolchain.toolchain.Path}");
+        if (unityToolchain.vindex == 0)
+        {
+            Console.WriteLine($"Found exact match for project version {unityToolchain.version} in {unityToolchain.toolchain.Path}");
+        }
+        else
+        {
+            Console.WriteLine($"Project is version {unityProject.GetVersion()}");
+            Console.WriteLine($"Found compatible version {unityToolchain.version} (from {UnityConstants.EditorsYmlFileName}) in {unityToolchain.toolchain.Path}");
+        }
 
         // build up cli and environment
 
