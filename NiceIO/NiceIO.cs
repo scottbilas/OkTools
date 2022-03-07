@@ -335,7 +335,7 @@ namespace NiceIO
             }
         }
 
-        public string ExtensionWithoutDot
+        public string ExtensionWithoutDot // TODO: rename to just Extension
         {
             get
             {

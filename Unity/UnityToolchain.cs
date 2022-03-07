@@ -38,7 +38,6 @@ public class UnityToolchain : IStructuredOutput
 
     // TODO: was mono built locally or part of the distro? maybe check its pdb path
     // TODO: detect installed modules (mac, il2ccp, etc. - see C:\Users\scott\AppData\Roaming\UnityHub\releases.json)
-    // TODO: detect architecture and platform
 
     UnityToolchain(NPath unityEditorExePath, UnityToolchainOrigin? origin)
     {
