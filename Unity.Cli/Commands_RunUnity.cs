@@ -114,6 +114,8 @@ Options:
         {
             Console.WriteLine($"Project is version {unityProject.GetVersion()}");
             Console.WriteLine($"Found compatible version {unityToolchain.version} (from {UnityConstants.EditorsYmlFileName}) in {unityToolchain.toolchain.Path}");
+            Console.Error.WriteLine("Only working with exact matches for now (WIP!)");
+            return CliExitCode.ErrorUnavailable;
         }
 
         // build up cli and environment
@@ -167,7 +169,26 @@ Options:
             {
                 var targetPath = logPath.ChangeFilename($"{unityProject.Name}-editor_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.log");
                 if (doit)
+                {
+                    // TODO: make all of this a utility function, and add file-exists exception safeties
+
+                    // never want a chance to lose log data
+                    if (targetPath.FileExists())
+                    {
+                        var bakPath = targetPath.ChangeExtension(targetPath.ExtensionWithoutDot + ".bak");
+                        var serial = 1;
+                        while (bakPath.FileExists())
+                            bakPath = targetPath.ChangeExtension(targetPath.ExtensionWithoutDot + ".bak" + serial++);
+                        File.Move(targetPath, bakPath);
+                    }
                     File.Move(logPath, targetPath);
+
+                    // create and delete the logfile to work around "tunneling" feature and guarantee that the new file created gets current timestamp
+                    // (see https://web.archive.org/web/20150307194932/http://support.microsoft.com/kb/172190)
+                    logPath.CreateFile();
+                    File.SetCreationTime(logPath, DateTime.Now);
+                    logPath.Delete();
+                }
                 else
                     Console.WriteLine($"[dryrun] Rotating previous log file {logPath.RelativeTo(unityProject.Path)} to {targetPath.RelativeTo(unityProject.Path)}");
             }
