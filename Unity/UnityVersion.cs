@@ -197,14 +197,16 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
     public static UnityVersion? TryFromText(string versionText, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No)
     {
         var m = Regex.Match(versionText, @"^(?imnx-s)
+            (unityhub://)?
             (?<Major>\d+)
             (\.(?<Minor>\d+)
              (\.(?<Revision>\d+)
               ((?<ReleaseType>[a-z])
                (?<Incremental>\d+)?
             )?)?)?
-            (-(?<Branch>[^_]+))?
-            (_(?<Hash>[a-f0-9]{6,}))?$");
+            (-(?<Branch>[^_/]+))?
+            ([_/](?<Hash>[a-f0-9]{6,}))?$");
+
         if (m.Success)
         {
             string? Get(string name)

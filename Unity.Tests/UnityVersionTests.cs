@@ -11,6 +11,10 @@ class UnityVersionTests : TestFixtureBase
     {
         Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromText(versionText));
         UnityVersion.TryFromText(versionText).ShouldBeNull();
+
+        var hubVersion = "unityhub://" + versionText;
+        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromText(hubVersion));
+        UnityVersion.TryFromText(hubVersion).ShouldBeNull();
     }
 
     [Test]
@@ -47,6 +51,10 @@ class UnityVersionTests : TestFixtureBase
         var version = UnityVersion.FromText(versionText);
         version.ShouldBe(expected);
         version.ToString().ShouldBe(versionText);
+
+        var hubVersion = UnityVersion.FromText("unityhub://" + versionText);
+        hubVersion.ShouldBe(expected);
+        hubVersion.ToString().ShouldBe(versionText);
     }
 
     [Test]
