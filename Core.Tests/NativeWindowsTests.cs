@@ -17,6 +17,13 @@ class NativeWindowsTests
         actual1.ShouldBe(expected);
     }
 
+    // TODO: consider posh implementation.. (`get-process foo|get-member -name commandline |select -expandproperty definition`)
+    /* if ($IsWindows) {
+           (Get-CimInstance Win32_Process -Filter "ProcessId = $($this.Id)").CommandLine
+       } elseif ($IsLinux) {
+           Get-Content -LiteralPath "/proc/$($this.Id)/cmdline"
+       }*/
+
     // can't use Environment.CommandLine as it has been processed by .net and won't match
     [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
     static extern IntPtr GetCommandLine();
