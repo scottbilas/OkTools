@@ -33,12 +33,14 @@ Description:
   Any arguments given in EXTRA will be passed along to the newly launched Unity process.
 
 Options:
-  --dry-run           Don't change anything, only print out what would happen instead
-  --attach-debugger   Unity will pause with a dialog so you can attach a managed debugger
-  --rider             Open Rider after the project opens in Unity
-  --no-local-log      Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
-  --no-burst          Completely disable Burst
-  --verbose-upm-logs  Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
+  --dry-run                  Don't change anything, only print out what would happen instead
+  --use-toolchain TOOLCHAIN  Ignore project version and use this toolchain (can be version, path to toolchain, or unityhub link)
+  --open-rider               Open Rider after the project opens in Unity
+  --attach-debugger          Unity will pause with a dialog so you can attach a managed debugger
+  --no-local-log             Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
+  --no-burst                 Completely disable Burst
+  --no-activate-existing     Skip normal behavior of activating an existing Unity main window if found running on the project
+  --verbose-upm-logs         Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
 
   All of these options will only apply to the new Unity session being launched.
 ";
@@ -79,43 +81,81 @@ Options:
 
         // check if unity is already running on that project
 
-        var existingUnityRc = TryActivateExistingUnity(unityProject, doit);
+        // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --use-toolchain config)
+
+        var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"));
         if (existingUnityRc != null)
             return existingUnityRc.Value;
 
         // find a matching toolchain
 
-        var testableVersions = unityProject.GetTestableVersions().Memoize();
-        var foundToolchains = FindAllToolchains(context.Config, false).Memoize();
+        UnityToolchain useToolchain;
 
-        var unityToolchain = testableVersions
-            .WithIndex()
-            .SelectMany(v => foundToolchains.Select(t => (version: v.item, vindex: v.index, toolchain: t)))
-            .FirstOrDefault(i => i.toolchain.Version == i.version);
-
-        if (unityToolchain == default)
+        if (context.TryGetConfigString("use-toolchain", out var useToolchainConfig))
         {
-            Console.Error.WriteLine("Could not find a compatible toolchain :(");
-            Console.Error.WriteLine();
-            Console.Error.WriteLine("Project:");
-            Console.Error.WriteLine();
-            Output(unityProject, OutputFlags.Yaml, Console.Error);
-            Console.Error.WriteLine();
-            Console.Error.WriteLine("Available toolchains:");
-            Output(foundToolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
-            return CliExitCode.ErrorUnavailable;
-        }
+            // given explicitly
 
-        if (unityToolchain.vindex == 0)
-        {
-            Console.WriteLine($"Found exact match for project version {unityToolchain.version} in {unityToolchain.toolchain.Path}");
+            // try as path
+            var testToolchain = UnityToolchain.TryCreateFromPath(useToolchainConfig);
+            if (testToolchain == null)
+            {
+                // try as version
+                var testVersion = UnityVersion.TryFromText(useToolchainConfig);
+                if (testVersion == null)
+                {
+                    Console.Error.WriteLine($"TOOLCHAIN given ('{useToolchainConfig}') cannot be parsed to a valid toolchain path or Unity version");
+                    return CliExitCode.ErrorUsage;
+                }
+
+                testToolchain = FindAllToolchains(context.Config, false).FirstOrDefault(t => t.Version.IsMatch(testVersion));
+                if (testToolchain == null)
+                {
+                    Console.Error.WriteLine($"Unable to find any toolchain with version {testVersion}");
+                    return CliExitCode.ErrorUnavailable;
+                }
+            }
+
+            useToolchain = testToolchain;
+            Console.WriteLine($"Using toolchain with version {useToolchain.Version} at {useToolchain.Path}");
         }
         else
         {
-            Console.WriteLine($"Project is version {unityProject.GetVersion()}");
-            Console.WriteLine($"Found compatible version {unityToolchain.version} (from {UnityConstants.EditorsYmlFileName}) in {unityToolchain.toolchain.Path}");
-            Console.Error.WriteLine("Only working with exact matches for now (WIP!)");
-            return CliExitCode.ErrorUnavailable;
+            // detect from project
+
+            var testableVersions = unityProject.GetTestableVersions().Memoize();
+            var foundToolchains = FindAllToolchains(context.Config, false).Memoize();
+
+            var detectedToolchain = testableVersions
+                .WithIndex()
+                .SelectMany(v => foundToolchains.Select(t => (version: v.item, vindex: v.index, toolchain: t)))
+                .FirstOrDefault(i => i.toolchain.Version == i.version);
+
+            if (detectedToolchain == default)
+            {
+                Console.Error.WriteLine("Could not find a compatible toolchain :(");
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Project:");
+                Console.Error.WriteLine();
+                Output(unityProject, OutputFlags.Yaml, Console.Error);
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Available toolchains:");
+                Output(foundToolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
+                return CliExitCode.ErrorUnavailable;
+            }
+
+            if (detectedToolchain.vindex == 0)
+            {
+                Console.WriteLine($"Found exact match for project version {detectedToolchain.version} in {detectedToolchain.toolchain.Path}");
+            }
+            else
+            {
+                Console.WriteLine($"Project is version {unityProject.GetVersion()}");
+                Console.WriteLine($"Found compatible version {detectedToolchain.version} (from {UnityConstants.EditorsYmlFileName}) in {detectedToolchain.toolchain.Path}");
+                Console.Error.WriteLine("Only working with exact matches for now (WIP!)");
+                return CliExitCode.ErrorUnavailable;
+            }
+
+            useToolchain = detectedToolchain.toolchain;
         }
 
         // build up cli and environment
@@ -123,32 +163,32 @@ Options:
         var unityArgs = new List<string> { "-projectPath", unityProject.Path };
         var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} };
 
-        if (context.GetConfigBool("unity", "attach-debugger"))
+        if (context.GetConfigBool("attach-debugger"))
         {
             //TODO status "Will wait for debugger on Unity startup"
             unityEnv.Add("UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER", 1);
         }
 
-        if (context.GetConfigBool("unity", "rider"))
+        if (context.GetConfigBool("open-rider"))
         {
             //TODO status "Opening Rider on {slnname} after project open in Unity"
             unityArgs.Add(@"-executeMethod");
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }
 
-        if (context.GetConfigBool("unity", "no-burst"))
+        if (context.GetConfigBool("no-burst"))
         {
             //TODO status "Disabling Burst"
             unityArgs.Add("--burst-disable-compilation");
         }
 
-        if (context.GetConfigBool("unity", "verbose-upm-logs"))
+        if (context.GetConfigBool("verbose-upm-logs"))
         {
             //TODO status "Turning on extra debug logging for UPM ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})"
             unityArgs.Add("-enablePackageManagerTraces");
         }
 
-        if (context.GetConfigBool("unity", "no-local-log"))
+        if (context.GetConfigBool("no-local-log"))
         {
             //TODO status "Debug logging to default ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})"
         }
@@ -207,7 +247,7 @@ Options:
         {
             var unityStartInfo = new ProcessStartInfo
             {
-                FileName = unityToolchain.toolchain.EditorExePath,
+                FileName = useToolchain.EditorExePath,
                 WorkingDirectory = unityProject.Path,
             };
 
@@ -225,7 +265,7 @@ Options:
         else
         {
             Console.WriteLine("[dryrun] Executing Unity with:");
-            Console.WriteLine("[dryrun]   path        | " + unityToolchain.toolchain.EditorExePath);
+            Console.WriteLine("[dryrun]   path        | " + useToolchain.EditorExePath);
             Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs));
             Console.WriteLine("[dryrun]   environment | " + unityEnv.Select(kvp => $"{kvp.Key}={kvp.Value}").StringJoin("; "));
         }
@@ -236,7 +276,7 @@ Options:
     [DllImport("user32.dll")]
     static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    static CliExitCode? TryActivateExistingUnity(UnityProject project, bool doit)
+    static CliExitCode? TryActivateExistingUnity(UnityProject project, bool activateMainWindow)
     {
         var unityProcesses = Unity.FindUnityProcessesForProject(project.Path);
         if (!unityProcesses.Any())
@@ -264,7 +304,7 @@ Options:
 
             Console.WriteLine("Process is responding, activating and bringing to the front!");
 
-            if (doit)
+            if (activateMainWindow)
                 SetForegroundWindow(mainUnity.MainWindowHandle);
 
             return CliExitCode.Success;
