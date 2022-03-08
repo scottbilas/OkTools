@@ -95,7 +95,7 @@ Print help for COMMAND.
                     : new DocoptInputErrorException($"Unknown command '{helpCommand}'");
             }
 
-            var commandContext = new CommandContext(ParseOpt(mainFound.FullDoc), Config.Build(), debugMode);
+            var commandContext = new CommandContext(mainFound.Name, ParseOpt(mainFound.FullDoc), Config.Build(), debugMode);
             return (int)mainFound.RunAction(commandContext);
         }
         catch (DocoptInputErrorException x)
