@@ -9,7 +9,7 @@ public enum UnityEditorBuildConfig
 [PublicAPI]
 public enum MonoBuildConfig
 {
-    Debug, Release
+    Missing, Debug, Release
 }
 
 [PublicAPI]
@@ -21,7 +21,8 @@ public enum UnityToolchainOrigin
 [PublicAPI]
 public class UnityToolchain : IStructuredOutput
 {
-    readonly NPath _editorExePath, _monoDllPath;
+    readonly NPath _editorExePath;
+    readonly NPath? _monoDllPath;
 
     public string Path => NPath;
     internal NPath NPath => _editorExePath.Parent;
@@ -33,7 +34,7 @@ public class UnityToolchain : IStructuredOutput
     public readonly UnityEditorBuildConfig EditorBuildConfig;
 
     // mono
-    public string MonoDllPath => _monoDllPath;
+    public string? MonoDllPath => _monoDllPath?.ToString();
     public readonly MonoBuildConfig MonoBuildConfig;
 
     // TODO: was mono built locally or part of the distro? maybe check its pdb path
@@ -42,7 +43,10 @@ public class UnityToolchain : IStructuredOutput
     UnityToolchain(NPath unityEditorExePath, UnityToolchainOrigin? origin)
     {
         _editorExePath = unityEditorExePath.MakeAbsolute().FileMustExist();
-        _monoDllPath = NPath.Combine(UnityConstants.MonoDllRelativeNPath).MakeAbsolute().FileMustExist();
+        _monoDllPath = NPath.Combine(UnityConstants.MonoDllRelativeNPath).MakeAbsolute();
+        if (!_monoDllPath.FileExists())
+            _monoDllPath = null;
+
         Version = UnityVersion.FromUnityExe(_editorExePath);
 
         // TODO: ideally we'd be detecting whether it's hub-managed or manually-installed _here_, without needing to be
@@ -74,14 +78,19 @@ public class UnityToolchain : IStructuredOutput
         };
 
         // same deal as editor buildconfig regarding hard coded size matching
-        MonoBuildConfig = (_monoDllPath.FileInfo.Length / (1024.0 * 1024)) switch
+        if (_monoDllPath != null)
         {
-            > 4 and < 7.5 => MonoBuildConfig.Release,
-            > 9 and <  11 => MonoBuildConfig.Debug,
+            MonoBuildConfig = (_monoDllPath.FileInfo.Length / (1024.0 * 1024)) switch
+            {
+                > 4 and < 7.5 => MonoBuildConfig.Release,
+                > 9 and <  11 => MonoBuildConfig.Debug,
 
-            var sizeMb => throw new InvalidDataException(
-                $"Unexpected size of {_editorExePath} ({sizeMb}MB) need to revise detection bounds for Mono build config")
-        };
+                var sizeMb => throw new InvalidDataException(
+                    $"Unexpected size of {_editorExePath} ({sizeMb}MB) need to revise detection bounds for Mono build config")
+            };
+        }
+        else
+            MonoBuildConfig = MonoBuildConfig.Missing;
     }
 
     public override string ToString() => $"{Version} ({EditorBuildConfig}, {Origin}):\n  {NPath}";
