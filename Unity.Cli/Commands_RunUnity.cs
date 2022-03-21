@@ -7,6 +7,7 @@ using OkTools.Unity;
 static partial class Commands
 {
     // TODO: partial matches (like ignore hash and go with most recent install)
+    // TODO: option to kill unity if found running (perhaps only if not responding..otherwise give it a quit message and a 15s or whatever timeout, then fall back to kill)
 
 /*
     * Choose an EXE
@@ -36,7 +37,9 @@ Options:
   --dry-run                  Don't change anything, only print out what would happen instead
   --use-toolchain TOOLCHAIN  Ignore project version and use this toolchain (can be version, path to toolchain, or unityhub link)
   --open-rider               Open Rider after the project opens in Unity
+  --enable-debugger          Enable managed code debugging (disabled optimizations)
   --attach-debugger          Unity will pause with a dialog so you can attach a managed debugger
+  --enable-coverage          Enable code coverage
   --no-local-log             Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst                 Completely disable Burst
   --no-activate-existing     Skip normal behavior of activating an existing Unity main window if found running on the project
@@ -163,16 +166,28 @@ Options:
         var unityArgs = new List<string> { "-projectPath", unityProject.Path };
         var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} };
 
+        if (context.GetConfigBool("enable-debugger"))
+        {
+            //TODO status "Enables debug code optimization mode, overriding the current default code optimization mode for the session."
+            unityArgs.Add("-debugCodeOptimization");
+        }
+
         if (context.GetConfigBool("attach-debugger"))
         {
             //TODO status "Will wait for debugger on Unity startup"
             unityEnv.Add("UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER", 1);
         }
 
+        if (context.GetConfigBool("enable-coverage"))
+        {
+            //TODO status "Enables code coverage and allows access to the Coverage API."
+            unityArgs.Add("-enableCodeCoverage");
+        }
+
         if (context.GetConfigBool("open-rider"))
         {
             //TODO status "Opening Rider on {slnname} after project open in Unity"
-            unityArgs.Add(@"-executeMethod");
+            unityArgs.Add("-executeMethod");
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }
 
