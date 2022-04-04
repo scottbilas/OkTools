@@ -796,7 +796,7 @@ namespace NiceIO
         public void ThrowIfRelative()
         {
             if (_isRelative)
-                throw new ArgumentException("You are attempting an operation on a Path that requires an absolute path, but the path is relative");
+                throw new ArgumentException($"You are attempting an operation on a path that requires an absolute path, but the path is relative ({this})");
         }
 
         public void ThrowIfRoot()
