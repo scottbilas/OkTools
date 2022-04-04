@@ -89,7 +89,7 @@ Options:
             {
                 if (nthing.FileName.EqualsIgnoreCase(UnityConstants.UnityExeName))
                     return UnityVersion.FromUnityExe(nthing);
-                if (nthing.FileName.EqualsIgnoreCase(UnityConstants.ProjectVersionTxtFileName))
+                if (nthing.FileName.EqualsIgnoreCase(UnityProjectConstants.ProjectVersionTxtFileName))
                     return UnityVersion.FromUnityProjectVersionTxt(nthing);
                 if (nthing.FileName.EqualsIgnoreCase(UnityConstants.EditorsYmlFileName))
                     return UnityVersion.FromEditorsYml(nthing);

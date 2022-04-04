@@ -7,16 +7,7 @@ public static class UnityConstants
 
     public const string UnityProcessName = "Unity";
     public const string UnityExeName = "Unity.exe";
-    public const string ProjectAssetsFolderName = "Assets";
-    public const string ProjectLogsFolderName = "Logs";
-    public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
     public const string EditorsYmlFileName = "editors.yml";
-
-    internal static readonly NPath ProjectVersionRelativeNPath = new NPath("ProjectSettings").Combine(ProjectVersionTxtFileName);
-    public static readonly string ProjectVersionRelativePath = ProjectVersionRelativeNPath;
-
-    internal static readonly NPath ArtifactDbRelativeNPath = new("Library/ArtifactDB");
-    public static readonly string ArtifactDbRelativePath = ArtifactDbRelativeNPath;
 
     internal static readonly NPath MonoDllRelativeNPath = "Data/MonoBleedingEdge/EmbedRuntime/mono-2.0-bdwgc.dll".ToNPath();
     public static readonly string MonoDllRelativePath = MonoDllRelativeNPath;
@@ -32,4 +23,38 @@ public static class UnityConstants
 
     internal static readonly NPath UpmLogNPath = NPath.LocalAppDataDirectory.Combine("Unity/Editor/upm.log");
     public static readonly string UpmLogPath = UpmLogNPath;
+}
+
+[PublicAPI]
+public static class UnityProjectConstants
+{
+    public const string SceneFileExtension = ".unity";
+
+    public const string AssetsFolderName = "Assets";
+    internal static readonly NPath AssetsNPath = new(AssetsFolderName);
+    public static readonly string AssetsPath = AssetsNPath;
+
+    public const string LibraryFolderName = "Library";
+    internal static readonly NPath LibraryNPath = new(LibraryFolderName);
+    public static readonly string LibraryPath = LibraryNPath;
+
+        public const string ArtifactDbFileName = "ArtifactDB";
+        internal static readonly NPath ArtifactDbNPath = LibraryNPath.Combine(ArtifactDbFileName);
+        public static readonly string ArtifactDbPath = ArtifactDbNPath;
+
+        public const string LastSceneManagerSetupFileName = "LastSceneManagerSetup.txt";
+        internal static readonly NPath LastSceneManagerSetupNPath = LibraryNPath.Combine(LastSceneManagerSetupFileName);
+        public static readonly string LastSceneManagerSetupPath = LastSceneManagerSetupNPath;
+
+    public const string ProjectSettingsFolderName = "ProjectSettings";
+    internal static readonly NPath ProjectSettingsNPath = new(ProjectSettingsFolderName);
+    public static readonly string ProjectSettingsPath = ProjectSettingsNPath;
+
+        public const string ProjectVersionTxtFileName = "ProjectVersion.txt";
+        internal static readonly NPath ProjectVersionTxtNPath = ProjectSettingsNPath.Combine(ProjectVersionTxtFileName);
+        public static readonly string ProjectVersionTxtPath = ProjectVersionTxtNPath;
+
+    public const string LogsFolderName = "Logs";
+    internal static readonly NPath LogsNPath = new(LogsFolderName);
+    public static readonly string LogsPath = LogsNPath;
 }

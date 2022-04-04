@@ -47,7 +47,7 @@ public class UnityProject : IStructuredOutput
 
     public UnityVersion GetVersion()
     {
-        var projectVersionNPath = _projectRoot.Combine(UnityConstants.ProjectVersionRelativeNPath);
+        var projectVersionNPath = _projectRoot.Combine(UnityProjectConstants.ProjectVersionTxtNPath);
         return UnityVersion.FromUnityProjectVersionTxt(projectVersionNPath);
     }
 
@@ -70,7 +70,7 @@ public class UnityProject : IStructuredOutput
     // returns null if never opened
     public DateTime? GetLastOpenedTime()
     {
-        var artifactDb = _projectRoot.Combine(UnityConstants.ArtifactDbRelativeNPath);
+        var artifactDb = _projectRoot.Combine(UnityProjectConstants.ArtifactDbNPath);
         if (!artifactDb.FileExists())
             return null;
 
@@ -79,7 +79,7 @@ public class UnityProject : IStructuredOutput
 
     public DateTime GetCreationTime()
     {
-        return _projectRoot.Combine(UnityConstants.ProjectAssetsFolderName).FileInfo.CreationTime;
+        return _projectRoot.Combine(UnityProjectConstants.AssetsNPath).FileInfo.CreationTime;
     }
 
     public static UnityProject? TryCreateFromProjectRoot(string pathToUnityProject) =>
@@ -87,11 +87,11 @@ public class UnityProject : IStructuredOutput
     internal static UnityProject? TryCreateFromProjectRoot(NPath pathToUnityProject)
     {
         // must have an assets folder (unity rule)
-        if (!pathToUnityProject.Combine(UnityConstants.ProjectAssetsFolderName).DirectoryExists())
+        if (!pathToUnityProject.Combine(UnityProjectConstants.AssetsNPath).DirectoryExists())
             return null;
 
         // must have a projectversion file
-        if (!pathToUnityProject.Combine(UnityConstants.ProjectVersionRelativeNPath).FileExists())
+        if (!pathToUnityProject.Combine(UnityProjectConstants.ProjectVersionTxtNPath).FileExists())
             return null;
 
         return new UnityProject(pathToUnityProject);
