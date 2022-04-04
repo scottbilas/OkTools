@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using DocoptNet;
 using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
@@ -8,6 +9,9 @@ static partial class Commands
 {
     // TODO: partial matches (like ignore hash and go with most recent install)
     // TODO: option to kill unity if found running (perhaps only if not responding..otherwise give it a quit message and a 15s or whatever timeout, then fall back to kill)
+    // TODO: --create-project option (probably should also require --toolchain..difficult to choose a default)
+    // TODO: --kill-hub option
+    // TODO: let --toolchain specify another project path or a projectversion so can mean "launch project x with the same unity as project y uses"
 
 /*
     * Choose an EXE
@@ -34,18 +38,29 @@ Description:
   Any arguments given in EXTRA will be passed along to the newly launched Unity process.
 
 Options:
-  --dry-run                  Don't change anything, only print out what would happen instead
-  --use-toolchain TOOLCHAIN  Ignore project version and use this toolchain (can be version, path to toolchain, or unityhub link)
-  --open-rider               Open Rider after the project opens in Unity
-  --enable-debugger          Enable managed code debugging (disabled optimizations)
-  --attach-debugger          Unity will pause with a dialog so you can attach a managed debugger
-  --enable-coverage          Enable code coverage
-  --no-local-log             Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
-  --no-burst                 Completely disable Burst
-  --no-activate-existing     Skip normal behavior of activating an existing Unity main window if found running on the project
-  --verbose-upm-logs         Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
+  --dry-run               Don't change anything, only print out what would happen instead
+  --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be version, path to toolchain, or unityhub link)
+  --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
+  --rider                 Open Rider after the project opens in Unity
+  --enable-debugger       Enable managed code debugging (disabled optimizations)
+  --wait-attach-debugger  Unity will pause with a dialog so you can attach a managed debugger
+  --enable-coverage       Enable code coverage
+  --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
+  --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
+  --no-burst              Completely disable Burst
+  --no-activate-existing  Skip normal behavior of activating an existing Unity main window if found running on the project
+  --verbose-upm-logs      Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
 
   All of these options will only apply to the new Unity session being launched.
+
+Log Files:
+  Unity is always directed to include timestamps in its log files, which will have this format:
+    <year>-<month>-<day>T<hour>:<minute>:<second>.<milliseconds>Z|<thread-id>|<log-line>
+  The timestamp is unfortunately recorded in unadjusted UTC.
+
+  Also, unless --no-local-log is used, Unity log files will be stored as `Logs/<ProjectName>-editor.log` local to the
+  project. Any existing file with this name will be rotated out to a filename with a timestamp appended to it, thus
+  preserving logs from previous sessions.
 ";
 
     public static CliExitCode RunUnity(CommandContext context)
@@ -84,17 +99,20 @@ Options:
 
         // check if unity is already running on that project
 
-        // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --use-toolchain config)
+        // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --toolchain config)
 
         var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"));
         if (existingUnityRc != null)
+        {
+            // TODO: warn if the existing unity process received different command line flags or env than we were going to use here
             return existingUnityRc.Value;
+        }
 
         // find a matching toolchain
 
         UnityToolchain useToolchain;
 
-        if (context.TryGetConfigString("use-toolchain", out var useToolchainConfig))
+        if (context.TryGetConfigString("toolchain", out var useToolchainConfig))
         {
             // given explicitly
 
@@ -164,7 +182,7 @@ Options:
         // build up cli and environment
 
         var unityArgs = new List<string> { "-projectPath", unityProject.Path };
-        var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} };
+        var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} }; // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
 
         if (context.GetConfigBool("enable-debugger"))
         {
@@ -172,7 +190,7 @@ Options:
             unityArgs.Add("-debugCodeOptimization");
         }
 
-        if (context.GetConfigBool("attach-debugger"))
+        if (context.GetConfigBool("wait-attach-debugger"))
         {
             //TODO status "Will wait for debugger on Unity startup"
             unityEnv.Add("UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER", 1);
@@ -184,7 +202,21 @@ Options:
             unityArgs.Add("-enableCodeCoverage");
         }
 
-        if (context.GetConfigBool("open-rider"))
+        if (context.TryGetConfigString("stack-trace-log", out var stackTraceLogType))
+        {
+            unityArgs.Add("-stackTraceLogType");
+
+            // unity is case-sensitive and does not validate the arg, so make it nicer here
+            unityArgs.Add(stackTraceLogType.ToLower() switch
+            {
+                "none" => "None",
+                "scriptonly" => "ScriptOnly",
+                "full" => "Full",
+                string bad => throw new DocoptInputErrorException($"Illegal stack-trace-log type {bad}")
+            });
+        }
+
+        if (context.GetConfigBool("rider"))
         {
             //TODO status "Opening Rider on {slnname} after project open in Unity"
             unityArgs.Add("-executeMethod");
@@ -213,7 +245,7 @@ Options:
             //TODO make log pathspec configurable
 
             var logPath = unityProject.Path.ToNPath()
-                .Combine(UnityConstants.ProjectLogsFolderName)
+                .Combine(UnityProjectConstants.LogsPath)
                 .EnsureDirectoryExists()
                 .Combine($"{unityProject.Name}-editor.log");
 
@@ -252,6 +284,42 @@ Options:
             unityArgs.Add(logPath);
         }
 
+        var sceneName = context.GetConfigString("scene");
+        NPath? scenePath = null;
+        if (sceneName != null)
+        {
+            scenePath = sceneName.ToNPath();
+            if (scenePath.ExtensionWithDot != UnityProjectConstants.SceneFileExtension)
+                scenePath = scenePath.ChangeExtension(UnityProjectConstants.SceneFileExtension);
+
+            // TODO: build and leverage some kind of scene finder utility
+            if (scenePath.IsRelative)
+            {
+                foreach (var basePath in new[]
+                         {
+                             NPath.CurrentDirectory,
+                             unityProject.Path.ToNPath(),
+                             unityProject.Path.ToNPath().Combine(UnityProjectConstants.AssetsPath)
+                         })
+                {
+                    var testPath = basePath.Combine(scenePath);
+                    if (testPath.FileExists())
+                    {
+                        scenePath = testPath;
+                        break;
+                    }
+                }
+            }
+
+            if (!scenePath.FileExists())
+                throw new DocoptInputErrorException($"Scene '{sceneName}' was not found in project");
+
+            if (!scenePath.IsChildOf(unityProject.Path))
+                throw new DocoptInputErrorException($"Scene '{scenePath}' is not part of project at '{unityProject.Path}'");
+
+            scenePath = scenePath.RelativeTo(unityProject.Path);
+        }
+
         if (context.Config.TryGetString("unity", null, "extra-args", out var extraArgs))
             unityArgs.AddRange(CliUtility.ParseCommandLineArgs(extraArgs));
         unityArgs.AddRange(context.CommandLine["EXTRA"].AsStrings());
@@ -260,6 +328,13 @@ Options:
 
         if (doit)
         {
+            if (scenePath != null)
+            {
+                var setupPath = unityProject.Path.ToNPath().Combine(UnityProjectConstants.LastSceneManagerSetupPath);
+                setupPath.EnsureParentDirectoryExists();
+                setupPath.WriteAllText("sceneSetups:\n- path: " + scenePath);
+            }
+
             var unityStartInfo = new ProcessStartInfo
             {
                 FileName = useToolchain.EditorExePath,
@@ -283,6 +358,8 @@ Options:
             Console.WriteLine("[dryrun]   path        | " + useToolchain.EditorExePath);
             Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs));
             Console.WriteLine("[dryrun]   environment | " + unityEnv.Select(kvp => $"{kvp.Key}={kvp.Value}").StringJoin("; "));
+            if (scenePath != null)
+                Console.WriteLine("[dryrun]   scene       | " + scenePath);
         }
 
         return CliExitCode.Success;
