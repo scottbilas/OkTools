@@ -106,6 +106,9 @@ Print help for COMMAND.
         }
         catch (DocoptExitException x)
         {
+            // TODO: wrap help to terminal width. can probably get away with a simple parser aimed just at reflowing
+            // aligned/indented content, with some knowledge of the dash-prefixed options table..
+
             Console.WriteLine(x.Message);
             return (int)CliExitCode.Help;
         }

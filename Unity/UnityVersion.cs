@@ -194,6 +194,9 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
     public static UnityVersion FromText(string versionText, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No) =>
         TryFromText(versionText, normalizeLegacy) ?? throw new UnityVersionFormatException(versionText);
 
+    // TODO: add a TryFromText variant that can also take a list of versions (or toolchains) and do a "match one of these".
+    //       (very important for, at least, version-from-hash)
+
     public static UnityVersion? TryFromText(string versionText, NormalizeLegacy normalizeLegacy = NormalizeLegacy.No)
     {
         var m = Regex.Match(versionText, @"^(?imnx-s)

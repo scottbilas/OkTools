@@ -4,6 +4,8 @@ using OkTools.Unity;
 
 static partial class Commands
 {
+    // TODO: get toolchain by partial version text match (including "just the hash")
+
     public const string DocUsageToolchains =
 @"Usage: okunity toolchains [options] [SPEC]...
 
