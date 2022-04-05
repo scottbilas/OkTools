@@ -6,7 +6,7 @@ static partial class Commands
 @"Usage: okunity install [options] SPEC [-- EXTRA...]
 
 Description:
-  Install new version of Unity.
+  Install or update a build of Unity.
 
   SPEC may be one of:
 
