@@ -35,9 +35,7 @@ Options:
             .Concat(context.CommandLine["SPEC"]
                 .AsStrings()
                 .SelectMany(spec => Unity.FindCustomToolchains(spec, true)))
-            // TODO: have this whole distinct-orderby chain in OkTools.Unity, with an outer function that decides using passed overlay-config
-            .DistinctBy(toolchain => toolchain.Path)            // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
-            .OrderByDescending(toolchain => toolchain.Version); // nice to have newest stuff first
+            .MakeNice();
 
         Output(toolchains, context);
 

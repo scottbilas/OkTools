@@ -128,7 +128,7 @@ Log Files:
                     return CliExitCode.ErrorUsage;
                 }
 
-                testToolchain = FindAllToolchains(context.Config, false).FirstOrDefault(t => t.Version.IsMatch(testVersion));
+                testToolchain = FindAllToolchains(context.Config, false).MakeNice().FirstOrDefault(t => t.Version.IsMatch(testVersion));
                 if (testToolchain == null)
                 {
                     Console.Error.WriteLine($"Unable to find any toolchain with version {testVersion}");
