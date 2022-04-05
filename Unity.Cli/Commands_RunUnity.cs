@@ -92,7 +92,13 @@ Debugging:
 
         // scope
         {
-            var projectPath = new NPath(context.CommandLine["PROJECT"].Value?.ToString() ?? ".");
+            var projectConfig = context.CommandLine["PROJECT"].Value?.ToString();
+
+            // special: docopt.net's processing of "--" is not greedy, so this situation can happen if EXTRA is passed but PROJECT is not (for example `unity --no-burst -- -extra-stuff`)
+            if (context.CommandLine["--"].IsFalse && projectConfig == "--")
+                 projectConfig = null;
+
+            var projectPath = new NPath(projectConfig ?? ".");
             if (!projectPath.DirectoryExists())
             {
                 Console.Error.WriteLine($"Could not find directory '{projectPath}'");
