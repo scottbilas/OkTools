@@ -39,16 +39,16 @@ Description:
 
 Options:
   --dry-run               Don't change anything, only print out what would happen instead
-  --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be version, path to toolchain, or unityhub link)
+  --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be full/partial version, path to toolchain, or unityhub link)
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
   --rider                 Open Rider after the project opens in Unity
-  --enable-debugger       Enable managed code debugging (disabled optimizations)
+  --enable-debugger       Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a managed debugger
   --enable-coverage       Enable code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
-  --no-activate-existing  Skip normal behavior of activating an existing Unity main window if found running on the project
+  --no-activate-existing  Don't activate an existing Unity main window if found running on the project
   --verbose-upm-logs      Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
 
   All of these options will only apply to the new Unity session being launched.
