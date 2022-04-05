@@ -87,7 +87,7 @@ Print help for COMMAND.
             if (mainCommand == "help")
             {
                 if (args.Length == 1)
-                    throw new DocoptExitException(k_docUsageHelp);
+                    throw new DocoptExitException(k_docUsageGlobal);
 
                 var helpCommand = ParseOpt(k_docUsageHelp)["COMMAND"].Value.ToString()!;
                 throw k_commandSpecs.TryFirst(s => s.Name == helpCommand, out var helpFound)
