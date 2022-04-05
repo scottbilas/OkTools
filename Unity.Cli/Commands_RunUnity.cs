@@ -303,39 +303,48 @@ Debugging:
         }
 
         var sceneName = context.GetConfigString("scene");
-        NPath? scenePath = null;
+        string? scenePathArg = null;
         if (sceneName != null)
         {
-            scenePath = sceneName.ToNPath();
+            var scenePath = sceneName.ToNPath();
             if (scenePath.ExtensionWithDot != UnityProjectConstants.SceneFileExtension)
                 scenePath = scenePath.ChangeExtension(UnityProjectConstants.SceneFileExtension);
 
             // TODO: build and leverage some kind of scene finder utility
-            if (scenePath.IsRelative)
+            // TODO: implement support for Packages
+
+            // Packages are handled with virtual file system, so we can't validate scene paths here without a lot more
+            // work on project+packages pathing support.
+            if (!string.Equals(scenePath.Elements[0], "Packages", StringComparison.OrdinalIgnoreCase))
             {
-                foreach (var basePath in new[]
-                         {
-                             NPath.CurrentDirectory,
-                             unityProject.Path.ToNPath(),
-                             unityProject.Path.ToNPath().Combine(UnityProjectConstants.AssetsPath)
-                         })
+                if (scenePath.IsRelative)
                 {
-                    var testPath = basePath.Combine(scenePath);
-                    if (testPath.FileExists())
+                    foreach (var basePath in new[]
+                             {
+                                 NPath.CurrentDirectory,
+                                 unityProject.Path.ToNPath(),
+                                 unityProject.Path.ToNPath().Combine(UnityProjectConstants.AssetsPath)
+                             })
                     {
-                        scenePath = testPath;
-                        break;
+                        var testPath = basePath.Combine(scenePath);
+                        if (testPath.FileExists())
+                        {
+                            scenePath = testPath;
+                            break;
+                        }
                     }
                 }
+
+                if (!scenePath.FileExists())
+                    throw new DocoptInputErrorException($"Scene '{sceneName}' was not found in project");
+
+                if (!scenePath.IsChildOf(unityProject.Path))
+                    throw new DocoptInputErrorException($"Scene '{scenePath}' is not part of project at '{unityProject.Path}'");
+
+                scenePath = scenePath.RelativeTo(unityProject.Path);
             }
 
-            if (!scenePath.FileExists())
-                throw new DocoptInputErrorException($"Scene '{sceneName}' was not found in project");
-
-            if (!scenePath.IsChildOf(unityProject.Path))
-                throw new DocoptInputErrorException($"Scene '{scenePath}' is not part of project at '{unityProject.Path}'");
-
-            scenePath = scenePath.RelativeTo(unityProject.Path);
+            scenePathArg = scenePath.ToString(SlashMode.Forward); // unity always expects forward slash paths
         }
 
         if (context.Config.TryGetString("unity", null, "extra-args", out var extraArgs))
@@ -346,11 +355,11 @@ Debugging:
 
         if (doit)
         {
-            if (scenePath != null)
+            if (scenePathArg != null)
             {
                 var setupPath = unityProject.Path.ToNPath().Combine(UnityProjectConstants.LastSceneManagerSetupPath);
                 setupPath.EnsureParentDirectoryExists();
-                setupPath.WriteAllText("sceneSetups:\n- path: " + scenePath);
+                setupPath.WriteAllText("sceneSetups:\n- path: " + scenePathArg);
             }
 
             var unityStartInfo = new ProcessStartInfo
@@ -376,8 +385,8 @@ Debugging:
             Console.WriteLine("[dryrun]   path        | " + useToolchain.EditorExePath);
             Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs));
             Console.WriteLine("[dryrun]   environment | " + unityEnv.Select(kvp => $"{kvp.Key}={kvp.Value}").StringJoin("; "));
-            if (scenePath != null)
-                Console.WriteLine("[dryrun]   scene       | " + scenePath);
+            if (scenePathArg != null)
+                Console.WriteLine("[dryrun]   scene       | " + scenePathArg);
         }
 
         return CliExitCode.Success;
