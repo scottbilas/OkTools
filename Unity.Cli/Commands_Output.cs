@@ -73,6 +73,8 @@ static partial class Commands
         if (context.CommandLine["--yaml"].IsTrue)
             flags |= OutputFlags.Yaml;
         if (context.CommandLine["--detailed"].IsTrue)
+            flags |= OutputFlags.Detail;
+        if (context.Debug)
             flags |= OutputFlags.Debug;
 
         Output(thingObject, flags, where);
