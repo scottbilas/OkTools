@@ -45,7 +45,7 @@ Print help for COMMAND.
 
     static readonly CommandSpec[] k_commandSpecs =
     {
-        new("help",       "Print help for a command",             k_docUsageHelp, _ => throw new DocoptExitException(k_docUsageHelp)),
+        new("help",       "Print help for any of these commands", k_docUsageHelp, _ => throw new DocoptExitException(k_docUsageHelp)),
         new("unity",      "Run Unity to open a project",          Commands.DocUsageUnity, Commands.RunUnity),
         new("install",    "Install a Unity toolchain",            Commands.DocUsageInstall, Commands.RunInstall),
         new("toolchains", "Get info on Unity toolchains",         Commands.DocUsageToolchains, Commands.RunToolchains),

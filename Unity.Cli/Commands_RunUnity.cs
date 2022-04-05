@@ -42,9 +42,9 @@ Options:
   --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be full/partial version, path to toolchain, or unityhub link)
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
   --rider                 Open Rider after the project opens in Unity
-  --enable-debugger       Enable managed code debugging (disable optimizations)
-  --wait-attach-debugger  Unity will pause with a dialog so you can attach a managed debugger
-  --enable-coverage       Enable code coverage
+  --enable-debugging      Enable managed code debugging (disable optimizations)
+  --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
+  --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
@@ -61,6 +61,16 @@ Log Files:
   Also, unless --no-local-log is used, Unity log files will be stored as `Logs/<ProjectName>-editor.log` local to the
   project. Any existing file with this name will be rotated out to a filename with a timestamp appended to it, thus
   preserving logs from previous sessions.
+
+Debugging:
+  If using --wait-attach-debugger, Unity will pause twice during startup to allow you to attach a debugger if you want,
+  showing a messagebox and waiting for you to click OK. These messageboxes will pop up if you use this flag:
+
+  1. Unity is ready for a native debugger to be attached
+  2. Mono has started up and Unity is ready for a managed debugger to be attached. This is a good way to catch static
+     constructors, [InitializeOnLoadMethod], etc.
+
+  If you will be attaching a managed debugger, be sure to also select --enable-debugging.
 ";
 
     public static CliExitCode RunUnity(CommandContext context)
@@ -181,10 +191,12 @@ Log Files:
 
         // build up cli and environment
 
+        // docs for unity's cl args: https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
+
         var unityArgs = new List<string> { "-projectPath", unityProject.Path };
         var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} }; // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
 
-        if (context.GetConfigBool("enable-debugger"))
+        if (context.GetConfigBool("enable-debugging"))
         {
             //TODO status "Enables debug code optimization mode, overriding the current default code optimization mode for the session."
             unityArgs.Add("-debugCodeOptimization");
