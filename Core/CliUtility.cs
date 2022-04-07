@@ -139,146 +139,214 @@ public static class CliUtility
             stdin);
     }
 
-    class Line
+    public readonly struct StringSpan
     {
-        string _text;
-        int _start, _end;
+        public readonly string Text;
+        public readonly int Start, End;
 
-        public Line(string text) => _text = text;
-
-        public int Start
+        public StringSpan(string text, int start, int end)
         {
-            get => _start;
-            set
-            {
-                if (value < 0 || value > End)
-                    throw new Exception($"Line.Start: {value} < {0} || {value} > {End} (old Start: {_start})");
-                _start = value;
-            }
-        }
+            if (start < 0 || start > text.Length)
+                throw new IndexOutOfRangeException(nameof(start) + $" out of range 0 <= {start} <= {text.Length}");
+            if (end < start || end > text.Length)
+                throw new IndexOutOfRangeException(nameof(end) + $" out of range {start} <= {end} <= {text.Length}");
 
-        public int End
-        {
-            get => _end;
-            set
-            {
-                if (value < Start || value > _text.Length)
-                    throw new Exception($"Line.End: {value} < {Start} || {value} > {_text.Length} (old End: {_end})");
-                _end = value;
-            }
-        }
-
-        public int FindLine(int newStart)
-        {
-            // find end of this line
-            var end = _text.IndexOf('\n', _start = newStart);
-
-            // find actual end of this line
-            _end = end < 0 ? _text.Length : end;
-            _end = FindTrimEnd(_end);
-
-            // go to next line (or stay at end)
-            return end < 0 ? end : end+1;
-        }
-
-        public void TrimStart()
-        {
-            while (_end > _start && _text[_start] == ' ')
-                ++_start;
-        }
-
-        public int FindTrimEnd(int end)
-        {
-            while (end > _start && char.IsWhiteSpace(_text[end-1]))
-                --end;
-            return end;
+            Text = text;
+            Start = start;
+            End = end;
         }
 
         public int Length => End - Start;
+        public bool IsEmpty => Start == End;
+        public bool Any => Start != End;
+
+        public static StringSpan Empty => new("", 0, 0);
+
+        public int TrimStartIndex()
+        {
+            var i = Start;
+            for (; i != End; ++i)
+            {
+                if (!char.IsWhiteSpace(Text[i]))
+                    break;
+            }
+
+            return i;
+        }
+
+        public StringSpan TrimStart() => new(Text, TrimStartIndex(), End);
+
+        public int TrimEndIndex()
+        {
+            var i = End;
+            for (; i > Start; --i)
+            {
+                if (!char.IsWhiteSpace(Text[i-1]))
+                    break;
+            }
+
+            return i;
+        }
+
+        public StringSpan TrimEnd() => new(Text, Start, TrimEndIndex());
+
+        public Match Match(Regex regex) => regex.Match(Text, Start, Length);
 
         public override string ToString()
         {
-            var text = _text.Substring(_start, Length)
+            var text = Text
+                .Substring(Start, Length)
                 .Replace("\r", "\\r")
                 .Replace("\n", "\\n");
             return $"'{text}' (start={Start}, end={End}, len={Length})";
         }
     }
 
-    static readonly Regex k_TableRx = new(@"^ *[-*] |\b {2,}\b", RegexOptions.Multiline);
+    public readonly struct LineSpan
+    {
+        public readonly StringSpan Span;
+        public readonly int Indent;
 
-    // wrapWidth: defaults to console width
-    // minWrapWidth: if a soft wrap takes the line width below this amount, then do a hard wrap instead
+        readonly bool _hasPrefix;
+
+        public LineSpan(StringSpan span)
+        {
+            Span = span.TrimEnd();
+
+            var indentMatch = Span.Match(s_indentRx);
+            if (indentMatch.Success)
+                Indent = indentMatch.Index - Span.Start + indentMatch.Length;
+            else
+                Indent = Span.TrimStartIndex() - Span.Start;
+
+            _hasPrefix = Span.TrimStartIndex() < Indent;
+        }
+
+        public bool CanFlowInto(LineSpan other) => Span.Any && other.Span.Any && Indent == other.Indent && !other._hasPrefix;
+
+        public override string ToString() => $"{Span}; indent={Indent}, prefix={_hasPrefix}";
+    }
+
+    static readonly Regex s_indentRx = new(@"^ *[-*] |\b {2,}\b");
+
+    public static IEnumerable<LineSpan> SelectSpans(string text)
+    {
+        for (var start = 0; start != text.Length;)
+        {
+            var end = text.IndexOf('\n', start);
+
+            var next = end;
+            if (end < 0)
+                end = next = text.Length;
+            else
+                ++next;
+
+            yield return new LineSpan(new StringSpan(text, start, end));
+            start = next;
+        }
+    }
+
+    public static IEnumerable<LineSpan> JoinSpans
+
     public static string Reflow(string text, int wrapWidth, int minWrapWidth = 0, string eol = "\n")
     {
-        if (text.Contains('\t'))
-            throw new ArgumentException("Tab characters not ok in a reflow string");
+        if (wrapWidth <= 0)
+            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $" out of range 0 < {wrapWidth}");
+        if (minWrapWidth < 0 || minWrapWidth >= wrapWidth)
+            throw new ArgumentOutOfRangeException(nameof(minWrapWidth), $" out of range 0 <= {minWrapWidth} < {wrapWidth}");
 
         var sb = new StringBuilder();
-        var currentLine = new Line(text);
+        var mainLine = default(LineSpan);
+        var currentLen = 0;
 
-        var (lastLen, lastIndent, nextStart) = (0, 0, 0);
-
-        while (nextStart >= 0)
+        void Newline()
         {
-            nextStart = currentLine.FindLine(nextStart);
-            if (currentLine.Length == 0)
+            sb.Append(eol);
+            currentLen = 0;
+        }
+
+        foreach (var line in SelectSpans(text))
+        {
+            var span = line.Span;
+
+            // detect if we're continuing a section or not
+            if (mainLine.CanFlowInto(line))
+                span = span.TrimStart();
+            else
             {
-                sb.Append(eol);
+                mainLine = line;
+
+                if (currentLen != 0)
+                {
+                    // terminate previous in-progress line
+                    sb.Append(eol);
+                    currentLen = 0;
+                }
+            }
+
+            if (span.IsEmpty)
+            {
+                // blank line
+                Newline();
                 continue;
             }
 
-            var indent = text.IndexOfNot(' ', currentLine.Start, currentLine.Length);
-            currentLine.Start = indent;
-            var interruptedIndent = indent != lastIndent;
-            lastIndent = indent;
-
-            void Append(int len, bool terminate)
+            do
             {
-                if (len > 0)
+                var available = wrapWidth - currentLen;
+
+                if (currentLen > 0)
                 {
-                    if (lastLen > 0)
+                    // continuing a previous line, so we will start out with a space before the next word
+                    --available;
+                }
+                else if (line.Span.Start != mainLine.Span.Start)
+                {
+                    // it's a new line, but we're continuing a section, so start the line with an indent
+                    sb.Append(' ', mainLine.Indent);
+                    available -= mainLine.Indent;
+                }
+
+                var nextSpan = StringSpan.Empty;
+                if (span.Length > available)
+                {
+                    // find nice place to break
+                    var wrapBreak = span.Text.LastIndexOf(' ', span.Start + available, available + 1);
+
+                    // ok, no we found a nice place to break, but we're past the minimum break point so fine to just
+                    // finish this line (if it was in progress) and try again
+                    if (wrapBreak < 0 && currentLen > 0 && currentLen >= minWrapWidth)
                     {
-                        // if we were extending the previous line, add a space
+                        Newline();
+                        continue;
+                    }
+
+                    // if the last wrap still occurs too early, we'll have to switch to a hard break
+                    if (wrapBreak < span.Start + minWrapWidth)
+                        wrapBreak = span.Start + available;
+
+                    // take a chunk and advance
+                    nextSpan = new StringSpan(span.Text, wrapBreak, span.End).TrimStart();
+                    span = new StringSpan(span.Text, span.Start, wrapBreak).TrimEnd();
+                }
+
+                if (span.Any)
+                {
+                    if (currentLen > 0)
                         sb.Append(' ');
-                        ++lastLen;
-                    }
-                    else if (indent > 0)
-                    {
-                        // it's the start of a new line, so indent
-                        sb.Append(' ', indent);
-                        lastLen += indent;
-                    }
 
-                    // add line text
-                    var end = currentLine.FindTrimEnd(currentLine.Start + len);
-                    sb.Append(text, currentLine.Start, end - currentLine.Start);
-                    currentLine.Start += len;
-                    lastLen += len;
-
-                    // trim any following spaces so any further continuation wraps cleanly
-                    currentLine.TrimStart();
+                    // now we can add the span that fits
+                    sb.Append(span.Text, span.Start, span.Length);
+                    currentLen += span.Length;
                 }
 
-                if (terminate)
-                {
-                    sb.Append(eol);
-                    lastLen = 0;
-                }
-            }
+                // newline if we know the span is going to continue
+                if (nextSpan.Any)
+                    Newline();
 
-            for (var available = wrapWidth - indent - lastLen - (lastLen > 0 ? 1 : 0);
-                 currentLine.Length > available; available = wrapWidth)
-            {
-                var wrapBreak = text.LastIndexOf(' ', currentLine.Start + available, available + 1);
-                if (wrapBreak >= currentLine.Start + minWrapWidth)
-                    Append(wrapBreak - currentLine.Start, true); // ok to wrap here
-                else
-                    Append(available, true); // too narrow, do a hard break
+                span = nextSpan;
             }
-
-            // write any remainder
-            Append(currentLine.Length, false);
+            while (span.Length > 0);
         }
 
         return sb.ToString();
