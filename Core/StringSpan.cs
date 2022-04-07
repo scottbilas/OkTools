@@ -35,6 +35,12 @@ public readonly struct StringSpan
     public bool IsEmpty => Start == End;
     public bool Any => Start != End;
 
+    public StringSpan WithStart(int start) => new(Text, start, End);
+    public StringSpan WithOffsetStart(int offset) => new(Text, Start + offset, End);
+    public StringSpan WithEnd(int end) => new(Text, Start, end);
+    public StringSpan WithOffsetEnd(int offset) => new(Text, Start, End + offset);
+    public StringSpan WithLength(int len) => new(Text, Start, Start + len);
+
     public static StringSpan Empty => new("", 0, 0);
 
     public int TrimStartIndex(int fromStart)

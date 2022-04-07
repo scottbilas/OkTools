@@ -32,8 +32,7 @@ public static partial class TextUtility
                 needEol = false;
             }
 
-            var span = section.Span;
-            if (!span.Any)
+            if (!section.Span.Any)
             {
                 result.Append(options.Eol);
                 continue;
@@ -41,10 +40,11 @@ public static partial class TextUtility
 
             // do the indent here so its whitespace doesn't get caught up in the calculations below
             // (TODO: this breaks very narrow wrapping..)
-            result.Append(span.Text, span.Start, section.Indent);
-            span = new StringSpan(span.Text, span.Start + section.Indent, span.End);
+            result.Append(section.Span.WithLength(section.Indent));
+            var span = section.Span.WithOffsetStart(section.Indent);
 
             // special: if we have a really wide column indent, let's fall back to non aligned
+            // (TODO: also broken with very narrow wrapping..)
             var indent = section.Indent;
             if (options.IndentFallback != 0 && wrapWidth - indent < options.IndentFallback)
             {
@@ -71,7 +71,7 @@ public static partial class TextUtility
 
                 // write what will fit and advance
                 result.Append(span.Text, span.Start, span.TrimEndIndex(span.Start + write) - span.Start);
-                span = new StringSpan(span.Text, span.Start + write, span.End).TrimStart();
+                span = span.WithOffsetStart(write).TrimStart();
                 if (!span.Any)
                     break;
 
@@ -85,21 +85,10 @@ public static partial class TextUtility
         return result.ToString();
     }
 
-    readonly struct Section
+    record struct Section(StringSpan Span, int Indent)
     {
-        public readonly StringSpan Span;
-        public readonly int Indent;
-
-        Section(StringSpan span, int indent)
+        public Section(StringSpan span) : this(span.TrimEnd(), 0)
         {
-            Span = span;
-            Indent = indent;
-        }
-
-        public Section(StringSpan span)
-        {
-            Span = span.TrimEnd();
-
             var indentMatch = Span.Match(s_indentRx);
             if (indentMatch.Success)
                 Indent = indentMatch.Index - Span.Start + indentMatch.Length;
@@ -124,10 +113,8 @@ public static partial class TextUtility
 
     static readonly Regex s_indentRx = new(@"^ *([-*]|\d+\.) |\b {2,}\b");
 
-    static IEnumerable<Section> SelectSections(string text)
+    static IEnumerable<StringSpan> SelectLines(string text)
     {
-        Section? lastSection = null;
-
         for (var start = 0; start != text.Length;)
         {
             var end = text.IndexOf('\n', start);
@@ -138,8 +125,18 @@ public static partial class TextUtility
             else
                 ++next;
 
-            var newSection = new Section(new StringSpan(text, start, end));
+            yield return new StringSpan(text, start, end);
             start = next;
+        }
+    }
+
+    static IEnumerable<Section> SelectSections(string text)
+    {
+        Section? lastSection = null;
+
+        foreach (var span in SelectLines(text))
+        {
+            var newSection = new Section(span);
 
             if (lastSection != null)
             {
