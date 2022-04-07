@@ -1,7 +1,7 @@
 namespace OkTools.Core;
 
 [PublicAPI]
-public static class StringUtility
+public static partial class TextUtility
 {
     /// <summary>
     /// Scans `text` for EOL sequences (\n, \r\n) and returns the most common seen. Old style mac sequences (plain \r) are not supported and instead treated as unix (plain \n).

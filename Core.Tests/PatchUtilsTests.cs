@@ -10,7 +10,7 @@ class DiffUtilsTests
             "@@ -1,6 +1,7 @@",
         }.StringJoin('\n');
 
-        PatchUtils.IsDiff(diffText).ShouldBeTrue();
+        PatchUtility.IsDiff(diffText).ShouldBeTrue();
     }
 
     [Test]
@@ -23,13 +23,13 @@ class DiffUtilsTests
             "@@ -1,6 +1,7 @@",
         }.StringJoin("\r\n");
 
-        PatchUtils.IsDiff(diffText).ShouldBeTrue();
+        PatchUtility.IsDiff(diffText).ShouldBeTrue();
     }
 
     [Test]
     public void IsDiff_EmptyDiff_ReturnsFalse()
     {
-        PatchUtils.IsDiff("").ShouldBeFalse();
+        PatchUtility.IsDiff("").ShouldBeFalse();
     }
 
     [Test]
@@ -42,7 +42,7 @@ class DiffUtilsTests
             "@@ -1,6 +1,7 @@"
         }.StringJoin('\n');
 
-        PatchUtils.IsDiff(diffText).ShouldBeFalse();
+        PatchUtility.IsDiff(diffText).ShouldBeFalse();
     }
 
     [Test]
@@ -54,6 +54,6 @@ class DiffUtilsTests
             "+++ b/folder/another/some_file.cs",
         }.StringJoin('\n');
 
-        PatchUtils.IsDiff(diffText).ShouldBeFalse();
+        PatchUtility.IsDiff(diffText).ShouldBeFalse();
     }
 }
