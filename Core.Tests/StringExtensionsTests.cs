@@ -5,20 +5,20 @@ class StringExtensionsTests
     [Test]
     public void IndexOfNot()
     {
-        "aaab".IndexOfNot('a').ShouldBe(3);
-        "aaab".IndexOfNot('a', 0).ShouldBe(3);
-        "aaab".IndexOfNot('a', 0, 0).ShouldBe(-1);
-        "aaab".IndexOfNot('a', 1).ShouldBe(3);
-        "aaab".IndexOfNot('a', 1, 0).ShouldBe(-1);
-        "aaab".IndexOfNot('a', 1, 1).ShouldBe(-1);
-        "aaab".IndexOfNot('a', 1, 2).ShouldBe(-1);
-        "aaab".IndexOfNot('a', 1, 3).ShouldBe(3);
-        "aaab".IndexOfNot('a', 2).ShouldBe(3);
-        "aaab".IndexOfNot('a', 3).ShouldBe(3);
-        "aaab".IndexOfNot('a', 4).ShouldBe(-1);
+        "aaabaa".IndexOfNot('a').ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 0).ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 0, 0).ShouldBe(-1);
+        "aaabaa".IndexOfNot('a', 1).ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 1, 0).ShouldBe(-1);
+        "aaabaa".IndexOfNot('a', 1, 1).ShouldBe(-1);
+        "aaabaa".IndexOfNot('a', 1, 2).ShouldBe(-1);
+        "aaabaa".IndexOfNot('a', 1, 3).ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 2).ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 3).ShouldBe(3);
+        "aaabaa".IndexOfNot('a', 4).ShouldBe(-1);
 
-        "aAab".IndexOfNot('a').ShouldBe(1);
-        "aaab".IndexOfNot('b').ShouldBe(0);
+        "aAabaa".IndexOfNot('a').ShouldBe(1);
+        "aaabaa".IndexOfNot('b').ShouldBe(0);
         "".IndexOfNot('a').ShouldBe(-1);
     }
 
@@ -29,6 +29,35 @@ class StringExtensionsTests
         Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 5));
         Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 2, 10));
         Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 2, 3));
+    }
+
+    [Test]
+    public void LastIndexOfNot()
+    {
+        "aaabaa".LastIndexOfNot('a').ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 0).ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 0, 0).ShouldBe(-1);
+        "aaabaa".LastIndexOfNot('a', 1).ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 1, 0).ShouldBe(-1);
+        "aaabaa".LastIndexOfNot('a', 1, 1).ShouldBe(-1);
+        "aaabaa".LastIndexOfNot('a', 1, 2).ShouldBe(-1);
+        "aaabaa".LastIndexOfNot('a', 1, 3).ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 2).ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 3).ShouldBe(3);
+        "aaabaa".LastIndexOfNot('a', 4).ShouldBe(-1);
+
+        "aAabaa".LastIndexOfNot('a').ShouldBe(3);
+        "aaabaa".LastIndexOfNot('b').ShouldBe(5);
+        "".LastIndexOfNot('a').ShouldBe(-1);
+    }
+
+    [Test]
+    public void LastIndexOfNot_OutOfBounds_Throws()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() => "baaa".LastIndexOfNot('a', -10));
+        Should.Throw<ArgumentOutOfRangeException>(() => "baaa".LastIndexOfNot('a', 5));
+        Should.Throw<ArgumentOutOfRangeException>(() => "baaa".LastIndexOfNot('a', 2, 10));
+        Should.Throw<ArgumentOutOfRangeException>(() => "baaa".LastIndexOfNot('a', 2, 3));
     }
 
     [Test]
