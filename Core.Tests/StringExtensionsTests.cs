@@ -3,6 +3,35 @@
 class StringExtensionsTests
 {
     [Test]
+    public void IndexOfNot()
+    {
+        "aaab".IndexOfNot('a').ShouldBe(3);
+        "aaab".IndexOfNot('a', 0).ShouldBe(3);
+        "aaab".IndexOfNot('a', 0, 0).ShouldBe(-1);
+        "aaab".IndexOfNot('a', 1).ShouldBe(3);
+        "aaab".IndexOfNot('a', 1, 0).ShouldBe(-1);
+        "aaab".IndexOfNot('a', 1, 1).ShouldBe(-1);
+        "aaab".IndexOfNot('a', 1, 2).ShouldBe(-1);
+        "aaab".IndexOfNot('a', 1, 3).ShouldBe(3);
+        "aaab".IndexOfNot('a', 2).ShouldBe(3);
+        "aaab".IndexOfNot('a', 3).ShouldBe(3);
+        "aaab".IndexOfNot('a', 4).ShouldBe(-1);
+
+        "aAab".IndexOfNot('a').ShouldBe(1);
+        "aaab".IndexOfNot('b').ShouldBe(0);
+        "".IndexOfNot('a').ShouldBe(-1);
+    }
+
+    [Test]
+    public void IndexOfNot_OutOfBounds_Throws()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', -10));
+        Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 5));
+        Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 2, 10));
+        Should.Throw<ArgumentOutOfRangeException>(() => "aaab".IndexOfNot('a', 2, 3));
+    }
+
+    [Test]
     public void Left_InBounds_ReturnsSubstring()
     {
         "".Left(0).ShouldBe("");

@@ -16,6 +16,28 @@ public static class StringExtensions
 
     public static bool EqualsIgnoreCase(this string @this, string other) => @this.Equals(other, StringComparison.OrdinalIgnoreCase);
 
+    public static int IndexOfNot(this string @this, char value, int startIndex, int count)
+    {
+        // TODO: use span/unsafe and optimize a bit (see string.IndexOf for example)
+
+        if (startIndex < 0 || startIndex > @this.Length)
+            throw new ArgumentOutOfRangeException(nameof(startIndex));
+        if (count < 0 || count > @this.Length - startIndex)
+            throw new ArgumentOutOfRangeException(nameof(count));
+
+        for (var (i, iend) = (startIndex, startIndex + count); i != iend; ++i)
+        {
+            if (@this[i] != value)
+                return i;
+        }
+
+        return -1;
+    }
+    public static int IndexOfNot(this string @this, char value, int startIndex) =>
+        @this.IndexOfNot(value, startIndex, @this.Length - startIndex);
+    public static int IndexOfNot(this string @this, char value) =>
+        @this.IndexOfNot(value, 0, @this.Length);
+
     // left/mid/right are BASIC-inspired names, and never throw except for a clear programming error
 
     public static string Left(this string @this, int maxChars) =>
