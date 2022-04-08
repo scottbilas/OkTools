@@ -3,18 +3,19 @@ using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
 
-public class ReflowOptions
+public class DocoptReflowOptions
 {
     public int MinWrapWidth = 0;
     public int IndentFallback = 15;
     public string Eol = "\n";
 }
 
-public static partial class TextUtility
+[PublicAPI]
+public static class DocoptUtility
 {
-    public static string Reflow(string text, int wrapWidth) => Reflow(text, wrapWidth, new ReflowOptions());
+    public static string Reflow(string text, int wrapWidth) => Reflow(text, wrapWidth, new DocoptReflowOptions());
 
-    public static string Reflow(string text, int wrapWidth, ReflowOptions options)
+    public static string Reflow(string text, int wrapWidth, DocoptReflowOptions options)
     {
         if (wrapWidth <= 0)
             throw new ArgumentOutOfRangeException(nameof(wrapWidth), $" out of range 0 < {wrapWidth}");

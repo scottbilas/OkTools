@@ -1,8 +1,8 @@
-﻿class TextUtilityTests
+﻿class DocoptUtilityTests
 {
     static string Reflow(string text, int width, int minWrapWidth = 0, string eol = "\n") =>
-        TextUtility.Reflow(text, width,
-            new ReflowOptions
+        DocoptUtility.Reflow(text, width,
+            new DocoptReflowOptions
             {
                 MinWrapWidth = minWrapWidth,
                 IndentFallback = 0,
