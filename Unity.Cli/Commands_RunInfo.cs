@@ -3,6 +3,13 @@ using NiceIO;
 using OkTools.Core;
 using OkTools.Unity;
 
+// TODO:
+//
+// project info:
+//    running_unity_instance: pids, mono_pmips found, log file, version, etc.
+// toolchain info:
+//    look at contents of .unity-downloader-meta.yml for installed components etc.
+
 static partial class Commands
 {
     public const string DocUsageInfo =

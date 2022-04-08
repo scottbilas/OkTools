@@ -12,6 +12,7 @@ static partial class Commands
     // TODO: --create-project option (probably should also require --toolchain..difficult to choose a default)
     // TODO: --kill-hub option
     // TODO: let --toolchain specify another project path or a projectversion so can mean "launch project x with the same unity as project y uses"
+    // TODO: `--prefer-toolchain LocallyBuilt` or something that lets me say "use the one i built rather than the installed" and does a semi-fuzzy match on versioning, because obvs it will be a bit different from projectversion.txt expectation
 
 /*
     * Choose an EXE

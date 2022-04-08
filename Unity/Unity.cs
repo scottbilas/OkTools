@@ -85,6 +85,8 @@ public static class Unity
         // 2. run that exe with "/S /D=C:\Program Files\Unity\Hub\Editor\2020.3.25f1-foo"
         //    ^ this causes problems when we have different hashes but otherwise same versions
         // 3. installer runs (it will do an unnecessary UAC popup if path is to a user-controlled folder) and hub waits for it to complete
+        //
+        // releases are stored in C:\Users\scott\AppData\Roaming\UnityHub\releases.json
     }
     #endif
 }
