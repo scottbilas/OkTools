@@ -137,19 +137,29 @@ Debugging:
             var testToolchain = UnityToolchain.TryCreateFromPath(useToolchainConfig);
             if (testToolchain == null)
             {
+                var toolchains = FindAllToolchains(context.Config, false).MakeNice().Memoize();
+
                 // try as version
                 var testVersion = UnityVersion.TryFromText(useToolchainConfig);
                 if (testVersion == null)
                 {
-                    Console.Error.WriteLine($"TOOLCHAIN given ('{useToolchainConfig}') cannot be parsed to a valid toolchain path or Unity version");
-                    return CliExitCode.ErrorUsage;
+                    // try as plain text match - could be a simple hash
+                    // TODO: also try as UnityEditorBuildConfig and UnityToolchainOrigin (maybe comma-delimit as query operators...clearly need to make this a utility function..)
+                    testToolchain = toolchains.FirstOrDefault(t => t.Version.Hash == useToolchainConfig);
+                    if (testToolchain == null)
+                    {
+                        Console.Error.WriteLine($"TOOLCHAIN given ('{useToolchainConfig}') cannot be parsed to a valid toolchain path or Unity version");
+                        return CliExitCode.ErrorUsage;
+                    }
                 }
-
-                testToolchain = FindAllToolchains(context.Config, false).MakeNice().FirstOrDefault(t => t.Version.IsMatch(testVersion));
-                if (testToolchain == null)
+                else
                 {
-                    Console.Error.WriteLine($"Unable to find any toolchain with version {testVersion}");
-                    return CliExitCode.ErrorUnavailable;
+                    testToolchain = FindAllToolchains(context.Config, false).MakeNice().FirstOrDefault(t => t.Version.IsMatch(testVersion));
+                    if (testToolchain == null)
+                    {
+                        Console.Error.WriteLine($"Unable to find any toolchain with version {testVersion}");
+                        return CliExitCode.ErrorUnavailable;
+                    }
                 }
             }
 

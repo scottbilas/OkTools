@@ -15,7 +15,7 @@ public enum MonoBuildConfig
 [PublicAPI]
 public enum UnityToolchainOrigin
 {
-    Unknown, LocallyBuilt, UnityDownloader, UnityHub, ManuallyInstalled
+    LocallyBuilt, UnityDownloader, ManuallyInstalled, UnityHub, Unknown
 }
 
 [PublicAPI]

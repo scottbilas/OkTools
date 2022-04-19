@@ -31,6 +31,10 @@ static class Extensions
 
     // TODO: have this whole distinct-orderby chain in OkTools.Unity, with an outer function that decides using passed overlay-config
     public static IEnumerable<UnityToolchain> MakeNice(this IEnumerable<UnityToolchain> toolchains) => toolchains
-        .DistinctBy(toolchain => toolchain.Path)            // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
-        .OrderByDescending(toolchain => toolchain.Version); // nice to have newest stuff first
+        // there may be dupes in the list, so filter. and we want the defaults to come first, because they will have the correct origin.
+        .DistinctBy(toolchain => toolchain.Path)
+        // nice to have newest stuff first, but don't include the hash because locally-built will probably have different hash for the same version
+        .OrderByDescending(toolchain => toolchain.Version.StripHash())
+        // put the things we are more likely to want to use first
+        .ThenBy(toolchain => toolchain.Origin);
 }

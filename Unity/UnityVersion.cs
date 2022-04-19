@@ -93,6 +93,8 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         return str;
     }
 
+    public UnityVersion StripHash() => new(Major, Minor, Revision, ReleaseType, Incremental, Branch);
+
     static bool IsHashSame(string? a, string? b)
     {
         if (a is null && b is null)
