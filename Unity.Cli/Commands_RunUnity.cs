@@ -89,7 +89,7 @@ Debugging:
 
         // get a valid unity project
 
-        UnityProject? unityProject;
+        UnityProject unityProject;
 
         // scope
         {
@@ -106,12 +106,19 @@ Debugging:
                 return CliExitCode.ErrorNoInput;
             }
 
-            unityProject = UnityProject.TryCreateFromProjectRoot(projectPath);
-            if (unityProject == null)
+            var tryUnityProject = UnityProject.TryCreateFromProjectPath(projectPath);
+            if (tryUnityProject == null)
             {
-                Console.Error.WriteLine($"Directory is not a Unity project '{projectPath}'");
+                Console.Error.WriteLine($"Path is not in a Unity project '{projectPath}'");
                 return CliExitCode.ErrorNoInput;
             }
+
+            unityProject = tryUnityProject;
+            Console.Write($"Loading project at {unityProject.Path}; expects {unityProject.GetVersion()}");
+            var lastOpened = unityProject.GetLastOpenedTime();
+            if (lastOpened != null)
+                Console.Write($"; last opened {lastOpened.Value.ToNiceAge(true)}");
+            Console.WriteLine();
         }
 
         // check if unity is already running on that project
@@ -241,7 +248,7 @@ Debugging:
                 "none" => "None",
                 "scriptonly" => "ScriptOnly",
                 "full" => "Full",
-                string bad => throw new DocoptInputErrorException($"Illegal stack-trace-log type {bad}")
+                var bad => throw new DocoptInputErrorException($"Illegal stack-trace-log type {bad}")
             });
         }
 

@@ -82,6 +82,7 @@ public class UnityProject : IStructuredOutput
         return _projectRoot.Combine(UnityProjectConstants.AssetsNPath).FileInfo.CreationTime;
     }
 
+    // only tests this folder as root
     public static UnityProject? TryCreateFromProjectRoot(string pathToUnityProject) =>
         TryCreateFromProjectRoot(pathToUnityProject.ToNPath());
     internal static UnityProject? TryCreateFromProjectRoot(NPath pathToUnityProject)
@@ -95,5 +96,29 @@ public class UnityProject : IStructuredOutput
             return null;
 
         return new UnityProject(pathToUnityProject);
+    }
+
+    // walks up ancestry to test for root
+    public static UnityProject? TryCreateFromProjectPath(string pathToTest) =>
+        TryCreateFromProjectTree(pathToTest.ToNPath());
+    internal static UnityProject? TryCreateFromProjectTree(NPath pathToTest)
+    {
+        pathToTest = pathToTest.MakeAbsolute();
+
+        // probably a mistake if we were given an explicit file, rather than some directory (likely CWD) under project root
+        if (pathToTest.FileExists())
+            return null;
+
+        for (;;)
+        {
+            var project = TryCreateFromProjectRoot(pathToTest);
+            if (project != null)
+                return project;
+
+            if (pathToTest.IsRoot)
+                return null;
+
+            pathToTest = pathToTest.Parent;
+        }
     }
 }

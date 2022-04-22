@@ -77,7 +77,7 @@ Options:
                 if (toolchain != null)
                     return toolchain;
 
-                var project = UnityProject.TryCreateFromProjectRoot(nthing);
+                var project = UnityProject.TryCreateFromProjectPath(nthing);
                 if (project != null)
                     return project;
 
