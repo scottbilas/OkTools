@@ -13,6 +13,7 @@ static partial class Commands
     // TODO: --kill-hub option
     // TODO: let --toolchain specify another project path or a projectversion so can mean "launch project x with the same unity as project y uses"
     // TODO: `--prefer-toolchain LocallyBuilt` or something that lets me say "use the one i built rather than the installed" and does a semi-fuzzy match on versioning, because obvs it will be a bit different from projectversion.txt expectation
+    // TODO: use '!' to mean "last". for example `oku unity !` will run unity with the last project chosen. (requires obvs saving out this data..also need to be careful with context about where we might allow a ! for any given flag..what about --toolchain !, right? last for that project, last for any project..? use !! for 'global' and ! for "last local if applicable"?)
 
 /*
     * Choose an EXE
@@ -42,7 +43,7 @@ Options:
   --dry-run               Don't change anything, only print out what would happen instead
   --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be full/partial version, path to toolchain, or unityhub link)
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
-  --rider                 Open Rider after the project opens in Unity
+  --ide                   Open code IDE after the project opens in Unity
   --enable-debugging      Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
   --enable-coverage       Enable Unity code coverage
@@ -252,9 +253,18 @@ Debugging:
             });
         }
 
-        if (context.GetConfigBool("rider"))
+        if (context.GetConfigBool("ide"))
         {
-            //TODO status "Opening Rider on {slnname} after project open in Unity"
+            // TODO: this doesn't get called if the editor is already running - instead, tell existing one to open c# project using socket
+
+            //TODO status "Opening IDE on {slnname} after project open in Unity"
+
+            // ideally we'd use `Unity.CodeEditor.CodeEditor.CurrentEditor.OpenProject` but -executeMethod requires
+            // a static method, not something with properties it has to evaluate. so we use rider's nice function that
+            // they were nice enough to add for me. note that even though it's in the rider package, it will run
+            // whatever external editor is selected in prefs. so if you want to use `--ide` on a VS-only project, you
+            // must still have the rider package included in the manifest.
+
             unityArgs.Add("-executeMethod");
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }
@@ -294,6 +304,8 @@ Debugging:
                 if (doit)
                 {
                     // TODO: make all of this a utility function, and add file-exists exception safeties
+                    // TODO: catch an IOException and re-throw it wrapped with a message that says what we're actually doing and what the involved filenames are (File.Move doesn't store any of this in the exception message)
+                    // TODO: maybe we can also run `handle` on the file if the error was detected to be one of those "cannot access because used by another process" errors..
 
                     // never want a chance to lose log data
                     if (targetPath.FileExists())
