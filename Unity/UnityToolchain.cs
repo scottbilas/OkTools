@@ -70,11 +70,11 @@ public class UnityToolchain : IStructuredOutput
         // TODO: look into UnityEditor.Unsupported.IsNativeCodeBuiltInReleaseMode()..is there any way to extract this statically?
         EditorBuildConfig = (_editorExePath.FileInfo.Length / (1024.0 * 1024)) switch
         {
-            >  60 and < 150 => UnityEditorBuildConfig.Release,
+            >  60 and < 250 => UnityEditorBuildConfig.Release,
             > 300 and < 400 => UnityEditorBuildConfig.Debug,
 
             var sizeMb => throw new InvalidDataException(
-                $"Unexpected size of {_editorExePath} ({sizeMb}MB) need to revise detection bounds for Editor build config")
+                $"Unexpected size of {_editorExePath} ({sizeMb:0.0}MB) need to revise detection bounds for Editor build config")
         };
 
         // same deal as editor buildconfig regarding hard coded size matching
@@ -86,7 +86,7 @@ public class UnityToolchain : IStructuredOutput
                 > 9 and <  11 => MonoBuildConfig.Debug,
 
                 var sizeMb => throw new InvalidDataException(
-                    $"Unexpected size of {_editorExePath} ({sizeMb}MB) need to revise detection bounds for Mono build config")
+                    $"Unexpected size of {_editorExePath} ({sizeMb:0.0}MB) need to revise detection bounds for Mono build config")
             };
         }
         else
