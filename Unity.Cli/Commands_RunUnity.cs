@@ -14,6 +14,8 @@ static partial class Commands
     // TODO: let --toolchain specify another project path or a projectversion so can mean "launch project x with the same unity as project y uses"
     // TODO: `--prefer-toolchain LocallyBuilt` or something that lets me say "use the one i built rather than the installed" and does a semi-fuzzy match on versioning, because obvs it will be a bit different from projectversion.txt expectation
     // TODO: use '!' to mean "last". for example `oku unity !` will run unity with the last project chosen. (requires obvs saving out this data..also need to be careful with context about where we might allow a ! for any given flag..what about --toolchain !, right? last for that project, last for any project..? use !! for 'global' and ! for "last local if applicable"?)
+    // TODO: add a --buildTarget that will also optionally do a Library folder swaperoo (maybe..)
+    // TODO: add a --buildtype that will do nice things like check in advance for NINTENDO_SDK_ROOT set and exists if running with Switch type..
 
 /*
     * Choose an EXE
@@ -46,6 +48,7 @@ Options:
   --ide                   Open code IDE after the project opens in Unity
   --enable-debugging      Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
+  --wait-unity            Wait for the Unity process to terminate and then return its exit code
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
@@ -141,6 +144,10 @@ Debugging:
         {
             // given explicitly
 
+            // TODO: explicit version may be fuzzy (like 2020.3). in that case, filter all found toolchains by that, then
+            // pick whichever is the closest match to the project expected version (== is best, > is acceptable, < will require user being more explicit).
+            // TODO: consider requiring a --downgrade-ok for even if the user is explicit about wanting an older version. can be very destructive, need to def be sure.
+
             // try as path
             var testToolchain = UnityToolchain.TryCreateFromPath(useToolchainConfig);
             if (testToolchain == null)
@@ -179,7 +186,7 @@ Debugging:
             // detect from project
 
             var testableVersions = unityProject.GetTestableVersions().Memoize();
-            var foundToolchains = FindAllToolchains(context.Config, false).Memoize();
+            var foundToolchains = FindAllToolchains(context.Config, false).MakeNice().Memoize();
 
             var detectedToolchain = testableVersions
                 .WithIndex()
@@ -195,7 +202,7 @@ Debugging:
                 Output(unityProject, OutputFlags.Yaml, Console.Error);
                 Console.Error.WriteLine();
                 Console.Error.WriteLine("Available toolchains:");
-                Output(foundToolchains.OrderByDescending(t => t.GetInstallTime()), 0, Console.Error);
+                Output(foundToolchains, 0, Console.Error);
                 return CliExitCode.ErrorUnavailable;
             }
 
@@ -377,6 +384,7 @@ Debugging:
             scenePathArg = scenePath.ToString(SlashMode.Forward); // unity always expects forward slash paths
         }
 
+        // TODO: aggregate a total set from config + command line (not as override)
         if (context.Config.TryGetString("unity", null, "extra-args", out var extraArgs))
             unityArgs.AddRange(CliUtility.ParseCommandLineArgs(extraArgs));
         unityArgs.AddRange(context.CommandLine["EXTRA"].AsStrings());
@@ -408,6 +416,22 @@ Debugging:
                 throw new Exception($"Unexpected failure to start process '{unityStartInfo.FileName}'");
 
             Console.WriteLine("Launched Unity as pid " + unityProcess.Id);
+
+            // TODO: consider making this automatic if running with -batchMode
+            // (maybe just add a --batch-mode instead, that does both)
+            if (context.GetConfigBool("wait-unity"))
+            {
+                var now = DateTime.Now;
+                Console.Write("Waiting for Unity process to terminate...");
+                unityProcess.WaitForExit();
+                Console.WriteLine($"exited with code {unityProcess.ExitCode} after {(DateTime.Now - now).ToNiceAge()}");
+
+                // TODO: sure don't like this cast..maybe have command func receive an out int? exitCode or something...
+                // also...aren't we supposed to put the subprocess return code into an upper byte? that way the caller
+                // can distinguish a cli error (bad arg or whatever) vs unity error. check bash docs. and wrap this up
+                // in a little helper struct that does the bit shifting.
+                return (CliExitCode)unityProcess.ExitCode;
+            }
         }
         else
         {
