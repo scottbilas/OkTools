@@ -106,6 +106,8 @@ static partial class Commands
 
                 // TODO: find a better/safer way to annotate structured output for better pretty printing
 
+                // TODO: look at https://github.com/spectreconsole/spectre.console instead of BetterConsoleTables
+
                 if (valueType == typeof(UnityEditorBuildConfig))
                 {
                     tableBuilder
