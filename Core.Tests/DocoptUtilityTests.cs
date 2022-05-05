@@ -188,4 +188,42 @@
             "    this_is_a_really_long_word", 15).ShouldBe(
             "    this_is_a_r\n    eally_long_\n    word");
     }
+
+    [Test, Category("TODO")]
+    public void Reflow_WithProgramUsage_DoesNotJoinLines()
+    {
+        Reflow(
+            "Usage:\n  progname and some extra text\n  progname and some other text", 23).ShouldBe(
+            // TODO: what i want to work
+        //  "Usage:\n  progname and some\n           extra text\n  progname and some\n           other text");
+            // what currently happens
+            "Usage:\n  progname and some\n  extra text progname\n  and some other text");
+
+        // this gets it right, but requires a workaround of double-space after program name (not the end of the world)
+        Reflow(
+            "Usage:\n  progname  and some extra text\n  progname  and some other text", 23).ShouldBe(
+            "Usage:\n  progname  and some\n            extra text\n  progname  and some\n            other text");
+
+    }
+
+    [Test, Category("TODO")]
+    public void Reflow_Bug_FinalLineNotIndented()
+    {
+        // TODO: something about the '--version' in there is causing the bad wrapping
+        Reflow(
+            "Usage:\n"+
+            "  okflog  PATH long stuff on top of it\n"+
+            "  okflog  --version long stuff on top of it",
+            32).ShouldBe(
+            "Usage:\n"+
+            "  okflog  PATH long stuff on top\n"+
+            "          of it\n"+
+        //  WHAT WE WANT
+        //  "  okflog  --version long stuff on\n"+
+        //  "          top of it"
+        //  WHAT WE ACTUALLY GET
+            "  okflog  --version long stuff\n"+
+            "  on top of it"
+            );
+    }
 }

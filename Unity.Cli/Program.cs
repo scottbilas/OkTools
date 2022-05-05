@@ -24,8 +24,8 @@ public static class Program
 $@"{k_docName}
 
 Usage:
-  okunity [options] COMMAND [ARG]...
-  okunity --version
+  okunity  [options] COMMAND [ARG]...
+  okunity  --version
 
 Commands:
 {docUsageCommands}
@@ -106,9 +106,6 @@ Print help for COMMAND.
         }
         catch (DocoptExitException x)
         {
-            // TODO: wrap help to terminal width. can probably get away with a simple parser aimed just at reflowing
-            // aligned/indented content, with some knowledge of the dash-prefixed options table..
-
             Console.WriteLine(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
             return (int)CliExitCode.Help;
         }
@@ -117,9 +114,11 @@ Print help for COMMAND.
             if (debugMode)
                 throw;
 
-            Console.Error.WriteLine($"Internal error: {x.Message}");
-        }
+            Console.Error.WriteLine("Internal error!");
+            Console.Error.WriteLine();
+            Console.Error.WriteLine(x);
 
-        return 0;
+            return (int)CliExitCode.ErrorSoftware;
+        }
     }
 }

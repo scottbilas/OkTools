@@ -106,7 +106,7 @@ public static class DocoptUtility
 
             // $$$ TODO: get rid of this silliness
             var newText = Span.ToString() + ' ' + other.Span.TrimStart();
-            return new Section(new StringSpan(newText), Indent);
+            return this with { Span = new StringSpan(newText) };
         }
 
         public override string ToString() => $"{Span.ToDebugString()}; indent={Indent}, prefix={HasPrefix}";
