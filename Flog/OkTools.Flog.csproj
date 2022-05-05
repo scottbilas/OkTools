@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\_Include\Defaults.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="DotNetConfig" Version="1.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\OkTools.Core.csproj" />
+    <ProjectReference Include="..\NiceIO\NiceIO.csproj" />
+  </ItemGroup>
+
+</Project>

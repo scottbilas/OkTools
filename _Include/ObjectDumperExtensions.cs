@@ -1,4 +1,6 @@
-﻿[PublicAPI]
+﻿#pragma warning disable RS0030 // TODO: remove me
+
+[PublicAPI]
 static class ObjectDumperExtensions
 {
     public static T DumpConsole<T>(this T @this, int? maxLevel = null)

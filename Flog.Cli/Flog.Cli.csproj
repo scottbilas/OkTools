@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\_Include\Defaults.targets" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>okflog</AssemblyName>
+    <RootNamespace />
+
+    <!-- TODO: Remove in .NET 7. -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+
+    <!-- single-file publish options -->
+
+    <PublishSingleFile>true</PublishSingleFile>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+
+    <!--
+    see notes in Unity.Cli.csproj for single-file publish size comparisons
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="docopt.net" Version="0.7.0" />
+    <PackageReference Include="DotNetConfig" Version="1.0.6" />
+    <PackageReference Include="System.Interactive" Version="6.0.1" />
+    <PackageReference Include="Terminal.Gui" Version="1.5.0" />
+    <PackageReference Include="Vezel.Cathode" Version="0.8.23" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Core\OkTools.Core.csproj" />
+    <ProjectReference Include="..\Flog\OkTools.Flog.csproj" />
+  </ItemGroup>
+
+</Project>

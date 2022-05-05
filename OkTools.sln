@@ -37,6 +37,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_Include", "_Include", "{D2
         GlobalUsings.Tests.cs = _Include\GlobalUsings.Tests.cs
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OkTools.Flog", "Flog\OkTools.Flog.csproj", "{FF9DF47E-9257-4816-A0B6-AAF969D17621}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "Flog.Cli\Flog.Cli.csproj", "{101CA45E-235D-47A2-BCC5-07E444429328}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +83,14 @@ Global
 		{8C6F581D-A79F-4D68-B14C-AA7167D74288}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C6F581D-A79F-4D68-B14C-AA7167D74288}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C6F581D-A79F-4D68-B14C-AA7167D74288}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF9DF47E-9257-4816-A0B6-AAF969D17621}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF9DF47E-9257-4816-A0B6-AAF969D17621}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF9DF47E-9257-4816-A0B6-AAF969D17621}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF9DF47E-9257-4816-A0B6-AAF969D17621}.Release|Any CPU.Build.0 = Release|Any CPU
+		{101CA45E-235D-47A2-BCC5-07E444429328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{101CA45E-235D-47A2-BCC5-07E444429328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{101CA45E-235D-47A2-BCC5-07E444429328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{101CA45E-235D-47A2-BCC5-07E444429328}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B1B77DB9-0635-4432-9327-26800B9D93DE} = {078A18EE-E782-4E50-98AC-FA4D6877D79A}
