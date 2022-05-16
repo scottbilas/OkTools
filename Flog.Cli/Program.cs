@@ -14,9 +14,15 @@ using Terminal.Gui;
 //  * https://github.com/tonerdo/readline
 //  * https://github.com/mono/LineEditor
 using Vezel.Cathode;
+using Vezel.Cathode.Text.Control;
 using Term = Vezel.Cathode.Terminal;
 #pragma warning disable RS0030 // TODO: remove me
 // TODO: if this works out ok, add Vezel.Cathode.Analyzers nuget package too...though do I need it? getting RS0030 above without it being in the project
+#else
+#pragma warning disable RS0030
+#endif
+#if SPECTRE
+using Spectre.Console;
 #endif
 
 class CliExitException : Exception
@@ -101,6 +107,13 @@ Options:
 
     static CliExitCode FlogIt(NPath path)
     {
+        var result = FlogItAsync(path);
+        result.Wait();
+        return result.Result;
+    }
+
+    static async Task<CliExitCode> FlogItAsync(NPath path)
+    {
         var text = path.ReadAllLines(); // TODO: tabs->spaces
 
         #if GUICS
@@ -172,29 +185,212 @@ Options:
             Out(new ControlBuilder().SetScreenBuffer(ScreenBuffer.Main));
         }
 
+        // $$$ REPLACE
         Console.CancelKeyPress += (_, _) => Shutdown();
+
+        // TODO: react to resize events
 
         var x = 0;
         var y = 0;
 
-        for (var i = 0; i < Term.Size.Height; ++i)
-            cb.PrintLine(text[i+y][x..]);
+        void Refresh(int beginScreenY, int endScreenY)
+        {
+            cb.SaveCursorState();
+            cb.SetCursorVisibility(false);
+
+            cb.MoveCursorTo(0, beginScreenY);
+            for (var i = beginScreenY; i < endScreenY; ++i)
+            {
+                cb.ClearLine();
+                cb.PrintLine(text[i+y][x..]);
+            }
+
+            cb.RestoreCursorState();
+        }
+        Refresh(0, Term.Size.Height);
 
         Out(cb);
+
+        Term.EnableRawMode();
 
         try
         {
             for (;;)
             {
+                var keys = new byte[10];
+                Term.Read(keys);
+                if (keys[0] == 0x1b) // ESC
+                {
+                    await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                    if (keys[0] == '[')
+                    {
+                        await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                        if (keys[0] == 'A')
+                        {
+                            cb.MoveBufferDown(1);
+                            y = Math.Max(y-1, 0);
+                            Refresh(0, 1);
+                            Out(cb);
+                        }
+                        else if (keys[0] == 'B')
+                        {
+                            cb.MoveBufferUp(1);
+                            y = Math.Min(y+1, text.Length);
+                            Refresh(Term.Size.Height-1, Term.Size.Height);
+                            Out(cb);
+                        }
+                    }
+
+                    continue;
+                }
+
                 var key = Console.ReadKey(true);
                 if (key.KeyChar == 'q')
                     return CliExitCode.Success;
 
-                if (key.KeyChar == 'j' || key.Key == ConsoleKey.UpArrow)
-                    Out(cb.MoveBufferUp(1));
-                else if (key.KeyChar == 'k' || key.Key == ConsoleKey.DownArrow)
-                    Out(cb.MoveBufferDown(1));
+                // TODO: shift-j/k/down/up should do half page
 
+                if (key.KeyChar == 'j' || key.Key == ConsoleKey.DownArrow)
+                {
+                    cb.MoveBufferUp(1);
+                    y = Math.Min(y+1, text.Length);
+                    Refresh(Term.Size.Height-1, Term.Size.Height);
+                    Out(cb);
+                }
+                else if (key.KeyChar == 'k' || key.Key == ConsoleKey.UpArrow)
+                {
+                    cb.MoveBufferDown(1);
+                    y = Math.Max(y-1, 0);
+                    Refresh(0, 1);
+                    Out(cb);
+                }
+                else if (key.Key == ConsoleKey.PageDown)
+                {
+                    y = Math.Min(y+Term.Size.Height, text.Length);
+                    Refresh(0, Term.Size.Height);
+                    Out(cb);
+                }
+                else if (key.Key == ConsoleKey.PageUp)
+                {
+                    y = Math.Max(y-Term.Size.Height, 0);
+                    Refresh(0, Term.Size.Height);
+                    Out(cb);
+                }
+            }
+        }
+        finally
+        {
+            Shutdown();
+        }
+        //return CliExitCode.Success;
+        #endif
+
+        #if SPECTRE
+
+        if (!AnsiConsole.Profile.Capabilities.Interactive)
+            throw new CliExitException($"{k_programName} requires an interactive console", CliExitCode.ErrorUsage);
+        if (!AnsiConsole.Profile.Capabilities.Ansi)
+            throw new CliExitException($"{k_programName} requires an ANSI console", CliExitCode.ErrorUsage);
+
+        AlternateScreen(true);
+        AnsiConsole.Cursor.SetPosition(0, 0);
+
+        void Shutdown()
+        {
+            AlternateScreen(false);
+        }
+
+        // $$$ REPLACE
+        Console.CancelKeyPress += (_, _) => Shutdown();
+
+        // TODO: react to resize events
+
+        var x = 0;
+        var y = 0;
+
+        void Refresh(int beginScreenY, int endScreenY)
+        {
+            //cb.SaveCursorState();
+            //cb.SetCursorVisibility(false);
+
+            AnsiConsole.Cursor.SetPosition(0, beginScreenY);
+            for (var i = beginScreenY; i < endScreenY; ++i)
+            {
+                //AnsiConsole.ClearLine();
+                AnsiConsole.WriteLine(text[i+y][x..]);
+            }
+
+            //cb.RestoreCursorState();
+        }
+        Refresh(0, AnsiConsole.Console.Profile.Height);
+
+        Out(cb);
+
+        Term.EnableRawMode();
+
+        try
+        {
+            for (;;)
+            {
+                var keys = new byte[1];
+                Term.Read(keys);
+                if (keys[0] == 0x1b) // ESC
+                {
+                    await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                    if (keys[0] == '[')
+                    {
+                        await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                        if (keys[0] == 'A')
+                        {
+                            cb.MoveBufferDown(1);
+                            y = Math.Max(y-1, 0);
+                            Refresh(0, 1);
+                            Out(cb);
+                        }
+                        else if (keys[0] == 'B')
+                        {
+                            cb.MoveBufferUp(1);
+                            y = Math.Min(y+1, text.Length);
+                            Refresh(Term.Size.Height-1, Term.Size.Height);
+                            Out(cb);
+                        }
+                    }
+
+                    continue;
+                }
+
+                var key = Console.ReadKey(true);
+                if (key.KeyChar == 'q')
+                    return CliExitCode.Success;
+
+                // TODO: shift-j/k/down/up should do half page
+
+                if (key.KeyChar == 'j' || key.Key == ConsoleKey.DownArrow)
+                {
+                    cb.MoveBufferUp(1);
+                    y = Math.Min(y+1, text.Length);
+                    Refresh(Term.Size.Height-1, Term.Size.Height);
+                    Out(cb);
+                }
+                else if (key.KeyChar == 'k' || key.Key == ConsoleKey.UpArrow)
+                {
+                    cb.MoveBufferDown(1);
+                    y = Math.Max(y-1, 0);
+                    Refresh(0, 1);
+                    Out(cb);
+                }
+                else if (key.Key == ConsoleKey.PageDown)
+                {
+                    y = Math.Min(y+Term.Size.Height, text.Length);
+                    Refresh(0, Term.Size.Height);
+                    Out(cb);
+                }
+                else if (key.Key == ConsoleKey.PageUp)
+                {
+                    y = Math.Max(y-Term.Size.Height, 0);
+                    Refresh(0, Term.Size.Height);
+                    Out(cb);
+                }
             }
         }
         finally
@@ -204,6 +400,8 @@ Options:
         //return CliExitCode.Success;
         #endif
     }
+
+    #if CATHODE
 
     static void Out(ControlBuilder cb)
     {
@@ -223,4 +421,22 @@ Options:
     {
         Term.OutLine(text);
     }
+
+    #endif
+
+    #if SPECTRE
+
+    static void AlternateScreen(bool alternate)
+    {
+        // oh well..
+        if (!AnsiConsole.Profile.Capabilities.AlternateBuffer)
+            return; // TODO: maybe need to clear the screen too?
+
+        if (alternate)
+            AnsiConsole.Write("\u001b[?1049h\u001b[H");
+        else
+            AnsiConsole.Write("\u001b[?1049l");
+    }
+
+    #endif
 }
