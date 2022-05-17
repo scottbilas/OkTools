@@ -1,29 +1,11 @@
-﻿#define CATHODE
-
+﻿using System.Text;
+using System.Text.RegularExpressions;
 using DocoptNet;
 using NiceIO;
 using OkTools.Core;
-#if GUICS
-// crazy feature set, especially the input handling
-// but slow as FUCK
-using Terminal.Gui;
-#endif
-#if CATHODE
-// zero support for keyboard handling..may be able to do my own hotkeys with multiple-Read() but bleh big pain
-// and can plug in a ReadLine type thing from one of these:
-//  * https://github.com/tonerdo/readline
-//  * https://github.com/mono/LineEditor
-using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 using Term = Vezel.Cathode.Terminal;
 #pragma warning disable RS0030 // TODO: remove me
-// TODO: if this works out ok, add Vezel.Cathode.Analyzers nuget package too...though do I need it? getting RS0030 above without it being in the project
-#else
-#pragma warning disable RS0030
-#endif
-#if SPECTRE
-using Spectre.Console;
-#endif
 
 class CliExitException : Exception
 {
@@ -105,338 +87,274 @@ Options:
         }
     }
 
-    static CliExitCode FlogIt(NPath path)
+    class Options
     {
-        var result = FlogItAsync(path);
-        result.Wait();
-        return result.Result;
+        public readonly int TabWidth = 4;
     }
 
-    static async Task<CliExitCode> FlogItAsync(NPath path)
+    class View
     {
-        var text = path.ReadAllLines(); // TODO: tabs->spaces
+        static readonly string k_empty = new(' ', 100);
 
-        #if GUICS
-        try
+        readonly Options _options;
+        readonly string[] _lines;
+        readonly string?[] _processedLines;
+        readonly ControlBuilder _cb = new();
+        readonly StringBuilder _sb = new();
+
+        int _x, _y;
+
+        public View(Options options, NPath path)
         {
-            Application.Init();
+            _options = options;
+            _lines = path.ReadAllLines();
+            _processedLines = new string?[_lines.Length];
         }
-        catch (Exception exception)
+
+        public void Refresh()
         {
-            throw new CliExitException($"{k_programName} requires an interactive console", exception, CliExitCode.ErrorUsage);
+            Refresh(0, Term.Size.Height);
         }
 
-        var x = 0;
-        var y = 0;
+        // https://github.com/chalk/ansi-regex/blob/main/index.js
+        static readonly Regex s_ansiEscapes = new(
+            "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)|" +
+            "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))");
 
-        var main = new View
+        string ProcessForDisplay(string line)
         {
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-        };
+            var hasEscapeSeqs = false;
+            var hasControlChars = false;
 
-        void Refresh()
-        {
-            main.Text = string.Join("\n", text[y..].Select(l => l[Math.Min(l.Length, x)..]));
-        }
-        Refresh();
-
-        Application.Top.KeyDown += args =>
-        {
-            switch (args.KeyEvent.Key)
+            for (var i = 0; i < line.Length; ++i)
             {
-                case Key.q:
-                    Application.RequestStop();
-                    break;
-                case Key.CursorUp:
-                    y = Math.Max(0, y - 1);
-                    Refresh();
-                    break;
-                case Key.CursorDown:
-                    ++y;
-                    Refresh();
-                    break;
-                case Key.CursorLeft:
-                    x = Math.Max(0, x - 10);
-                    Refresh();
-                    break;
-                case Key.CursorRight:
-                    x += 10;
-                    Refresh();
-                    break;
+                var c = line[i];
+                if (c == 0x1b)
+                    hasEscapeSeqs = true;
+                else if (c <= 0x1f || c == 0x7f)
+                    hasControlChars = true;
             }
-        };
 
-        Application.Top.Add(main);
+            if (!hasEscapeSeqs && !hasControlChars)
+                return line;
 
-        Application.Run();
-        return CliExitCode.Success;
-        #endif
+            if (hasEscapeSeqs)
+                line = s_ansiEscapes.Replace(line, "");
 
-        #if CATHODE
-
-        var cb = new ControlBuilder();
-        cb
-            .SetScreenBuffer(ScreenBuffer.Alternate)
-            .MoveCursorTo(0, 0);
-
-        void Shutdown()
-        {
-            Out(new ControlBuilder().SetScreenBuffer(ScreenBuffer.Main));
+            if (hasControlChars)
+            {
+                _sb.Clear();
+                for (var i = 0; i < line.Length; ++i)
+                {
+                    var c = line[i];
+                    if (c == '\t')
+                    {
+                        var indent = _sb.Length % _options.TabWidth;
+                        // $$$$
+                    }
+                    else if (c <= 0x1f || c == 0x7f)
+                    {
+                        // skip
+                    }
+                    else
+                        _sb.Append(c);
+                }
+            }
         }
-
-        // $$$ REPLACE
-        Console.CancelKeyPress += (_, _) => Shutdown();
-
-        // TODO: react to resize events
-
-        var x = 0;
-        var y = 0;
 
         void Refresh(int beginScreenY, int endScreenY)
         {
-            cb.SaveCursorState();
-            cb.SetCursorVisibility(false);
+            _cb.SaveCursorState();
+            _cb.SetCursorVisibility(false);
 
-            cb.MoveCursorTo(0, beginScreenY);
-            for (var i = beginScreenY; i < endScreenY; ++i)
+            var endPrintY = Math.Min(endScreenY, _lines.Length - _y);
+
+            for (var i = beginScreenY; i < endPrintY; ++i)
             {
-                cb.ClearLine();
-                cb.PrintLine(text[i+y][x..]);
+                _cb.MoveCursorTo(0, i);
+
+                var line = _processedLines[i + _y] ?? (_processedLines[i + _y] = ProcessForDisplay(_lines[i + _y]));
+
+                var len = Math.Min(line.Length - _x, Term.Size.Width);
+                if (len > 0)
+                {
+                    _cb.Print(line.AsSpan(_x, len));
+
+                    for (var remain = Term.Size.Width - len; remain > 0; )
+                    {
+                        var write = Math.Min(remain, k_empty.Length);
+                        _cb.Print(k_empty.AsSpan(0, write));
+                        remain -= write;
+                    }
+                }
+                else
+                    _cb.ClearLine();
             }
 
-            cb.RestoreCursorState();
+            for (var i = endPrintY; i < endScreenY; ++i)
+            {
+                _cb.MoveCursorTo(0, i);
+                _cb.ClearLine();
+            }
+
+            _cb.RestoreCursorState();
+
+            Term.Out(_cb);
+            _cb.Clear(Term.Size.Width * Term.Size.Height * 2);
         }
-        Refresh(0, Term.Size.Height);
 
-        Out(cb);
+        int ConstrainY(int testY)
+        {
+            return Math.Max(Math.Min(testY, _lines.Length - 1), 0);
+        }
 
+        bool ScrollToY(int y)
+        {
+            y = ConstrainY(y);
+
+            var (beginScreenY, endScreenY) = (0, Term.Size.Height);
+            var offset = y - _y;
+
+            switch (offset)
+            {
+                case > 0 when offset < Term.Size.Height:
+                    _cb.MoveBufferUp(offset);
+                    beginScreenY = Term.Size.Height - offset;
+                    break;
+                case < 0 when -offset < Term.Size.Height:
+                    _cb.MoveBufferDown(-offset);
+                    endScreenY = -offset;
+                    break;
+                case 0:
+                    return false;
+            }
+
+            _y = y;
+            Refresh(beginScreenY, endScreenY);
+            return true;
+        }
+
+        void ScrollY(int offset) => ScrollToY(_y + offset);
+
+        void ScrollToX(int x)
+        {
+            if (x < 0)
+                x = 0;
+
+            if (_x == x)
+                return;
+
+            _x = x;
+            Refresh();
+        }
+
+        void ScrollX(int offset) => ScrollToX(_x + offset);
+
+        public void ScrollDown() => ScrollY(1);
+        public void ScrollUp() => ScrollY(-1);
+        public void ScrollPageDown() => ScrollY(Term.Size.Height);
+        public void ScrollPageUp() => ScrollY(-Term.Size.Height);
+
+        public void ScrollLeft() => ScrollX(10);
+        public void ScrollRight() => ScrollX(-10);
+
+        public void ScrollToBegin()
+        {
+            if (!ScrollToY(0))
+                ScrollToX(0);
+        }
+
+        public void ScrollToEnd()
+        {
+            var target = _lines.Length - (Term.Size.Height / 2);
+            ScrollToY(_y < target ? target : _lines.Length);
+        }
+
+        public void Resized()
+        {
+            _y = ConstrainY(_y);
+            Refresh();
+        }
+    }
+
+    static CliExitCode FlogIt(NPath path)
+    {
         Term.EnableRawMode();
+        Term.Out(new ControlBuilder().SetScreenBuffer(ScreenBuffer.Alternate));
+        void Shutdown() => Term.Out(new ControlBuilder().SetScreenBuffer(ScreenBuffer.Main));
+        Term.Signaled += _ => Shutdown();
+
+        var options = new Options();
+
+        var view = new View(options, path);
+        view.Refresh();
+
+        Term.Resized += newSize =>
+        {
+            view.Resized();
+        };
 
         try
         {
             for (;;)
             {
+                // TODO: shift-j/k/down/up should do half page
+
                 var keys = new byte[10];
                 Term.Read(keys);
                 if (keys[0] == 0x1b) // ESC
                 {
-                    await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                    Term.Read(keys, new CancellationTokenSource(15).Token);
                     if (keys[0] == '[')
                     {
-                        await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
+                        Term.Read(keys, new CancellationTokenSource(15).Token);
                         if (keys[0] == 'A')
-                        {
-                            cb.MoveBufferDown(1);
-                            y = Math.Max(y-1, 0);
-                            Refresh(0, 1);
-                            Out(cb);
-                        }
+                            view.ScrollUp();
                         else if (keys[0] == 'B')
+                            view.ScrollDown();
+                        else if (keys[0] == 'C')
+                            view.ScrollLeft();
+                        else if (keys[0] == 'D')
+                            view.ScrollRight();
+                        else if (keys[0] == 'H')
+                            view.ScrollToBegin();
+                        else if (keys[0] == 'F')
+                            view.ScrollToEnd();
+                        else if (keys[0] == '5')
                         {
-                            cb.MoveBufferUp(1);
-                            y = Math.Min(y+1, text.Length);
-                            Refresh(Term.Size.Height-1, Term.Size.Height);
-                            Out(cb);
+                            Term.Read(keys);
+                            if (keys[0] == '~')
+                                view.ScrollPageUp();
+                        }
+                        else if (keys[0] == '6')
+                        {
+                            Term.Read(keys);
+                            if (keys[0] == '~')
+                                view.ScrollPageDown();
                         }
                     }
-
-                    continue;
                 }
-
-                var key = Console.ReadKey(true);
-                if (key.KeyChar == 'q')
+                else if (keys[0] == 3) // ctrl-c
+                    return UnixSignal.KeyboardInterrupt.AsCliExitCode();
+                else if (keys[0] == 4) // ctrl-d
                     return CliExitCode.Success;
-
-                // TODO: shift-j/k/down/up should do half page
-
-                if (key.KeyChar == 'j' || key.Key == ConsoleKey.DownArrow)
-                {
-                    cb.MoveBufferUp(1);
-                    y = Math.Min(y+1, text.Length);
-                    Refresh(Term.Size.Height-1, Term.Size.Height);
-                    Out(cb);
-                }
-                else if (key.KeyChar == 'k' || key.Key == ConsoleKey.UpArrow)
-                {
-                    cb.MoveBufferDown(1);
-                    y = Math.Max(y-1, 0);
-                    Refresh(0, 1);
-                    Out(cb);
-                }
-                else if (key.Key == ConsoleKey.PageDown)
-                {
-                    y = Math.Min(y+Term.Size.Height, text.Length);
-                    Refresh(0, Term.Size.Height);
-                    Out(cb);
-                }
-                else if (key.Key == ConsoleKey.PageUp)
-                {
-                    y = Math.Max(y-Term.Size.Height, 0);
-                    Refresh(0, Term.Size.Height);
-                    Out(cb);
-                }
+                else if (keys[0] == 'q')
+                    return CliExitCode.Success;
+                else if (keys[0] == 'j')
+                    view.ScrollDown();
+                else if (keys[0] == 'k')
+                    view.ScrollUp();
+                else if (keys[0] == 'l')
+                    view.ScrollLeft();
+                else if (keys[0] == 'h')
+                    view.ScrollRight();
             }
         }
         finally
         {
             Shutdown();
         }
+
         //return CliExitCode.Success;
-        #endif
-
-        #if SPECTRE
-
-        if (!AnsiConsole.Profile.Capabilities.Interactive)
-            throw new CliExitException($"{k_programName} requires an interactive console", CliExitCode.ErrorUsage);
-        if (!AnsiConsole.Profile.Capabilities.Ansi)
-            throw new CliExitException($"{k_programName} requires an ANSI console", CliExitCode.ErrorUsage);
-
-        AlternateScreen(true);
-        AnsiConsole.Cursor.SetPosition(0, 0);
-
-        void Shutdown()
-        {
-            AlternateScreen(false);
-        }
-
-        // $$$ REPLACE
-        Console.CancelKeyPress += (_, _) => Shutdown();
-
-        // TODO: react to resize events
-
-        var x = 0;
-        var y = 0;
-
-        void Refresh(int beginScreenY, int endScreenY)
-        {
-            //cb.SaveCursorState();
-            //cb.SetCursorVisibility(false);
-
-            AnsiConsole.Cursor.SetPosition(0, beginScreenY);
-            for (var i = beginScreenY; i < endScreenY; ++i)
-            {
-                //AnsiConsole.ClearLine();
-                AnsiConsole.WriteLine(text[i+y][x..]);
-            }
-
-            //cb.RestoreCursorState();
-        }
-        Refresh(0, AnsiConsole.Console.Profile.Height);
-
-        Out(cb);
-
-        Term.EnableRawMode();
-
-        try
-        {
-            for (;;)
-            {
-                var keys = new byte[1];
-                Term.Read(keys);
-                if (keys[0] == 0x1b) // ESC
-                {
-                    await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
-                    if (keys[0] == '[')
-                    {
-                        await Term.ReadAsync(keys, new CancellationTokenSource(15).Token);
-                        if (keys[0] == 'A')
-                        {
-                            cb.MoveBufferDown(1);
-                            y = Math.Max(y-1, 0);
-                            Refresh(0, 1);
-                            Out(cb);
-                        }
-                        else if (keys[0] == 'B')
-                        {
-                            cb.MoveBufferUp(1);
-                            y = Math.Min(y+1, text.Length);
-                            Refresh(Term.Size.Height-1, Term.Size.Height);
-                            Out(cb);
-                        }
-                    }
-
-                    continue;
-                }
-
-                var key = Console.ReadKey(true);
-                if (key.KeyChar == 'q')
-                    return CliExitCode.Success;
-
-                // TODO: shift-j/k/down/up should do half page
-
-                if (key.KeyChar == 'j' || key.Key == ConsoleKey.DownArrow)
-                {
-                    cb.MoveBufferUp(1);
-                    y = Math.Min(y+1, text.Length);
-                    Refresh(Term.Size.Height-1, Term.Size.Height);
-                    Out(cb);
-                }
-                else if (key.KeyChar == 'k' || key.Key == ConsoleKey.UpArrow)
-                {
-                    cb.MoveBufferDown(1);
-                    y = Math.Max(y-1, 0);
-                    Refresh(0, 1);
-                    Out(cb);
-                }
-                else if (key.Key == ConsoleKey.PageDown)
-                {
-                    y = Math.Min(y+Term.Size.Height, text.Length);
-                    Refresh(0, Term.Size.Height);
-                    Out(cb);
-                }
-                else if (key.Key == ConsoleKey.PageUp)
-                {
-                    y = Math.Max(y-Term.Size.Height, 0);
-                    Refresh(0, Term.Size.Height);
-                    Out(cb);
-                }
-            }
-        }
-        finally
-        {
-            Shutdown();
-        }
-        //return CliExitCode.Success;
-        #endif
     }
-
-    #if CATHODE
-
-    static void Out(ControlBuilder cb)
-    {
-        Term.Out(cb);
-        cb.Clear();
-    }
-    static void OutLine(ControlBuilder cb)
-    {
-        Term.OutLine(cb);
-        cb.Clear();
-    }
-    static void Out(string text)
-    {
-        Term.Out(text);
-    }
-    static void OutLine(string text)
-    {
-        Term.OutLine(text);
-    }
-
-    #endif
-
-    #if SPECTRE
-
-    static void AlternateScreen(bool alternate)
-    {
-        // oh well..
-        if (!AnsiConsole.Profile.Capabilities.AlternateBuffer)
-            return; // TODO: maybe need to clear the screen too?
-
-        if (alternate)
-            AnsiConsole.Write("\u001b[?1049h\u001b[H");
-        else
-            AnsiConsole.Write("\u001b[?1049l");
-    }
-
-    #endif
 }
