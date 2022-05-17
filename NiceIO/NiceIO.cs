@@ -938,6 +938,12 @@ namespace NiceIO
             return File.ReadAllLines(ToString());
         }
 
+        public IEnumerable<string> ReadLines()
+        {
+            ThrowIfRelative();
+            return File.ReadLines(ToString());
+        }
+
         public IEnumerable<NPath> CopyFiles(NPath destination, bool recurse, Func<NPath, bool>? fileFilter = null)
         {
             destination.EnsureDirectoryExists();
