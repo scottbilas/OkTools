@@ -7,6 +7,7 @@ public enum CliExitCode
     #pragma warning disable CA1069
     Success = 0,
     #pragma warning restore CA1069
+    ErrorGeneral = 1,
 
     // https://man.openbsd.org/sysexits
 
@@ -25,4 +26,36 @@ public enum CliExitCode
     ErrorProtocol    = 76, // The remote system returned something that was “not possible” during a protocol exchange.
     ErrorNoPerm      = 77, // You did not have sufficient permission to perform the operation. This is not intended for file system problems, which should use EX_NOINPUT or EX_CANTCREAT, but rather for higher level permissions.
     ErrorConfig      = 78, // Something was found in an unconfigured or misconfigured state.
+
+    // https://tldp.org/LDP/abs/html/exitcodes.html
+
+    ErrorCommandInvokedCannotExecute = 126,
+    ErrorCommandNotFound = 127,
+//  ErrorSignal = 128, // use FromSignal below
+}
+
+[PublicAPI]
+public enum UnixSignal
+{
+    // https://www.man7.org/linux/man-pages/man7/signal.7.html
+
+    Hangup = 1,             // SIGHUP  = Hangup detected on controlling terminal or death of controlling process
+    KeyboardInterrupt = 2,  // SIGINT  = Interrupt from keyboard (ctrl-c)
+    KeyboardQuit = 3,       // SIGQUIT = Quit from keyboard (ctrl-d)
+    Abort = 6,              // SIGABRT = Abort signal from `abort()` call within the app
+    Kill = 9                // SIGKILL = Instant kill, no chance for app cleanup
+}
+
+[PublicAPI]
+public static class UnixSignalUtils
+{
+    public static CliExitCode FromSignal(int signal)
+    {
+        if (signal is < 1 or > 31)
+            throw new ArgumentOutOfRangeException(nameof(signal), signal, $"not in range 1 <= {signal} <= 31");
+
+        return (CliExitCode)(128 + signal);
+    }
+
+    public static CliExitCode AsCliExitCode(this UnixSignal @this) => FromSignal((int)@this);
 }
