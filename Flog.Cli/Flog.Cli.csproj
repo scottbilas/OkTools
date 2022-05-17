@@ -13,8 +13,10 @@
     <!-- single-file publish options -->
 
     <PublishSingleFile>true</PublishSingleFile>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
+
+    <!-- force windows to x64 -->
+    <RuntimeIdentifier Condition=" '$(OS)' == 'Windows_NT' ">win-x64</RuntimeIdentifier>
 
     <!--
     see notes in Unity.Cli.csproj for single-file publish size comparisons
