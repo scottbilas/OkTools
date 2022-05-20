@@ -37,16 +37,23 @@ class InputParser
         while (_rawInput.TryReceive(out var chunk))
             _input.AddRange(chunk);
 
-        if (DateTime.UtcNow >= _keyExpire)
-            Parse(true);
-        else if (_input.Count != oldSize)
+        // only consider timer expired if we still haven't gotten any new input
+        if (_input.Count != oldSize)
             Parse(false);
+        else if (DateTime.UtcNow >= _keyExpire)
+            Parse(true);
     }
 
     void Parse(bool timerExpired)
     {
-        while (!_input.IsEmpty)
+        for (;;)
         {
+            if (_input.IsEmpty)
+            {
+                _input.Reset(); // we've consumed all input, so reuse the memory for further writes
+                break;
+            }
+
             var partial = false;
 
             switch (ParseChar())
@@ -55,7 +62,7 @@ class InputParser
                 case InputParseResult.Partial: partial = true; break;
             }
 
-            switch (ParseKey())
+            switch (ParseControlKey())
             {
                 case InputParseResult.Accept: continue;
                 case InputParseResult.Partial: partial = true; break;
@@ -87,7 +94,6 @@ class InputParser
             }
         }
 
-        _input.Reset(); // we've consumed all input, so reuse the memory for further writes
         _keyExpire = DateTime.UtcNow + k_standaloneEscTimeoutMs;
     }
 
@@ -153,7 +159,7 @@ class InputParser
         new("\x4",       'd',                   ctrl:true),
     };
 
-    InputParseResult ParseKey()
+    InputParseResult ParseControlKey()
     {
         var input = _input.Span;
         var partial = false;
