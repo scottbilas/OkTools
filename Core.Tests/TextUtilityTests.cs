@@ -1,4 +1,4 @@
-class StringUtilityTests
+class TextUtilityTests
 {
     [Test]
     public void DetectEolType_WithStopAfterWindow_ReturnsMatchAfterStopping()
