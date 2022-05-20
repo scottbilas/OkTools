@@ -36,21 +36,23 @@ class View
 
     public void Refresh() => Refresh(0, _cy);
 
-    public void ScrollDown() => ScrollY(1);
-    public void ScrollUp() => ScrollY(-1);
-    public void ScrollPageDown() => ScrollY(_cy);
-    public void ScrollPageUp() => ScrollY(-_cy);
+    public void ScrollDown() => ScrollY(-1);
+    public void ScrollUp() => ScrollY(1);
+    public void ScrollHalfPageDown() => ScrollY(-_cy/2);
+    public void ScrollHalfPageUp() => ScrollY(_cy/2);
+    public void ScrollPageDown() => ScrollY(-_cy);
+    public void ScrollPageUp() => ScrollY(_cy);
 
     public void ScrollLeft() => ScrollX(_options.HorizScrollSize);
     public void ScrollRight() => ScrollX(-_options.HorizScrollSize);
 
-    public void ScrollToBegin()
+    public void ScrollToTop()
     {
         if (!ScrollToY(0))
             ScrollToX(0);
     }
 
-    public void ScrollToEnd()
+    public void ScrollToBottom()
     {
         var target = _lines.Length - (_cy / 2);
         ScrollToY(_y < target ? target : _lines.Length);
@@ -165,7 +167,7 @@ class View
         return Math.Max(Math.Min(testY, _lines.Length - 1), 0);
     }
 
-    bool ScrollToY(int y)
+    public bool ScrollToY(int y)
     {
         y = ClampY(y);
 
@@ -193,7 +195,7 @@ class View
 
     void ScrollY(int offset) => ScrollToY(_y + offset);
 
-    void ScrollToX(int x)
+    public void ScrollToX(int x)
     {
         if (x < 0)
             x = 0;

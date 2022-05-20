@@ -99,17 +99,13 @@ Options:
 
         for (;;)
         {
-            // TODO: shift-j/k/down/up should do half page
-
             switch (screen.TryGetEvent())
             {
-                // TODO: need to ensure these aren't modified..
-
                 case KeyEvent { Key.Key: ConsoleKey.Home, Key.Modifiers: 0 }:
-                    view.ScrollToBegin();
+                    view.ScrollToTop();
                     break;
                 case KeyEvent { Key.Key: ConsoleKey.End, Key.Modifiers: 0 }:
-                    view.ScrollToEnd();
+                    view.ScrollToBottom();
                     break;
 
                 case KeyEvent { Key.Key: ConsoleKey.UpArrow, Key.Modifiers: 0 }:
@@ -121,13 +117,24 @@ Options:
                     view.ScrollUp();
                     break;
 
+                case KeyEvent { Key.KeyChar: 'K', Key.Modifiers: ConsoleModifiers.Shift }:
+                    view.ScrollHalfPageDown();
+                    break;
+                case KeyEvent { Key.KeyChar: 'J', Key.Modifiers: ConsoleModifiers.Shift }:
+                    view.ScrollHalfPageUp();
+                    break;
+
                 case KeyEvent { Key.Key: ConsoleKey.LeftArrow, Key.Modifiers: 0 }:
                 case KeyEvent { Key.KeyChar: 'l', Key.Modifiers: 0 }:
-                    view.ScrollRight();
+                    view.ScrollLeft();
                     break;
                 case KeyEvent { Key.Key: ConsoleKey.RightArrow, Key.Modifiers: 0 }:
                 case KeyEvent { Key.KeyChar: 'h', Key.Modifiers: 0 }:
-                    view.ScrollLeft();
+                    view.ScrollRight();
+                    break;
+
+                case KeyEvent { Key.KeyChar: 'H', Key.Modifiers: ConsoleModifiers.Shift }:
+                    view.ScrollToX(0);
                     break;
 
                 case KeyEvent { Key.Key: ConsoleKey.PageUp, Key.Modifiers: 0 }:

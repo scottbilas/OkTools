@@ -7,6 +7,8 @@ class TerminalInputEofException : Exception {}
 
 interface IEvent {}
 
+// TODO: split into KeyEvent vs CharEvent...the union is not very helpful, especially given pattern matching
+// (and don't want to use ConsoleKey.A/B/C etc. because there is no '!' or '#' etc. in ConsoleKey, even the tiny oem set)
 [PublicAPI]
 readonly struct KeyEvent : IEvent
 {
