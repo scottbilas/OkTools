@@ -29,13 +29,13 @@ class InputParser
 
         // block until we get something, unless we're in a partial sequence (in which case sleep to avoid spinning for the full timeout)
         if (_input.Count == 0 && !_inEscape)
-            _input.AddRange(_rawInput.Receive());
+            _input.Write(_rawInput.Receive());
         else
             Thread.Sleep(1);
 
         // read whatever more is available
         while (_rawInput.TryReceive(out var chunk))
-            _input.AddRange(chunk);
+            _input.Write(chunk);
 
         // only consider timer expired if we still haven't gotten any new input
         if (_input.Count != oldSize)
@@ -106,7 +106,7 @@ class InputParser
 
             _events.Post(new KeyEvent((char)b, _inEscape, false));
             _inEscape = false;
-            _input.Skip();
+            _input.Seek();
 
             return InputParseResult.Accept;
         }
@@ -171,7 +171,7 @@ class InputParser
             {
                 _events.Post(new KeyEvent(mapping.Key));
                 _inEscape = false;
-                _input.Skip(pattern.Length);
+                _input.Seek(pattern.Length);
 
                 return InputParseResult.Accept;
             }
