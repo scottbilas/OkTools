@@ -2,6 +2,9 @@
 using NiceIO;
 using OkTools.Core;
 
+// TODO: this is temporary until remove Console.* calls
+#pragma warning disable RS0030
+
 class CliExitException : Exception
 {
     public CliExitException(string message, CliExitCode code) : base(message) { Code = code; }
@@ -93,7 +96,7 @@ Options:
 
         var options = new Options();
         var view = new View(screen.Terminal, options, path); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
-        screen.Terminal.Resized += _ => view.Resized();
+        screen.Terminal.Resized += _ => view.Resized(); // TODO: consider anchoring the scroll origin to bottom instead of top (because that's where the command line is..have to feel that out...)
 
         view.Refresh();
 
@@ -125,12 +128,12 @@ Options:
                     break;
 
                 case KeyEvent { Key.Key: ConsoleKey.LeftArrow, Key.Modifiers: 0 }:
-                case KeyEvent { Key.KeyChar: 'l', Key.Modifiers: 0 }:
-                    view.ScrollLeft();
-                    break;
-                case KeyEvent { Key.Key: ConsoleKey.RightArrow, Key.Modifiers: 0 }:
                 case KeyEvent { Key.KeyChar: 'h', Key.Modifiers: 0 }:
                     view.ScrollRight();
+                    break;
+                case KeyEvent { Key.Key: ConsoleKey.RightArrow, Key.Modifiers: 0 }:
+                case KeyEvent { Key.KeyChar: 'l', Key.Modifiers: 0 }:
+                    view.ScrollLeft();
                     break;
 
                 case KeyEvent { Key.KeyChar: 'H', Key.Modifiers: ConsoleModifiers.Shift }:
