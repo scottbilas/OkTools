@@ -51,6 +51,15 @@ public static class ByteArrayExtensions
 [PublicAPI]
 public static class ListExtensions
 {
+    public static void AddRange<T>(this List<T> @this, ReadOnlySpan<T> items)
+    {
+        // hard to improve this without https://github.com/dotnet/runtime/issues/1530
+
+        // ReSharper disable once ForCanBeConvertedToForeach
+        for (var i = 0; i < items.Length; ++i)
+            @this.Add(items[i]);
+    }
+
     public static void SetRange<T>(this List<T> @this, IEnumerable<T> collection)
     {
         @this.Clear();
