@@ -147,6 +147,7 @@ Options:
                 case KeyEvent { Key.KeyChar: 'c', Key.Modifiers: ConsoleModifiers.Control }:
                     return UnixSignal.KeyboardInterrupt.AsCliExitCode();
 
+                case KeyEvent { Key.Key: ConsoleKey.Escape, Key.Modifiers: 0 }:
                 case KeyEvent { Key.KeyChar: 'q', Key.Modifiers: 0 }:
                 case KeyEvent { Key.KeyChar: 'd', Key.Modifiers: ConsoleModifiers.Control }:
                     return CliExitCode.Success;
