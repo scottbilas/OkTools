@@ -1,6 +1,5 @@
 ﻿using System.Text;
 using System.Threading.Tasks.Dataflow;
-using Vezel.Cathode.Text.Control;
 
 enum InputParseResult { Accept, NoMatch, Partial }
 
@@ -26,6 +25,7 @@ class InputParser
         var oldSize = _input.Count;
 
         // TODO: would be better to figure out how to Receive() with a timeout
+        // TODO: use timeout on Receive() rather than Receive vs TryReceive vs Sleep etc., to simplify all this
 
         // block until we get something, unless we're in a partial sequence (in which case sleep to avoid spinning for the full timeout)
         if (_input.Count == 0 && !_inEscape)
@@ -76,7 +76,7 @@ class InputParser
             if (b != ControlConstants.ESC)
             {
                 // unrecognized sequence or timeout, so push to app to figure it out
-                _events.Post(new KeyEvent((char)b, _inEscape, false));
+                _events.Post(new CharEvent((char)b, _inEscape, false));
                 _inEscape = false;
             }
             else if (_input.IsEmpty)
@@ -104,7 +104,7 @@ class InputParser
         {
             // normal ascii
 
-            _events.Post(new KeyEvent((char)b, _inEscape, false));
+            _events.Post(new CharEvent((char)b, _inEscape, false));
             _inEscape = false;
             _input.Seek();
 
@@ -122,18 +122,18 @@ class InputParser
     readonly struct ControlMapping
     {
         public readonly byte[] Input;
-        public readonly ConsoleKeyInfo Key;
+        public readonly IEvent Event;
 
         public ControlMapping(string input, ConsoleKey key, bool shift = false, bool alt = false, bool ctrl = false)
         {
             Input = Encoding.ASCII.GetBytes(input);
-            Key = new ConsoleKeyInfo((char)0, key, shift, alt, ctrl);
+            Event = new KeyEvent(key, shift, alt, ctrl);
         }
 
         public ControlMapping(string input, char ch, bool alt = false, bool ctrl = false)
         {
             Input = Encoding.ASCII.GetBytes(input);
-            Key = new ConsoleKeyInfo(ch, 0, char.IsUpper(ch), alt, ctrl);
+            Event = new CharEvent(ch, alt, ctrl);
         }
     }
 
@@ -169,7 +169,7 @@ class InputParser
             var pattern = mapping.Input.AsSpan();
             if (input.StartsWith(pattern))
             {
-                _events.Post(new KeyEvent(mapping.Key));
+                _events.Post(mapping.Event);
                 _inEscape = false;
                 _input.Seek(pattern.Length);
 
