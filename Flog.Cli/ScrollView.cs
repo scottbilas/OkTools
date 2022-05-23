@@ -1,8 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using NiceIO;
-using Vezel.Cathode;
-using Vezel.Cathode.Text.Control;
 
 class Options
 {
@@ -10,38 +8,37 @@ class Options
     public readonly int HorizScrollSize = 10;
 }
 
-class View
+class ScrollView
 {
     static readonly string k_empty = new(' ', 100);
 
-    readonly VirtualTerminal _terminal;
+    readonly Screen _screen;
     readonly Options _options;
     readonly string[] _lines;
     readonly string?[] _processedLines;
     readonly ControlBuilder _cb = new();
     readonly StringBuilder _sb = new();
 
-    int _x, _y, _cx, _cy;
+    int _x, _y, _cx, _top, _bottom;
 
-    public View(VirtualTerminal terminal, Options options, NPath path)
+    public ScrollView(Screen screen, Options options, NPath path)
     {
-        _terminal = terminal;
+        _screen = screen;
         _options = options;
         _lines = path.ReadAllLines();
         _processedLines = new string?[_lines.Length];
-
-        _cx = _terminal.Size.Width;
-        _cy = _terminal.Size.Height;
     }
 
-    public void Refresh() => Refresh(0, _cy);
+    public int Height => _bottom - _top;
+    public int Top => _top;
+    public int Bottom => _bottom;
 
     public void ScrollDown() => ScrollY(-1);
     public void ScrollUp() => ScrollY(1);
-    public void ScrollHalfPageDown() => ScrollY(-_cy/2);
-    public void ScrollHalfPageUp() => ScrollY(_cy/2);
-    public void ScrollPageDown() => ScrollY(-_cy);
-    public void ScrollPageUp() => ScrollY(_cy);
+    public void ScrollHalfPageDown() => ScrollY(-Height/2);
+    public void ScrollHalfPageUp() => ScrollY(Height/2);
+    public void ScrollPageDown() => ScrollY(-Height);
+    public void ScrollPageUp() => ScrollY(Height);
 
     public void ScrollLeft() => ScrollX(_options.HorizScrollSize);
     public void ScrollRight() => ScrollX(-_options.HorizScrollSize);
@@ -54,17 +51,40 @@ class View
 
     public void ScrollToBottom()
     {
-        var target = _lines.Length - (_cy / 2);
+        var target = _lines.Length - (Height / 2);
         ScrollToY(_y < target ? target : _lines.Length);
     }
 
-    public void Resized() // TODO: SetBounds instead
+    public void SetBounds(int width, int top, int bottom, bool draw = true)
     {
-        _cx = _terminal.Size.Width;
-        _cy = _terminal.Size.Height;
-        _y = ClampY(_y);
+        var needsFullRefresh = _cx != width;
+        _cx = width;
 
-        Refresh();
+        var oldTop = _top;
+        var oldBottom = _bottom;
+        var oldY = _y;
+
+        _top = top;
+        _bottom = bottom;
+
+        _screen.WriteAndClear(_cb.SetScrollMargin(_top, _bottom - 1));
+
+        // maintain scroll position regardless of origin (minimize distracting text movement)
+        _y = ClampY(oldY + _top - oldTop);
+
+        if (draw)
+        {
+            if (needsFullRefresh)
+                Refresh();
+            else
+            {
+                // fill in anything that's new
+                if (_top < oldTop)
+                    Refresh(0, oldTop - _top);
+                if (_bottom > oldBottom)
+                    Refresh(_bottom - oldBottom, Height);
+            }
+        }
     }
 
     // regex from https://github.com/chalk/ansi-regex/blob/main/index.js
@@ -126,11 +146,13 @@ class View
         return line;
     }
 
-    void Refresh(int beginScreenY, int endScreenY)
-    {
-        var endPrintY = Math.Min(endScreenY, _lines.Length - _y);
+    void Refresh() => Refresh(0, Height);
 
-        for (var i = beginScreenY; i < endPrintY; ++i)
+    void Refresh(int top, int bottom)
+    {
+        var endPrintY = Math.Min(bottom, _lines.Length - _y);
+
+        for (var i = top; i < endPrintY; ++i)
         {
             _cb.MoveCursorTo(0, i);
 
@@ -152,14 +174,13 @@ class View
                 _cb.ClearLine();
         }
 
-        for (var i = endPrintY; i < endScreenY; ++i)
+        for (var i = endPrintY; i < bottom; ++i)
         {
             _cb.MoveCursorTo(0, i);
             _cb.ClearLine();
         }
 
-        _terminal.Out(_cb);
-        _cb.Clear(_cx * _cy * 2);
+        _screen.WriteAndClear(_cb, _cx * Height * 2);
     }
 
     int ClampY(int testY)
@@ -171,16 +192,16 @@ class View
     {
         y = ClampY(y);
 
-        var (beginScreenY, endScreenY) = (0, _cy);
+        var (beginScreenY, endScreenY) = (0, Height);
         var offset = y - _y;
 
         switch (offset)
         {
-            case > 0 when offset < _cy:
+            case > 0 when offset < Height:
                 _cb.MoveBufferUp(offset);
-                beginScreenY = _cy - offset;
+                beginScreenY = Height - offset;
                 break;
-            case < 0 when -offset < _cy:
+            case < 0 when -offset < Height:
                 _cb.MoveBufferDown(-offset);
                 endScreenY = -offset;
                 break;

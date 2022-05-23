@@ -1,6 +1,4 @@
 using System.Threading.Tasks.Dataflow;
-using Vezel.Cathode;
-using Vezel.Cathode.Text.Control;
 
 class TerminalNotInteractiveException : Exception {}
 class TerminalInputEofException : Exception {}
@@ -34,6 +32,7 @@ class Screen : IDisposable
     static int s_instanceCount;
     bool _engaged, _disposed;
 
+    readonly VirtualTerminal _terminal;
     readonly BufferBlock<IEvent> _events = new();
     readonly BufferBlock<ReadOnlyMemory<byte>> _rawInput = new();
 
@@ -43,7 +42,7 @@ class Screen : IDisposable
             throw new InvalidOperationException("Instance already exists");
         ++s_instanceCount;
 
-        Terminal = Vezel.Cathode.Terminal.System;
+        _terminal = Terminal.System;
         if (!Terminal.StandardIn.IsInteractive)
             throw new TerminalNotInteractiveException();
 
@@ -61,9 +60,8 @@ class Screen : IDisposable
         */
 
         Terminal.EnableRawMode();
-        Terminal.Out(new ControlBuilder()
+        WriteAndClear(new ControlBuilder()
             .SetScreenBuffer(ScreenBuffer.Alternate)
-            .SetCursorVisibility(false)
             .ClearScreen());
         Terminal.Signaled += OnSignaled;
 
@@ -85,12 +83,27 @@ class Screen : IDisposable
         Task.Run(() => Wrap(TaskReadKeyEvents));
     }
 
-    public VirtualTerminal Terminal { get; }
+    public event Action<TerminalSize>? Resized
+    {
+        add => _terminal.Resized += value;
+        remove => _terminal.Resized -= value;
+    }
 
     public IEvent? TryGetEvent()
     {
         _events.TryReceive(out var evt);
         return evt;
+    }
+
+    public TerminalSize Size => _terminal.Size;
+
+    public void WriteAndClear(ControlBuilder cb, int? reallocateThreshold = null)
+    {
+        _terminal.Out(cb.Span);
+        if (reallocateThreshold != null)
+            cb.Clear(reallocateThreshold.Value);
+        else
+            cb.Clear();
     }
 
     void OnSignaled(TerminalSignalContext _) => Disengage();
@@ -136,7 +149,8 @@ class Screen : IDisposable
             .ResetAttributes()
             .ClearScreen()
             .SetScreenBuffer(ScreenBuffer.Main)
-            .SetCursorVisibility(true));
+            .SetCursorVisibility(true)
+            .Span);
         Terminal.DisableRawMode();
     }
 
