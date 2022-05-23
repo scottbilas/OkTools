@@ -39,11 +39,12 @@ public enum UnixSignal
 {
     // https://www.man7.org/linux/man-pages/man7/signal.7.html
 
-    Hangup = 1,             // SIGHUP  = Hangup detected on controlling terminal or death of controlling process
-    KeyboardInterrupt = 2,  // SIGINT  = Interrupt from keyboard (ctrl-c)
-    KeyboardQuit = 3,       // SIGQUIT = Quit from keyboard (ctrl-d)
-    Abort = 6,              // SIGABRT = Abort signal from `abort()` call within the app
-    Kill = 9                // SIGKILL = Instant kill, no chance for app cleanup
+    Lost = 1,              // SIGHUP  = Hangup detected on controlling terminal or death of controlling process
+    KeyboardInterrupt = 2, // SIGINT  = Interrupt from keyboard (ctrl-c)
+    KeyboardQuit = 3,      // SIGQUIT = Quit from keyboard (ctrl-d)
+    Abort = 6,             // SIGABRT = Abort signal from `abort()` call within the app
+    Kill = 9,              // SIGKILL = Instant kill, no chance for app cleanup
+    Terminate = 15,        // SIGTERM = Termination signal, the "polite" kill, gives chance for cleanup (or ignored)
 }
 
 [PublicAPI]
