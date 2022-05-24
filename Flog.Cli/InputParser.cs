@@ -100,7 +100,7 @@ class InputParser
     InputParseResult ParseChar()
     {
         var b = _input.Peek();
-        if (b >= ' ' && b <= 0x7F)
+        if (b >= ' ' && b < 0x7F)
         {
             // normal ascii
 
@@ -140,23 +140,35 @@ class InputParser
     static readonly ControlMapping[] k_controlMappings =
     {
         new("\x1b[A",    ConsoleKey.UpArrow),
-        new("\x1b[1;5A", ConsoleKey.UpArrow,    ctrl:true),
+        new("\x1b[1;5A", ConsoleKey.UpArrow,    ctrl: true),
         new("\x1b[B",    ConsoleKey.DownArrow),
-        new("\x1b[1;5B", ConsoleKey.DownArrow,  ctrl:true),
+        new("\x1b[1;5B", ConsoleKey.DownArrow,  ctrl: true),
         new("\x1b[C",    ConsoleKey.RightArrow),
-        new("\x1b[1;5C", ConsoleKey.RightArrow, ctrl:true),
+        new("\x1b[1;5C", ConsoleKey.RightArrow, ctrl: true),
         new("\x1b[D",    ConsoleKey.LeftArrow),
-        new("\x1b[1;5D", ConsoleKey.LeftArrow,  ctrl:true),
+        new("\x1b[1;5D", ConsoleKey.LeftArrow,  ctrl: true),
 
         new("\x1b[H",    ConsoleKey.Home),
         new("\x1b[F",    ConsoleKey.End),
 
+        new("\x1b[2~",   ConsoleKey.Insert),
+        new("\x1b[3~",   ConsoleKey.Delete),
+
         new("\x1b[5~",   ConsoleKey.PageUp),
         new("\x1b[6~",   ConsoleKey.PageDown),
 
-        // do a better way of mapping this
-        new("\x3",       'c',                   ctrl:true),
-        new("\x4",       'd',                   ctrl:true),
+        new("\x7f",      ConsoleKey.Backspace),
+        new("\r",        ConsoleKey.Enter),
+
+        // do a better way of mapping this (note that ^M == \r == Enter key..)
+        new("\x1",       'a',                   ctrl: true),
+        new("\x2",       'b',                   ctrl: true),
+        new("\x3",       'c',                   ctrl: true),
+        new("\x4",       'd',                   ctrl: true),
+        new("\x5",       'e',                   ctrl: true),
+        new("\x6",       'f',                   ctrl: true),
+        new("\xb",       'k',                   ctrl: true),
+        new("\x15",      'u',                   ctrl: true),
     };
 
     InputParseResult ParseControlKey()
