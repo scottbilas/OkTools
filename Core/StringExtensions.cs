@@ -63,10 +63,12 @@ public static class StringExtensions
         @this.LastIndexOfNot(value, 0, @this.Length);
 
     // left/mid/right are BASIC-inspired names, and never throw except for a clear programming error
+    // TODO: replace with Span
 
     public static string Left(this string @this, int maxChars) =>
         @this[..Math.Min(maxChars, @this.Length)];
 
+    // TODO: get rid of -1 special code
     public static string Mid(this string @this, int offset, int maxChars = -1)
     {
         if (offset < 0)
@@ -88,6 +90,20 @@ public static class StringExtensions
 
         return @this.Left(maxChars - trailer.Length) + trailer;
     }
+
+    public static ReadOnlySpan<char> AsSpanSafe(this string @this, int start, int maxLength)
+    {
+        if (start < 0)
+            throw new ArgumentException("offset must be >= 0", nameof(start));
+
+        var safeStart = Math.Min(start, @this.Length);
+        var safeEnd = Math.Min(safeStart + maxLength, @this.Length);
+
+        return @this.AsSpan(safeStart, safeEnd - safeStart);
+    }
+
+    public static ReadOnlySpan<char> AsSpanSafe(this string @this, int start) =>
+        @this.AsSpanSafe(start, @this.Length);
 
     public static IEnumerable<string> SelectToStrings<T>(this IEnumerable<T> @this) =>
         @this.Select(v => v?.ToString()).WhereNotNull();
