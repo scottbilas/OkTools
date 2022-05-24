@@ -1,24 +1,5 @@
 using System.Threading.Tasks.Dataflow;
 
-class TerminalNotInteractiveException : Exception {}
-class TerminalInputEofException : Exception {}
-
-interface IEvent {}
-
-// TODO: split into KeyEvent vs CharEvent...the union is not very helpful, especially given pattern matching
-// (and don't want to use ConsoleKey.A/B/C etc. because there is no '!' or '#' etc. in ConsoleKey, even the tiny oem set)
-[PublicAPI]
-readonly struct KeyEvent : IEvent
-{
-    public readonly ConsoleKeyInfo Key;
-
-    public KeyEvent(ConsoleKeyInfo key) => Key = key;
-    public KeyEvent(ConsoleKey key, bool shift, bool alt, bool ctrl) : this(new ConsoleKeyInfo((char)0, key, shift, alt, ctrl)) {}
-    // ReSharper disable once IntroduceOptionalParameters.Global
-    public KeyEvent(ConsoleKey key) : this(key, false, false, false) {}
-    public KeyEvent(char ch, bool alt, bool ctrl) : this(new ConsoleKeyInfo(ch, 0, char.IsUpper(ch), alt, ctrl)) {}
-}
-
 [PublicAPI]
 readonly struct ErrorEvent : IEvent
 {
@@ -27,10 +8,10 @@ readonly struct ErrorEvent : IEvent
     public ErrorEvent(Exception exception) => Exception = exception;
 }
 
-class Screen : IDisposable
+partial class Screen : IDisposable
 {
     static int s_instanceCount;
-    bool _engaged, _disposed;
+    volatile bool _disposed;
 
     readonly VirtualTerminal _terminal;
     readonly BufferBlock<IEvent> _events = new();
@@ -60,12 +41,12 @@ class Screen : IDisposable
         */
 
         Terminal.EnableRawMode();
-        WriteAndClear(new ControlBuilder()
-            .SetScreenBuffer(ScreenBuffer.Alternate)
-            .ClearScreen());
-        Terminal.Signaled += OnSignaled;
+        _cb.SetScreenBuffer(ScreenBuffer.Alternate);
+        OutClearScreen();
+        OutFlush();
 
-        _engaged = true;
+        Terminal.Signaled += OnSignaled;
+        Terminal.Resized += OnResized;
 
         void Wrap(Action action)
         {
@@ -83,48 +64,24 @@ class Screen : IDisposable
         Task.Run(() => Wrap(TaskReadKeyEvents));
     }
 
-    public event Action<TerminalSize>? Resized
+    public void GetEvents(IList<IEvent> events)
     {
-        add => _terminal.Resized += value;
-        remove => _terminal.Resized -= value;
-    }
+        OutFlush();
 
-    public IEvent? TryGetEvent()
-    {
-        _events.TryReceive(out var evt);
-        return evt;
+        // block on the first one
+        events.Add(_events.Receive());
+
+        // receive as many more as we can
+        while (_events.TryReceive(out var evt))
+            events.Add(evt);
     }
 
     public TerminalSize Size => _terminal.Size;
-
-    public void WriteAndClear(ControlBuilder cb, int? reallocateThreshold = null)
-    {
-        _terminal.Out(cb.Span);
-        if (reallocateThreshold != null)
-            cb.Clear(reallocateThreshold.Value);
-        else
-            cb.Clear();
-    }
-
-    void OnSignaled(TerminalSignalContext _) => Disengage();
 
     public void Dispose()
     {
         if (_disposed)
             throw new ObjectDisposedException("Instance already disposed");
-
-        Disengage();
-
-        _disposed = true;
-        --s_instanceCount;
-    }
-
-    void Disengage()
-    {
-        if (!_engaged)
-            return;
-
-        _engaged = false;
 
         /* https://github.com/gdamore/tcell/v2/tscreen.go
 
@@ -145,13 +102,29 @@ class Screen : IDisposable
         */
 
         Terminal.Signaled -= OnSignaled;
-        Terminal.Out(new ControlBuilder()
-            .ResetAttributes()
-            .ClearScreen()
-            .SetScreenBuffer(ScreenBuffer.Main)
-            .SetCursorVisibility(true)
-            .Span);
+        Terminal.Resized -= OnResized;
+
+        _cb.Clear(); // drop anything that was in progress
+        OutResetAttributes();
+        OutClearScreen();
+        _cb.SetScreenBuffer(ScreenBuffer.Main);
+        OutShowCursor(true);
+        OutFlush();
+
         Terminal.DisableRawMode();
+
+        _disposed = true;
+        --s_instanceCount;
+    }
+
+    void OnSignaled(TerminalSignalContext signal)
+    {
+        _events.Post(new SignalEvent(signal.Signal));
+    }
+
+    void OnResized(TerminalSize size)
+    {
+        _events.Post(new ResizeEvent(size));
     }
 
     void TaskReadRawInput()
@@ -168,7 +141,7 @@ class Screen : IDisposable
         // get rid of this unnecessary extra _rawInput protocol.
         // (keep the combined read+process in a task off the main thread, though.)
 
-        while (_engaged)
+        while (!_disposed)
         {
             var input = new byte[128];
             var read = Terminal.Read(input);
@@ -182,7 +155,7 @@ class Screen : IDisposable
     void TaskReadKeyEvents()
     {
         var parser = new InputParser(_rawInput, _events);
-        while (_engaged)
+        while (!_disposed)
             parser.Process();
     }
 }

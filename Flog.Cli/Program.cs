@@ -93,169 +93,168 @@ Options:
     static CliExitCode FlogIt(NPath path)
     {
         using var screen = new Screen();
-        screen.WriteAndClear(new ControlBuilder().SetCursorVisibility(false));
+        screen.OutShowCursor(false);
 
         var options = new Options();
-        var view = new ScrollView(screen, options, path); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
+        var scrollView = new ScrollView(screen, options, path); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
+        var promptView = new PromptView(screen);
         var inPrompt = false;
-        var cb = new ControlBuilder();
 
-        void UpdateBounds()
+        void UpdateLayout()
         {
             var bottom = screen.Size.Height;
+
             if (inPrompt)
-                --bottom;
-            view.SetBounds(screen.Size.Width, 0, bottom);
+            {
+                screen.OutShowCursor(false);
+                scrollView.SetBounds(screen.Size.Width, 0, bottom - 1);
+                promptView.SetBounds(screen.Size.Width, bottom - 1);
+                screen.OutShowCursor(true);
+            }
+            else
+            {
+                screen.OutShowCursor(false);
+                scrollView.SetBounds(screen.Size.Width, 0, bottom);
+            }
         }
 
-        screen.Resized += _ => UpdateBounds();
-        UpdateBounds();
+        UpdateLayout();
 
         void TogglePrompt()
         {
             inPrompt = !inPrompt;
-
-            if (inPrompt)
-            {
-                UpdateBounds();
-
-                cb.MoveCursorTo(0, view.Bottom);
-                cb.ClearLine();
-                cb.Print(":");
-                cb.SetCursorVisibility(true);
-                screen.WriteAndClear(cb);
-            }
-            else
-            {
-                cb.SetCursorVisibility(false);
-                screen.WriteAndClear(cb);
-                UpdateBounds();
-            }
+            UpdateLayout();
         }
 
-        void PreservePrompt(Action scrollAction)
-        {
-            screen.WriteAndClear(cb.SaveCursorState().SetCursorVisibility(false));
-            scrollAction();
-            screen.WriteAndClear(cb.RestoreCursorState().SetCursorVisibility(true));
-        }
-
+        var events = new List<IEvent>();
         for (;;)
         {
-            var evt = screen.TryGetEvent();
-            if (evt == null)
-            {
-                Thread.Sleep(10);
-                continue;
-            }
+            events.Clear();
+            screen.GetEvents(events);
 
-            // global
-            switch (evt)
-            {
-                case KeyEvent { Key.KeyChar: 'c', Key.Modifiers: ConsoleModifiers.Control }:
-                    return UnixSignal.KeyboardInterrupt.AsCliExitCode();
-                case KeyEvent { Key.KeyChar: 'd', Key.Modifiers: ConsoleModifiers.Control }:
-                    return CliExitCode.Success;
-            }
+            // process global events from the batch first
 
-            if (inPrompt)
+            foreach (var evt in events)
             {
                 switch (evt)
                 {
-                    case KeyEvent { Key.Key: ConsoleKey.UpArrow, Key.Modifiers: 0 }:
-                        PreservePrompt(() => view.ScrollDown());
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.DownArrow, Key.Modifiers: 0 }:
-                        PreservePrompt(() => view.ScrollUp());
-                        break;
+                    case SignalEvent signalEvt:
+                        return (signalEvt.Signal switch
+                        {
+                            TerminalSignal.Close     /*SIGHUP*/  => UnixSignal.Lost,
+                            TerminalSignal.Interrupt /*SIGINT*/  => UnixSignal.KeyboardInterrupt,
+                            TerminalSignal.Quit      /*SIGQUIT*/ => UnixSignal.KeyboardQuit,
+                            TerminalSignal.Terminate /*SIGTERM*/ => UnixSignal.Terminate,
+                            _ => (UnixSignal)0
+                        }).AsCliExitCode();
 
-                    case KeyEvent { Key.Key: ConsoleKey.PageUp, Key.Modifiers: 0 }:
-                        PreservePrompt(() => view.ScrollPageDown());
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.PageDown, Key.Modifiers: 0 }:
-                        PreservePrompt(() => view.ScrollPageUp());
-                        break;
+                    case CharEvent { Char: 'c', Alt: false, Ctrl: true }:
+                        return UnixSignal.KeyboardInterrupt.AsCliExitCode();
 
-                    case KeyEvent { Key.Key: ConsoleKey.Escape, Key.Modifiers: 0 }:
-                        TogglePrompt();
-                        break;
-
-                    case KeyEvent { Key.Key: 0 } kevt:
-                        screen.WriteAndClear(cb.Print(kevt.Key.KeyChar));
-                        break;
-                }
-            }
-            else
-            {
-                switch (evt)
-                {
-                    case KeyEvent { Key.Key: ConsoleKey.Home, Key.Modifiers: 0 }:
-                        view.ScrollToTop();
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.End, Key.Modifiers: 0 }:
-                        view.ScrollToBottom();
-                        break;
-
-                    case KeyEvent { Key.Key: ConsoleKey.UpArrow, Key.Modifiers: 0 }://:
-                    case KeyEvent { Key.KeyChar: 'k', Key.Modifiers: 0 }:
-                        view.ScrollDown();
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.DownArrow, Key.Modifiers: 0 }://:
-                    case KeyEvent { Key.KeyChar: 'j', Key.Modifiers: 0 }:
-                        view.ScrollUp();
-                        break;
-
-                    case KeyEvent { Key.KeyChar: 'K', Key.Modifiers: ConsoleModifiers.Shift }:
-                        view.ScrollHalfPageDown();
-                        break;
-                    case KeyEvent { Key.KeyChar: 'J', Key.Modifiers: ConsoleModifiers.Shift }:
-                        view.ScrollHalfPageUp();
-                        break;
-
-                    case KeyEvent { Key.Key: ConsoleKey.LeftArrow, Key.Modifiers: 0 }:
-                    case KeyEvent { Key.KeyChar: 'h', Key.Modifiers: 0 }:
-                        view.ScrollRight();
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.RightArrow, Key.Modifiers: 0 }:
-                    case KeyEvent { Key.KeyChar: 'l', Key.Modifiers: 0 }:
-                        view.ScrollLeft();
-                        break;
-
-                    case KeyEvent { Key.KeyChar: 'H', Key.Modifiers: ConsoleModifiers.Shift }:
-                        view.ScrollToX(0);
-                        break;
-
-                    case KeyEvent { Key.Key: ConsoleKey.PageUp, Key.Modifiers: 0 }:
-                        view.ScrollPageDown();
-                        break;
-                    case KeyEvent { Key.Key: ConsoleKey.PageDown, Key.Modifiers: 0 }:
-                        view.ScrollPageUp();
-                        break;
-
-                    case KeyEvent { Key.KeyChar: 'q', Key.Modifiers: 0 }:
-                    case KeyEvent { Key.Key: ConsoleKey.Escape, Key.Modifiers: 0 }:
-                        return CliExitCode.Success;
-
-                    case KeyEvent { Key.KeyChar: ':', Key.Modifiers: 0 }:
-                        TogglePrompt();
+                    case ResizeEvent:
+                        UpdateLayout();
                         break;
                 }
             }
 
+            // now ordinary events
+
+            foreach (var evt in events)
+            {
+                if (inPrompt)
+                {
+                    void PreservePrompt(Action scrollAction)
+                    {
+                        screen.OutSaveCursorPos();
+                        screen.OutShowCursor(false);
+                        scrollAction();
+                        screen.OutRestoreCursorPos();
+                        screen.OutShowCursor(true);
+                    }
+
+                    switch (evt)
+                    {
+                        case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
+                            PreservePrompt(() => scrollView.ScrollDown());
+                            break;
+                        case KeyEvent { Key: ConsoleKey.DownArrow, NoModifiers: true }:
+                            PreservePrompt(() => scrollView.ScrollUp());
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
+                            PreservePrompt(() => scrollView.ScrollPageDown());
+                            break;
+                        case KeyEvent { Key: ConsoleKey.PageDown, NoModifiers: true }:
+                            PreservePrompt(() => scrollView.ScrollPageUp());
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
+                            TogglePrompt();
+                            break;
+
+                        default:
+                            promptView.HandleEvent(evt);
+                            break;
+                    }
+                }
+                else
+                {
+                    switch (evt)
+                    {
+                        case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:
+                            scrollView.ScrollToTop();
+                            break;
+                        case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
+                            scrollView.ScrollToBottom();
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
+                        case CharEvent { Char: 'k', NoModifiers: true }:
+                            scrollView.ScrollDown();
+                            break;
+                        case KeyEvent { Key: ConsoleKey.DownArrow, NoModifiers: true }:
+                        case CharEvent { Char: 'j', NoModifiers: true }:
+                            scrollView.ScrollUp();
+                            break;
+
+                        case CharEvent { Char: 'K', NoModifiers: true }:
+                            scrollView.ScrollHalfPageDown();
+                            break;
+                        case CharEvent { Char: 'J', NoModifiers: true }:
+                            scrollView.ScrollHalfPageUp();
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.LeftArrow, NoModifiers: true }:
+                        case CharEvent { Char: 'h', NoModifiers: true }:
+                            scrollView.ScrollRight();
+                            break;
+                        case KeyEvent { Key: ConsoleKey.RightArrow, NoModifiers: true }:
+                        case CharEvent { Char: 'l', NoModifiers: true }:
+                            scrollView.ScrollLeft();
+                            break;
+
+                        case CharEvent { Char: 'H', NoModifiers: true }:
+                            scrollView.ScrollToX(0);
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
+                            scrollView.ScrollPageDown();
+                            break;
+                        case KeyEvent { Key: ConsoleKey.PageDown, NoModifiers: true }:
+                            scrollView.ScrollPageUp();
+                            break;
+
+                        case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
+                        case CharEvent { Char: 'd', Alt: false, Ctrl: true }:
+                        case CharEvent { Char: 'q', NoModifiers: true }:
+                            return CliExitCode.Success;
+
+                        case CharEvent { Char: ':', NoModifiers: true }:
+                            TogglePrompt();
+                            break;
+                    }
+                }
+            }
         }
     }
-}
-
-static class ConsoleKeyInfoExtensions
-{
-    public static bool HasCtrl (this ConsoleKeyInfo @this) => @this.Modifiers.HasCtrl();
-    public static bool HasAlt  (this ConsoleKeyInfo @this) => @this.Modifiers.HasAlt();
-    public static bool HasShift(this ConsoleKeyInfo @this) => @this.Modifiers.HasShift();
-}
-
-static class ConsoleModifiersExtensions
-{
-    public static bool HasCtrl (this ConsoleModifiers @this) => (@this & ConsoleModifiers.Control) != 0;
-    public static bool HasAlt  (this ConsoleModifiers @this) => (@this & ConsoleModifiers.Alt    ) != 0;
-    public static bool HasShift(this ConsoleModifiers @this) => (@this & ConsoleModifiers.Shift  ) != 0;
 }
