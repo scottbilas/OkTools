@@ -1,11 +1,9 @@
 using System.Threading.Tasks.Dataflow;
 
-[PublicAPI]
-readonly struct ErrorEvent : IEvent
+class Options
 {
-    public readonly Exception Exception;
-
-    public ErrorEvent(Exception exception) => Exception = exception;
+    public readonly int TabWidth = 4;
+    public readonly int HorizScrollSize = 10;
 }
 
 partial class Screen : IDisposable
@@ -14,6 +12,7 @@ partial class Screen : IDisposable
     volatile bool _disposed;
 
     readonly VirtualTerminal _terminal;
+    readonly Options _options = new();
     readonly BufferBlock<IEvent> _events = new();
     readonly BufferBlock<ReadOnlyMemory<byte>> _rawInput = new();
 
@@ -64,6 +63,8 @@ partial class Screen : IDisposable
         Task.Run(() => Wrap(TaskReadKeyEvents));
     }
 
+    public void PostEvent(IEvent evt) => _events.Post(evt);
+
     public void GetEvents(IList<IEvent> events)
     {
         OutFlush();
@@ -77,6 +78,8 @@ partial class Screen : IDisposable
     }
 
     public TerminalSize Size => _terminal.Size;
+
+    public Options Options => _options;
 
     public void Dispose()
     {

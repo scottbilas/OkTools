@@ -3,6 +3,13 @@ class TerminalInputEofException : Exception {}
 
 interface IEvent {}
 
+readonly struct ErrorEvent : IEvent
+{
+    public readonly Exception Exception;
+
+    public ErrorEvent(Exception exception) => Exception = exception;
+}
+
 readonly struct SignalEvent : IEvent
 {
     public readonly TerminalSignal Signal;
@@ -51,5 +58,15 @@ readonly struct ResizeEvent : IEvent
     public ResizeEvent(TerminalSize newSize)
     {
         NewSize = newSize;
+    }
+}
+
+readonly struct FilterUpdatedEvent : IEvent
+{
+    public readonly string NewFilter;
+
+    public FilterUpdatedEvent(string newFilter)
+    {
+        NewFilter = newFilter;
     }
 }

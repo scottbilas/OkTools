@@ -160,7 +160,10 @@ class InputParser
         new("\x7f",      ConsoleKey.Backspace),
         new("\r",        ConsoleKey.Enter),
 
-        // do a better way of mapping this (note that ^M == \r == Enter key..)
+        // TODO: do a better way of mapping this
+        // note that ^M == \r == Enter key..could be we really do want Console+CharKey unified..or maybe ctrl-keys are
+        // *always* a ConsoleKey because they're ctrl sequences. also less confusing when trying to figure out what to
+        // match against on the receiving side (don't have to look up what ^J or ^M or \r means).
         new("\x1",       'a',                   ctrl: true),
         new("\x2",       'b',                   ctrl: true),
         new("\x3",       'c',                   ctrl: true),

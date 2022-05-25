@@ -1,30 +1,22 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using NiceIO;
 using OkTools.Core;
-
-class Options
-{
-    public readonly int TabWidth = 4;
-    public readonly int HorizScrollSize = 10;
-}
 
 class ScrollView
 {
     readonly Screen _screen;
-    readonly Options _options;
-    readonly string[] _lines;
+    readonly ILogSource _logSource;
     readonly string?[] _processedLines;
     readonly StringBuilder _sb = new();
 
     int _x, _y, _cx, _top, _bottom;
+    // TODO: bool for "tail on", also need some options for how we refresh
 
-    public ScrollView(Screen screen, Options options, NPath path)
+    public ScrollView(Screen screen, ILogSource logSource)
     {
         _screen = screen;
-        _options = options;
-        _lines = path.ReadAllLines();
-        _processedLines = new string?[_lines.Length];
+        _logSource = logSource;
+        _processedLines = new string?[logSource.Lines.Count];
     }
 
     public int Height => _bottom - _top;
@@ -38,8 +30,8 @@ class ScrollView
     public void ScrollPageDown() => ScrollY(-Height);
     public void ScrollPageUp() => ScrollY(Height);
 
-    public void ScrollLeft() => ScrollX(_options.HorizScrollSize);
-    public void ScrollRight() => ScrollX(-_options.HorizScrollSize);
+    public void ScrollLeft() => ScrollX(_screen.Options.HorizScrollSize);
+    public void ScrollRight() => ScrollX(-_screen.Options.HorizScrollSize);
 
     public void ScrollToTop()
     {
@@ -49,8 +41,9 @@ class ScrollView
 
     public void ScrollToBottom()
     {
-        var target = _lines.Length - (Height / 2);
-        ScrollToY(_y < target ? target : _lines.Length);
+        var end = _logSource.Lines.Count;
+        var target = end - (Height / 2);
+        ScrollToY(_y < target ? target : end);
     }
 
     public void SetBounds(int width, int top, int bottom)
@@ -82,74 +75,15 @@ class ScrollView
         }
     }
 
-    // regex from https://github.com/chalk/ansi-regex/blob/main/index.js
-    // TODO: eliminate the rx and work on spans by porting fzf's escape parser from https://github.com/junegunn/fzf/blob/master/src/ansi.go#L130
-    static readonly Regex s_ansiEscapes = new(
-        "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)|" +
-        "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))");
-
-    string ProcessForDisplay(string line)
-    {
-        var hasEscapeSeqs = false;
-        var hasControlChars = false;
-
-        // ReSharper disable once ForCanBeConvertedToForeach
-        for (var i = 0; i < line.Length; ++i)
-        {
-            var c = line[i];
-            if (c == 0x1b)
-            {
-                hasEscapeSeqs = true;
-                if (hasControlChars)
-                    break;
-            }
-            else if (c <= 0x1f || c == 0x7f)
-            {
-                hasControlChars = true;
-                if (hasEscapeSeqs)
-                    break;
-            }
-        }
-
-        if (hasEscapeSeqs)
-            line = s_ansiEscapes.Replace(line, "");
-
-        if (hasControlChars)
-        {
-            _sb.Clear();
-            // ReSharper disable once ForCanBeConvertedToForeach
-            for (var i = 0; i < line.Length; ++i)
-            {
-                var c = line[i];
-                if (c == '\t' && _options.TabWidth > 0)
-                {
-                    var indent = (_sb.Length+1) % _options.TabWidth;
-                    _sb.Append(' ', _options.TabWidth - indent+1);
-                }
-                else if (c <= 0x1f || c == 0x7f)
-                {
-                    // just skip these
-                    // TODO: consider insert a special char like from https://unicode-table.com/en/blocks/control-pictures/
-                }
-                else
-                    _sb.Append(c);
-            }
-
-            line = _sb.ToString();
-        }
-
-        return line;
-    }
-
     void Refresh() => Refresh(0, Height);
 
     void Refresh(int top, int bottom)
     {
-        var endPrintY = Math.Min(bottom, _lines.Length - _y);
+        var endPrintY = Math.Min(bottom, _logSource.Lines.Count - _y);
 
         for (var i = top; i < endPrintY; ++i)
         {
-            var line = _processedLines[i + _y] ?? (_processedLines[i + _y] = ProcessForDisplay(_lines[i + _y]));
+            var line = _processedLines[i + _y] ?? (_processedLines[i + _y] = ProcessForDisplay(_logSource.Lines[i + _y]));
 
             _screen.OutSetCursorPos(0, i);
             _screen.OutPrint(line.AsSpanSafe(_x), _cx, true);
@@ -164,7 +98,7 @@ class ScrollView
 
     int ClampY(int testY)
     {
-        return Math.Max(Math.Min(testY, _lines.Length - 1), 0);
+        return Math.Max(Math.Min(testY, _logSource.Lines.Count - 1), 0);
     }
 
     public bool ScrollToY(int y)
@@ -208,4 +142,63 @@ class ScrollView
     }
 
     void ScrollX(int offset) => ScrollToX(_x + offset);
+
+    // regex from https://github.com/chalk/ansi-regex/blob/main/index.js
+    // TODO: eliminate the rx and work on spans by porting fzf's escape parser from https://github.com/junegunn/fzf/blob/master/src/ansi.go#L130
+    static readonly Regex s_ansiEscapes = new(
+        "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)|" +
+        "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))");
+
+    string ProcessForDisplay(string line)
+    {
+        var hasEscapeSeqs = false;
+        var hasControlChars = false;
+
+        // ReSharper disable once ForCanBeConvertedToForeach
+        for (var i = 0; i < line.Length; ++i)
+        {
+            var c = line[i];
+            if (c == 0x1b)
+            {
+                hasEscapeSeqs = true;
+                if (hasControlChars)
+                    break;
+            }
+            else if (c <= 0x1f || c == 0x7f)
+            {
+                hasControlChars = true;
+                if (hasEscapeSeqs)
+                    break;
+            }
+        }
+
+        if (hasEscapeSeqs)
+            line = s_ansiEscapes.Replace(line, "");
+
+        if (hasControlChars)
+        {
+            _sb.Clear();
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (var i = 0; i < line.Length; ++i)
+            {
+                var c = line[i];
+                if (c == '\t' && _screen.Options.TabWidth > 0)
+                {
+                    var indent = (_sb.Length+1) % _screen.Options.TabWidth;
+                    _sb.Append(' ', _screen.Options.TabWidth - indent+1);
+                }
+                else if (c <= 0x1f || c == 0x7f)
+                {
+                    // just skip these
+                    // TODO: consider insert a special char like from https://unicode-table.com/en/blocks/control-pictures/
+                }
+                else
+                    _sb.Append(c);
+            }
+
+            line = _sb.ToString();
+        }
+
+        return line;
+    }
 }

@@ -17,7 +17,7 @@ class PromptView
         _screen.OutSetCursorPos(0, _y);
         _screen.OutPrint(':');
         _screen.OutPrint(_command.ToString().AsSpan(_x), _cx - 1, true);
-        UpdateCursor();
+        UpdateCursorPos();
     }
 
     public void SetBounds(int width, int y)
@@ -28,7 +28,9 @@ class PromptView
         Refresh();
     }
 
-    void UpdateCursor() => _screen.OutSetCursorPos(_cursor - _x + 1, _y);
+    void UpdateCursorPos() => _screen.OutSetCursorPos(_cursor - _x + 1, _y);
+
+    void PostUpdatedFilter() => _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
 
     public void HandleEvent(IEvent evt)
     {
@@ -41,7 +43,7 @@ class PromptView
                 if (_cursor > 0)
                 {
                     --_cursor;
-                    UpdateCursor();
+                    UpdateCursorPos();
                 }
                 break;
 
@@ -50,28 +52,29 @@ class PromptView
                 if (_cursor < _command.Length)
                 {
                     ++_cursor;
-                    UpdateCursor();
+                    UpdateCursorPos();
                 }
                 break;
 
             case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:
             case CharEvent { Char: 'a', Alt: false, Ctrl: true }:
                 _cursor = 0;
-                UpdateCursor();
+                UpdateCursorPos();
                 break;
 
             case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
             case CharEvent { Char: 'e', Alt: false, Ctrl: true }:
                 _cursor = _command.Length;
-                UpdateCursor();
+                UpdateCursorPos();
                 break;
 
             case KeyEvent { Key: ConsoleKey.Backspace, NoModifiers: true }:
                 if (_cursor > 0)
                 {
                     _command.Remove(--_cursor, 1);
-                    UpdateCursor();
+                    UpdateCursorPos();
                     _screen.OutDeleteChars(1);
+                    PostUpdatedFilter();
                 }
                 break;
 
@@ -81,6 +84,7 @@ class PromptView
                 {
                     _command.Remove(_cursor, 1);
                     _screen.OutDeleteChars(1);
+                    PostUpdatedFilter();
                 }
                 break;
 
@@ -89,6 +93,7 @@ class PromptView
                 {
                     _command.Remove(_cursor, _command.Length - _cursor);
                     _screen.OutClearLine(ClearMode.After);
+                    PostUpdatedFilter();
                 }
                 break;
 
@@ -98,8 +103,9 @@ class PromptView
                     var removed = _cursor;
                     _command.Remove(0, _cursor);
                     _cursor = 0;
-                    UpdateCursor();
+                    UpdateCursorPos();
                     _screen.OutDeleteChars(removed);
+                    PostUpdatedFilter();
                 }
                 break;
 
@@ -107,6 +113,7 @@ class PromptView
                 _command.Insert(_cursor++, chrEvt.Char);
                 _screen.OutInsertChars(1);
                 _screen.OutPrint(chrEvt.Char);
+                PostUpdatedFilter();
                 break;
         }
     }
