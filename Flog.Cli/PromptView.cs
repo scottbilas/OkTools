@@ -32,7 +32,7 @@ class PromptView
 
     void PostUpdatedFilter() => _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
 
-    public void HandleEvent(IEvent evt)
+    public void HandleEvent(ITerminalEvent evt)
     {
         switch (evt)
         {

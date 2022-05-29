@@ -1,16 +1,16 @@
 ﻿class TerminalNotInteractiveException : Exception {}
 class TerminalInputEofException : Exception {}
 
-interface IEvent {}
+interface ITerminalEvent {}
 
-readonly struct ErrorEvent : IEvent
+readonly struct ErrorEvent : ITerminalEvent
 {
     public readonly Exception Exception;
 
     public ErrorEvent(Exception exception) => Exception = exception;
 }
 
-readonly struct SignalEvent : IEvent
+readonly struct SignalEvent : ITerminalEvent
 {
     public readonly TerminalSignal Signal;
 
@@ -20,7 +20,7 @@ readonly struct SignalEvent : IEvent
     }
 }
 
-readonly struct KeyEvent : IEvent
+readonly struct KeyEvent : ITerminalEvent
 {
     public readonly ConsoleKey Key;
     public readonly bool Shift, Alt, Ctrl;
@@ -36,7 +36,7 @@ readonly struct KeyEvent : IEvent
     public bool NoModifiers => !Shift && !Alt && !Ctrl;
 }
 
-readonly struct CharEvent : IEvent
+readonly struct CharEvent : ITerminalEvent
 {
     public readonly char Char;
     public readonly bool Alt, Ctrl;
@@ -51,7 +51,7 @@ readonly struct CharEvent : IEvent
     public bool NoModifiers => !Alt && !Ctrl;
 }
 
-readonly struct ResizeEvent : IEvent
+readonly struct ResizeEvent : ITerminalEvent
 {
     public readonly TerminalSize NewSize;
 
@@ -61,7 +61,7 @@ readonly struct ResizeEvent : IEvent
     }
 }
 
-readonly struct FilterUpdatedEvent : IEvent
+readonly struct FilterUpdatedEvent : ITerminalEvent
 {
     public readonly string NewFilter;
 
