@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using System.Threading.Tasks.Dataflow;
+using System.Threading.Channels;
 
 enum InputParseResult { Accept, NoMatch, Partial }
 
@@ -7,20 +7,20 @@ class InputParser
 {
     static readonly TimeSpan k_standaloneEscTimeoutMs = TimeSpan.FromMilliseconds(50); // tcell uses this timeout
 
-    readonly BufferBlock<ReadOnlyMemory<byte>> _rawInput;
-    readonly BufferBlock<IEvent> _events;
+    readonly ChannelReader<ReadOnlyMemory<byte>> _rawInput;
+    readonly ChannelWriter<ITerminalEvent> _events;
 
     readonly ByteStream _input = new();
     bool _inEscape;
     DateTime _keyExpire;
 
-    public InputParser(BufferBlock<ReadOnlyMemory<byte>> rawInput, BufferBlock<IEvent> events)
+    public InputParser(ChannelReader<ReadOnlyMemory<byte>> rawInput, ChannelWriter<ITerminalEvent> events)
     {
         _rawInput = rawInput;
         _events = events;
     }
 
-    public void Process()
+    public async Task Process()
     {
         var oldSize = _input.Count;
 
@@ -29,12 +29,12 @@ class InputParser
 
         // block until we get something, unless we're in a partial sequence (in which case sleep to avoid spinning for the full timeout)
         if (_input.Count == 0 && !_inEscape)
-            _input.Write(_rawInput.Receive());
+            _input.Write(await _rawInput.ReadAsync());
         else
             Thread.Sleep(1);
 
         // read whatever more is available
-        while (_rawInput.TryReceive(out var chunk))
+        while (_rawInput.TryRead(out var chunk))
             _input.Write(chunk);
 
         // only consider timer expired if we still haven't gotten any new input
@@ -44,7 +44,7 @@ class InputParser
             Parse(true);
     }
 
-    void Parse(bool timerExpired)
+    async void Parse(bool timerExpired)
     {
         for (;;)
         {
@@ -56,13 +56,13 @@ class InputParser
 
             var partial = false;
 
-            switch (ParseChar())
+            switch (await ParseChar())
             {
                 case InputParseResult.Accept: continue;
                 case InputParseResult.Partial: partial = true; break;
             }
 
-            switch (ParseControlKey())
+            switch (await ParseControlKey())
             {
                 case InputParseResult.Accept: continue;
                 case InputParseResult.Partial: partial = true; break;
@@ -76,14 +76,14 @@ class InputParser
             if (b != ControlConstants.ESC)
             {
                 // unrecognized sequence or timeout, so push to app to figure it out
-                _events.Post(new CharEvent((char)b, _inEscape, false));
+                await _events.WriteAsync(new CharEvent((char)b, _inEscape, false));
                 _inEscape = false;
             }
             else if (_input.IsEmpty)
             {
                 // this is a real esc keypress (we likely got here because ESC+timeout)
                 // note that (at least on windows) no modifiers will come through, as the OS uses modified ESC for other things
-                _events.Post(new KeyEvent(ConsoleKey.Escape));
+                await _events.WriteAsync(new KeyEvent(ConsoleKey.Escape));
                 _inEscape = false;
             }
             else
@@ -97,14 +97,14 @@ class InputParser
         _keyExpire = DateTime.UtcNow + k_standaloneEscTimeoutMs;
     }
 
-    InputParseResult ParseChar()
+    async Task<InputParseResult> ParseChar()
     {
         var b = _input.Peek();
         if (b >= ' ' && b < 0x7F)
         {
             // normal ascii
 
-            _events.Post(new CharEvent((char)b, _inEscape, false));
+            await _events.WriteAsync(new CharEvent((char)b, _inEscape, false));
             _inEscape = false;
             _input.Seek();
 
@@ -122,7 +122,7 @@ class InputParser
     readonly struct ControlMapping
     {
         public readonly byte[] Input;
-        public readonly IEvent Event;
+        public readonly ITerminalEvent Event;
 
         public ControlMapping(string input, ConsoleKey key, bool shift = false, bool alt = false, bool ctrl = false)
         {
@@ -174,24 +174,23 @@ class InputParser
         new("\x15",      'u',                   ctrl: true),
     };
 
-    InputParseResult ParseControlKey()
+    async Task<InputParseResult> ParseControlKey()
     {
-        var input = _input.Span;
         var partial = false;
 
         foreach (var mapping in k_controlMappings)
         {
-            var pattern = mapping.Input.AsSpan();
-            if (input.StartsWith(pattern))
+            var pattern = mapping.Input.AsMemory();
+            if (_input.Span.StartsWith(pattern.Span))
             {
-                _events.Post(mapping.Event);
+                await _events.WriteAsync(mapping.Event);
                 _inEscape = false;
                 _input.Seek(pattern.Length);
 
                 return InputParseResult.Accept;
             }
 
-            if (pattern.StartsWith(input))
+            if (pattern.Span.StartsWith(_input.Span))
                 partial = true;
         }
 

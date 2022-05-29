@@ -31,7 +31,7 @@ Options:
   --debug  Enable extra debug features
 ";
 
-    public static int Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         var debugMode = false;
 
@@ -43,7 +43,7 @@ Options:
             var opt = new Docopt().Apply(k_docUsage, args, version: $"{k_docName} {k_docVersion}", help: false);
             debugMode = opt["--debug"].IsTrue;
 
-            return (int)FlogIt(opt["PATH"].ToString().ToNPath().FileMustExist());
+            return (int)await FlogIt(opt["PATH"].ToString().ToNPath().FileMustExist());
         }
         catch (DocoptInputErrorException x)
         {

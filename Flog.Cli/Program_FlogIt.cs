@@ -3,7 +3,7 @@ using OkTools.Core;
 
 public static partial class Program
 {
-    static CliExitCode FlogIt(NPath path)
+    static async Task<CliExitCode> FlogIt(NPath path)
     {
         using var screen = new Screen();
         screen.OutShowCursor(false);
@@ -43,11 +43,11 @@ public static partial class Program
             UpdateLayout();
         }
 
-        var events = new List<IEvent>();
+        var events = new List<ITerminalEvent>();
         for (;;)
         {
             events.Clear();
-            screen.GetEvents(events);
+            await screen.GetEvents(events);
 
             // process global events from the batch first
 

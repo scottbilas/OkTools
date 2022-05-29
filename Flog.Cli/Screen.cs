@@ -1,4 +1,4 @@
-using System.Threading.Tasks.Dataflow;
+using System.Threading.Channels;
 
 class Options
 {
@@ -9,12 +9,13 @@ class Options
 partial class Screen : IDisposable
 {
     static int s_instanceCount;
-    volatile bool _disposed;
-
+    readonly CancellationTokenSource _disposed = new();
     readonly VirtualTerminal _terminal;
     readonly Options _options = new();
-    readonly BufferBlock<IEvent> _events = new();
-    readonly BufferBlock<ReadOnlyMemory<byte>> _rawInput = new();
+
+    readonly Channel<ITerminalEvent> _terminalEvents = Channel
+        .CreateUnbounded<ITerminalEvent>(new UnboundedChannelOptions
+            { SingleReader = true }); // only mainloop processes incoming events
 
     public Screen()
     {
@@ -55,25 +56,28 @@ partial class Screen : IDisposable
             }
             catch (Exception x)
             {
-                _events.Post(new ErrorEvent(x));
+                _terminalEvents.Writer.WriteAsync(new ErrorEvent(x));
             }
         }
 
-        Task.Run(() => Wrap(TaskReadRawInput));
-        Task.Run(() => Wrap(TaskReadKeyEvents));
+        var terminalRawInput = Channel.CreateUnbounded<ReadOnlyMemory<byte>>(
+            new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
+
+        Task.Run(() => Wrap(() => TaskReadRawInput(terminalRawInput.Writer)));
+        Task.Run(() => Wrap(() => TaskReadKeyEvents(terminalRawInput.Reader)));
     }
 
-    public void PostEvent(IEvent evt) => _events.Post(evt);
+    public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt);
 
-    public void GetEvents(IList<IEvent> events)
+    public async Task GetEvents(IList<ITerminalEvent> events)
     {
         OutFlush();
 
         // block on the first one
-        events.Add(_events.Receive());
+        events.Add(await _terminalEvents.Reader.ReadAsync());
 
         // receive as many more as we can
-        while (_events.TryReceive(out var evt))
+        while (_terminalEvents.Reader.TryRead(out var evt))
             events.Add(evt);
     }
 
@@ -83,8 +87,9 @@ partial class Screen : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if (_disposed.IsCancellationRequested)
             throw new ObjectDisposedException("Instance already disposed");
+        _disposed.Cancel();
 
         /* https://github.com/gdamore/tcell/v2/tscreen.go
 
@@ -116,21 +121,20 @@ partial class Screen : IDisposable
 
         Terminal.DisableRawMode();
 
-        _disposed = true;
         --s_instanceCount;
     }
 
     void OnSignaled(TerminalSignalContext signal)
     {
-        _events.Post(new SignalEvent(signal.Signal));
+        _terminalEvents.Writer.WriteAsync(new SignalEvent(signal.Signal));
     }
 
     void OnResized(TerminalSize size)
     {
-        _events.Post(new ResizeEvent(size));
+        _terminalEvents.Writer.WriteAsync(new ResizeEvent(size));
     }
 
-    void TaskReadRawInput()
+    async void TaskReadRawInput(ChannelWriter<ReadOnlyMemory<byte>> rawInput)
     {
         // vezel cathode doesn't support cancelable key read on windows, so we have to roll our own
         //
@@ -141,24 +145,29 @@ partial class Screen : IDisposable
         //
 
         // TODO: would really like to use a cancelable Terminal.Read or use a Peek() on there instead, so we can
-        // get rid of this unnecessary extra _rawInput protocol.
+        // get rid of this unnecessary extra _rawInput protocol (needs a timeout in order to detect standalone ESC).
         // (keep the combined read+process in a task off the main thread, though.)
 
-        while (!_disposed)
-        {
-            var input = new byte[128];
-            var read = Terminal.Read(input);
-            if (read == 0)
-                throw new TerminalInputEofException();
 
-            _rawInput.Post(new Memory<byte>(input, 0, read));
+        // TODO: turn this into async enumerable
+        while (!_disposed.IsCancellationRequested)
+        {
+            var input = new byte[10];
+            var read = await Terminal.ReadAsync(input, _disposed.Token);
+            if (read == 0)
+            {
+                await _terminalEvents.Writer.WriteAsync(new SignalEvent(TerminalSignal.Close), _disposed.Token);
+                break;
+            }
+
+            await rawInput.WriteAsync(new Memory<byte>(input, 0, read), _disposed.Token);
         }
     }
 
-    void TaskReadKeyEvents()
+    async void TaskReadKeyEvents(ChannelReader<ReadOnlyMemory<byte>> rawInput)
     {
-        var parser = new InputParser(_rawInput, _events);
-        while (!_disposed)
-            parser.Process();
+        var parser = new InputParser(rawInput, _terminalEvents);
+        while (!_disposed.IsCancellationRequested)
+            await parser.Process();
     }
 }

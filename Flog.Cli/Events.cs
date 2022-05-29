@@ -1,5 +1,4 @@
 ﻿class TerminalNotInteractiveException : Exception {}
-class TerminalInputEofException : Exception {}
 
 interface ITerminalEvent {}
 
