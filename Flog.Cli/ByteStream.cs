@@ -5,6 +5,7 @@
 
     public int Count => _write - _read;
     public bool IsEmpty => _write == _read;
+    public Memory<byte> Memory => new(_buffer, _read, Count);
     public Span<byte> Span => new(_buffer, _read, Count);
 
     public void Reset()
