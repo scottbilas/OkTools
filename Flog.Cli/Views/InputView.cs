@@ -32,7 +32,7 @@ class InputView
 
     void PostUpdatedFilter() => _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
 
-    public void HandleEvent(ITerminalEvent evt)
+    public bool HandleEvent(ITerminalEvent evt)
     {
         switch (evt)
         {
@@ -115,6 +115,11 @@ class InputView
                 _screen.OutPrint(chrEvt.Char);
                 PostUpdatedFilter();
                 break;
+
+            default:
+                return false;
         }
+
+        return true;
     }
 }

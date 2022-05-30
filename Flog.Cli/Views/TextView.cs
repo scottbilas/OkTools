@@ -143,6 +143,67 @@ class TextView
 
     void ScrollX(int offset) => ScrollToX(_x + offset);
 
+    public bool HandleEvent(ITerminalEvent evt, Action? pre = null, Action? post = null)
+    {
+        void Preserve(Action action)
+        {
+            pre?.Invoke();
+            action();
+            post?.Invoke();
+        }
+
+        switch (evt)
+        {
+            case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:
+                Preserve(ScrollToTop);
+                break;
+            case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
+                Preserve(ScrollToBottom);
+                break;
+
+            case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
+            case CharEvent { Char: 'k', NoModifiers: true }:
+                Preserve(ScrollDown);
+                break;
+            case KeyEvent { Key: ConsoleKey.DownArrow, NoModifiers: true }:
+            case CharEvent { Char: 'j', NoModifiers: true }:
+                Preserve(ScrollUp);
+                break;
+
+            case CharEvent { Char: 'K', NoModifiers: true }:
+                Preserve(ScrollHalfPageDown);
+                break;
+            case CharEvent { Char: 'J', NoModifiers: true }:
+                Preserve(ScrollHalfPageUp);
+                break;
+
+            case KeyEvent { Key: ConsoleKey.LeftArrow, NoModifiers: true }:
+            case CharEvent { Char: 'h', NoModifiers: true }:
+                Preserve(ScrollRight);
+                break;
+            case KeyEvent { Key: ConsoleKey.RightArrow, NoModifiers: true }:
+            case CharEvent { Char: 'l', NoModifiers: true }:
+                Preserve(ScrollLeft);
+                break;
+
+            case CharEvent { Char: 'H', NoModifiers: true }:
+                Preserve(() => ScrollToX(0));
+                break;
+
+            case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
+                Preserve(ScrollPageDown);
+                break;
+            case KeyEvent { Key: ConsoleKey.PageDown, NoModifiers: true }:
+                Preserve(ScrollPageUp);
+                break;
+
+            default:
+                return false;
+        }
+
+        return true;
+    }
+
     // regex from https://github.com/chalk/ansi-regex/blob/main/index.js
     // TODO: eliminate the rx and work on spans by porting fzf's escape parser from https://github.com/junegunn/fzf/blob/master/src/ansi.go#L130
     static readonly Regex s_ansiEscapes = new(

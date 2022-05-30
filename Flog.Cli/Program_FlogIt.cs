@@ -8,12 +8,12 @@ public static partial class Program
         using var screen = new Screen();
         screen.OutShowCursor(false);
 
-        var scrollViews = new List<TextView>();
-        scrollViews.Add(new TextView(screen, new StreamLogSource(path))); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
+        var textViews = new List<TextView>();
+        textViews.Add(new TextView(screen, new StreamLogSource(path))); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
+        var currentFilter = textViews[0];
 
-        var scrollView = scrollViews[0];
-        var promptView = new InputView(screen);
-        var inPrompt = false;
+        var command = new InputView(screen);
+        var inCommand = false;
 
         // TODO: scrolling in a later view should also (optionally) update views in base views
 
@@ -21,25 +21,25 @@ public static partial class Program
         {
             var bottom = screen.Size.Height;
 
-            if (inPrompt)
+            if (inCommand)
             {
                 screen.OutShowCursor(false);
-                scrollView.SetBounds(screen.Size.Width, 0, bottom - 1);
-                promptView.SetBounds(screen.Size.Width, bottom - 1);
+                currentFilter.SetBounds(screen.Size.Width, 0, bottom - 1);
+                command.SetBounds(screen.Size.Width, bottom - 1);
                 screen.OutShowCursor(true);
             }
             else
             {
                 screen.OutShowCursor(false);
-                scrollView.SetBounds(screen.Size.Width, 0, bottom);
+                currentFilter.SetBounds(screen.Size.Width, 0, bottom);
             }
         }
 
         UpdateLayout();
 
-        void TogglePrompt()
+        void ToggleCommandMode()
         {
-            inPrompt = !inPrompt;
+            inCommand = !inCommand;
             UpdateLayout();
         }
 
@@ -78,39 +78,31 @@ public static partial class Program
 
             foreach (var evt in events)
             {
-                if (inPrompt)
+                if (inCommand)
                 {
-                    void PreservePrompt(Action scrollAction)
-                    {
-                        screen.OutSaveCursorPos();
-                        screen.OutShowCursor(false);
-                        scrollAction();
-                        screen.OutRestoreCursorPos();
-                        screen.OutShowCursor(true);
-                    }
-
                     switch (evt)
                     {
-                        case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
-                            PreservePrompt(() => scrollView.ScrollDown());
-                            break;
-                        case KeyEvent { Key: ConsoleKey.DownArrow, NoModifiers: true }:
-                            PreservePrompt(() => scrollView.ScrollUp());
-                            break;
-
-                        case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
-                            PreservePrompt(() => scrollView.ScrollPageDown());
-                            break;
-                        case KeyEvent { Key: ConsoleKey.PageDown, NoModifiers: true }:
-                            PreservePrompt(() => scrollView.ScrollPageUp());
-                            break;
-
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
-                            TogglePrompt();
+                            ToggleCommandMode();
                             break;
 
                         default:
-                            promptView.HandleEvent(evt);
+                            if (!command.HandleEvent(evt))
+                            {
+                                currentFilter.HandleEvent(evt,
+                                    // ReSharper disable AccessToDisposedClosure
+                                    () =>
+                                    {
+                                        screen.OutSaveCursorPos();
+                                        screen.OutShowCursor(false);
+                                    },
+                                    () =>
+                                    {
+                                        screen.OutRestoreCursorPos();
+                                        screen.OutShowCursor(true);
+                                    });
+                                    // ReSharper restore AccessToDisposedClosure
+                            }
                             break;
                     }
                 }
@@ -118,49 +110,6 @@ public static partial class Program
                 {
                     switch (evt)
                     {
-                        case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:
-                            scrollView.ScrollToTop();
-                            break;
-                        case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
-                            scrollView.ScrollToBottom();
-                            break;
-
-                        case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
-                        case CharEvent { Char: 'k', NoModifiers: true }:
-                            scrollView.ScrollDown();
-                            break;
-                        case KeyEvent { Key: ConsoleKey.DownArrow, NoModifiers: true }:
-                        case CharEvent { Char: 'j', NoModifiers: true }:
-                            scrollView.ScrollUp();
-                            break;
-
-                        case CharEvent { Char: 'K', NoModifiers: true }:
-                            scrollView.ScrollHalfPageDown();
-                            break;
-                        case CharEvent { Char: 'J', NoModifiers: true }:
-                            scrollView.ScrollHalfPageUp();
-                            break;
-
-                        case KeyEvent { Key: ConsoleKey.LeftArrow, NoModifiers: true }:
-                        case CharEvent { Char: 'h', NoModifiers: true }:
-                            scrollView.ScrollRight();
-                            break;
-                        case KeyEvent { Key: ConsoleKey.RightArrow, NoModifiers: true }:
-                        case CharEvent { Char: 'l', NoModifiers: true }:
-                            scrollView.ScrollLeft();
-                            break;
-
-                        case CharEvent { Char: 'H', NoModifiers: true }:
-                            scrollView.ScrollToX(0);
-                            break;
-
-                        case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
-                            scrollView.ScrollPageDown();
-                            break;
-                        case KeyEvent { Key: ConsoleKey.PageDown, NoModifiers: true }:
-                            scrollView.ScrollPageUp();
-                            break;
-
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
                         case CharEvent { Char: 'd', Alt: false, Ctrl: true }:
                         case CharEvent { Char: 'q', NoModifiers: true }:
@@ -168,7 +117,11 @@ public static partial class Program
 
                         case KeyEvent { Key: ConsoleKey.Enter, NoModifiers: true }:
                         case CharEvent { Char: ':', NoModifiers: true }:
-                            TogglePrompt();
+                            ToggleCommandMode();
+                            break;
+
+                        default:
+                            currentFilter.HandleEvent(evt);
                             break;
                     }
                 }
