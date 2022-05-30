@@ -53,9 +53,6 @@ Options:
         }
         catch (DocoptExitException x)
         {
-            // TODO: wrap help to terminal width. can probably get away with a simple parser aimed just at reflowing
-            // aligned/indented content, with some knowledge of the dash-prefixed options table..
-
             Console.WriteLine(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
             return (int)CliExitCode.Help;
         }
