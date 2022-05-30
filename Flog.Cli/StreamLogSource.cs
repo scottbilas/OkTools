@@ -1,4 +1,5 @@
 using NiceIO;
+using OkTools.Core;
 
 /*
 readonly struct LogEntry
@@ -36,9 +37,45 @@ class StreamLogSource : ILogSource
 
     public StreamLogSource(NPath path)
     {
-        // TODO: start up tail-task
+        // TODO: async this in batches
+        // TODO: option to tail the log (on by default)
+        // TODO: option for dealing with a deleted/truncated log while reading/tailing
 
         _lines = path.ReadAllLines();
+    }
+
+    public IReadOnlyList<string> Lines => _lines;
+}
+
+class FilterLogSource : ILogSource
+{
+    readonly ILogSource _source;
+    readonly List<string> _lines;
+    string _filter = "";
+
+    public FilterLogSource(ILogSource parent)
+    {
+        _source = parent;
+
+        // TODO: async this in batches
+
+        _lines = _source.Lines.ToList();
+    }
+
+    public void SetFilter(string filter)
+    {
+        // TODO: loads of options here, like regex, whole word, case, etc.
+        //       other inspirations for filtering:
+        //        * ripgrep
+        //        * voidtools Everything
+        //        * sysinternals procmon
+        //        * wireshark
+
+        if (_filter == filter)
+            return;
+
+        _filter = filter;
+        _lines.SetRange(_source.Lines.Where(l => l.Contains(_filter)));
     }
 
     public IReadOnlyList<string> Lines => _lines;

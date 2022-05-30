@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Core;
 
-class TextView
+class TextView //TODO: ILogSource
 {
     readonly Screen _screen;
     readonly ILogSource _logSource;
@@ -19,7 +19,9 @@ class TextView
         _processedLines = new string?[logSource.Lines.Count];
     }
 
+    public ILogSource LogSource => _logSource;
     public int Height => _bottom - _top;
+    public int Width => _cx;
     public int Top => _top;
     public int Bottom => _bottom;
 
@@ -75,7 +77,7 @@ class TextView
         }
     }
 
-    void Refresh() => Refresh(0, Height);
+    public void Refresh() => Refresh(0, Height);
 
     void Refresh(int top, int bottom)
     {

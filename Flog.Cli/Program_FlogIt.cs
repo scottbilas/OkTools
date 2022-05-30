@@ -8,30 +8,42 @@ public static partial class Program
         using var screen = new Screen();
         screen.OutShowCursor(false);
 
-        var textViews = new List<TextView>();
-        textViews.Add(new TextView(screen, new StreamLogSource(path))); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
-        var currentFilter = textViews[0];
+        var filterViews = new List<TextView> { new(screen, new StreamLogSource(path)) };
+        var filterPane = filterViews[0];
+        var filteringPane = default(TextView);
 
-        var command = new InputView(screen);
-        var inCommand = false;
+        var commandPane = new InputView(screen);
+        var commandMode = false;
 
         // TODO: scrolling in a later view should also (optionally) update views in base views
+
+        void Pre()
+        {
+            screen.OutSaveCursorPos();
+            screen.OutShowCursor(false);
+        }
+
+        void Post()
+        {
+            screen.OutRestoreCursorPos();
+            screen.OutShowCursor(true);
+        }
 
         void UpdateLayout()
         {
             var bottom = screen.Size.Height;
 
-            if (inCommand)
+            if (commandMode)
             {
                 screen.OutShowCursor(false);
-                currentFilter.SetBounds(screen.Size.Width, 0, bottom - 1);
-                command.SetBounds(screen.Size.Width, bottom - 1);
+                filterPane.SetBounds(screen.Size.Width, 0, bottom - 1);
+                commandPane.SetBounds(screen.Size.Width, bottom - 1);
                 screen.OutShowCursor(true);
             }
             else
             {
                 screen.OutShowCursor(false);
-                currentFilter.SetBounds(screen.Size.Width, 0, bottom);
+                filterPane.SetBounds(screen.Size.Width, 0, bottom);
             }
         }
 
@@ -39,7 +51,7 @@ public static partial class Program
 
         void ToggleCommandMode()
         {
-            inCommand = !inCommand;
+            commandMode = !commandMode;
             UpdateLayout();
         }
 
@@ -78,7 +90,7 @@ public static partial class Program
 
             foreach (var evt in events)
             {
-                if (inCommand)
+                if (commandMode)
                 {
                     switch (evt)
                     {
@@ -86,22 +98,37 @@ public static partial class Program
                             ToggleCommandMode();
                             break;
 
-                        default:
-                            if (!command.HandleEvent(evt))
+                        case FilterUpdatedEvent filterUpdatedEvt:
+
+                            if (filteringPane == null)
                             {
-                                currentFilter.HandleEvent(evt,
-                                    // ReSharper disable AccessToDisposedClosure
-                                    () =>
-                                    {
-                                        screen.OutSaveCursorPos();
-                                        screen.OutShowCursor(false);
-                                    },
-                                    () =>
-                                    {
-                                        screen.OutRestoreCursorPos();
-                                        screen.OutShowCursor(true);
-                                    });
-                                    // ReSharper restore AccessToDisposedClosure
+                                filteringPane = new TextView(screen, new FilterLogSource(filterPane.LogSource));
+                                // TODO: not loving this.
+                                filteringPane.SetBounds(filterViews[0].Width, filterViews[0].Top, filterViews[0].Bottom);
+                                filterPane = filteringPane;
+                                filterViews.Add(filteringPane);
+                            }
+
+                            // TODO: avoid this "reaching in" cast stuff
+                            filteringPane.LogSource.To<FilterLogSource>().SetFilter(filterUpdatedEvt.NewFilter);
+
+                            // TODO: refresh should be automatic via channels
+                            Pre();
+                            filteringPane.Refresh();
+                            Post();
+
+                            break;
+
+                        case FilterCommittedEvent:
+                            filteringPane = null;
+                            ToggleCommandMode();
+                            break;
+
+                        default:
+                            if (!commandPane.HandleEvent(evt))
+                            {
+                                // allow some scrolling operations while command mode open
+                                filterPane.HandleEvent(evt, Pre, Post);
                             }
                             break;
                     }
@@ -121,7 +148,7 @@ public static partial class Program
                             break;
 
                         default:
-                            currentFilter.HandleEvent(evt);
+                            filterPane.HandleEvent(evt);
                             break;
                     }
                 }

@@ -69,3 +69,5 @@ readonly struct FilterUpdatedEvent : ITerminalEvent
         NewFilter = newFilter;
     }
 }
+
+readonly struct FilterCommittedEvent : ITerminalEvent {}

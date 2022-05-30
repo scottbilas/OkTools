@@ -109,6 +109,11 @@ class InputView
                 }
                 break;
 
+            case KeyEvent { Key: ConsoleKey.Enter }:
+                _screen.PostEvent(new FilterCommittedEvent());
+                _command.Clear();
+                break;
+
             case CharEvent { NoModifiers: true } chrEvt:
                 _command.Insert(_cursor++, chrEvt.Char);
                 _screen.OutInsertChars(1);
