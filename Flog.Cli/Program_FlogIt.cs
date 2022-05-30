@@ -8,11 +8,11 @@ public static partial class Program
         using var screen = new Screen();
         screen.OutShowCursor(false);
 
-        var scrollViews = new List<ScrollView>();
-        scrollViews.Add(new ScrollView(screen, new StreamLogSource(path))); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
+        var scrollViews = new List<TextView>();
+        scrollViews.Add(new TextView(screen, new StreamLogSource(path))); // TODO: remove path, start up threaded reader, have main thread feed view(s) with chunks from reader
 
         var scrollView = scrollViews[0];
-        var promptView = new PromptView(screen);
+        var promptView = new InputView(screen);
         var inPrompt = false;
 
         // TODO: scrolling in a later view should also (optionally) update views in base views

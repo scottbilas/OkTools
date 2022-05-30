@@ -149,7 +149,7 @@ partial class Screen : IDisposable
         // (keep the combined read+process in a task off the main thread, though.)
 
 
-        // TODO: turn this into async enumerable
+        // TODO: turn this into async enumerable (??)
         while (!_disposed.IsCancellationRequested)
         {
             var input = new byte[10];

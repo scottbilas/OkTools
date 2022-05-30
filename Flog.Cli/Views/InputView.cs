@@ -1,13 +1,13 @@
 ﻿using System.Text;
 
-class PromptView
+class InputView
 {
     readonly Screen _screen;
 
     int _x = 0, _y, _cx, _cursor;
     readonly StringBuilder _command = new();
 
-    public PromptView(Screen screen)
+    public InputView(Screen screen)
     {
         _screen = screen;
     }

@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Core;
 
-class ScrollView
+class TextView
 {
     readonly Screen _screen;
     readonly ILogSource _logSource;
@@ -12,7 +12,7 @@ class ScrollView
     int _x, _y, _cx, _top, _bottom;
     // TODO: bool for "tail on", also need some options for how we refresh
 
-    public ScrollView(Screen screen, ILogSource logSource)
+    public TextView(Screen screen, ILogSource logSource)
     {
         _screen = screen;
         _logSource = logSource;
