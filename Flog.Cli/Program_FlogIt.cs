@@ -8,50 +8,38 @@ public static partial class Program
         using var screen = new Screen();
         screen.OutShowCursor(false);
 
-        var filterViews = new List<TextView> { new(screen, new StreamLogSource(path)) };
-        var filterPane = filterViews[0];
-        var filteringPane = default(TextView);
+        var filterViews = new List<ScrollingTextView> { new(screen, new StreamLogSource(path)) };
+        var currentFilterPane = filterViews[0];
+        currentFilterPane.Enabled = true;
+        var liveFilteringPane = default(ScrollingTextView);
+
+        var statusPane = new StatusView(screen);
+        statusPane.SetLogName(path.FileName);
+        statusPane.Enabled = true;
 
         var commandPane = new InputView(screen);
-        var commandMode = false;
 
         // TODO: scrolling in a later view should also (optionally) update views in base views
 
-        void Pre()
-        {
-            screen.OutSaveCursorPos();
-            screen.OutShowCursor(false);
-        }
-
-        void Post()
-        {
-            screen.OutRestoreCursorPos();
-            screen.OutShowCursor(true);
-        }
-
         void UpdateLayout()
         {
-            var bottom = screen.Size.Height;
+            var bottom
+                = screen.Size.Height
+                + (commandPane.Enabled ? -1 : 0)
+                + (statusPane.Enabled ? -1 : 0);
 
-            if (commandMode)
-            {
-                screen.OutShowCursor(false);
-                filterPane.SetBounds(screen.Size.Width, 0, bottom - 1);
-                commandPane.SetBounds(screen.Size.Width, bottom - 1);
-                screen.OutShowCursor(true);
-            }
-            else
-            {
-                screen.OutShowCursor(false);
-                filterPane.SetBounds(screen.Size.Width, 0, bottom);
-            }
+            currentFilterPane.SetBounds(screen.Size.Width, 0, bottom);
+            if (statusPane.Enabled)
+                statusPane.SetBounds(screen.Size.Width, bottom, ++bottom);
+            if (commandPane.Enabled)
+                commandPane.SetBounds(screen.Size.Width, bottom, ++bottom);
         }
 
         UpdateLayout();
 
         void ToggleCommandMode()
         {
-            commandMode = !commandMode;
+            commandPane.Enabled = !commandPane.Enabled;
             UpdateLayout();
         }
 
@@ -60,6 +48,10 @@ public static partial class Program
         {
             events.Clear();
             await screen.GetEvents(events);
+
+            // don't want cursor visible for any screen updates
+
+            screen.OutShowCursor(false);
 
             // process global events from the batch first
 
@@ -90,7 +82,7 @@ public static partial class Program
 
             foreach (var evt in events)
             {
-                if (commandMode)
+                if (commandPane.Enabled)
                 {
                     switch (evt)
                     {
@@ -98,38 +90,9 @@ public static partial class Program
                             ToggleCommandMode();
                             break;
 
-                        case FilterUpdatedEvent filterUpdatedEvt:
-
-                            if (filteringPane == null)
-                            {
-                                filteringPane = new TextView(screen, new FilterLogSource(filterPane.LogSource));
-                                // TODO: not loving this.
-                                filteringPane.SetBounds(filterViews[0].Width, filterViews[0].Top, filterViews[0].Bottom);
-                                filterPane = filteringPane;
-                                filterViews.Add(filteringPane);
-                            }
-
-                            // TODO: avoid this "reaching in" cast stuff
-                            filteringPane.LogSource.To<FilterLogSource>().SetFilter(filterUpdatedEvt.NewFilter);
-
-                            // TODO: refresh should be automatic via channels
-                            Pre();
-                            filteringPane.Refresh();
-                            Post();
-
-                            break;
-
-                        case FilterCommittedEvent:
-                            filteringPane = null;
-                            ToggleCommandMode();
-                            break;
-
                         default:
                             if (!commandPane.HandleEvent(evt))
-                            {
-                                // allow some scrolling operations while command mode open
-                                filterPane.HandleEvent(evt, Pre, Post);
-                            }
+                                currentFilterPane.HandleEvent(evt);
                             break;
                     }
                 }
@@ -148,7 +111,7 @@ public static partial class Program
                             break;
 
                         default:
-                            filterPane.HandleEvent(evt);
+                            currentFilterPane.HandleEvent(evt);
                             break;
                     }
                 }
@@ -156,10 +119,37 @@ public static partial class Program
 
             // finally any updated filters
 
-            foreach (var filterEvt in events.OfType<FilterUpdatedEvent>())
+            foreach (var evt in events)
             {
+                switch (evt)
+                {
+                    case FilterUpdatedEvent updatedEvt:
+                        if (liveFilteringPane == null)
+                        {
+                            liveFilteringPane = new ScrollingTextView(screen, new FilterLogSource(currentFilterPane.LogSource));
+                            // TODO: not loving this.
+                            liveFilteringPane.SetBounds(filterViews[0].Width, filterViews[0].Top, filterViews[0].Bottom);
+                            currentFilterPane = liveFilteringPane;
+                            filterViews.Add(liveFilteringPane);
+                        }
 
+                        // TODO: avoid this "reaching in" cast stuff
+                        liveFilteringPane.LogSource.To<FilterLogSource>().SetFilter(updatedEvt.NewFilter);
+
+                        // TODO: refresh should be automatic via channels
+                        liveFilteringPane.Draw();
+                        break;
+
+                    case FilterCommittedEvent:
+                        liveFilteringPane = null;
+                        ToggleCommandMode();
+                        break;
+                }
             }
+
+            // ensure we always have correct cursor after any events processed
+            if (commandMode)
+                commandPane.UpdateCursor();
         }
     }
 }

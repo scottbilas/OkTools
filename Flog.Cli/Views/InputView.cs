@@ -1,36 +1,46 @@
 ﻿using System.Text;
 
-class InputView
+class InputView : ViewBase
 {
     readonly Screen _screen;
 
-    int _x = 0, _y, _cx, _cursor;
+    int _scrollX, _cursor;
     readonly StringBuilder _command = new();
 
-    public InputView(Screen screen)
+    public InputView(Screen screen) : base(screen)
     {
         _screen = screen;
     }
 
     public void Refresh()
     {
-        _screen.OutSetCursorPos(0, _y);
-        _screen.OutPrint(':');
-        _screen.OutPrint(_command.ToString().AsSpan(_x), _cx - 1, true);
-        UpdateCursorPos();
+        _screen.OutSetCursorPos(0, Top);
+        if (_scrollX == 0)
+            _screen.OutPrint(':');
+        _screen.OutPrint(_command.ToString().AsSpan(_scrollX), Width - 1, true);
     }
 
-    public void SetBounds(int width, int y)
+    public override void SetBounds(int width, int top, int bottom)
     {
-        _cx = width;
-        _y = y;
-
+        base.SetBounds(width, top, bottom);
         Refresh();
     }
 
-    void UpdateCursorPos() => _screen.OutSetCursorPos(_cursor - _x + 1, _y);
+    public void UpdateCursor()
+    {
+        UpdateCursorPos();
+        _screen.OutShowCursor(true);
+    }
 
-    void PostUpdatedFilter() => _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
+    void UpdateCursorPos()
+    {
+        _screen.OutSetCursorPos(_cursor - _scrollX + 1, Top);
+    }
+
+    void PostUpdatedFilter()
+    {
+        _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
+    }
 
     public bool HandleEvent(ITerminalEvent evt)
     {
@@ -41,38 +51,30 @@ class InputView
             case KeyEvent { Key: ConsoleKey.LeftArrow, NoModifiers: true }:
             case CharEvent { Char: 'b', Alt: false, Ctrl: true }:
                 if (_cursor > 0)
-                {
                     --_cursor;
-                    UpdateCursorPos();
-                }
                 break;
 
             case KeyEvent { Key: ConsoleKey.RightArrow, NoModifiers: true }:
             case CharEvent { Char: 'f', Alt: false, Ctrl: true }:
                 if (_cursor < _command.Length)
-                {
                     ++_cursor;
-                    UpdateCursorPos();
-                }
                 break;
 
             case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:
             case CharEvent { Char: 'a', Alt: false, Ctrl: true }:
                 _cursor = 0;
-                UpdateCursorPos();
                 break;
 
             case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
             case CharEvent { Char: 'e', Alt: false, Ctrl: true }:
                 _cursor = _command.Length;
-                UpdateCursorPos();
                 break;
 
             case KeyEvent { Key: ConsoleKey.Backspace, NoModifiers: true }:
                 if (_cursor > 0)
                 {
                     _command.Remove(--_cursor, 1);
-                    UpdateCursorPos();
+                    _screen.OutMoveCursorLeft();
                     _screen.OutDeleteChars(1);
                     PostUpdatedFilter();
                 }

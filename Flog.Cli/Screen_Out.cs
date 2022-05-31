@@ -22,12 +22,15 @@ partial class Screen
 
     public void OutShowCursor(bool visible) => _cb.SetCursorVisibility(visible);
     public void OutSetCursorPos(int x, int y) => _cb.MoveCursorTo(x, y);
+
+    public void OutMoveCursorLeft(int count = 1) => _cb.MoveCursorLeft(count);
+    public void OutMoveCursorRight(int count = 1) => _cb.MoveCursorRight(count);
     public void OutSaveCursorPos() => _cb.SaveCursorState();
     public void OutRestoreCursorPos() => _cb.RestoreCursorState();
 
     public void OutSetScrollMargins(int top, int bottom) => _cb.SetScrollMargin(top, bottom);
-    public void OutScrollBufferUp(int count) => _cb.MoveBufferUp(count);
-    public void OutScrollBufferDown(int count) => _cb.MoveBufferDown(count);
+    public void OutScrollBufferUp(int count = 1) => _cb.MoveBufferUp(count);
+    public void OutScrollBufferDown(int count = 1) => _cb.MoveBufferDown(count);
 
     public void OutPrint(char chr) => _cb.Print(chr);
     public void OutPrint(ReadOnlySpan<char> span) => _cb.Print(span);
