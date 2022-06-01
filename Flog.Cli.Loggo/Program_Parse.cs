@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using OkTools.Core;
 
 public static partial class Program
 {
@@ -18,8 +19,19 @@ public static partial class Program
         return (min, max);
     }
 
-    static long ParseSize(string str)
+    static int? TryParseInt(string str)
     {
+        if (str.IsNullOrEmpty())
+            return null;
+
+        return int.Parse(str);
+    }
+
+    static long? TryParseSize(string str)
+    {
+        if (str.IsNullOrEmpty())
+            return null;
+
         var match = Regex.Match(str, @"(\d+)([kmg]b)?", RegexOptions.IgnoreCase);
         if (!match.Success)
             throw new ArgumentException($"`{str}` is not a valid size");
