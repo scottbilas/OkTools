@@ -41,14 +41,14 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
         ScrollToY(_scrollY < target ? target : end);
     }
 
-    public override void SetBounds(int width, int top, int bottom)
+    public override void SetBounds(int width, int top, int bottom, bool forceRedraw)
     {
-        var needsFullDraw = Width > width;
+        var needsFullDraw = forceRedraw || Width < width;
         var oldTop = Top;
         var oldBottom = Bottom;
         var oldScrollY = _scrollY;
 
-        base.SetBounds(width, top, bottom);
+        base.SetBounds(width, top, bottom, forceRedraw);
 
         Screen.OutSetScrollMargins(Top, Bottom - 1);
 

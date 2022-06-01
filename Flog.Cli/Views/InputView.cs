@@ -10,6 +10,8 @@ class InputView : ViewBase
     public InputView(Screen screen) : base(screen)
     {
         _screen = screen;
+
+        _scrollX = 0;
     }
 
     public void Refresh()
@@ -20,9 +22,9 @@ class InputView : ViewBase
         _screen.OutPrint(_command.ToString().AsSpan(_scrollX), Width - 1, true);
     }
 
-    public override void SetBounds(int width, int top, int bottom)
+    public override void SetBounds(int width, int top, int bottom, bool forceRedraw)
     {
-        base.SetBounds(width, top, bottom);
+        base.SetBounds(width, top, bottom, forceRedraw);
         Refresh();
     }
 

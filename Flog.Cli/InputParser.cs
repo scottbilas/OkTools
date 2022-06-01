@@ -171,6 +171,7 @@ class InputParser
         new("\x5",       'e',                   ctrl: true),
         new("\x6",       'f',                   ctrl: true),
         new("\xb",       'k',                   ctrl: true),
+        new("\xc",       'l',                   ctrl: true),
         new("\x15",      'u',                   ctrl: true),
     };
 

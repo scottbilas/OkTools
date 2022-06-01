@@ -14,36 +14,36 @@ public static partial class Program
         var liveFilteringPane = default(ScrollingTextView);
 
         var statusPane = new StatusView(screen);
-        statusPane.SetLogName(path.FileName);
-        statusPane.Enabled = true;
+        //statusPane.SetLogName(path.FileName);
+        //statusPane.Enabled = true;
 
         var commandPane = new InputView(screen);
 
         // TODO: scrolling in a later view should also (optionally) update views in base views
 
-        void UpdateLayout()
+        void UpdateLayout(bool forceRedraw)
         {
             var bottom
                 = screen.Size.Height
                 + (commandPane.Enabled ? -1 : 0)
                 + (statusPane.Enabled ? -1 : 0);
 
-            currentFilterPane.SetBounds(screen.Size.Width, 0, bottom);
+            currentFilterPane.SetBounds(screen.Size.Width, 0, bottom, true);
             if (statusPane.Enabled)
-                statusPane.SetBounds(screen.Size.Width, bottom, ++bottom);
+                statusPane.SetBounds(screen.Size.Width, bottom, ++bottom, true);
             if (commandPane.Enabled)
-                commandPane.SetBounds(screen.Size.Width, bottom, ++bottom);
+                commandPane.SetBounds(screen.Size.Width, bottom, ++bottom, true);
         }
 
-        UpdateLayout();
+        UpdateLayout(true);
 
         void ToggleCommandMode()
         {
             commandPane.Enabled = !commandPane.Enabled;
-            UpdateLayout();
+            UpdateLayout(false);
         }
 
-        var events = new List<ITerminalEvent>();
+        var events = new EventBuffer<ITerminalEvent>();
         for (;;)
         {
             events.Clear();
@@ -57,7 +57,7 @@ public static partial class Program
 
             foreach (var evt in events)
             {
-                switch (evt)
+                switch (evt.Value)
                 {
                     case SignalEvent signalEvt:
                         return (signalEvt.Signal switch
@@ -72,8 +72,13 @@ public static partial class Program
                     case CharEvent { Char: 'c', Alt: false, Ctrl: true }:
                         return UnixSignal.KeyboardInterrupt.AsCliExitCode();
 
+                    case CharEvent { Char: 'l', Alt: false, Ctrl: true }:
+                        UpdateLayout(true);
+                        evt.Accept();
+                        break;
+
                     case ResizeEvent:
-                        UpdateLayout();
+                        UpdateLayout(false);
                         break;
                 }
             }
@@ -84,21 +89,22 @@ public static partial class Program
             {
                 if (commandPane.Enabled)
                 {
-                    switch (evt)
+                    switch (evt.Value)
                     {
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
                             ToggleCommandMode();
+                            evt.Accept();
                             break;
 
                         default:
-                            if (!commandPane.HandleEvent(evt))
-                                currentFilterPane.HandleEvent(evt);
+                            if (commandPane.HandleEvent(evt.Value) || currentFilterPane.HandleEvent(evt.Value))
+                                evt.Accept();
                             break;
                     }
                 }
                 else
                 {
-                    switch (evt)
+                    switch (evt.Value)
                     {
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
                         case CharEvent { Char: 'd', Alt: false, Ctrl: true }:
@@ -108,10 +114,12 @@ public static partial class Program
                         case KeyEvent { Key: ConsoleKey.Enter, NoModifiers: true }:
                         case CharEvent { Char: ':', NoModifiers: true }:
                             ToggleCommandMode();
+                            evt.Accept();
                             break;
 
                         default:
-                            currentFilterPane.HandleEvent(evt);
+                            if (currentFilterPane.HandleEvent(evt.Value))
+                                evt.Accept();
                             break;
                     }
                 }
@@ -121,15 +129,16 @@ public static partial class Program
 
             foreach (var evt in events)
             {
-                switch (evt)
+                switch (evt.Value)
                 {
                     case FilterUpdatedEvent updatedEvt:
                         if (liveFilteringPane == null)
                         {
-                            liveFilteringPane = new ScrollingTextView(screen, new FilterLogSource(currentFilterPane.LogSource));
+                            liveFilteringPane = new ScrollingTextView(screen, new FilterLogSource(currentFilterPane.LogSource)) { Enabled = true };
                             // TODO: not loving this.
-                            liveFilteringPane.SetBounds(filterViews[0].Width, filterViews[0].Top, filterViews[0].Bottom);
+                            liveFilteringPane.SetBounds(filterViews[0].Width, filterViews[0].Top, filterViews[0].Bottom, false);
                             currentFilterPane = liveFilteringPane;
+                            filterViews.Last().Enabled = false;
                             filterViews.Add(liveFilteringPane);
                         }
 
@@ -138,17 +147,20 @@ public static partial class Program
 
                         // TODO: refresh should be automatic via channels
                         liveFilteringPane.Draw();
+
+                        evt.Accept();
                         break;
 
                     case FilterCommittedEvent:
                         liveFilteringPane = null;
                         ToggleCommandMode();
+                        evt.Accept();
                         break;
                 }
             }
 
             // ensure we always have correct cursor after any events processed
-            if (commandMode)
+            if (commandPane.Enabled)
                 commandPane.UpdateCursor();
         }
     }

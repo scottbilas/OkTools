@@ -69,7 +69,7 @@ partial class Screen : IDisposable
 
     public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt);
 
-    public async Task GetEvents(IList<ITerminalEvent> events)
+    public async Task GetEvents(EventBuffer<ITerminalEvent> events)
     {
         OutFlush();
 
