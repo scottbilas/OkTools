@@ -40,10 +40,11 @@ Options:
             if (args.Length == 0)
                 throw new DocoptExitException(k_docUsage);
 
-            var opt = new Docopt().Apply(k_docUsage, args, version: $"{k_docName} {k_docVersion}", help: false);
-            debugMode = opt["--debug"].IsTrue;
+            var options = new Docopt().Apply(k_docUsage, args, version: $"{k_docName} {k_docVersion}", help: false);
+            debugMode = options["--debug"].IsTrue;
 
-            return (int)await FlogIt(opt["PATH"].ToString().ToNPath().FileMustExist());
+            using var flogApp = new FlogApp(options);
+            return (int)await flogApp.Run();
         }
         catch (DocoptInputErrorException x)
         {

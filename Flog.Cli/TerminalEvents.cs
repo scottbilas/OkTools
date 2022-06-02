@@ -59,15 +59,3 @@ readonly struct ResizeEvent : ITerminalEvent
         NewSize = newSize;
     }
 }
-
-readonly struct FilterUpdatedEvent : ITerminalEvent
-{
-    public readonly string NewFilter;
-
-    public FilterUpdatedEvent(string newFilter)
-    {
-        NewFilter = newFilter;
-    }
-}
-
-readonly struct FilterCommittedEvent : ITerminalEvent {}

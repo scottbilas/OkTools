@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Core;
@@ -18,6 +19,12 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
     }
 
     public ILogSource LogSource => _logSource;
+    public int ScrollPos => _scrollY;
+
+    public void FilterChanged()
+    {
+        Array.Clear(_processedLines);
+    }
 
     public void ScrollDown() => ScrollY(-1);
     public void ScrollUp() => ScrollY(1);
@@ -41,14 +48,14 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
         ScrollToY(_scrollY < target ? target : end);
     }
 
-    public override void SetBounds(int width, int top, int bottom, bool forceRedraw)
+    public override void SetBounds(int width, int top, int bottom)
     {
-        var needsFullDraw = forceRedraw || Width < width;
+        var needsFullDraw = Width < width;
         var oldTop = Top;
         var oldBottom = Bottom;
         var oldScrollY = _scrollY;
 
-        base.SetBounds(width, top, bottom, forceRedraw);
+        base.SetBounds(width, top, bottom);
 
         Screen.OutSetScrollMargins(Top, Bottom - 1);
 
@@ -67,10 +74,23 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
         }
     }
 
+    public void TakePaneFrom(ScrollingTextView other)
+    {
+        Debug.Assert(other.Enabled);
+
+        Enabled = true;
+        other.Enabled = false;
+
+        SetBounds(other.Width, other.Top, other.Bottom);
+        Draw();
+    }
+
     public void Draw() => Draw(0, Height);
 
     void Draw(int top, int bottom)
     {
+        CheckEnabled();
+
         var endPrintY = Math.Min(bottom, _logSource.Lines.Count - _scrollY);
 
         for (var i = top; i < endPrintY; ++i)
@@ -137,6 +157,10 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
 
     public bool HandleEvent(ITerminalEvent evt)
     {
+        CheckEnabled();
+
+        // TODO: scrolling in a later filter should also (optionally) update base filter scrollpos
+
         switch (evt)
         {
             case KeyEvent { Key: ConsoleKey.Home, NoModifiers: true }:

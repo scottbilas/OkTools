@@ -160,6 +160,19 @@ class InputParser
         new("\x7f",      ConsoleKey.Backspace),
         new("\r",        ConsoleKey.Enter),
 
+        new("\x1bOP",    ConsoleKey.F1),
+        new("\x1bOQ",    ConsoleKey.F2),
+        new("\x1bOR",    ConsoleKey.F3),
+        new("\x1bOS",    ConsoleKey.F4),
+        new("\x1b[15~",  ConsoleKey.F5),
+        new("\x1b[17~",  ConsoleKey.F6),
+        new("\x1b[18~",  ConsoleKey.F7),
+        new("\x1b[19~",  ConsoleKey.F8),
+        new("\x1b[20~",  ConsoleKey.F9),
+        new("\x1b[21~",  ConsoleKey.F10),
+        new("\x1b[23~",  ConsoleKey.F11),
+        new("\x1b[24~",  ConsoleKey.F12),
+
         // TODO: do a better way of mapping this
         // note that ^M == \r == Enter key..could be we really do want Console+CharKey unified..or maybe ctrl-keys are
         // *always* a ConsoleKey because they're ctrl sequences. also less confusing when trying to figure out what to
@@ -172,6 +185,7 @@ class InputParser
         new("\x6",       'f',                   ctrl: true),
         new("\xb",       'k',                   ctrl: true),
         new("\xc",       'l',                   ctrl: true),
+        new("\x14",      't',                   ctrl: true),
         new("\x15",      'u',                   ctrl: true),
     };
 

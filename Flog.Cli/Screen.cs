@@ -48,6 +48,9 @@ partial class Screen : IDisposable
         Terminal.Signaled += OnSignaled;
         Terminal.Resized += OnResized;
 
+        // initial size event to kick off a layout and refresh
+        OnResized(Terminal.Size);
+
         void Wrap(Action action)
         {
             try

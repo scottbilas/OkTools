@@ -14,41 +14,61 @@ class InputView : ViewBase
         _scrollX = 0;
     }
 
-    public void Refresh()
+    public string Prompt { get; set; } = "";
+
+    public string Text
     {
+        get => _command.ToString();
+        set
+        {
+            _command.Clear();
+            _command.Append(value);
+            if (_cursor > _command.Length)
+                _cursor = _command.Length;
+        }
+    }
+
+    public override void SetBounds(int width, int top, int bottom)
+    {
+        base.SetBounds(width, top, bottom);
+
+        // TODO: adjust _scrollX to keep cursor in view
+    }
+
+    public void Accept()
+    {
+        Text = "";
+        // TODO future: add entry to history
+    }
+
+    public void Draw()
+    {
+        CheckEnabled();
+
         _screen.OutSetCursorPos(0, Top);
         if (_scrollX == 0)
-            _screen.OutPrint(':');
-        _screen.OutPrint(_command.ToString().AsSpan(_scrollX), Width - 1, true);
+            _screen.OutPrint(Prompt);
+        _screen.OutPrint(_command.ToString().AsSpan(_scrollX), Width - Prompt.Length, true);
     }
 
-    public override void SetBounds(int width, int top, int bottom, bool forceRedraw)
+    public void UpdateCursorPos()
     {
-        base.SetBounds(width, top, bottom, forceRedraw);
-        Refresh();
+        CheckEnabled();
+
+        _screen.OutSetCursorPos(_cursor - _scrollX + Prompt.Length, Top);
     }
 
-    public void UpdateCursor()
+    public (bool accepted, bool inputChanged) HandleEvent(ITerminalEvent evt)
     {
-        UpdateCursorPos();
-        _screen.OutShowCursor(true);
-    }
+        CheckEnabled();
 
-    void UpdateCursorPos()
-    {
-        _screen.OutSetCursorPos(_cursor - _scrollX + 1, Top);
-    }
+        var inputChanged = false;
 
-    void PostUpdatedFilter()
-    {
-        _screen.PostEvent(new FilterUpdatedEvent(_command.ToString()));
-    }
-
-    public bool HandleEvent(ITerminalEvent evt)
-    {
         switch (evt)
         {
             // TODO: find a readline library to use instead of hacking it like this
+
+            // non-modifying cursor movement
 
             case KeyEvent { Key: ConsoleKey.LeftArrow, NoModifiers: true }:
             case CharEvent { Char: 'b', Alt: false, Ctrl: true }:
@@ -72,13 +92,15 @@ class InputView : ViewBase
                 _cursor = _command.Length;
                 break;
 
+            // these change the input (and cursor)
+
             case KeyEvent { Key: ConsoleKey.Backspace, NoModifiers: true }:
                 if (_cursor > 0)
                 {
                     _command.Remove(--_cursor, 1);
                     _screen.OutMoveCursorLeft();
                     _screen.OutDeleteChars(1);
-                    PostUpdatedFilter();
+                    inputChanged = true;
                 }
                 break;
 
@@ -88,7 +110,7 @@ class InputView : ViewBase
                 {
                     _command.Remove(_cursor, 1);
                     _screen.OutDeleteChars(1);
-                    PostUpdatedFilter();
+                    inputChanged = true;
                 }
                 break;
 
@@ -97,7 +119,7 @@ class InputView : ViewBase
                 {
                     _command.Remove(_cursor, _command.Length - _cursor);
                     _screen.OutClearLine(ClearMode.After);
-                    PostUpdatedFilter();
+                    inputChanged = true;
                 }
                 break;
 
@@ -109,26 +131,21 @@ class InputView : ViewBase
                     _cursor = 0;
                     UpdateCursorPos();
                     _screen.OutDeleteChars(removed);
-                    PostUpdatedFilter();
+                    inputChanged = true;
                 }
-                break;
-
-            case KeyEvent { Key: ConsoleKey.Enter }:
-                _screen.PostEvent(new FilterCommittedEvent());
-                _command.Clear();
                 break;
 
             case CharEvent { NoModifiers: true } chrEvt:
                 _command.Insert(_cursor++, chrEvt.Char);
                 _screen.OutInsertChars(1);
                 _screen.OutPrint(chrEvt.Char);
-                PostUpdatedFilter();
+                inputChanged = true;
                 break;
 
             default:
-                return false;
+                return (false, false);
         }
 
-        return true;
+        return (true, inputChanged);
     }
 }

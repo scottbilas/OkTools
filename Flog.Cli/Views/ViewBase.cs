@@ -12,13 +12,18 @@
         Screen = screen;
     }
 
-    public virtual void SetBounds(int width, int top, int bottom, bool forceRedraw)
+    public virtual void SetBounds(int width, int top, int bottom)
     {
-        if (!Enabled)
-            throw new InvalidOperationException("Unexpected operation on a disabled View");
+        CheckEnabled();
 
         Width = width;
         Top = top;
         Bottom = bottom;
+    }
+
+    protected void CheckEnabled()
+    {
+        if (!Enabled)
+            throw new InvalidOperationException("Unexpected operation on a disabled View");
     }
 }

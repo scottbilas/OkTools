@@ -62,6 +62,8 @@ class FilterLogSource : ILogSource
         _lines = _source.Lines.ToList();
     }
 
+    public string Filter => _filter;
+
     public void SetFilter(string filter)
     {
         // TODO: loads of options here, like regex, whole word, case, etc.
