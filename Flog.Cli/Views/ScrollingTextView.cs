@@ -50,14 +50,17 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
 
     public override void SetBounds(int width, int top, int bottom)
     {
-        var needsFullDraw = Width < width;
+        SetBounds(width, top, bottom, false);
+    }
+
+    public void SetBounds(int width, int top, int bottom, bool forceRedraw)
+    {
+        var needsFullDraw = forceRedraw || Width < width;
         var oldTop = Top;
         var oldBottom = Bottom;
         var oldScrollY = _scrollY;
 
         base.SetBounds(width, top, bottom);
-
-        Screen.OutSetScrollMargins(Top, Bottom - 1);
 
         // maintain scroll position regardless of origin (minimize distracting text movement)
         _scrollY = ClampY(oldScrollY + Top - oldTop);
@@ -72,17 +75,8 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
             if (Bottom > oldBottom)
                 Draw(Bottom - oldBottom, Height);
         }
-    }
 
-    public void TakePaneFrom(ScrollingTextView other)
-    {
-        Debug.Assert(other.Enabled);
-
-        Enabled = true;
-        other.Enabled = false;
-
-        SetBounds(other.Width, other.Top, other.Bottom);
-        Draw();
+        Screen.OutSetScrollMargins(Top, Bottom - 1);
     }
 
     public void Draw() => Draw(0, Height);

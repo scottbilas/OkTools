@@ -21,10 +21,12 @@ class InputView : ViewBase
         get => _command.ToString();
         set
         {
+            if (_command.Equals(value))
+                return;
+
             _command.Clear();
             _command.Append(value);
-            if (_cursor > _command.Length)
-                _cursor = _command.Length;
+            _cursor = value.Length;
         }
     }
 

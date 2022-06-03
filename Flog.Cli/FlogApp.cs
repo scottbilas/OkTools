@@ -5,14 +5,12 @@ using OkTools.Core;
 class FlogApp : IDisposable
 {
     readonly Screen _screen = new();
-    readonly List<ScrollingTextView> _filterPaneViews = new();
+    readonly FilterChainView _filterPane;
     readonly StatusView _statusPane;
     readonly InputView _commandPane, _editFilterPane;
 
-    int _currentFilterView;
+    bool _editingExistingFilter;
     string _originalFilter = "";
-
-    ScrollingTextView FilterPane => _filterPaneViews[_currentFilterView];
 
     enum State
     {
@@ -28,31 +26,15 @@ class FlogApp : IDisposable
     {
         _screen.OutShowCursor(false);
 
+        _filterPane = new FilterChainView(_screen) { Enabled = true };
         var path = options["PATH"].ToString().ToNPath().FileMustExist();
-        AddAndActivateFilterView(new ScrollingTextView(_screen, new StreamLogSource(path)));
+        _filterPane.AddAndActivate(new StreamLogSource(path));
 
         _statusPane = new StatusView(_screen) { Enabled = true };
         _statusPane.SetLogPath(path);
 
         _commandPane = new InputView(_screen) { Prompt = ":" };
         _editFilterPane = new InputView(_screen) { Prompt = "=" };
-    }
-
-    void AddAndActivateFilterView(ScrollingTextView filterView)
-    {
-        if (_filterPaneViews.Any())
-            filterView.TakePaneFrom(_filterPaneViews.Last());
-        else
-            filterView.Enabled = true;
-
-        _currentFilterView = _filterPaneViews.Count;
-        _filterPaneViews.Add(filterView);
-    }
-
-    void AddAndActivateChildFilterView()
-    {
-        var newView = new ScrollingTextView(_screen, new FilterLogSource(FilterPane.LogSource));
-        AddAndActivateFilterView(newView);
     }
 
     void IDisposable.Dispose()
@@ -107,7 +89,7 @@ class FlogApp : IDisposable
                 return exitCode.Value;
 
             // update status
-            _statusPane.SetFilterStatus(_filterPaneViews, _currentFilterView);
+            _statusPane.SetFilterStatus(_filterPane);
             _statusPane.DrawIfChanged();
         }
     }
@@ -116,21 +98,22 @@ class FlogApp : IDisposable
     {
         var y = _screen.Size.Height;
 
+        if (_statusPane.Enabled)
+            _statusPane.SetBounds(_screen.Size.Width, --y, y+1);
+
         if (_commandPane.Enabled)
             _commandPane.SetBounds(_screen.Size.Width, --y, y+1);
         else if (_editFilterPane.Enabled)
             _editFilterPane.SetBounds(_screen.Size.Width, --y, y+1);
 
-        if (_statusPane.Enabled)
-            _statusPane.SetBounds(_screen.Size.Width, --y, y+1);
-        FilterPane.SetBounds(_screen.Size.Width, 0, y);
+        _filterPane.SetBounds(_screen.Size.Width, 0, y);
     }
 
     void Refresh()
     {
         using var x = new AutoCursor(this);
 
-        FilterPane.Draw();
+        _filterPane.Draw();
         if (_statusPane.Enabled)
             _statusPane.Draw();
 
@@ -195,7 +178,7 @@ class FlogApp : IDisposable
     void StateChange_LogView_InputEditFilter()
     {
         _editFilterPane.Enabled = true;
-        _editFilterPane.Text = _originalFilter = FilterPane.LogSource.To<FilterLogSource>().Filter;
+        _editFilterPane.Text = _originalFilter = _filterPane.Current.LogSource.To<FilterLogSource>().Filter;
         UpdateLayout();
         _statusPane.Draw();
         _editFilterPane.Draw();
@@ -209,6 +192,10 @@ class FlogApp : IDisposable
         _editFilterPane.Enabled = false;
         UpdateLayout();
         _statusPane.Draw();
+
+        // clean other state
+        _editingExistingFilter = false;
+        _originalFilter = "";
 
         _state = State.LogView;
     }
@@ -240,7 +227,7 @@ class FlogApp : IDisposable
                         // new child filter
                         case CharEvent { Char: 't', Alt: false, Ctrl: true }:
                         case CharEvent { Char: '+', NoModifiers: true }:
-                            AddAndActivateChildFilterView();
+                            _filterPane.AddAndActivateChild();
                             StateChange_LogView_InputEditFilter();
                             break;
 
@@ -248,17 +235,21 @@ class FlogApp : IDisposable
                         case KeyEvent { Key: ConsoleKey.F2, NoModifiers: true }:
                         case KeyEvent { Key: ConsoleKey.Enter, NoModifiers: true }:
                         case CharEvent { Char: '=', NoModifiers: true }:
-                            if (_currentFilterView == 0)
-                                AddAndActivateChildFilterView();
+                            if (_filterPane.CurrentIndex == 0)
+                                _filterPane.AddAndActivateChild();
+                            else
+                                _editingExistingFilter = true;
                             StateChange_LogView_InputEditFilter();
                             break;
 
                         // prev filter
                         case CharEvent { Char: ',', NoModifiers: true }:
+                            _filterPane.ActivatePrev();
                             break;
 
                         // next filter
                         case CharEvent { Char: '.', NoModifiers: true }:
+                            _filterPane.ActivateNext();
                             break;
 
                         // command mode
@@ -267,7 +258,7 @@ class FlogApp : IDisposable
                             break;
 
                         default:
-                            accept = FilterPane.HandleEvent(evt.Value);
+                            accept = _filterPane.HandleEvent(evt.Value);
                             break;
                     }
 
@@ -287,7 +278,7 @@ class FlogApp : IDisposable
                             break;
 
                         default:
-                            accept = _commandPane.HandleEvent(evt.Value).accepted || FilterPane.HandleEvent(evt.Value);
+                            accept = _commandPane.HandleEvent(evt.Value).accepted || _filterPane.HandleEvent(evt.Value);
                             break;
                     }
                     break;
@@ -296,10 +287,15 @@ class FlogApp : IDisposable
                     switch (evt.Value)
                     {
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
-                            FilterPane.LogSource.To<FilterLogSource>().SetFilter(_originalFilter);
-                            FilterPane.FilterChanged();
-                            FilterPane.Draw();
+                            if (_editingExistingFilter)
+                            {
+                                _filterPane.Current.LogSource.To<FilterLogSource>().SetFilter(_originalFilter);
+                                _filterPane.Current.FilterChanged();
+                            }
+                            else
+                                _filterPane.RemoveLast();
 
+                            _filterPane.Draw();
                             StateChange_Input_LogView();
                             break;
 
@@ -312,12 +308,12 @@ class FlogApp : IDisposable
                             var handled = _editFilterPane.HandleEvent(evt.Value);
                             if (handled.inputChanged)
                             {
-                                FilterPane.LogSource.To<FilterLogSource>().SetFilter(_editFilterPane.Text);
-                                FilterPane.FilterChanged();
-                                FilterPane.Draw();
+                                _filterPane.Current.LogSource.To<FilterLogSource>().SetFilter(_editFilterPane.Text);
+                                _filterPane.Current.FilterChanged();
+                                _filterPane.Draw();
                             }
 
-                            accept = handled.accepted || FilterPane.HandleEvent(evt.Value);
+                            accept = handled.accepted || _filterPane.HandleEvent(evt.Value);
                             break;
                     }
                     break;

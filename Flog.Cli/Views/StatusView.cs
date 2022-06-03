@@ -32,23 +32,23 @@ class StatusView : ViewBase
         _changed = true;
     }
 
-    public void SetFilterStatus(IList<ScrollingTextView> filterViews, int currentIndex)
+    public void SetFilterStatus(FilterChainView filterPane)
     {
-        if (_currentFilterIndex != currentIndex)
+        if (_currentFilterIndex != filterPane.CurrentIndex)
         {
-            _currentFilterIndex = currentIndex;
+            _currentFilterIndex = filterPane.CurrentIndex;
             _changed = true;
         }
 
-        if (_filterViewStates.Length != filterViews.Count)
+        if (_filterViewStates.Length != filterPane.Filters.Count)
         {
-            _filterViewStates = new (int, int)[filterViews.Count];
+            _filterViewStates = new (int, int)[filterPane.Filters.Count];
             _changed = true;
         }
 
         for (var i = 0; i < _filterViewStates.Length; ++i)
         {
-            var state = (filterViews[i].ScrollPos, filterViews[i].LogSource.Lines.Count);
+            var state = (filterPane.Filters[i].ScrollPos, filterPane.Filters[i].LogSource.Lines.Count);
             if (_filterViewStates[i] != state)
             {
                 _filterViewStates[i] = state;
@@ -100,6 +100,7 @@ class StatusView : ViewBase
         Screen.OutSetCursorPos(0, Top);
         Screen.OutSetForegroundColor(128, 128, 128);
         Screen.OutPrint(csb.Span, Width, true);
+        Screen.OutResetAttributes();
 
         _changed = false;
     }
