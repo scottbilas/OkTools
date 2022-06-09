@@ -43,7 +43,7 @@ class ScrollingTextView : ViewBase
             var viewEnd = viewStart + Height;
 
             if (changedStart < viewEnd && changedEnd > viewStart)
-                Draw(Math.Max(changedStart, viewStart), Math.Min(changedEnd, viewEnd));
+                Draw(Math.Max(changedStart, viewStart) - _scrollY, Math.Min(changedEnd, viewEnd) - _scrollY);
         }
     }
 
