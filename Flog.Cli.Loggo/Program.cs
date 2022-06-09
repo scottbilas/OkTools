@@ -14,13 +14,15 @@ Usage:
 
 Options:
   --stdout           Mirror to stdout as well (defaults to true if PATH not specified)
-  --linenums         Prefix each line with a line number
+  --line-nums        Prefix each line with a line number
   --delay DELAY      Delay between each line being added to the log in ms [default: 1,5]
   --width WIDTH      Width of generated lines [default: 1,200]
   --size SIZE        Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
   --lines LINES      Stop generating after LINES lines
   --pattern PATTERN  Pattern to use for generated lines (one of: lorem, nums, loggy, unity) [default: nums]
   --eol EOL          End of line character to use (one of: crlf, lf, mix) [default: lf]
+  --overwrite        Overwrite existing log file if it already exists
+  --delete-on-exit   Delete log file when program exits
 
 Notes:
   DELAY and WIDTH can be ""min,max"" entries separated by a comma (for example `1MB,50GB`). Both min and max will be the same if there is only one entry.
@@ -63,18 +65,38 @@ Alternative:
     static CliExitCode LoggIt(IDictionary<string, ValueObject> options)
     {
         StreamWriter? fileWriter = null;
+        var optPath = options["PATH"].ToString();
+
+        // ReSharper disable AccessToModifiedClosure
+        void Dispose()
+        {
+            if (fileWriter == null)
+                return;
+
+            fileWriter.Dispose();
+            if (options["--delete-on-exit"].IsTrue)
+                File.Delete(optPath);
+        }
+        // ReSharper restore AccessToModifiedClosure
+
+        Console.CancelKeyPress += (_, _) => Dispose();
 
         try
         {
             var optStdout = options["--stdout"].IsTrue;
 
-            var optPath = options["PATH"].ToString();
             if (optPath.IsNullOrEmpty())
                 optStdout = true;
             else
-                fileWriter = File.CreateText(optPath);
+            {
+                optPath = Path.GetFullPath(optPath);
+                fileWriter = new StreamWriter(File.Open(optPath,
+                    options["--overwrite"].IsTrue ? FileMode.Create : FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.ReadWrite | FileShare.Delete));
+            }
 
-            var optLineNums = options["--linenums"].IsTrue;
+            var optLineNums = options["--line-nums"].IsTrue;
             var optDelay = ParseMinMaxInt(options["--delay"].ToString());
             var optWidth = ParseMinMaxInt(options["--width"].ToString());
             var optSize = TryParseSize(options["--size"].ToString());
@@ -135,22 +157,18 @@ Alternative:
                         throw new DocoptInputErrorException($"Invalid --pattern option `{optPattern}`");
                 }
 
-                switch (optEol)
+                var eol = optEol switch
                 {
-                    case "crlf":
-                        csb.Append("\r\n");
-                        break;
-                    case "lf":
-                        csb.Append('\n');
-                        break;
-                    case "mix":
-                        csb.Append(Random.Shared.Next() % 2 == 0 ? "\r\n" : "\n");
-                        break;
-                    default:
-                        throw new DocoptInputErrorException($"Invalid --eol option `{optEol}`");
-                }
+                    "crlf" => "\r\n",
+                    "lf"   => "\n",
+                    "mix"  => Random.Shared.Next() % 2 == 0 ? "\r\n" : "\n",
+                    _      => throw new DocoptInputErrorException($"Invalid --eol option `{optEol}`")
+                };
 
-                var span = csb.Span.Truncate(width);
+                csb.Length = Math.Min(csb.Length, width);
+                csb.Append(eol);
+
+                var span = csb.Span;
                 fileWriter?.Write(span);
                 written += span.Length;
 
@@ -163,6 +181,7 @@ Alternative:
                 if (optDelay.min != 0 || optDelay.max != 0)
                 {
                     var delay = Random.Shared.Next(optDelay.min, optDelay.max+1);
+                    fileWriter?.Flush();
                     Thread.Sleep(delay);
                 }
             }
@@ -171,15 +190,7 @@ Alternative:
         }
         finally
         {
-            fileWriter?.Dispose();
+            Dispose();
         }
     }
-}
-
-static class Extensions
-{
-    public static Span<T> Truncate<T>(this Span<T> span, int length) =>
-        span[..Math.Min(length, span.Length)];
-    public static ReadOnlySpan<T> Truncate<T>(this ReadOnlySpan<T> span, int length) =>
-        span[..Math.Min(length, span.Length)];
 }
