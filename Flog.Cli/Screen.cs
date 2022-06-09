@@ -59,7 +59,7 @@ partial class Screen : IDisposable
             }
             catch (Exception x)
             {
-                _terminalEvents.Writer.WriteAsync(new ErrorEvent(x));
+                _terminalEvents.Writer.WriteAsync(new ErrorEvent(x), _disposed.Token);
             }
         }
 
@@ -70,14 +70,14 @@ partial class Screen : IDisposable
         Task.Run(() => Wrap(() => TaskReadKeyEvents(terminalRawInput.Reader)));
     }
 
-    public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt);
+    public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt, _disposed.Token);
 
     public async Task GetEvents(EventBuffer<ITerminalEvent> events)
     {
         OutFlush();
 
         // block on the first one
-        events.Add(await _terminalEvents.Reader.ReadAsync());
+        events.Add(await _terminalEvents.Reader.ReadAsync(_disposed.Token));
 
         // receive as many more as we can
         while (_terminalEvents.Reader.TryRead(out var evt))
@@ -127,15 +127,8 @@ partial class Screen : IDisposable
         --s_instanceCount;
     }
 
-    void OnSignaled(TerminalSignalContext signal)
-    {
-        _terminalEvents.Writer.WriteAsync(new SignalEvent(signal.Signal));
-    }
-
-    void OnResized(TerminalSize size)
-    {
-        _terminalEvents.Writer.WriteAsync(new ResizeEvent(size));
-    }
+    void OnSignaled(TerminalSignalContext signal) => PostEvent(new SignalEvent(signal.Signal));
+    void OnResized(TerminalSize size) => PostEvent(new ResizeEvent(size));
 
     async void TaskReadRawInput(ChannelWriter<ReadOnlyMemory<byte>> rawInput)
     {
