@@ -19,6 +19,12 @@ class LogFilterChain
         }
     }
 
-    public void Add(LogProcessor processor) => _processors.Add(processor);
+    public void Add(LogProcessor processor)
+    {
+        if (_processors.Count > 0)
+            processor.Process(_processors[^1].LinesMemory);
+        _processors.Add(processor);
+    }
+
     public int GetItemCount(int processorIndex) => _processors[processorIndex].Count;
 }

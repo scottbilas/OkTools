@@ -75,6 +75,7 @@ abstract class LogProcessor
     public int Count => _processed.Count;
     public uint Version => _version;
     public ReadOnlySpan<string> Lines => _processed.AsSpan;
+    public ReadOnlyMemory<string> LinesMemory => _processed.AsMemory;
 
     public void Invalidate()
     {
