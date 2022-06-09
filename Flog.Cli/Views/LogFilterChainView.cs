@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using OkTools.Core;
 
-class FilterChainView : ViewBase
+class LogFilterChainView : ViewBase
 {
     readonly List<ScrollingTextView> _views = new();
     int _currentIndex = -1;
 
-    public FilterChainView(Screen screen) : base(screen) {}
+    public LogFilterChainView(Screen screen) : base(screen) {}
 
     public IReadOnlyList<ScrollingTextView> Filters => _views;
     public int CurrentIndex => _currentIndex;
@@ -19,6 +19,7 @@ class FilterChainView : ViewBase
     }
 
     public void Draw() => Current.Draw();
+    public void UpdateAndDrawIfChanged() => Current.UpdateAndDrawIfChanged();
     public bool HandleEvent(ITerminalEvent evt) => Current.HandleEvent(evt);
 
     public void SetCurrentIndex(int index)
@@ -36,35 +37,25 @@ class FilterChainView : ViewBase
             Current.SetBounds(Width, Top, Bottom, true);
     }
 
-    public void AddAndActivate(ILogSource logSource)
+    public void SafeSetCurrentIndex(int index)
     {
-        Debug.Assert(_currentIndex == _views.Count - 1, "Insertion not supported yet");
+        SetCurrentIndex(Math.Clamp(index, 0, _views.Count - 1));
+    }
 
+    public void AddAndActivate(LogProcessor logSource)
+    {
         _views.Add(new ScrollingTextView(Screen, logSource) { Enabled = true });
-        SetCurrentIndex(_views.Count - 1);
+        ActivateLast();
     }
 
-    public void AddAndActivateChild()
-    {
-        Debug.Assert(_currentIndex == _views.Count - 1, "Insertion not supported yet");
-
-        AddAndActivate(new FilterLogSource(Current.LogSource));
-    }
-
-    public void ActivateNext()
-    {
-        if (_currentIndex < _views.Count - 1)
-            SetCurrentIndex(_currentIndex + 1);
-    }
-
-    public void ActivatePrev()
-    {
-        if (_currentIndex > 0)
-            SetCurrentIndex(_currentIndex - 1);
-    }
+    public void ActivateNext() => SafeSetCurrentIndex(_currentIndex + 1);
+    public void ActivatePrev() => SafeSetCurrentIndex(_currentIndex - 1);
+    public void ActivateLast() => SafeSetCurrentIndex(_views.Count - 1);
 
     public void RemoveLast()
     {
+        Debug.Assert(_views.Count > 1); // don't delete all the views, kill the whole chain instead..
+
         _views.DropBack();
 
         _views[^1].Enabled = true;

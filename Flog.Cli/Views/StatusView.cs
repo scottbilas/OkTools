@@ -32,23 +32,23 @@ class StatusView : ViewBase
         _changed = true;
     }
 
-    public void SetFilterStatus(FilterChainView filterPane)
+    public void SetFilterStatus(LogFilterChain logFilterChain, LogFilterChainView logFilterPane)
     {
-        if (_currentFilterIndex != filterPane.CurrentIndex)
+        if (_currentFilterIndex != logFilterPane.CurrentIndex)
         {
-            _currentFilterIndex = filterPane.CurrentIndex;
+            _currentFilterIndex = logFilterPane.CurrentIndex;
             _changed = true;
         }
 
-        if (_filterViewStates.Length != filterPane.Filters.Count)
+        if (_filterViewStates.Length != logFilterPane.Filters.Count)
         {
-            _filterViewStates = new (int, int)[filterPane.Filters.Count];
+            _filterViewStates = new (int, int)[logFilterPane.Filters.Count];
             _changed = true;
         }
 
         for (var i = 0; i < _filterViewStates.Length; ++i)
         {
-            var state = (filterPane.Filters[i].ScrollPos, filterPane.Filters[i].LogSource.Lines.Count);
+            var state = (logFilterPane.Filters[i].ScrollPos, logFilterChain.GetItemCount(i));
             if (_filterViewStates[i] != state)
             {
                 _filterViewStates[i] = state;

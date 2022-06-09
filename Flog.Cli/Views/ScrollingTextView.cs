@@ -3,28 +3,51 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Core;
 
-class ScrollingTextView : ViewBase //TODO: ILogSource
+class ScrollingTextView : ViewBase
 {
-    readonly ILogSource _logSource;
-    readonly string?[] _processedLines;
+    readonly LogProcessor _source;
+    uint _logSourceVersion;
+
+    readonly OkList<string?> _processedLines = new(LogProcessor.DefaultCapacity);
     readonly StringBuilder _sb = new();
 
     int _scrollX, _scrollY;
-    // TODO: bool for "tail on", also need some options for how we draw
+    // TODO: bool for "follow on", also need some options for how often we draw as we follow the tail
+    //       ^ consider using VS-output-style following..if go to end, it turns on follow, and if do any scroll at all, it turns it off..
 
-    public ScrollingTextView(Screen screen, ILogSource logSource) : base(screen)
+    public ScrollingTextView(Screen screen, LogProcessor source) : base(screen)
     {
-        _logSource = logSource;
-        _processedLines = new string?[logSource.Lines.Count];
+        _source = source;
+        _logSourceVersion = source.Version - 1;
     }
 
-    public ILogSource LogSource => _logSource;
+    public LogProcessor Processor => _source;
+
+    public void UpdateAndDrawIfChanged()
+    {
+        if (_logSourceVersion != _source.Version)
+        {
+            _processedLines.ClearItems();
+            _processedLines.Count = _source.Count;
+            _logSourceVersion = _source.Version;
+
+            Draw();
+        }
+        else if (_source.Count != _processedLines.Count)
+        {
+            var changedStart = _processedLines.Count;
+            _processedLines.Count = _source.Count;
+            var changedEnd = _processedLines.Count;
+
+            var viewStart = _scrollY;
+            var viewEnd = viewStart + Height;
+
+            if (changedStart < viewEnd && changedEnd > viewStart)
+                Draw(Math.Max(changedStart, viewStart), Math.Min(changedEnd, viewEnd));
+        }
+    }
+
     public int ScrollPos => _scrollY;
-
-    public void FilterChanged()
-    {
-        Array.Clear(_processedLines);
-    }
 
     public void ScrollDown() => ScrollY(-1);
     public void ScrollUp() => ScrollY(1);
@@ -43,7 +66,7 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
 
     public void ScrollToBottom()
     {
-        var end = _logSource.Lines.Count;
+        var end = _source.Count;
         var target = end - (Height / 2);
         ScrollToY(_scrollY < target ? target : end);
     }
@@ -85,11 +108,15 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
     {
         CheckEnabled();
 
-        var endPrintY = Math.Min(bottom, _logSource.Lines.Count - _scrollY);
+        Debug.Assert(top >= 0 && top <= Height);
+        Debug.Assert(bottom >= top && bottom <= Height);
+
+        var endPrintY = Math.Min(bottom, _source.Count - _scrollY);
 
         for (var i = top; i < endPrintY; ++i)
         {
-            var line = _processedLines[i + _scrollY] ?? (_processedLines[i + _scrollY] = SanitizeForDisplay(_logSource.Lines[i + _scrollY]));
+            ref var pline = ref _processedLines.RefAt(i + _scrollY);
+            var line = pline ??= SanitizeForDisplay(_source.Lines[i + _scrollY]);
 
             Screen.OutSetCursorPos(0, i);
             Screen.OutPrint(line.AsSpanSafe(_scrollX), Width, true);
@@ -104,7 +131,7 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
 
     int ClampY(int testY)
     {
-        return Math.Max(Math.Min(testY, _logSource.Lines.Count - 1), 0);
+        return Math.Max(Math.Min(testY, _source.Count - 1), 0);
     }
 
     public bool ScrollToY(int y)
@@ -153,7 +180,7 @@ class ScrollingTextView : ViewBase //TODO: ILogSource
     {
         CheckEnabled();
 
-        // TODO: scrolling in a later filter should also (optionally) update base filter scrollpos
+        // TODO: scrolling in a later filter should also (optionally) update base filter scroll pos
 
         switch (evt)
         {
