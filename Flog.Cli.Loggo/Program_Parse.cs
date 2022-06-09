@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using DocoptNet;
 using OkTools.Core;
 
 public static partial class Program
@@ -32,9 +33,9 @@ public static partial class Program
         if (str.IsNullOrEmpty())
             return null;
 
-        var match = Regex.Match(str, @"(\d+)([kmg]b)?", RegexOptions.IgnoreCase);
+        var match = Regex.Match(str, @"(\d+)([kmg]b)?$", RegexOptions.IgnoreCase);
         if (!match.Success)
-            throw new ArgumentException($"`{str}` is not a valid size");
+            throw new DocoptInputErrorException($"`{str}` is not a valid size");
 
         var multiplier = 1;
         if (match.Groups[2].Success)
