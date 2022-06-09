@@ -93,22 +93,33 @@ class FlogApp : IDisposable
 
         for (;;)
         {
-            events.Clear();
-            await Task.WhenAny(
-                _screen.GetEvents(events),
-                _logFileReader.WaitToReadAsync(_logFileCancel.Token).AsTask());
+            while (_screen.Events.TryRead(out var evt))
+                events.Add(evt);
+
+            if (events.Count == 0)
+            {
+                var tEvents = _screen.Events.WaitToReadAsync().AsTask();
+                var tSource = _logFileReader.WaitToReadAsync().AsTask();
+                if (await Task.WhenAny(tEvents, tSource) == tEvents)
+                    continue;
+            }
 
             using var _ = new AutoCursor(this);
 
-            // do any global events from the batch first
-            var exitCode = ProcessGlobalEvents(events);
-            if (exitCode != null)
-                return exitCode.Value;
+            if (events.Count > 0)
+            {
+                // do any global events from the batch first
+                var exitCode = ProcessGlobalEvents(events);
+                if (exitCode != null)
+                    return exitCode.Value;
 
-            // now process the rest of the batch
-            exitCode = ProcessNormalEvents(events);
-            if (exitCode != null)
-                return exitCode.Value;
+                // now process the rest of the batch
+                exitCode = ProcessNormalEvents(events);
+                if (exitCode != null)
+                    return exitCode.Value;
+
+                events.Clear();
+            }
 
             // update filter chain
             _logFilterChain.Process();
@@ -119,6 +130,9 @@ class FlogApp : IDisposable
             // update status
             _statusPane.SetFilterStatus(_logFilterChain, _logFilterPane);
             _statusPane.DrawIfChanged();
+
+            // flush anything still buffered
+            _screen.OutFlush();
         }
     }
 

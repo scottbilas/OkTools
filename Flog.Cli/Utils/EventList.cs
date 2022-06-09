@@ -15,6 +15,8 @@
         _accepted.Clear();
     }
 
+    public int Count => _buffer.Count;
+
     public Enumerator GetEnumerator() => new(this);
 
     public struct Enumerator

@@ -11,7 +11,6 @@ partial class Screen : IDisposable
     static int s_instanceCount;
     readonly CancellationTokenSource _disposed = new();
     readonly VirtualTerminal _terminal;
-    readonly Options _options = new();
 
     readonly Channel<ITerminalEvent> _terminalEvents = Channel
         .CreateUnbounded<ITerminalEvent>(new UnboundedChannelOptions
@@ -72,27 +71,15 @@ partial class Screen : IDisposable
 
     public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt, _disposed.Token);
 
-    public async Task GetEvents(EventBuffer<ITerminalEvent> events)
-    {
-        OutFlush();
-
-        // block on the first one
-        events.Add(await _terminalEvents.Reader.ReadAsync(_disposed.Token));
-
-        // receive as many more as we can
-        while (_terminalEvents.Reader.TryRead(out var evt))
-            events.Add(evt);
-    }
-
     public TerminalSize Size => _terminal.Size;
-
-    public Options Options => _options;
+    public ChannelReader<ITerminalEvent> Events => _terminalEvents.Reader;
+    public Options Options { get; } = new();
 
     public void Dispose()
     {
         if (_disposed.IsCancellationRequested)
             throw new ObjectDisposedException("Instance already disposed");
-        _disposed.Cancel();
+        _disposed.Cancel(); // don't dispose, let finalizer get it
 
         /* https://github.com/gdamore/tcell/v2/tscreen.go
 
