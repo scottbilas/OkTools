@@ -19,7 +19,7 @@ class LogFilterChainView : ViewBase
     }
 
     public void Draw() => Current.Draw();
-    public void UpdateAndDrawIfChanged() => Current.UpdateAndDrawIfChanged();
+    public void UpdateAndDrawIfChanged() => Current.Update(true);
     public bool HandleEvent(ITerminalEvent evt) => Current.HandleEvent(evt);
 
     public void SetCurrentIndex(int index)
@@ -32,6 +32,7 @@ class LogFilterChainView : ViewBase
 
         _currentIndex = index;
         Current.Enabled = true;
+        Current.Update(false);
 
         if (Height != 0)
             Current.SetBounds(Width, Top, Bottom, true);
@@ -57,9 +58,7 @@ class LogFilterChainView : ViewBase
         Debug.Assert(_views.Count > 1); // don't delete all the views, kill the whole chain instead..
 
         _views.DropBack();
-
-        _views[^1].Enabled = true;
-        _currentIndex = _views.Count - 1;
-        Current.SetBounds(Width, Top, Bottom, true);
+        _currentIndex = -1;
+        SetCurrentIndex(_views.Count - 1);
     }
 }

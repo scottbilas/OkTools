@@ -23,7 +23,7 @@ class ScrollingTextView : ViewBase
 
     public LogProcessor Processor => _source;
 
-    public void UpdateAndDrawIfChanged()
+    public void Update(bool drawIfChanged)
     {
         if (_logSourceVersion != _source.Version)
         {
@@ -31,7 +31,8 @@ class ScrollingTextView : ViewBase
             _processedLines.Count = _source.Count;
             _logSourceVersion = _source.Version;
 
-            Draw();
+            if (drawIfChanged)
+                Draw();
         }
         else if (_source.Count != _processedLines.Count)
         {
@@ -42,7 +43,7 @@ class ScrollingTextView : ViewBase
             var viewStart = _scrollY;
             var viewEnd = viewStart + Height;
 
-            if (changedStart < viewEnd && changedEnd > viewStart)
+            if (drawIfChanged && changedStart < viewEnd && changedEnd > viewStart)
                 Draw(Math.Max(changedStart, viewStart) - _scrollY, Math.Min(changedEnd, viewEnd) - _scrollY);
         }
     }
