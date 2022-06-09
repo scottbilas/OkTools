@@ -13,7 +13,7 @@ static class LogSource
             reader = await OpenFileAsync(path, token);
             await writer.WriteAsync(LogChange.Clear, token);
 
-            var eof = reader.BaseStream.Length;
+            var eof = 0L;
             while (!token.IsCancellationRequested)
             {
                 if (reader.BaseStream.Length == eof)
