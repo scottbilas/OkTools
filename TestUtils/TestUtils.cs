@@ -30,6 +30,7 @@ public struct DirectoryBackup : IDisposable
 [PublicAPI]
 public abstract class TestFileSystemFixture
 {
+    NPath _rootDir = null!;
     protected NPath BaseDir { private set; get; } = null!;
     protected string Eol { set; get; } = "\n";
     protected string TestDirectory { set; get; } = TestContext.CurrentContext.TestDirectory;
@@ -37,9 +38,8 @@ public abstract class TestFileSystemFixture
     [OneTimeSetUp]
     public void InitFixture()
     {
-        // TODO: put in uniquely-named subdir so can parallelize across fixtures
-
-        BaseDir = TestDirectory.ToNPath().Combine("testfs");
+        _rootDir = TestDirectory.ToNPath().Combine("testfs");
+        BaseDir = _rootDir.Combine(GetType().Name);
         DeleteTestFileSystem();
     }
 
@@ -71,6 +71,8 @@ public abstract class TestFileSystemFixture
         }
 
         BaseDir.Delete();
+        if (!_rootDir.Contents().Any())
+            _rootDir.Delete();
     }
 
     protected NPath WriteAllLines(NPath path, params string[] lines) =>
