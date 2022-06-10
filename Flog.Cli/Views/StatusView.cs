@@ -80,6 +80,10 @@
     {
         CheckEnabled();
 
+        // TODO: CSB needs to have some ControlBuilder abilities.. want
+        //     * ability to prevent writing past end of screen, but also clear to end (currently handled by `OutPrint(span, width, true)`)
+        //     * support for some basic attribute-only (color, underline etc.) control sequences, which will then not count against Width
+
         var csb = new CharSpanBuilder(_text);
 
         // TODO: "TryAppend", put in sections with center/left/etc-aligning, truncate, deal with pathological widths, etc..
