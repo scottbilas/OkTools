@@ -1,11 +1,17 @@
 ﻿class StatusView : ViewBase
 {
+    record struct FilterStatus(int Count, int CountWhenLastActive, int ScrollPos, bool IsFollowing)
+    {
+        public bool HasNewData => Count != CountWhenLastActive;
+    }
+
+    // TODO: rethink this whole thing..maybe just go with a simple double buffering of the char[]
     char[] _text = Array.Empty<char>();
     bool _changed = true;
 
     NPath? _logPath;
     int _currentFilterIndex;
-    (int current, int total)[] _filterViewStates = Array.Empty<(int, int)>();
+    FilterStatus[] _filterStatuses = Array.Empty<FilterStatus>();
 
     public StatusView(Screen screen) : base(screen) {}
 
@@ -39,18 +45,29 @@
             _changed = true;
         }
 
-        if (_filterViewStates.Length != logView.FilterViews.Count)
+        if (_filterStatuses.Length != logView.FilterViews.Count)
         {
-            _filterViewStates = new (int, int)[logView.FilterViews.Count];
+            // TODO: this will be a problem when i allow insert/remove on filters (not just at the end)
+            Array.Resize(ref _filterStatuses, logView.FilterViews.Count);
             _changed = true;
         }
 
-        for (var i = 0; i < _filterViewStates.Length; ++i)
+        for (var i = 0; i < _filterStatuses.Length; ++i)
         {
-            var state = (logView.FilterViews[i].ScrollPos, logModel.GetItemCount(i));
-            if (_filterViewStates[i] != state)
+            var state = new FilterStatus
             {
-                _filterViewStates[i] = state;
+                Count = logModel.GetItemCount(i),
+                ScrollPos = logView.FilterViews[i].ScrollPos,
+                IsFollowing = logView.FilterViews[i].IsFollowing
+            };
+
+            state.CountWhenLastActive = i == _currentFilterIndex
+                ? state.Count // count is current while we look at it
+                : _filterStatuses[i].CountWhenLastActive; // maintain previous count
+
+            if (_filterStatuses[i] != state)
+            {
+                _filterStatuses[i] = state;
                 _changed = true;
             }
         }
@@ -73,7 +90,7 @@
             csb.Append(" | ");
         }
 
-        for (var i = 0; i < _filterViewStates.Length; ++i)
+        for (var i = 0; i < _filterStatuses.Length; ++i)
         {
             if (i != 0)
                 csb.Append(" -> ");
@@ -81,11 +98,15 @@
             if (i == _currentFilterIndex)
                 csb.Append('[');
 
-            csb.Append(i+1);
+            csb.Append(i + 1);
+            if (_filterStatuses[i].IsFollowing)
+                csb.Append('f');
             csb.Append(':');
-            csb.Append(_filterViewStates[i].current+1);
+            csb.Append(_filterStatuses[i].ScrollPos + 1);
             csb.Append('/');
-            csb.Append(_filterViewStates[i].total);
+            csb.Append(_filterStatuses[i].Count);
+            if (_filterStatuses[i].HasNewData)
+                csb.Append('*');
 
             if (i == _currentFilterIndex)
                 csb.Append(']');

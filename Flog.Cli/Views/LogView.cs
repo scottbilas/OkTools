@@ -10,6 +10,7 @@ class LogView : ViewBase
     {
         _model = model;
         AddAndActivate(new PassThruProcessor());
+        Current.IsFollowing = true;
     }
 
     public int CurrentIndex => _currentIndex;

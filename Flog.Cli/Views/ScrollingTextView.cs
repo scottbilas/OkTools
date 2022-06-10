@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
-using OkTools.Core;
 
 interface ILineDataSource
 {
@@ -31,6 +30,7 @@ class ScrollingTextView : ViewBase
     }
 
     public ILineDataSource Processor => _source;
+    public bool IsFollowing { get; set; }
 
     public void Update(bool drawIfChanged)
     {
@@ -39,6 +39,9 @@ class ScrollingTextView : ViewBase
             _processedLines.ClearItems();
             _processedLines.Count = _source.Count;
             _logSourceVersion = _source.Version;
+
+            if (IsFollowing)
+                _scrollY = ClampY(_processedLines.Count);
 
             if (drawIfChanged)
                 Draw();
@@ -52,8 +55,13 @@ class ScrollingTextView : ViewBase
             var viewStart = _scrollY;
             var viewEnd = viewStart + Height;
 
-            if (drawIfChanged && changedStart < viewEnd && changedEnd > viewStart)
-                Draw(Math.Max(changedStart, viewStart) - _scrollY, Math.Min(changedEnd, viewEnd) - _scrollY);
+            if (drawIfChanged)
+            {
+                if (changedStart < viewEnd && changedEnd > viewStart)
+                    Draw(Math.Max(changedStart, viewStart) - _scrollY, Math.Min(changedEnd, viewEnd) - _scrollY);
+                if (IsFollowing)
+                    ScrollToBottom(false);
+            }
         }
     }
 
@@ -74,11 +82,15 @@ class ScrollingTextView : ViewBase
             ScrollToX(0);
     }
 
-    public void ScrollToBottom()
+    public void ScrollToBottom(bool toggleHalfway)
     {
-        var end = _source.Count;
-        var target = end - (Height / 2);
-        ScrollToY(_scrollY < target ? target : end);
+        var target = ClampY(_source.Count - Height);
+        if (target == _scrollY && toggleHalfway && _source.Count >= Height)
+            target = ClampY(_source.Count - Height / 2);
+        else
+            IsFollowing = true;
+
+        ScrollToY(target, false);
     }
 
     public override void SetBounds(int width, int top, int bottom)
@@ -144,9 +156,14 @@ class ScrollingTextView : ViewBase
         return Math.Max(Math.Min(testY, _source.Count - 1), 0);
     }
 
-    public bool ScrollToY(int y)
+    public bool ScrollToY(int y, bool resetIsFollowing = true)
     {
+        if (resetIsFollowing)
+            IsFollowing = false;
+
         y = ClampY(y);
+        if (_scrollY == y)
+            return false;
 
         var (beginScreenY, endScreenY) = (0, Height);
         var offset = y - _scrollY;
@@ -161,8 +178,6 @@ class ScrollingTextView : ViewBase
                 Screen.OutScrollBufferDown(-offset);
                 endScreenY = -offset;
                 break;
-            case 0:
-                return false;
         }
 
         _scrollY = y;
@@ -198,7 +213,7 @@ class ScrollingTextView : ViewBase
                 ScrollToTop();
                 break;
             case KeyEvent { Key: ConsoleKey.End, NoModifiers: true }:
-                ScrollToBottom();
+                ScrollToBottom(true);
                 break;
 
             case KeyEvent { Key: ConsoleKey.UpArrow, NoModifiers: true }:
