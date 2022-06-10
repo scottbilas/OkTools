@@ -1,14 +1,10 @@
-﻿using System.Threading.Channels;
-using DocoptNet;
-using OkTools.Core;
+﻿using DocoptNet;
 
 class FlogApp : IDisposable
 {
     readonly Screen _screen = new();
-    readonly ChannelReader<LogChange> _logFileReader;
-    readonly CancellationTokenSource _logFileCancel = new();
-    readonly LogFilterChain _logFilterChain;
-    readonly LogFilterChainView _logFilterPane;
+    readonly LogView _logPane;
+    readonly LogModel _logModel;
     readonly StatusView _statusPane;
     readonly InputView _commandPane, _editFilterPane;
 
@@ -29,26 +25,16 @@ class FlogApp : IDisposable
     {
         _screen.OutShowCursor(false);
 
-        // tail
+        // main view
 
-        var path = options["PATH"].ToString();
-        var channel = Channel.CreateUnbounded<LogChange>();
-        Task.Run(() => LogSource.TailFileAsync(path, channel.Writer, _logFileCancel.Token));
-
-        // filter chain
-
-        _logFileReader = channel.Reader;
-        _logFilterChain = new LogFilterChain(_logFileReader);
-        var passThruProcessor = new PassThruProcessor();
-        _logFilterChain.Add(passThruProcessor);
-
-        _logFilterPane = new LogFilterChainView(_screen) { Enabled = true };
-        _logFilterPane.AddAndActivate(passThruProcessor);
+        var logFilePath = options["PATH"].ToString();
+        _logModel = new LogModel(logFilePath);
+        _logPane = new LogView(_screen, _logModel) { Enabled = true };
 
         // status
 
         _statusPane = new StatusView(_screen) { Enabled = true };
-        _statusPane.SetLogPath(path);
+        _statusPane.SetLogPath(logFilePath);
 
         // input
 
@@ -59,7 +45,7 @@ class FlogApp : IDisposable
     void IDisposable.Dispose()
     {
         _screen.Dispose();
-        _logFileCancel.Cancel();
+        _logModel.Dispose();
     }
 
     readonly struct AutoCursor : IDisposable
@@ -99,39 +85,35 @@ class FlogApp : IDisposable
             if (events.Count == 0)
             {
                 var tEvents = _screen.Events.WaitToReadAsync().AsTask();
-                var tSource = _logFileReader.WaitToReadAsync().AsTask();
+                var tSource = _logModel.WaitForNeedsUpdateAsync().AsTask();
                 if (await Task.WhenAny(tEvents, tSource) == tEvents)
                     continue;
             }
 
-            using var _ = new AutoCursor(this);
-
-            if (events.Count > 0)
+            using (new AutoCursor(this))
             {
-                // do any global events from the batch first
-                var exitCode = ProcessGlobalEvents(events);
-                if (exitCode != null)
-                    return exitCode.Value;
+                if (events.Count > 0)
+                {
+                    // do any global events from the batch first
+                    var exitCode = ProcessGlobalEvents(events);
+                    if (exitCode != null)
+                        return exitCode.Value;
 
-                // now process the rest of the batch
-                exitCode = ProcessNormalEvents(events);
-                if (exitCode != null)
-                    return exitCode.Value;
+                    // now process the rest of the batch
+                    exitCode = ProcessNormalEvents(events);
+                    if (exitCode != null)
+                        return exitCode.Value;
 
-                events.Clear();
+                    events.Clear();
+                }
+
+                _logModel.Update();
+                _logPane.Update(true);
+
+                _statusPane.Update(_logModel, _logPane);
             }
 
-            // update filter chain
-            _logFilterChain.Process();
-
-            // update visible filter
-            _logFilterPane.UpdateAndDrawIfChanged();
-
-            // update status
-            _statusPane.SetFilterStatus(_logFilterChain, _logFilterPane);
-            _statusPane.DrawIfChanged();
-
-            // flush anything still buffered
+            // flush anything left still buffered
             _screen.OutFlush();
         }
     }
@@ -148,14 +130,12 @@ class FlogApp : IDisposable
         else if (_editFilterPane.Enabled)
             _editFilterPane.SetBounds(_screen.Size.Width, --y, y+1);
 
-        _logFilterPane.SetBounds(_screen.Size.Width, 0, y);
+        _logPane.SetBounds(_screen.Size.Width, 0, y);
     }
 
-    void Refresh()
+    void Draw()
     {
-        using var x = new AutoCursor(this);
-
-        _logFilterPane.Draw();
+        _logPane.Draw();
         if (_statusPane.Enabled)
             _statusPane.Draw();
 
@@ -188,7 +168,7 @@ class FlogApp : IDisposable
 
                 case CharEvent { Char: 'l', Alt: false, Ctrl: true }:
                     UpdateLayout();
-                    Refresh();
+                    Draw();
                     break;
 
                 case ResizeEvent:
@@ -220,7 +200,7 @@ class FlogApp : IDisposable
     void StateChange_LogView_InputEditFilter()
     {
         _editFilterPane.Enabled = true;
-        _editFilterPane.Text = _originalFilter = _logFilterPane.Current.Processor.To<SimpleFilterProcessor>().Filter;
+        _editFilterPane.Text = _originalFilter = _logPane.CurrentFilterText;
         UpdateLayout();
         _statusPane.Draw();
         _editFilterPane.Draw();
@@ -240,13 +220,6 @@ class FlogApp : IDisposable
         _originalFilter = "";
 
         _state = State.LogView;
-    }
-
-    void AddAndActivateFilter()
-    {
-        var filter = new SimpleFilterProcessor();
-        _logFilterChain.Add(filter);
-        _logFilterPane.AddAndActivate(filter);
     }
 
     CliExitCode? ProcessNormalEvents(EventBuffer<ITerminalEvent> events)
@@ -271,8 +244,7 @@ class FlogApp : IDisposable
 
                         case CharEvent { Char: >= '1' and <= '9', Alt: true, Ctrl: false } cevt:
                             var index = cevt.Char - '1';
-                            if (index < _logFilterPane.Filters.Count)
-                                _logFilterPane.SetCurrentIndex(index);
+                            _logPane.SafeSetCurrentIndex(index);
                             break;
 
                         // micro search
@@ -282,7 +254,7 @@ class FlogApp : IDisposable
                         // new child filter
                         case CharEvent { Char: 't', Alt: false, Ctrl: true }:
                         case CharEvent { Char: '+', NoModifiers: true }:
-                            AddAndActivateFilter();
+                            _logPane.AddAndActivateSimpleFilter();
                             StateChange_LogView_InputEditFilter();
                             break;
 
@@ -290,21 +262,25 @@ class FlogApp : IDisposable
                         case KeyEvent { Key: ConsoleKey.F2, NoModifiers: true }:
                         case KeyEvent { Key: ConsoleKey.Enter, NoModifiers: true }:
                         case CharEvent { Char: '=', NoModifiers: true }:
-                            if (_logFilterPane.CurrentIndex == 0)
-                                AddAndActivateFilter();
+                            if (_logPane.FilterViews.Count == 1)
+                                _logPane.AddAndActivateSimpleFilter();
                             else
+                            {
+                                if (_logPane.CurrentIndex == 0)
+                                    _logPane.ActivateNext();
                                 _editingExistingFilter = true;
+                            }
                             StateChange_LogView_InputEditFilter();
                             break;
 
                         // prev filter
                         case CharEvent { Char: ',', NoModifiers: true }:
-                            _logFilterPane.ActivatePrev();
+                            _logPane.ActivatePrev();
                             break;
 
                         // next filter
                         case CharEvent { Char: '.', NoModifiers: true }:
-                            _logFilterPane.ActivateNext();
+                            _logPane.ActivateNext();
                             break;
 
                         // command mode
@@ -313,7 +289,7 @@ class FlogApp : IDisposable
                             break;
 
                         default:
-                            accept = _logFilterPane.HandleEvent(evt.Value);
+                            accept = _logPane.HandleEvent(evt.Value);
                             break;
                     }
 
@@ -333,7 +309,7 @@ class FlogApp : IDisposable
                             break;
 
                         default:
-                            accept = _commandPane.HandleEvent(evt.Value).accepted || _logFilterPane.HandleEvent(evt.Value);
+                            accept = _commandPane.HandleEvent(evt.Value).accepted || _logPane.HandleEvent(evt.Value);
                             break;
                     }
                     break;
@@ -343,11 +319,11 @@ class FlogApp : IDisposable
                     {
                         case KeyEvent { Key: ConsoleKey.Escape, NoModifiers: true }:
                             if (_editingExistingFilter)
-                                _logFilterPane.Current.Processor.To<SimpleFilterProcessor>().Filter = _originalFilter;
+                                _logPane.CurrentFilterText = _originalFilter;
                             else
-                                _logFilterPane.RemoveLast();
+                                _logPane.RemoveLast();
 
-                            _logFilterPane.Draw();
+                            _logPane.Draw();
                             StateChange_Input_LogView();
                             break;
 
@@ -359,9 +335,9 @@ class FlogApp : IDisposable
                         default:
                             var handled = _editFilterPane.HandleEvent(evt.Value);
                             if (handled.inputChanged)
-                                _logFilterPane.Current.Processor.To<SimpleFilterProcessor>().Filter = _editFilterPane.Text;
+                                _logPane.CurrentFilterText = _editFilterPane.Text;
 
-                            accept = handled.accepted || _logFilterPane.HandleEvent(evt.Value);
+                            accept = handled.accepted || _logPane.HandleEvent(evt.Value);
                             break;
                     }
                     break;

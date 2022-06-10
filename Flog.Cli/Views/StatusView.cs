@@ -1,7 +1,4 @@
-﻿using NiceIO;
-using OkTools.Core;
-
-class StatusView : ViewBase
+﻿class StatusView : ViewBase
 {
     char[] _text = Array.Empty<char>();
     bool _changed = true;
@@ -32,34 +29,31 @@ class StatusView : ViewBase
         _changed = true;
     }
 
-    public void SetFilterStatus(LogFilterChain logFilterChain, LogFilterChainView logFilterPane)
+    public void Update(LogModel logModel, LogView logView)
     {
-        if (_currentFilterIndex != logFilterPane.CurrentIndex)
+        CheckEnabled();
+
+        if (_currentFilterIndex != logView.CurrentIndex)
         {
-            _currentFilterIndex = logFilterPane.CurrentIndex;
+            _currentFilterIndex = logView.CurrentIndex;
             _changed = true;
         }
 
-        if (_filterViewStates.Length != logFilterPane.Filters.Count)
+        if (_filterViewStates.Length != logView.FilterViews.Count)
         {
-            _filterViewStates = new (int, int)[logFilterPane.Filters.Count];
+            _filterViewStates = new (int, int)[logView.FilterViews.Count];
             _changed = true;
         }
 
         for (var i = 0; i < _filterViewStates.Length; ++i)
         {
-            var state = (logFilterPane.Filters[i].ScrollPos, logFilterChain.GetItemCount(i));
+            var state = (logView.FilterViews[i].ScrollPos, logModel.GetItemCount(i));
             if (_filterViewStates[i] != state)
             {
                 _filterViewStates[i] = state;
                 _changed = true;
             }
         }
-    }
-
-    public void DrawIfChanged()
-    {
-        CheckEnabled();
 
         if (_changed)
             Draw();

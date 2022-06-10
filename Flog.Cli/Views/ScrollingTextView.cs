@@ -3,25 +3,34 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Core;
 
+interface ILineDataSource
+{
+    uint Version { get; }
+    ReadOnlySpan<string> Lines { get; }
+    int Count => Lines.Length;
+    int DefaultCapacity { get; }
+}
+
 class ScrollingTextView : ViewBase
 {
-    readonly LogProcessor _source;
+    readonly ILineDataSource _source;
     uint _logSourceVersion;
 
-    readonly OkList<string?> _processedLines = new(LogProcessor.DefaultCapacity);
+    readonly OkList<string?> _processedLines;
     readonly StringBuilder _sb = new();
 
     int _scrollX, _scrollY;
     // TODO: bool for "follow on", also need some options for how often we draw as we follow the tail
     //       ^ consider using VS-output-style following..if go to end, it turns on follow, and if do any scroll at all, it turns it off..
 
-    public ScrollingTextView(Screen screen, LogProcessor source) : base(screen)
+    public ScrollingTextView(Screen screen, ILineDataSource source) : base(screen)
     {
+        _processedLines = new(source.DefaultCapacity);
         _source = source;
         _logSourceVersion = source.Version - 1;
     }
 
-    public LogProcessor Processor => _source;
+    public ILineDataSource Processor => _source;
 
     public void Update(bool drawIfChanged)
     {
@@ -116,8 +125,8 @@ class ScrollingTextView : ViewBase
 
         for (var i = top; i < endPrintY; ++i)
         {
-            ref var pline = ref _processedLines.RefAt(i + _scrollY);
-            var line = pline ??= SanitizeForDisplay(_source.Lines[i + _scrollY]);
+            ref var pLine = ref _processedLines.RefAt(i + _scrollY);
+            var line = pLine ??= SanitizeForDisplay(_source.Lines[i + _scrollY]);
 
             Screen.OutSetCursorPos(0, i);
             Screen.OutPrint(line.AsSpanSafe(_scrollX), Width, true);

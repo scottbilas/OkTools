@@ -1,26 +1,30 @@
 ﻿using System.Diagnostics;
-using OkTools.Core;
 
-class LogFilterChainView : ViewBase
+class LogView : ViewBase
 {
+    readonly LogModel _model;
     readonly List<ScrollingTextView> _views = new();
     int _currentIndex = -1;
 
-    public LogFilterChainView(Screen screen) : base(screen) {}
+    public LogView(Screen screen, LogModel model) : base(screen)
+    {
+        _model = model;
+        AddAndActivate(new PassThruProcessor());
+    }
 
-    public IReadOnlyList<ScrollingTextView> Filters => _views;
     public int CurrentIndex => _currentIndex;
     public ScrollingTextView Current => _views[_currentIndex];
+    public IReadOnlyList<ScrollingTextView> FilterViews => _views;
+
+    public void Draw() => Current.Draw();
+    public void Update(bool drawIfChanged) => Current.Update(drawIfChanged);
+    public bool HandleEvent(ITerminalEvent evt) => Current.HandleEvent(evt);
 
     public override void SetBounds(int width, int top, int bottom)
     {
         base.SetBounds(width, top, bottom);
         Current.SetBounds(width, top, bottom);
     }
-
-    public void Draw() => Current.Draw();
-    public void UpdateAndDrawIfChanged() => Current.Update(true);
-    public bool HandleEvent(ITerminalEvent evt) => Current.HandleEvent(evt);
 
     public void SetCurrentIndex(int index)
     {
@@ -31,11 +35,13 @@ class LogFilterChainView : ViewBase
             Current.Enabled = false;
 
         _currentIndex = index;
-        Current.Enabled = true;
-        Current.Update(false);
 
-        if (Height != 0)
-            Current.SetBounds(Width, Top, Bottom, true);
+        var current = Current;
+        current.Enabled = true;
+        current.Update(false);
+
+        if (Enabled)
+            current.SetBounds(Width, Top, Bottom, true);
     }
 
     public void SafeSetCurrentIndex(int index)
@@ -43,9 +49,21 @@ class LogFilterChainView : ViewBase
         SetCurrentIndex(Math.Clamp(index, 0, _views.Count - 1));
     }
 
-    public void AddAndActivate(LogProcessor logSource)
+    public string CurrentFilterText
     {
-        _views.Add(new ScrollingTextView(Screen, logSource) { Enabled = true });
+        get => Current.Processor.To<SimpleFilterProcessor>().Filter;
+        set => Current.Processor.To<SimpleFilterProcessor>().Filter = value;
+    }
+
+    public void AddAndActivateSimpleFilter()
+    {
+        AddAndActivate(new SimpleFilterProcessor());
+    }
+
+    void AddAndActivate(LogProcessorBase processor)
+    {
+        _model.Add(processor);
+        _views.Add(new ScrollingTextView(Screen, processor) { Enabled = true });
         ActivateLast();
     }
 
