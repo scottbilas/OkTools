@@ -27,7 +27,7 @@ public ref struct CharSpanBuilder
 
     public void Clear() => _used = default;
 
-    public (char[] chars, int used) Chars => (_buffer, _used.Length); // for older api's that don't take spans but can use part of an array (e.g. Console.Write*)
+    public ArraySegment<char> Chars => new(_buffer, 0, _used.Length); // for older API's that can't take spans and require char[]
     public ReadOnlySpan<char> Span => _used;
     public Span<char> UnusedSpan => _buffer.AsSpan(_used.Length);
 
