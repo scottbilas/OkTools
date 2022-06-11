@@ -17,6 +17,11 @@ public static class DocoptUtility
 
     public static string Reflow(string text, int wrapWidth, DocoptReflowOptions options)
     {
+        // TODO: support a line break marker, such as a backslash at the end of a line. This would tell reflow not to join
+        //       that line with the next.
+
+        // TODO: try to keep [default: foo] together on the same line
+
         if (wrapWidth <= 0)
             throw new ArgumentOutOfRangeException(nameof(wrapWidth), $" out of range 0 < {wrapWidth}");
         if (options.MinWrapWidth < 0 || options.MinWrapWidth >= wrapWidth)
