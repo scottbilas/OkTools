@@ -15,7 +15,7 @@ public static class Program
 
     static Program()
     {
-        var minWidth = k_commandSpecs.Select(s => s.Name.Length).Max();
+        var minWidth = k_commandSpecs.Max(s => s.Name.Length);
         var docUsageCommands = k_commandSpecs
             .Select(s => $"  {s.Name.PadRight(minWidth)}  {s.ShortDoc}")
             .StringJoin('\n');

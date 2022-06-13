@@ -1,19 +1,20 @@
 ﻿using System.Threading.Channels;
-using OkTools.Core;
 
 static class LogSource
 {
-    public static async Task TailFileAsync(string path, ChannelWriter<LogChange> writer, CancellationToken token)
+    public static async Task TailFileAsync(string path, ChannelWriter<LogBatch> writer, CancellationToken token)
     {
         StreamReader? reader = null;
         try
         {
             // TODO: LogChange needs a way to mark up status and errors from the engine itself (LogChange.LogType?)
-            await writer.WriteAsync(new[] { $"! Waiting for file {path}..." }, token);
+            await writer.WriteAsync(LogRecord.Status($"Waiting for file {path}..."), token);
             reader = await OpenFileAsync(path, token);
-            await writer.WriteAsync(LogChange.Clear, token);
+            await writer.WriteAsync(LogBatch.Clear, token);
 
             var eof = 0L;
+            //$$$TODO var isTailing = false; <<< needed for timestamps (file create time vs system time)
+
             while (!token.IsCancellationRequested)
             {
                 if (reader.BaseStream.Length == eof)
@@ -21,10 +22,11 @@ static class LogSource
                     // TODO: option to decide how to handle file deleted underneath us.. show eof? restart? error? status update?
                     if (((FileStream)reader.BaseStream).WasFileDeleted())
                     {
-                        await writer.WriteAsync(new[] { "", $"! File {path} was deleted!" }, token);
+                        await writer.WriteAsync(LogRecord.Error($"File {path} was deleted!"), token);
                         return;
                     }
 
+                    //$$$TODO isTailing = true;
                     await Task.Delay(100, token);
                     continue;
                 }
@@ -38,8 +40,10 @@ static class LogSource
 
                 // TODO: implement partial line continuation..will require a bool LogChange.IsContinuation
 
+                // TODO: isTailing -> start applying system time as log entry time
+
                 while (await reader.ReadLineAsync() is { } line) // TODO: batches (though using 4k blocks or whatever will also throttle just fine)
-                    await writer.WriteAsync(new[] { line }, token);
+                    await writer.WriteAsync(LogRecord.Source(line), token);
 
                 eof = reader.BaseStream.Position;
             }

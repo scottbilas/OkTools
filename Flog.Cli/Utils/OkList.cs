@@ -97,7 +97,7 @@ class OkList<T> : IReadOnlyList<T>
     public ref T RefAtUnchecked(int index) => ref _items[index];
 
     public Span<T> AsSpan => _items.AsSpan(0, _used);
-    public Memory<T> AsMemory => new(_items, 0, _used);
+    public OkSegment<T> AsSegment => new(_items, 0, _used);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(T item)

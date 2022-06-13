@@ -2,35 +2,50 @@ abstract class LogProcessorBase : ILineDataSource
 {
     const int k_defaultCapacity = 10000;
 
-    readonly OkList<string> _processed = new(k_defaultCapacity);
+    readonly OkList<LogRecord> _processed = new(k_defaultCapacity);
     uint _version = 1;
 
-    public LogChange Process(LogChange change)
+    public LogBatch Process(LogBatch batch)
     {
-        if (change.IsClear)
+        if (batch.IsClear)
         {
             Invalidate();
-            return change;
+            return batch;
         }
 
         var oldCount = _processed.Count;
-        foreach (var item in change.Appended.Span)
+        foreach (var record in batch.Appended.Span)
         {
-            var processed = Process(item);
+            var processed = Process(record);
             if (processed != null)
-                _processed.Add(processed);
+                _processed.Add(processed.Value);
         }
 
-        return _processed.AsMemory[oldCount..];
+        return _processed.AsSegment[oldCount..];
     }
 
-    //protected abstract void Process(ReadOnlySpan<string> source, Span<string> converted);
-    protected abstract string? Process(string entry);
+    protected virtual LogBatch Process(LogBatch batch)
+    {
+        var records = batch.Appended.Span;
+        for (var i = 0; i < records.Length; )
+        {
+            if (Process(records[i]))
+            {
+                if (processed.Lines.Length != null)
+                    _processed.Add(processed.Value);
+            }
+            else
+            {
+            }
+        }
+    }
+
+    protected virtual bool Process(ref LogRecord record) => false;
 
     public int DefaultCapacity => k_defaultCapacity;
     public uint Version => _version;
-    public ReadOnlySpan<string> Lines => _processed.AsSpan;
-    public ReadOnlyMemory<string> LinesMemory => _processed.AsMemory;
+    public ReadOnlySpan<LogRecord> Lines => _processed.AsSpan;
+    public OkSegment<LogRecord> LinesSegment => _processed.AsSegment;
 
     public void Invalidate()
     {
@@ -41,7 +56,7 @@ abstract class LogProcessorBase : ILineDataSource
 
 class PassThruProcessor : LogProcessorBase
 {
-    protected override string Process(string entry) => entry;
+    protected override LogRecord? Process(LogRecord record) => record;
 }
 
 class SimpleFilterProcessor : LogProcessorBase
@@ -61,7 +76,7 @@ class SimpleFilterProcessor : LogProcessorBase
         }
     }
 
-    protected override string? Process(string entry)
+    protected override LogRecord? Process(LogRecord record)
     {
         // TODO: loads of options here, like regex, whole word, case, etc.
         //       other inspirations for filtering:
@@ -70,6 +85,11 @@ class SimpleFilterProcessor : LogProcessorBase
         //        * sysinternals procmon
         //        * wireshark
 
-        return entry.Contains(Filter, StringComparison.OrdinalIgnoreCase) ? entry : null;
+        foreach (var line in record.Lines)
+        {
+
+        }
+
+        return record.Lines.Any(c => c.Contains(Filter, StringComparison.OrdinalIgnoreCase) ? record : null;
     }
 }

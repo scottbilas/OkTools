@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 interface ILineDataSource
 {
     uint Version { get; }
-    ReadOnlySpan<string> Lines { get; }
+    ReadOnlySpan<LogRecord> Lines { get; }
     int Count => Lines.Length;
     int DefaultCapacity { get; }
 }

@@ -17,6 +17,7 @@
 
     <!-- force windows to x64 -->
     <RuntimeIdentifier Condition=" '$(OS)' == 'Windows_NT' ">win-x64</RuntimeIdentifier>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <!--
     see notes in Unity.Cli.csproj for single-file publish size comparisons
