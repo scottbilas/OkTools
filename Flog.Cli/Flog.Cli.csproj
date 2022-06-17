@@ -27,6 +27,7 @@
     <PackageReference Include="docopt.net" Version="0.7.0" />
     <PackageReference Include="DotNetConfig" Version="1.0.6" />
     <PackageReference Include="System.Interactive" Version="6.0.1" />
+    <PackageReference Include="System.IO.Pipelines" Version="7.0.0-preview.4.22229.4" />
     <PackageReference Include="Vezel.Cathode" Version="0.8.23" />
   </ItemGroup>
 
