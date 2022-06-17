@@ -65,6 +65,7 @@ partial class Screen : IDisposable
         var terminalRawInput = Channel.CreateUnbounded<ReadOnlyMemory<byte>>(
             new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
+        // TODO: switch terminalRawInput from a Channel to a Pipe. should simplify the state machine.
         Task.Run(() => Wrap(() => TaskReadRawInput(terminalRawInput.Writer)));
         Task.Run(() => Wrap(() => TaskReadKeyEvents(terminalRawInput.Reader)));
     }
