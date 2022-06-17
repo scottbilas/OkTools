@@ -111,15 +111,15 @@ Alternative:
             var optEol = options["--eol"].ToString();
             var optIntraLineDelay = options["--intra-line-delay"].IsTrue;
 
-            var csb = new CharSpanBuilder(optWidth.max + 2); // room for \r\n
-
             string[]? patternLines = null;
             if (File.Exists(optPattern))
             {
                 patternLines = File.ReadAllLines(optPattern);
-                var maxWidth = patternLines.Max(l => l.Length) + 50;
+                var maxWidth = patternLines.Max(l => l.Length) + 50; // leave room for prefixes
                 optWidth = (maxWidth, maxWidth);
             }
+
+            var csb = new CharSpanBuilder(optWidth.max + 2); // room for \r\n
 
             for (var (written, lineNum) = (0L, 0); ; ++lineNum)
             {
