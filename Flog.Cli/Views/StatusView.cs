@@ -1,4 +1,6 @@
-﻿class StatusView : ViewBase
+﻿using OkTools.Flog;
+
+class StatusView : ViewBase
 {
     record struct FilterStatus(int Count, int CountWhenLastActive, int ScrollPos, bool IsFollowing)
     {

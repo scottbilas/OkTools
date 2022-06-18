@@ -1,8 +1,12 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
 
+namespace OkTools.Core;
+
+// like a List<T>, but simpler. also gives access to underlying T[] as a Memory<T>.
+// TODO: uh, tests..
 [PublicAPI]
-class OkList<T> : IReadOnlyList<T>
+public class OkList<T> : IReadOnlyList<T>
 {
     T[] _items;
     int _used;

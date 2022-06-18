@@ -1,4 +1,6 @@
-﻿/*
+﻿namespace OkTools.Flog;
+
+/*
 readonly struct LogEntry
 {
     // ulong id
@@ -15,7 +17,7 @@ readonly struct LogEntry
 }
 */
 
-readonly struct LogChange
+public readonly struct LogChange
 {
     public readonly ReadOnlyMemory<string> Appended;
     public readonly bool IsClear;

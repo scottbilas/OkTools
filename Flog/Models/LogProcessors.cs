@@ -1,4 +1,14 @@
-abstract class LogProcessorBase : ILineDataSource
+namespace OkTools.Flog;
+
+public interface ILineDataSource
+{
+    uint Version { get; }
+    ReadOnlySpan<string> Lines { get; }
+    int Count => Lines.Length;
+    int DefaultCapacity { get; }
+}
+
+public abstract class LogProcessorBase : ILineDataSource
 {
     const int k_defaultCapacity = 10000;
 
@@ -39,12 +49,12 @@ abstract class LogProcessorBase : ILineDataSource
     }
 }
 
-class PassThruProcessor : LogProcessorBase
+public class PassThruProcessor : LogProcessorBase
 {
     protected override string Process(string entry) => entry;
 }
 
-class SimpleFilterProcessor : LogProcessorBase
+public class SimpleFilterProcessor : LogProcessorBase
 {
     string _filter = "";
 

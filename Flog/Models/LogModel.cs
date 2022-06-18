@@ -1,7 +1,9 @@
 ﻿using System.Threading.Channels;
 
+namespace OkTools.Flog;
+
 // currently expecting main thread only for processing and processed line access. move to tasks later when needed.
-class LogModel
+public class LogModel
 {
     readonly ChannelReader<LogChange> _reader;
     readonly CancellationTokenSource _cancel = new();

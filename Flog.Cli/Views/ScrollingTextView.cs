@@ -1,14 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
-
-interface ILineDataSource
-{
-    uint Version { get; }
-    ReadOnlySpan<string> Lines { get; }
-    int Count => Lines.Length;
-    int DefaultCapacity { get; }
-}
+using OkTools.Flog;
 
 class ScrollingTextView : ViewBase
 {
