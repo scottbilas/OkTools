@@ -43,6 +43,7 @@ Description:
 
 Options:
   --dry-run               Don't change anything, only print out what would happen instead
+  --create-project        Create a new project at PROJECT, which must be a folder that does not exist
   --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be full/partial version, path to toolchain, or unityhub link)
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
   --ide                   Open code IDE after the project opens in Unity
@@ -93,7 +94,9 @@ Debugging:
 
         // get a valid unity project
 
-        UnityProject unityProject;
+        UnityProject? unityProject = null;
+        NPath projectPath;
+        var createProject = context.GetConfigBool("create-project");
 
         // scope
         {
@@ -103,37 +106,54 @@ Debugging:
             if (context.CommandLine["--"].IsFalse && projectConfig == "--")
                  projectConfig = null;
 
-            var projectPath = new NPath(projectConfig ?? ".");
-            if (!projectPath.DirectoryExists())
+            projectPath = new NPath(projectConfig ?? ".");
+            if (createProject)
             {
-                Console.Error.WriteLine($"Could not find directory '{projectPath}'");
-                return CliExitCode.ErrorNoInput;
+                if (projectPath.DirectoryExists())
+                {
+                    Console.Error.WriteLine($"Can't create a new project in existing directory '{projectPath}'");
+                    return CliExitCode.ErrorUsage;
+                }
+            }
+            else
+            {
+                if (!projectPath.DirectoryExists())
+                {
+                    Console.Error.WriteLine($"Could not find directory '{projectPath}'");
+                    return CliExitCode.ErrorNoInput;
+                }
+
+                var tryUnityProject = UnityProject.TryCreateFromProjectPath(projectPath);
+                if (tryUnityProject == null)
+                {
+                    Console.Error.WriteLine($"Path is not in a Unity project '{projectPath}'");
+                    return CliExitCode.ErrorNoInput;
+                }
+
+                unityProject = tryUnityProject;
+                projectPath = unityProject.Path;
+                Console.Write($"Loading project at {unityProject.Path}; expects {unityProject.GetVersion()}");
+                var lastOpened = unityProject.GetLastOpenedTime();
+                if (lastOpened != null)
+                    Console.Write($"; last opened {lastOpened.Value.ToNiceAge(true)}");
+                Console.WriteLine();
             }
 
-            var tryUnityProject = UnityProject.TryCreateFromProjectPath(projectPath);
-            if (tryUnityProject == null)
-            {
-                Console.Error.WriteLine($"Path is not in a Unity project '{projectPath}'");
-                return CliExitCode.ErrorNoInput;
-            }
-
-            unityProject = tryUnityProject;
-            Console.Write($"Loading project at {unityProject.Path}; expects {unityProject.GetVersion()}");
-            var lastOpened = unityProject.GetLastOpenedTime();
-            if (lastOpened != null)
-                Console.Write($"; last opened {lastOpened.Value.ToNiceAge(true)}");
-            Console.WriteLine();
+            projectPath = projectPath.MakeAbsolute();
         }
 
-        // check if unity is already running on that project
-
-        // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --toolchain config)
-
-        var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"));
-        if (existingUnityRc != null)
+        if (unityProject != null)
         {
-            // TODO: warn if the existing unity process received different command line flags or env than we were going to use here
-            return existingUnityRc.Value;
+            // check if unity is already running on that project
+
+            // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --toolchain config)
+
+            var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"));
+            if (existingUnityRc != null)
+            {
+                // TODO: warn if the existing unity process received different command line flags or env than we were going to use here
+                return existingUnityRc.Value;
+            }
         }
 
         // find a matching toolchain
@@ -181,7 +201,7 @@ Debugging:
             useToolchain = testToolchain;
             Console.WriteLine($"Using toolchain with version {useToolchain.Version} at {useToolchain.Path}");
         }
-        else
+        else if (unityProject != null)
         {
             // detect from project
 
@@ -220,12 +240,18 @@ Debugging:
 
             useToolchain = detectedToolchain.toolchain;
         }
+        else
+        {
+            Debug.Assert(createProject);
+            Console.Error.WriteLine("Must specify a toolchain when using --create-project");
+            return CliExitCode.ErrorUsage;
+        }
 
         // build up cli and environment
 
         // docs for unity's cl args: https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
 
-        var unityArgs = new List<string> { "-projectPath", unityProject.Path };
+        var unityArgs = new List<string> { createProject ? "-createProject" : "-projectPath", projectPath };
         var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} }; // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
 
         if (context.GetConfigBool("enable-debugging"))
@@ -297,17 +323,17 @@ Debugging:
             //TODO status "Debug logging to %path"
             //TODO make log pathspec configurable
 
-            var logPath = unityProject.Path.ToNPath()
+            var logPath = projectPath
                 .Combine(UnityProjectConstants.LogsPath)
                 .EnsureDirectoryExists()
-                .Combine($"{unityProject.Name}-editor.log");
+                .Combine($"{projectPath.FileName}-editor.log");
 
             // rotate old log
             // TODO: give option to cap by size and/or file count the logs
             // TODO: give format config for rotation name
             if (logPath.FileExists())
             {
-                var targetPath = logPath.ChangeFilename($"{unityProject.Name}-editor_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.log");
+                var targetPath = logPath.ChangeFilename($"{projectPath.FileName}-editor_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.log");
                 if (doit)
                 {
                     // TODO: make all of this a utility function, and add file-exists exception safeties
@@ -332,7 +358,7 @@ Debugging:
                     logPath.Delete();
                 }
                 else
-                    Console.WriteLine($"[dryrun] Rotating previous log file {logPath.RelativeTo(unityProject.Path)} to {targetPath.RelativeTo(unityProject.Path)}");
+                    Console.WriteLine($"[dryrun] Rotating previous log file {logPath.RelativeTo(projectPath)} to {targetPath.RelativeTo(projectPath)}");
             }
 
             unityArgs.Add("-logFile");
@@ -343,6 +369,8 @@ Debugging:
         string? scenePathArg = null;
         if (sceneName != null)
         {
+            // TODO: what if --create-project set?
+
             var scenePath = sceneName.ToNPath();
             if (scenePath.ExtensionWithDot != UnityProjectConstants.SceneFileExtension)
                 scenePath = scenePath.ChangeExtension(UnityProjectConstants.SceneFileExtension);
@@ -359,8 +387,8 @@ Debugging:
                     foreach (var basePath in new[]
                              {
                                  NPath.CurrentDirectory,
-                                 unityProject.Path.ToNPath(),
-                                 unityProject.Path.ToNPath().Combine(UnityProjectConstants.AssetsPath)
+                                 projectPath,
+                                 projectPath.Combine(UnityProjectConstants.AssetsPath)
                              })
                     {
                         var testPath = basePath.Combine(scenePath);
@@ -375,10 +403,10 @@ Debugging:
                 if (!scenePath.FileExists())
                     throw new DocoptInputErrorException($"Scene '{sceneName}' was not found in project");
 
-                if (!scenePath.IsChildOf(unityProject.Path))
-                    throw new DocoptInputErrorException($"Scene '{scenePath}' is not part of project at '{unityProject.Path}'");
+                if (!scenePath.IsChildOf(projectPath))
+                    throw new DocoptInputErrorException($"Scene '{scenePath}' is not part of project at '{projectPath}'");
 
-                scenePath = scenePath.RelativeTo(unityProject.Path);
+                scenePath = scenePath.RelativeTo(projectPath);
             }
 
             scenePathArg = scenePath.ToString(SlashMode.Forward); // unity always expects forward slash paths
@@ -395,16 +423,14 @@ Debugging:
         {
             if (scenePathArg != null)
             {
-                var setupPath = unityProject.Path.ToNPath().Combine(UnityProjectConstants.LastSceneManagerSetupPath);
+                var setupPath = projectPath.Combine(UnityProjectConstants.LastSceneManagerSetupPath);
                 setupPath.EnsureParentDirectoryExists();
                 setupPath.WriteAllText("sceneSetups:\n- path: " + scenePathArg);
             }
 
-            var unityStartInfo = new ProcessStartInfo
-            {
-                FileName = useToolchain.EditorExePath,
-                WorkingDirectory = unityProject.Path,
-            };
+            var unityStartInfo = new ProcessStartInfo { FileName = useToolchain.EditorExePath };
+            if (unityProject != null)
+                unityStartInfo.WorkingDirectory = unityProject.Path;
 
             foreach (var arg in unityArgs)
                 unityStartInfo.ArgumentList.Add(arg);
