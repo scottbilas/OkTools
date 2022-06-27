@@ -73,6 +73,17 @@ class LogView : ViewBase
     public void ActivatePrev() => SafeSetCurrentIndex(_currentIndex - 1);
     public void ActivateLast() => SafeSetCurrentIndex(_views.Count - 1);
 
+    public void NextWrapType()
+    {
+        Current.WrapType = Current.WrapType switch
+        {
+            WrapType.None => WrapType.Rigid,
+            WrapType.Rigid => WrapType.Word,
+            WrapType.Word => WrapType.None,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
     public void RemoveLast()
     {
         Debug.Assert(_views.Count > 1); // don't delete all the views, kill the whole chain instead..

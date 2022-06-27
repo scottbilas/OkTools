@@ -3,6 +3,13 @@ using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Flog;
 
+enum WrapType
+{
+    None,
+    Rigid,
+    Word,
+}
+
 class ScrollingTextView : ViewBase
 {
     readonly ILineDataSource _source;
@@ -12,6 +19,8 @@ class ScrollingTextView : ViewBase
     readonly StringBuilder _sb = new();
 
     int _scrollX, _scrollY;
+    WrapType _wrapType;
+
     // TODO: bool for "follow on", also need some options for how often we draw as we follow the tail
     //       ^ consider using VS-output-style following..if go to end, it turns on follow, and if do any scroll at all, it turns it off..
 
@@ -24,6 +33,20 @@ class ScrollingTextView : ViewBase
 
     public ILineDataSource Processor => _source;
     public bool IsFollowing { get; set; }
+
+    public WrapType WrapType
+    {
+        get => _wrapType;
+
+        set
+        {
+            if (_wrapType == value)
+                return;
+
+            _wrapType = value;
+            Draw();
+        }
+    }
 
     public void Update(bool drawIfChanged)
     {
@@ -62,8 +85,8 @@ class ScrollingTextView : ViewBase
 
     public void ScrollDown() => ScrollY(-1);
     public void ScrollUp() => ScrollY(1);
-    public void ScrollHalfPageDown() => ScrollY(-Height/2);
-    public void ScrollHalfPageUp() => ScrollY(Height/2);
+    public void ScrollHalfPageDown() => ScrollY(-Height / 2);
+    public void ScrollHalfPageUp() => ScrollY(Height / 2);
     public void ScrollPageDown() => ScrollY(-Height);
     public void ScrollPageUp() => ScrollY(Height);
     public void ScrollLeft() => ScrollX(Screen.Options.HorizScrollSize);
@@ -294,8 +317,8 @@ class ScrollingTextView : ViewBase
                 var c = line[i];
                 if (c == '\t' && Screen.Options.TabWidth > 0)
                 {
-                    var indent = (_sb.Length+1) % Screen.Options.TabWidth;
-                    _sb.Append(' ', Screen.Options.TabWidth - indent+1);
+                    var indent = (_sb.Length + 1) % Screen.Options.TabWidth;
+                    _sb.Append(' ', Screen.Options.TabWidth - indent + 1);
                 }
                 else if (c <= 0x1f || c == 0x7f)
                 {

@@ -284,6 +284,11 @@ class FlogApp : IDisposable
                             _logPane.ActivateNext();
                             break;
 
+                        // cycle wrap
+                        case CharEvent { Char: 'w', NoModifiers: true }:
+                            _logPane.NextWrapType();
+                            break;
+
                         // command mode
                         case CharEvent { Char: ':', NoModifiers: true }:
                             StateChange_LogView_InputCommand();
