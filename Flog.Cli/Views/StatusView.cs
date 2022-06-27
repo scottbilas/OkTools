@@ -2,12 +2,13 @@
 
 class StatusView : ViewBase
 {
-    record struct FilterStatus(int Count, int CountWhenLastActive, int ScrollPos, bool IsFollowing)
+    record struct FilterStatus(int Count, int CountWhenLastActive, int ScrollPos, bool IsFollowing, WrapType WrapType)
     {
         public bool HasNewData => Count != CountWhenLastActive;
     }
 
     // TODO: rethink this whole thing..maybe just go with a simple double buffering of the char[]
+    readonly char[] _buffer = new char[100];
     char[] _text = Array.Empty<char>();
     bool _changed = true;
 
@@ -60,7 +61,8 @@ class StatusView : ViewBase
             {
                 Count = logModel.GetItemCount(i),
                 ScrollPos = logView.FilterViews[i].ScrollPos,
-                IsFollowing = logView.FilterViews[i].IsFollowing
+                IsFollowing = logView.FilterViews[i].IsFollowing,
+                WrapType = logView.FilterViews[i].WrapType,
             };
 
             state.CountWhenLastActive = i == _currentFilterIndex
@@ -86,41 +88,54 @@ class StatusView : ViewBase
         //     * ability to prevent writing past end of screen, but also clear to end (currently handled by `OutPrint(span, width, true)`)
         //     * support for some basic attribute-only (color, underline etc.) control sequences, which will then not count against Width
 
-        var csb = new CharSpanBuilder(_text);
+        var text = new CharSpanBuilder(_text);
 
-        // TODO: "TryAppend", put in sections with center/left/etc-aligning, truncate, deal with pathological widths, etc..
+        // TODO: fix this mess..not a great way to render sectional status bar..
 
         if (_logPath != null)
         {
-            csb.Append(_logPath.FileName);
-            csb.Append(" | ");
+            // TODO: assign 1/3 or something, trunc with "..."
+            text.AppendTrunc(_logPath.FileName);
+            text.TryAppend(" | ");
         }
 
-        for (var i = 0; i < _filterStatuses.Length; ++i)
+        var right = new CharSpanBuilder(_buffer);
+        right.Append(" | ");
+        right.Append(_filterStatuses[_currentFilterIndex].IsFollowing ? 'f' : ' ');
+        right.Append(_filterStatuses[_currentFilterIndex].WrapType switch
+            { WrapType.Rigid => 'w', WrapType.Word => 'W', _ => ' ' });
+
+        for (var i = 0; i < _filterStatuses.Length && text.UnusedLength > right.Length; ++i)
         {
+            var mid = new CharSpanBuilder(_buffer);
+
             if (i != 0)
-                csb.Append(" -> ");
+                mid.Append(" -> ");
 
             if (i == _currentFilterIndex)
-                csb.Append('[');
+                mid.Append('[');
 
-            csb.Append(i + 1);
-            if (_filterStatuses[i].IsFollowing)
-                csb.Append('f');
-            csb.Append(':');
-            csb.Append(_filterStatuses[i].ScrollPos + 1);
-            csb.Append('/');
-            csb.Append(_filterStatuses[i].Count);
+            mid.Append(i + 1);
+            mid.Append(':');
+            mid.Append(_filterStatuses[i].ScrollPos + 1);
+            mid.Append('/');
+            mid.Append(_filterStatuses[i].Count);
             if (_filterStatuses[i].HasNewData)
-                csb.Append('*');
+                mid.Append('*');
 
             if (i == _currentFilterIndex)
-                csb.Append(']');
+                mid.Append(']');
+
+            text.AppendTrunc(mid);
         }
+
+        text.Length = Math.Clamp(Width - right.Length, 0, text.Length);
+        text.Append(' ', Math.Max(0, Width - text.Length - right.Length));
+        text.AppendTrunc(right);
 
         Screen.OutSetCursorPos(0, Top);
         Screen.OutSetForegroundColor(128, 128, 128);
-        Screen.OutPrint(csb.Span, Width, true);
+        Screen.OutPrint(text, Width, true);
         Screen.OutResetAttributes();
 
         _changed = false;
