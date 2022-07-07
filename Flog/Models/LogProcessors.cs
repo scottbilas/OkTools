@@ -44,7 +44,7 @@ public abstract class LogProcessorBase : ILineDataSource
 
     public void Invalidate()
     {
-        _processed.ClearItems(DefaultCapacity);
+        _processed.Clear(DefaultCapacity);
         ++_version;
     }
 }

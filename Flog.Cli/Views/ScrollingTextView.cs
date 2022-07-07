@@ -52,7 +52,7 @@ class ScrollingTextView : ViewBase
     {
         if (_logSourceVersion != _source.Version)
         {
-            _processedLines.ClearItems();
+            _processedLines.Clear();
             _processedLines.Count = _source.Count;
             _logSourceVersion = _source.Version;
 
@@ -153,7 +153,7 @@ class ScrollingTextView : ViewBase
 
         for (var i = top; i < endPrintY; ++i)
         {
-            ref var pLine = ref _processedLines.RefAt(i + _scrollY);
+            ref var pLine = ref _processedLines[i + _scrollY];
             var line = pLine ??= SanitizeForDisplay(_source.Lines[i + _scrollY]);
 
             Screen.OutSetCursorPos(0, i);
