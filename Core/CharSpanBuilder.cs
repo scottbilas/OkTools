@@ -1,5 +1,6 @@
 ﻿namespace OkTools.Core;
 
+// TODO: look at ArrayBufferWriter and ArrayPool<char>.Shared(.Rent)
 public ref struct CharSpanBuilder
 {
     readonly char[] _buffer;
