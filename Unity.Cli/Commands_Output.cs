@@ -1,14 +1,9 @@
 ﻿using System.Collections;
-using System.Drawing;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using BetterConsoles.Colors.Extensions;
-using BetterConsoles.Core;
-using BetterConsoles.Tables.Builders;
-using BetterConsoles.Tables.Configuration;
-using BetterConsoles.Tables.Models;
 using OkTools.Core;
 using OkTools.Unity;
+using Spectre.Console;
 using YamlDotNet.Serialization.NamingConventions;
 using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
@@ -83,10 +78,9 @@ static partial class Commands
     static void OutputFlat(IReadOnlyList<object> things, TextWriter where)
     {
         var unique = new HashSet<string>();
-        var fields = new List<(string name, Type type)>();
+        var fields = new List<(string name, string display, Type type)>();
 
-        var tableBuilder = new TableBuilder(TableConfig.Simple());
-        var headerFormat = new CellFormat(fontStyle:FontStyleExt.Underline);
+        // TODO: find a better/safer way to annotate structured output for better pretty printing
 
         foreach (var thing in things)
         {
@@ -101,51 +95,23 @@ static partial class Commands
                 if (!unique.Add(name))
                     continue;
 
-                var valueType = value.GetType();
-                fields.Add((name, valueType));
-
-                // TODO: find a better/safer way to annotate structured output for better pretty printing
-
-                // TODO: look at https://github.com/spectreconsole/spectre.console instead of BetterConsoleTables
-
-                if (valueType == typeof(UnityEditorBuildConfig))
+                var display = value switch
                 {
-                    tableBuilder
-                        .AddColumn("CONFIG").RowFormatter<UnityEditorBuildConfig>(v =>
-                            v == UnityEditorBuildConfig.Debug
-                                ? v.ToString().ForegroundColor(Color.Salmon)
-                                : v.ToString().ForegroundColor(Color.Aquamarine))
-                        .HeaderFormat(headerFormat);
-                }
-                else if (name == "Version") // type is probably string
-                {
-                    tableBuilder
-                        .AddColumn(name.ToUpper()).RowFormatter<string>(v =>
-                        {
-                            var version = UnityVersion.TryFromText(v);
-                            if (version != null)
-                            {
-                                var year = DateTime.Now.Year;
-                                if (version.Major == year)
-                                    return v.ForegroundColor(Color.Aquamarine);
-                                if (version.Major < year - 2)
-                                    return v.ForegroundColor(Color.Salmon);
-                            }
-                            return v;
-                        })
-                        .HeaderFormat(headerFormat);
-                }
-                else
-                {
-                    tableBuilder
-                        .AddColumn(name.ToUpper())
-                        .HeaderFormat(headerFormat);
-                }
+                    UnityEditorBuildConfig _ => "CONFIG",
+                    _ => name.ToUpper(),
+                };
+
+                fields.Add((name, display, value.GetType()));
             }
         }
 
-        var table = tableBuilder.Build();
-        table.Config.hasHeaderRow = false;
+        var table = new Table();
+        table.NoBorder();
+        table.HideHeaders();
+
+        foreach (var field in fields)
+            table.AddColumn($"[underline]{field.display}[/] ");
+        table.AddRow(table.Columns.Select(c => c.Header));
 
         foreach (var thing in things)
         {
@@ -155,9 +121,30 @@ static partial class Commands
             var cells = fields
                 .Select(field =>
                 {
-                    dict.TryGetValue(field.name, out var value);
-                    return value ?? "";
+                    if (!dict.TryGetValue(field.name, out var value))
+                        return "";
+
+                    string? color = null;
+
+                    if (value is UnityEditorBuildConfig config)
+                        color = config == UnityEditorBuildConfig.Debug ? "salmon1" : "aquamarine3";
+
+                    if (field.name == "Version" && value is string versionText)
+                    {
+                        var version = UnityVersion.TryFromText(versionText);
+                        if (version != null)
+                        {
+                            var year = DateTime.Now.Year;
+                            if (version.Major == year)
+                                color = "aquamarine3";
+                            else if (version.Major < year - 2)
+                                color = "salmon1";
+                        }
+                    }
+
+                    return color != null ? $"[{color}]{value}[/] " : $"{value} ";
                 });
+
             table.AddRow(cells.ToArray());
         }
 
@@ -165,8 +152,7 @@ static partial class Commands
         {
             // TODO: if it's just one row, print out vertical block (?)
 
-            where.WriteLine();
-            where.WriteLine(table.ToString().TrimEnd());
+            AnsiConsole.Write(table);
         }
     }
 }
