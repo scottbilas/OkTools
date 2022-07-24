@@ -2,7 +2,7 @@
 
 public static class ReadOnlySpanExtensions
 {
-    public static ReadOnlySpan<T> SafeSlice<T>(this ReadOnlySpan<T> @this, int start, int length)
+    public static ReadOnlySpan<T> SliceSafe<T>(this ReadOnlySpan<T> @this, int start, int length)
     {
         if (start < 0)
         {
@@ -19,7 +19,7 @@ public static class ReadOnlySpanExtensions
         return @this.Slice(start, length);
     }
 
-    public static ReadOnlySpan<T> SafeSlice<T>(this ReadOnlySpan<T> @this, int start)
+    public static ReadOnlySpan<T> SliceSafe<T>(this ReadOnlySpan<T> @this, int start)
     {
         if (start < 0)
             start = 0;
@@ -32,7 +32,7 @@ public static class ReadOnlySpanExtensions
 
 public static class SpanExtensions
 {
-    public static Span<T> SafeSlice<T>(this Span<T> @this, int start, int length)
+    public static Span<T> SliceSafe<T>(this Span<T> @this, int start, int length)
     {
         if (start < 0)
         {
@@ -49,7 +49,7 @@ public static class SpanExtensions
         return @this.Slice(start, length);
     }
 
-    public static Span<T> SafeSlice<T>(this Span<T> @this, int start)
+    public static Span<T> SliceSafe<T>(this Span<T> @this, int start)
     {
         if (start < 0)
             start = 0;

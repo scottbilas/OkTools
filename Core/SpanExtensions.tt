@@ -4,7 +4,7 @@ namespace OkTools.Core;
 <# foreach (var type in new[] { "ReadOnlySpan", "Span" }) { #>
 public static class <#=type#>Extensions
 {
-    public static <#=type#><T> SafeSlice<T>(this <#=type#><T> @this, int start, int length)
+    public static <#=type#><T> SliceSafe<T>(this <#=type#><T> @this, int start, int length)
     {
         if (start < 0)
         {
@@ -21,7 +21,7 @@ public static class <#=type#>Extensions
         return @this.Slice(start, length);
     }
 
-    public static <#=type#><T> SafeSlice<T>(this <#=type#><T> @this, int start)
+    public static <#=type#><T> SliceSafe<T>(this <#=type#><T> @this, int start)
     {
         if (start < 0)
             start = 0;
