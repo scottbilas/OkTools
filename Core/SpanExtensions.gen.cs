@@ -10,9 +10,6 @@ public static class ReadOnlySpanExtensions
             start = 0;
         }
 
-        if (length <= 0)
-            return default;
-
         if (start + length > @this.Length)
             length = @this.Length - start;
 
@@ -43,11 +40,11 @@ public static class SpanExtensions
             start = 0;
         }
 
-        if (length <= 0)
-            return default;
-
         if (start + length > @this.Length)
             length = @this.Length - start;
+
+        if (length <= 0)
+            return default;
 
         return @this.Slice(start, length);
     }
