@@ -11,4 +11,16 @@
     <PackageReference Include="PInvoke.NTDll" Version="0.7.104" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="SpanExtensions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SpanExtensions.gen.cs</LastGenOutput>
+    </None>
+    <Compile Update="SpanExtensions.gen.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SpanExtensions.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

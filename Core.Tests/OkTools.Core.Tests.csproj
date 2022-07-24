@@ -17,4 +17,16 @@
     <ProjectReference Include="..\TestUtils\OkTools.TestUtils.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="SpanExtensionsTests.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SpanExtensionsTests.gen.cs</LastGenOutput>
+    </None>
+    <Compile Update="SpanExtensionsTests.gen.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SpanExtensionsTests.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,35 @@
+﻿<#@ output extension=".gen.cs" #>
+namespace OkTools.Core;
+
+<# foreach (var type in new[] { "ReadOnlySpan", "Span" }) { #>
+public static class <#=type#>Extensions
+{
+    public static <#=type#><T> SafeSlice<T>(this <#=type#><T> @this, int start, int length)
+    {
+        if (start < 0)
+        {
+            length += start;
+            start = 0;
+        }
+
+        if (start + length > @this.Length)
+            length = @this.Length - start;
+
+        if (length <= 0)
+            return default;
+
+        return @this.Slice(start, length);
+    }
+
+    public static <#=type#><T> SafeSlice<T>(this <#=type#><T> @this, int start)
+    {
+        if (start < 0)
+            start = 0;
+        else if (start >= @this.Length)
+            return default;
+
+        return @this[start..];
+    }
+}
+
+<# } #>
