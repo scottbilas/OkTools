@@ -11,9 +11,20 @@ public class OkList<T> : IReadOnlyList<T>
     T[] _items;
     int _used;
 
+    // note that capacity is always required; user must consider memory usage patterns when using this container
+
     public OkList(int capacity)
     {
         _items = new T[capacity];
+    }
+
+    public OkList(int capacity, int count)
+        : this(capacity)
+    {
+        if ((uint)count > (uint)_items.Length)
+            throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {Capacity} (capacity)");
+
+        _used = count;
     }
 
     public int Count
@@ -81,6 +92,16 @@ public class OkList<T> : IReadOnlyList<T>
         _used = 0;
     }
 
+    public void FillDefault()
+    {
+        Array.Fill(_items, default, 0, _used);
+    }
+
+    public void Fill(in T value)
+    {
+        Array.Fill(_items, value, 0, _used);
+    }
+
     public IEnumerator<T> GetEnumerator()
     {
         for (var i = 0; i < _used; ++i)
@@ -93,7 +114,7 @@ public class OkList<T> : IReadOnlyList<T>
     {
         set
         {
-            if (value < _used || value == 0)
+            if (value < _used)
                 throw new ArgumentOutOfRangeException(nameof(value));
 
             if (value != _items.Length)

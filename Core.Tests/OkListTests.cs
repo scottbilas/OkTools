@@ -14,6 +14,41 @@ class OkListTests
     }
 
     [Test]
+    public void Ctor_WithPositiveValue_DoesNotThrow()
+    {
+        Should.NotThrow(() => new OkList<int>(0));
+        Should.NotThrow(() => new OkList<int>(1));
+        Should.NotThrow(() => new OkList<int>(1000));
+    }
+
+    [Test]
+    public void Ctor_WithNegativeValue_Throws()
+    {
+        // note that this particular ctor throws an OverflowException rather than ArgumentOutOfRangeException because
+        // `capacity` is passed directly to `new T[]` (and that intrinsic throws an OverflowException).
+
+        Should.Throw<OverflowException>(() => new OkList<int>(-1));
+        Should.Throw<OverflowException>(() => new OkList<int>(-1000));
+    }
+
+    [Test]
+    public void Ctor_WithCountWithinCapacity_DoesNotThrow()
+    {
+        Should.NotThrow(() => new OkList<int>(5, 0));
+        Should.NotThrow(() => new OkList<int>(5, 1));
+        Should.NotThrow(() => new OkList<int>(5, 5));
+    }
+
+    [Test]
+    public void Ctor_WithCountOutsideCapacity_Throws()
+    {
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(5, -1));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(5, -1000));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(5, 6));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(5, 100));
+    }
+
+    [Test]
     public void CountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
     {
         var list1 = new OkList<string>(10) { "abc", "def" };
@@ -88,8 +123,8 @@ class OkListTests
     public void Count_WithNegativeValue_Throws()
     {
         var list = new OkList<int>(10);
-        Should.Throw<ArgumentException>(() => list.Count = -1);
-        Should.Throw<ArgumentException>(() => list.Count = -1000);
+        Should.Throw<ArgumentOutOfRangeException>(() => list.Count = -1);
+        Should.Throw<ArgumentOutOfRangeException>(() => list.Count = -1000);
     }
 
     [Test]
@@ -160,6 +195,27 @@ class OkListTests
     }
 
     [Test]
+    public void FillVariants_WithEmptyList_DoesNotThrow()
+    {
+        var list = new OkList<int>(0);
+        Should.NotThrow(() => list.Fill(7));
+        Should.NotThrow(() => list.FillDefault());
+    }
+
+    [Test]
+    public void FillVariants_WithValidList_FillsContents()
+    {
+        var list = new OkList<int>(5, 5);
+        list.ShouldBe(new[] { 0, 0, 0, 0, 0 });
+
+        list.Fill(7);
+        list.ShouldBe(new[] { 7, 7, 7, 7, 7 });
+
+        list.FillDefault();
+        list.ShouldBe(new[] { 0, 0, 0, 0, 0 });
+    }
+
+    [Test]
     public void EnumeratorGeneric()
     {
         new OkList<string>(10) { "abc", "def", "ghi" }.AsEnumerable().ToArray().ShouldBe(new[] { "abc", "def", "ghi" });
@@ -187,17 +243,17 @@ class OkListTests
     public void Capacity_WithPositiveValue_DoesNotThrow()
     {
         var list = new OkList<int>(10);
+        Should.NotThrow(() => list.Capacity = 0);
         Should.NotThrow(() => list.Capacity = 1);
         Should.NotThrow(() => list.Capacity = 1000);
     }
 
     [Test]
-    public void Capacity_WithNonPositiveValue_DoesNotThrow()
+    public void Capacity_WithNegativeValue_Throws()
     {
         var list = new OkList<int>(10);
-        Should.Throw<ArgumentException>(() => list.Capacity = 0);
-        Should.Throw<ArgumentException>(() => list.Capacity = -1);
-        Should.Throw<ArgumentException>(() => list.Capacity = -1000);
+        Should.Throw<ArgumentOutOfRangeException>(() => list.Capacity = -1);
+        Should.Throw<ArgumentOutOfRangeException>(() => list.Capacity = -1000);
     }
 
     [Test]
