@@ -40,7 +40,7 @@ class LogView : ViewBase
 
         var current = Current;
         current.Enabled = true;
-        current.Update(false);
+        current.Update(false); // don't draw here, will draw if needed during SetBounds below
 
         if (Enabled)
             current.SetBounds(Width, Top, Bottom, true);

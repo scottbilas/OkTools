@@ -85,9 +85,9 @@ class FlogApp : IDisposable
 
             if (events.Count == 0)
             {
-                var tEvents = _screen.Events.WaitToReadAsync().AsTask();
-                var tSource = _logModel.WaitForNeedsUpdateAsync().AsTask();
-                if (await Task.WhenAny(tEvents, tSource) == tEvents)
+                var taskEvents = _screen.Events.WaitToReadAsync().AsTask();
+                var taskModel = _logModel.WaitForNeedsUpdateAsync().AsTask();
+                if (await Task.WhenAny(taskEvents, taskModel) == taskEvents)
                     continue;
             }
 
