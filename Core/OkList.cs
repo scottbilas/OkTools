@@ -18,8 +18,9 @@ public class OkList<T> : IReadOnlyList<T>
         _items = new T[capacity];
     }
 
-    public OkList(int capacity, int count)
-        : this(capacity)
+    // TODO: not loving this API but i want a way to use the same value for capacity and count (without having to do a OkList.FromCount<T> type thing..)
+    public OkList(int? capacity, int count)
+        : this(capacity ?? count)
     {
         if ((uint)count > (uint)_items.Length)
             throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {Capacity} (capacity)");

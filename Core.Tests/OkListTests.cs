@@ -49,6 +49,32 @@ class OkListTests
     }
 
     [Test]
+    public void Ctor_WithNullCapacity_UsesCapacityFromCount()
+    {
+        var list = new OkList<int>(null, 0);
+        list.Count.ShouldBe(0);
+        list.Capacity.ShouldBe(0);
+
+        list = new OkList<int>(null, 5);
+        list.Count.ShouldBe(5);
+        list.Capacity.ShouldBe(5);
+
+        list = new OkList<int>(null, 1000);
+        list.Count.ShouldBe(1000);
+        list.Capacity.ShouldBe(1000);
+    }
+
+    [Test]
+    public void Ctor_WithNullCapacityAndNegativeCount_Throws()
+    {
+        // note that this particular ctor throws an OverflowException rather than ArgumentOutOfRangeException because
+        // `capacity` is passed directly to `new T[]` (and that intrinsic throws an OverflowException).
+
+        Should.Throw<OverflowException>(() => new OkList<int>(null, -1));
+        Should.Throw<OverflowException>(() => new OkList<int>(null, -1000));
+    }
+
+    [Test]
     public void CountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
     {
         var list1 = new OkList<string>(10) { "abc", "def" };
