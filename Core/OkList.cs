@@ -57,6 +57,9 @@ public class OkList<T> : IReadOnlyList<T>
         }
     }
 
+    public bool IsEmpty => _used == 0;
+    public bool Any => _used != 0;
+
     void ReduceCountTo(int count)
     {
         Assert(count >= 0 && count <= _used);
@@ -116,7 +119,7 @@ public class OkList<T> : IReadOnlyList<T>
         set
         {
             if (value < _used)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                throw new ArgumentOutOfRangeException(nameof(value), $"Out of range {_used} (count) <= {value}");
 
             if (value != _items.Length)
                 SetCapacity(value);
@@ -143,8 +146,8 @@ public class OkList<T> : IReadOnlyList<T>
     {
         get
         {
-            if (index >= _used)
-                throw new IndexOutOfRangeException();
+            if ((uint)index >= (uint)_used)
+                throw new IndexOutOfRangeException($"Out of range 0 <= {index} < {_used} (count)");
             return ref _items[index];
         }
     }
@@ -173,6 +176,33 @@ public class OkList<T> : IReadOnlyList<T>
     public void AddRange(params T[] items)
     {
         AddRange(items.AsSpan());
+    }
+
+    public void RemoveAtAndSwapBack(int index)
+    {
+        if ((uint)index >= (uint)_used)
+            throw new IndexOutOfRangeException($"Out of range 0 <= {index} < {_used} (count)");
+
+        _items[index] = _items[_used - 1];
+        ReduceCountTo(_used - 1);
+    }
+
+    public void DropBack()
+    {
+        if (_used == 0)
+            throw new InvalidOperationException("Collection cannot be empty");
+
+        ReduceCountTo(_used - 1);
+    }
+
+    public T PopBack()
+    {
+        if (_used == 0)
+            throw new InvalidOperationException("Collection cannot be empty");
+
+        var item = _items[_used - 1];
+        ReduceCountTo(_used - 1);
+        return item;
     }
 
     void GrowToAtLeast(int minCapacity)

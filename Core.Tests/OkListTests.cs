@@ -75,7 +75,19 @@ class OkListTests
     }
 
     [Test]
-    public void CountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
+    public void IsEmptyAny_MatchesCount()
+    {
+        var list = new OkList<int>(10) { 0, 1, 2 };
+        list.Any.ShouldBeTrue();
+        list.IsEmpty.ShouldBeFalse();
+
+        list.Clear();
+        list.Any.ShouldBeFalse();
+        list.IsEmpty.ShouldBeTrue();
+    }
+
+    [Test]
+    public void SetCountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
     {
         var list1 = new OkList<string>(10) { "abc", "def" };
         list1.Count.ShouldBe(2);
@@ -97,7 +109,7 @@ class OkListTests
     }
 
     [Test]
-    public void CountOrClear_WithValueTypeAndReduction_OnlyChangesCount()
+    public void SetCountOrClear_WithValueTypeAndReduction_OnlyChangesCount()
     {
         var list1 = new OkList<int>(10) { 1, 2 };
         list1.Count.ShouldBe(2);
@@ -119,7 +131,7 @@ class OkListTests
     }
 
     [Test]
-    public void Count_WithValueTypeAndIncrease_ClearsNewItems()
+    public void SetCount_WithValueTypeAndIncrease_ClearsNewItems()
     {
         var list = new OkList<int>(10) { 1, 2 };
         list.Count.ShouldBe(2);
@@ -132,7 +144,7 @@ class OkListTests
     }
 
     [Test]
-    public void Count_WithIncreasePastCapacity_AllocsNewArray()
+    public void SetCount_WithIncreasePastCapacity_AllocsNewArray()
     {
         var list = new OkList<int>(2) { 1, 2 };
         list.Count.ShouldBe(2);
@@ -146,7 +158,7 @@ class OkListTests
     }
 
     [Test]
-    public void Count_WithNegativeValue_Throws()
+    public void SetCount_WithNegativeValue_Throws()
     {
         var list = new OkList<int>(10);
         Should.Throw<ArgumentOutOfRangeException>(() => list.Count = -1);
@@ -154,7 +166,7 @@ class OkListTests
     }
 
     [Test]
-    public void Count_WithPositiveOrZeroValue_DoesNotThrow()
+    public void SetCount_WithPositiveOrZeroValue_DoesNotThrow()
     {
         var list = new OkList<int>(10);
         Should.NotThrow(() => list.Count = 0);
@@ -232,13 +244,13 @@ class OkListTests
     public void FillVariants_WithValidList_FillsContents()
     {
         var list = new OkList<int>(5, 5);
-        list.ShouldBe(new[] { 0, 0, 0, 0, 0 });
+        Validate(list, 0, 0, 0, 0, 0 );
 
         list.Fill(7);
-        list.ShouldBe(new[] { 7, 7, 7, 7, 7 });
+        Validate(list, 7, 7, 7, 7, 7);
 
         list.FillDefault();
-        list.ShouldBe(new[] { 0, 0, 0, 0, 0 });
+        Validate(list, 0, 0, 0, 0, 0);
     }
 
     [Test]
@@ -487,5 +499,110 @@ class OkListTests
 
         list.AddRange();
         Validate(list, 1, 2, 3, 4, 5);
+    }
+
+    [Test]
+    public void RemoveAtAndSwapBack_WithInvalidIndex_Throws()
+    {
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 0).RemoveAtAndSwapBack(0));
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-1));
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-100));
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(5));
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(6));
+        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(100));
+    }
+
+    [Test]
+    public void RemoveAtAndSwapBack()
+    {
+        var list = new OkList<int>(10) { 1, 2, 3 };
+        list.RemoveAtAndSwapBack(0);
+        Validate(list, 3, 2);
+        list.RemoveAtAndSwapBack(0);
+        Validate(list, 2);
+        list.RemoveAtAndSwapBack(0);
+        Validate(list);
+
+        list = new OkList<int>(10) { 1, 2, 3 };
+        list.RemoveAtAndSwapBack(2);
+        Validate(list, 1, 2);
+        list.RemoveAtAndSwapBack(1);
+        Validate(list, 1);
+        list.RemoveAtAndSwapBack(0);
+        Validate(list);
+    }
+
+    [Test]
+    public void DropBack_WithEmpty_Throws()
+    {
+        Should.Throw<InvalidOperationException>(() => new OkList<int>(null, 0).DropBack());
+    }
+
+    [Test]
+    public void DropBack_WithNonEmpty_Removes()
+    {
+        var list = new OkList<int>(10) { 0, 1, 2, 3, 4, 5 };
+        list[^1].ShouldBe(5);
+        list.DropBack();
+        list[^1].ShouldBe(4);
+        list.DropBack();
+        list[^1].ShouldBe(3);
+        list.DropBack();
+        list[^1].ShouldBe(2);
+        list.DropBack();
+        list[^1].ShouldBe(1);
+        list.DropBack();
+        list[^1].ShouldBe(0);
+        list.DropBack();
+        list.IsEmpty.ShouldBeTrue();
+    }
+
+    [Test]
+    public void PopBack_WithEmpty_Throws()
+    {
+        Should.Throw<InvalidOperationException>(() => new OkList<int>(null, 0).PopBack());
+    }
+
+    [Test]
+    public void PopBack_WithNonEmpty_RemovesAndReturnsItem()
+    {
+        var list = new OkList<int>(10) { 0, 1, 2, 3, 4, 5 };
+        list[^1].ShouldBe(5);
+        list.PopBack().ShouldBe(5);
+        list[^1].ShouldBe(4);
+        list.PopBack().ShouldBe(4);
+        list[^1].ShouldBe(3);
+        list.PopBack().ShouldBe(3);
+        list[^1].ShouldBe(2);
+        list.PopBack().ShouldBe(2);
+        list[^1].ShouldBe(1);
+        list.PopBack().ShouldBe(1);
+        list[^1].ShouldBe(0);
+        list.PopBack().ShouldBe(0);
+        list.IsEmpty.ShouldBeTrue();
+    }
+
+    [Test]
+    public void PopAndDropAndSwapBack_UseUnderlyingCountClear()
+    {
+        // these ensure that we're using underlying valuetype-sensitive clear
+
+        var vlist = new OkList<int>(10) { 0, 1, 2, 3, 4, 5 };
+        vlist.DropBack();
+        vlist.PopBack().ShouldBe(4);
+        vlist.RemoveAtAndSwapBack(1);
+        Validate(vlist, 0, 3, 2 );
+        vlist.RefAtDirect(3).ShouldBe(3);
+        vlist.RefAtDirect(4).ShouldBe(4);
+        vlist.RefAtDirect(5).ShouldBe(5);
+
+        var rlist = new OkList<string>(10) { "a", "b", "c", "d", "e", "f" };
+        rlist.DropBack();
+        rlist.PopBack().ShouldBe("e");
+        rlist.RemoveAtAndSwapBack(1);
+        Validate(rlist, "a", "d", "c");
+        rlist.RefAtDirect(3).ShouldBeNull();
+        rlist.RefAtDirect(4).ShouldBeNull();
+        rlist.RefAtDirect(5).ShouldBeNull();
     }
 }
