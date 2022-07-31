@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Collections;
 using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Flog;
@@ -12,27 +12,55 @@ enum WrapType
 
 class ScrollingTextView : ViewBase
 {
-    readonly ILineDataSource _source;
-    uint _logSourceVersion;
+    // source lines
+    readonly ILineDataSource _source;       // raw lines
+    int _sourceLineCount;                   // detect if the source has new lines available
+    uint _sourceVersion;                    // detect if raw source totally changes (e.g. file truncated)
+    // visible region
+    DisplayLine[] _displayLines;            // the screen.height set of actual lines we're showing
+    readonly BitArray _displayLinesValid;   // mutable state of each display line
 
-    readonly OkList<string?> _processedLines;
     readonly StringBuilder _sb = new();
+    int _scrollX, _scrollY; // TODO: _scrollSubY;
 
-    int _scrollX, _scrollY;
     WrapType _wrapType;
 
-    // TODO: bool for "follow on", also need some options for how often we draw as we follow the tail
-    //       ^ consider using VS-output-style following..if go to end, it turns on follow, and if do any scroll at all, it turns it off..
+    readonly record struct DisplayLine(int LineIndex, string? Chars, int Begin, int End)
+    {
+        public int Length => End - Begin;
+
+        public ReadOnlySpan<char> Span => Chars.AsSpan(Begin, Length);
+    }
 
     public ScrollingTextView(Screen screen, ILineDataSource source) : base(screen)
     {
-        _processedLines = new(source.DefaultCapacity);
         _source = source;
-        _logSourceVersion = source.Version - 1;
+        _sourceVersion = source.Version - 1;
+        _displayLines = new DisplayLine[screen.Size.Height];
+        _displayLinesValid = new BitArray(screen.Size.Height);
     }
 
     public ILineDataSource Processor => _source;
     public bool IsFollowing { get; set; }
+
+    void Invalidate()
+    {
+        _displayLinesValid.SetAll(false);
+
+        #if DEBUG
+        Array.Fill(_displayLines, default);
+        #endif
+    }
+
+    void Invalidate(int begin, int end)
+    {
+        for (var i = begin; i != end; ++i)
+            _displayLinesValid[i] = false;
+
+        #if DEBUG
+        Array.Fill(_displayLines, default, begin, end - begin);
+        #endif
+    }
 
     public WrapType WrapType
     {
@@ -44,40 +72,83 @@ class ScrollingTextView : ViewBase
                 return;
 
             _wrapType = value;
-            Draw();
+            Invalidate();
         }
     }
 
-    public void Update(bool drawIfChanged)
+    public void Update()
     {
-        if (_logSourceVersion != _source.Version)
+        CheckEnabled();
+
+        // react to changes in source
+
+        if (_sourceVersion != _source.Version)
         {
-            _processedLines.Clear();
-            _processedLines.Count = _source.Count;
-            _logSourceVersion = _source.Version;
+            // version change means something drastic happened at the source, so invalidate everything
+
+            _sourceVersion = _source.Version;
+            _sourceLineCount = 0;
+
+            Invalidate();
+        }
+        else if (_sourceLineCount != _source.Count)
+        {
+            // new lines available from source, so invalidate any display lines that previously resolved to "past EOF"
+
+            for (var i = 0; i < _displayLines.Length; ++i)
+            {
+                if (_displayLines[i].Chars == null)
+                {
+                    Invalidate(i, _displayLines.Length);
+                    break;
+                }
+            }
+        }
+
+        // finish reacting to changes in source
+
+        if (_sourceLineCount != _source.Count)
+        {
+            _sourceLineCount = _source.Count;
 
             if (IsFollowing)
-                _scrollY = ClampY(_processedLines.Count);
-
-            if (drawIfChanged)
-                Draw();
+                ScrollToBottom(false);
         }
-        else if (_source.Count != _processedLines.Count)
+
+        // validate and draw
+
+        for (var i = 0; i < _displayLinesValid.Length; ++i)
         {
-            var changedStart = _processedLines.Count;
-            _processedLines.Count = _source.Count;
-            var changedEnd = _processedLines.Count;
+            if (_displayLinesValid[i])
+                continue;
 
-            var viewStart = _scrollY;
-            var viewEnd = viewStart + Height;
-
-            if (drawIfChanged)
+            var index = _scrollY + i;
+            if (index < _sourceLineCount)
             {
-                if (changedStart < viewEnd && changedEnd > viewStart)
-                    Draw(Math.Max(changedStart, viewStart) - _scrollY, Math.Min(changedEnd, viewEnd) - _scrollY);
-                if (IsFollowing)
-                    ScrollToBottom(false);
+                var line = GetProcessedLine(index);
+                _displayLines[i] = new DisplayLine(index, line, 0, line.Length);
             }
+            else
+                _displayLines[i] = default;
+
+            Screen.OutSetCursorPos(0, i);
+
+            if (_displayLines[i].Chars != null)
+            {
+                var start = _wrapType == WrapType.None ? _scrollX : 0;
+                var span = _displayLines[i].Span.SliceSafe(start);
+
+                Screen.OutPrint(span, Width, true);
+            }
+            else
+            {
+                // TODO: make this char optional
+                // TODO: render in dark gray
+
+                Screen.OutPrint("~", Width, true);
+            }
+
+            _displayLinesValid[i] = true;
         }
     }
 
@@ -100,104 +171,96 @@ class ScrollingTextView : ViewBase
 
     public void ScrollToBottom(bool toggleHalfway)
     {
-        var target = ClampY(_source.Count - Height);
-        if (target == _scrollY && toggleHalfway && _source.Count >= Height)
-            target = ClampY(_source.Count - Height / 2);
+        var target = ClampY(_sourceLineCount - Height);
+        if (target == _scrollY && toggleHalfway && _sourceLineCount >= Height)
+            target = ClampY(_sourceLineCount - Height / 2);
         else
             IsFollowing = true;
 
-        ScrollToY(target, false);
+        ScrollToY(target, IsUserAction.No);
     }
 
     public override void SetBounds(int width, int top, int bottom)
     {
-        SetBounds(width, top, bottom, false);
-    }
+        // TODO: if no wrap, we don't need full redraw, just fill/delete chars
 
-    public void SetBounds(int width, int top, int bottom, bool forceRedraw)
-    {
-        var needsFullDraw = forceRedraw || Width < width;
+        var oldWidth = Width;
         var oldTop = Top;
         var oldBottom = Bottom;
         var oldScrollY = _scrollY;
 
         base.SetBounds(width, top, bottom);
 
-        // maintain scroll position regardless of origin (minimize distracting text movement)
-        _scrollY = ClampY(oldScrollY + Top - oldTop);
+        Array.Resize(ref _displayLines, Height);
+        _displayLinesValid.Length = Height;
 
+        // TODO: maintain scroll position regardless of origin (minimize distracting text movement)
+        //_scrollY = ClampY(oldScrollY + Top - oldTop);
+        // TODO: ^ handle wrap
+/*
         if (needsFullDraw)
-            Draw();
+            InvalidateDraw();
         else
         {
             // fill in anything that's new
             if (Top < oldTop)
-                Draw(0, oldTop - Top);
+                InvalidateDraw(0, oldTop - Top);
             if (Bottom > oldBottom)
-                Draw(Bottom - oldBottom, Height);
-        }
+                InvalidateDraw(Bottom - oldBottom, Height);
+        }*/
 
         Screen.OutSetScrollMargins(Top, Bottom - 1);
+
+        Invalidate();
     }
 
-    public void Draw() => Draw(0, Height);
-
-    void Draw(int top, int bottom)
+    protected override void OnEnabledChanged(bool enabled)
     {
-        CheckEnabled();
-
-        Debug.Assert(top >= 0 && top <= Height);
-        Debug.Assert(bottom >= top && bottom <= Height);
-
-        var endPrintY = Math.Min(bottom, _source.Count - _scrollY);
-
-        for (var i = top; i < endPrintY; ++i)
-        {
-            ref var pLine = ref _processedLines[i + _scrollY];
-            var line = pLine ??= SanitizeForDisplay(_source.Lines[i + _scrollY]);
-
-            Screen.OutSetCursorPos(0, i);
-            Screen.OutPrint(line.AsSpanSafe(_scrollX), Width, true);
-        }
-
-        for (var i = endPrintY; i < bottom; ++i)
-        {
-            Screen.OutSetCursorPos(0, i);
-            Screen.OutClearLine();
-        }
+        if (enabled)
+            Invalidate(); // wrap etc. could have changed while we were away
     }
 
-    int ClampY(int testY)
-    {
-        return Math.Max(Math.Min(testY, _source.Count - 1), 0);
-    }
+    int ClampY(int testY) => Math.Clamp(0, testY, _sourceLineCount - 1);
 
-    public bool ScrollToY(int y, bool resetIsFollowing = true)
+    public bool ScrollToY(int y) => ScrollToY(y, IsUserAction.Yes);
+
+    enum IsUserAction { No, Yes }
+
+    bool ScrollToY(int y, IsUserAction isUserAction)
     {
-        if (resetIsFollowing)
+        // user-initiated vertical scroll auto-kills follow
+        if (isUserAction == IsUserAction.Yes)
             IsFollowing = false;
 
         y = ClampY(y);
         if (_scrollY == y)
             return false;
 
-        var (beginScreenY, endScreenY) = (0, Height);
-        var offset = y - _scrollY;
+        var offset = _scrollY - y;
 
-        switch (offset)
+        if (Math.Abs(offset) < Height)
         {
-            case > 0 when offset < Height:
-                Screen.OutScrollBufferUp(offset);
-                beginScreenY = Height - offset;
-                break;
-            case < 0 when -offset < Height:
-                Screen.OutScrollBufferDown(-offset);
-                endScreenY = -offset;
-                break;
+            // scroll the screen
+            if (offset > 0)
+                Screen.OutScrollBufferDown(offset);
+            else
+                Screen.OutScrollBufferUp(-offset);
+
+            // scroll our display lines/state, invalidating newly exposed lines
+            _displayLinesValid.Shift(offset);
+            _displayLines.Shift(offset
+                #if DEBUG
+                , default
+                #endif
+                );
+        }
+        else
+        {
+            // at least a screen worth of change, no point in scrolling
+            Invalidate();
         }
 
         _scrollY = y;
-        Draw(beginScreenY, endScreenY);
         return true;
     }
 
@@ -205,6 +268,13 @@ class ScrollingTextView : ViewBase
 
     public void ScrollToX(int x)
     {
+        // TODO: use OutDelete/InsertChars then fill missing chars from new scroll (maybe can share solution with SetBounds(newWidth))
+        // (would be nice to be able to do this to avoid the full screen repaint when on a slow ssh connection with large terminal)
+
+        // ignore if in wrap mode
+        if (_wrapType != WrapType.None)
+            return;
+
         if (x < 0)
             x = 0;
 
@@ -212,7 +282,7 @@ class ScrollingTextView : ViewBase
             return;
 
         _scrollX = x;
-        Draw();
+        Invalidate();
     }
 
     void ScrollX(int offset) => ScrollToX(_scrollX + offset);
@@ -281,15 +351,15 @@ class ScrollingTextView : ViewBase
         "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)|" +
         "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))");
 
-    string SanitizeForDisplay(string line)
+    string GetProcessedLine(int lineIndex)
     {
+        var line = _source.Lines[lineIndex];
+
         var hasEscapeSeqs = false;
         var hasControlChars = false;
 
-        // ReSharper disable once ForCanBeConvertedToForeach
-        for (var i = 0; i < line.Length; ++i)
+        foreach (var c in line)
         {
-            var c = line[i];
             if (c == 0x1b)
             {
                 hasEscapeSeqs = true;

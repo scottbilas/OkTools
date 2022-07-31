@@ -18,8 +18,7 @@ class LogView : ViewBase
     public ScrollingTextView Current => _views[_currentIndex];
     public IReadOnlyList<ScrollingTextView> FilterViews => _views;
 
-    public void Draw() => Current.Draw();
-    public void Update(bool drawIfChanged) => Current.Update(drawIfChanged);
+    public void Update() => Current.Update();
     public bool HandleEvent(ITerminalEvent evt) => Current.HandleEvent(evt);
 
     public override void SetBounds(int width, int top, int bottom)
@@ -40,10 +39,8 @@ class LogView : ViewBase
 
         var current = Current;
         current.Enabled = true;
-        current.Update(false); // don't draw here, will draw if needed during SetBounds below
-
         if (Enabled)
-            current.SetBounds(Width, Top, Bottom, true);
+            current.SetBounds(Width, Top, Bottom);
     }
 
     public void SafeSetCurrentIndex(int index)

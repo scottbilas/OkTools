@@ -109,7 +109,7 @@ class FlogApp : IDisposable
                 }
 
                 _logModel.Update();
-                _logPane.Update(true);
+                _logPane.Update();
 
                 _statusPane.Update(_logModel, _logPane);
             }
@@ -136,7 +136,6 @@ class FlogApp : IDisposable
 
     void Draw()
     {
-        _logPane.Draw();
         if (_statusPane.Enabled)
             _statusPane.Draw();
 
@@ -329,7 +328,6 @@ class FlogApp : IDisposable
                             else
                                 _logPane.RemoveLast();
 
-                            _logPane.Draw();
                             StateChange_Input_LogView();
                             break;
 
