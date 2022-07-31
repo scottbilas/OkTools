@@ -1,4 +1,6 @@
-﻿public static class ArrayExtensions
+﻿using System.Collections;
+
+public static class ArrayExtensions
 {
     public static void ShiftLeft<T>(this T[] @this, int count)
     {
@@ -36,5 +38,50 @@
             @this.ShiftRight(count, fill);
         else
             @this.ShiftLeft(-count, fill);
+    }
+
+    // TODO: i don't love this "fixed" naming, the term can be ambiguous.
+
+    /// <summary>
+    /// This is a "fixed" version of `BitArray.RightShift`. The thing pretends to be an array (enumeration, indexing)
+    /// but underneath it's integers, and their "shift" lets this implementation detail bleed through. Arrays go left
+    /// to right, and that's the "fixed" naming here.
+    ///
+    /// Other notes:
+    ///
+    /// * The underlying implementation will always fill with 0's, we aren't given a choice.
+    /// * We throw if count > Length, to match `T[].ShiftLeft`.
+    /// </summary>
+    public static void ShiftLeftFixed(this BitArray @this, int count)
+    {
+        if ((uint)count > (uint)@this.Length)
+            throw new ArgumentOutOfRangeException(nameof(count), $" out of range 0 <= {count} <= {@this.Length}");
+        @this.RightShift(count);
+    }
+
+    /// <summary>
+    /// This is a "fixed" version of `BitArray.LeftShift`. The thing pretends to be an array (enumeration, indexing)
+    /// but underneath it's integers, and their "shift" lets this implementation detail bleed through. Arrays go left
+    /// to right, and that's the "fixed" naming here.
+    ///
+    /// Other notes:
+    ///
+    /// * The underlying implementation will always fill with 0's, we aren't given a choice.
+    /// * We throw if count > Length, to match `T[].ShiftRight`.
+    /// </summary>
+    public static void ShiftRightFixed(this BitArray @this, int count)
+    {
+        if ((uint)count > (uint)@this.Length)
+            throw new ArgumentOutOfRangeException(nameof(count), $" out of range 0 <= {count} <= {@this.Length}");
+        @this.LeftShift(count);
+    }
+
+    // this will always fill with 0 (Right/LeftShift do not give us a choice)
+    public static void Shift(this BitArray @this, int count)
+    {
+        if (count > 0)
+            @this.ShiftRightFixed(count);
+        else
+            @this.ShiftLeftFixed(-count);
     }
 }
