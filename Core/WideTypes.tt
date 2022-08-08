@@ -27,27 +27,25 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public <#=type#>((<#=Repeat(size, intType)#>) <#=combinedVars#>) =>
         (<#=fieldList#>) = <#=combinedVars#>;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= <#=size-1#>");
+
     public unsafe ref <#=intType#> this[int index]
     {
         get
         {
             if (index < 0 || index > <#=size-1#>)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (<#=intType#>* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(<#=Vars(v => $"out {intType} {v}")#>) =>
-        (<#=Vars()#>) = (<#=Fields()#>);
+    public static implicit operator <#=type#>((<#=Repeat(size, intType)#>) <#=combinedVars#>) => new(<#=combinedVars#>);
+    public void Deconstruct(<#=Vars(v => $"out {intType} {v}")#>) => (<#=Vars()#>) = (<#=Fields()#>);
 
-    public bool Equals(<#=type#> other) =>
-        <#=Fields(f => $"{f} == other.{f}", " && ")#>;
+    public bool Equals(<#=type#> other) => <#=Fields(f => $"{f} == other.{f}", " && ")#>;
+    public override bool Equals(object? obj) => obj is <#=type#> other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is <#=type#> other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(<#=Fields()#>);
+    public override int GetHashCode() => HashCode.Combine(<#=Fields()#>);
 
     public static <#=boolType#> operator ==(in <#=type#> left, in <#=type#> right) =>
         new(<#=Fields(f => $"left.{f} == right.{f}")#>);
@@ -133,12 +131,14 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public <#=type#>((<#=Repeat(size, "bool")#>) <#=combinedVars#>) =>
         (<#=fieldList#>) = <#=combinedVars#>;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= <#=size-1#>");
+
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > <#=size-1#>)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }

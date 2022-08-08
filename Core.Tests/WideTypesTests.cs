@@ -5,26 +5,53 @@
     {
         void Check(Int2 i, int x, int y)
         {
+            // direct
             i.X.ShouldBe(x);
-            i[0].ShouldBe(x);
             i.Y.ShouldBe(y);
+
+            // indexed
+            i[0].ShouldBe(x);
             i[1].ShouldBe(y);
 
+            // decomposed
             var (ix, iy) = i;
             ix.ShouldBe(x);
             iy.ShouldBe(y);
         }
 
-        var i0 = new Int2(1, 2);
-        Check(i0, 1, 2);
+        // default
+        var idef = new Int2();
+        Check(idef, 0, 0);
 
-        var i1 = new Int2(3);
-        Check(i1, 3, 3);
+        // different components
+        var idiff = new Int2(1, 2);
+        Check(idiff, 1, 2);
 
-        var i2 = new Int2((4, 5));
-        Check(i2, 4, 5);
-        i2.X = 6;
-        i2.Y = 7;
-        Check(i2, 6, 7);
+        // duplicated component
+        var idup = new Int2(3);
+        Check(idup, 3, 3);
+
+        // tuple
+        var itup = new Int2((4, 5));
+        Check(itup, 4, 5);
+
+        // assign direct
+        itup.X = 6;
+        itup.Y = 7;
+        Check(itup, 6, 7);
+
+        // assign tuple
+        itup = (8, 9);
+        Check(itup, 8, 9);
+    }
+
+    [Test]
+    public void Indexer_WithOutOfRange_Throws()
+    {
+        var i = new Int2();
+        Should.Throw<IndexOutOfRangeException>(() => _ = i[-1]);
+        Should.Throw<IndexOutOfRangeException>(() => _ = i[-99]);
+        Should.Throw<IndexOutOfRangeException>(() => _ = i[2]);
+        Should.Throw<IndexOutOfRangeException>(() => _ = i[50]);
     }
 }

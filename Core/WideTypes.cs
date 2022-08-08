@@ -14,27 +14,25 @@ public struct Int2 : IEquatable<Int2>
     public Int2((int, int) xy) =>
         (X, Y) = xy;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out int x, out int y) =>
-        (x, y) = (X, Y);
+    public static implicit operator Int2((int, int) xy) => new(xy);
+    public void Deconstruct(out int x, out int y) => (x, y) = (X, Y);
 
-    public bool Equals(Int2 other) =>
-        X == other.X && Y == other.Y;
+    public bool Equals(Int2 other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Int2 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Int2 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
 
     public static Bool2 operator ==(in Int2 left, in Int2 right) =>
         new(left.X == right.X, left.Y == right.Y);
@@ -116,27 +114,25 @@ public struct Int3 : IEquatable<Int3>
     public Int3((int, int, int) xyz) =>
         (X, Y, Z) = xyz;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out int x, out int y, out int z) =>
-        (x, y, z) = (X, Y, Z);
+    public static implicit operator Int3((int, int, int) xyz) => new(xyz);
+    public void Deconstruct(out int x, out int y, out int z) => (x, y, z) = (X, Y, Z);
 
-    public bool Equals(Int3 other) =>
-        X == other.X && Y == other.Y && Z == other.Z;
+    public bool Equals(Int3 other) => X == other.X && Y == other.Y && Z == other.Z;
+    public override bool Equals(object? obj) => obj is Int3 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Int3 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Z);
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
     public static Bool3 operator ==(in Int3 left, in Int3 right) =>
         new(left.X == right.X, left.Y == right.Y, left.Z == right.Z);
@@ -218,27 +214,25 @@ public struct Int4 : IEquatable<Int4>
     public Int4((int, int, int, int) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out int x, out int y, out int z, out int w) =>
-        (x, y, z, w) = (X, Y, Z, W);
+    public static implicit operator Int4((int, int, int, int) xyzw) => new(xyzw);
+    public void Deconstruct(out int x, out int y, out int z, out int w) => (x, y, z, w) = (X, Y, Z, W);
 
-    public bool Equals(Int4 other) =>
-        X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+    public bool Equals(Int4 other) => X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+    public override bool Equals(object? obj) => obj is Int4 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Int4 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Z, W);
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z, W);
 
     public static Bool4 operator ==(in Int4 left, in Int4 right) =>
         new(left.X == right.X, left.Y == right.Y, left.Z == right.Z, left.W == right.W);
@@ -320,27 +314,25 @@ public struct Long2 : IEquatable<Long2>
     public Long2((long, long) xy) =>
         (X, Y) = xy;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out long x, out long y) =>
-        (x, y) = (X, Y);
+    public static implicit operator Long2((long, long) xy) => new(xy);
+    public void Deconstruct(out long x, out long y) => (x, y) = (X, Y);
 
-    public bool Equals(Long2 other) =>
-        X == other.X && Y == other.Y;
+    public bool Equals(Long2 other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Long2 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Long2 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y);
+    public override int GetHashCode() => HashCode.Combine(X, Y);
 
     public static Bool2 operator ==(in Long2 left, in Long2 right) =>
         new(left.X == right.X, left.Y == right.Y);
@@ -422,27 +414,25 @@ public struct Long3 : IEquatable<Long3>
     public Long3((long, long, long) xyz) =>
         (X, Y, Z) = xyz;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out long x, out long y, out long z) =>
-        (x, y, z) = (X, Y, Z);
+    public static implicit operator Long3((long, long, long) xyz) => new(xyz);
+    public void Deconstruct(out long x, out long y, out long z) => (x, y, z) = (X, Y, Z);
 
-    public bool Equals(Long3 other) =>
-        X == other.X && Y == other.Y && Z == other.Z;
+    public bool Equals(Long3 other) => X == other.X && Y == other.Y && Z == other.Z;
+    public override bool Equals(object? obj) => obj is Long3 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Long3 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Z);
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z);
 
     public static Bool3 operator ==(in Long3 left, in Long3 right) =>
         new(left.X == right.X, left.Y == right.Y, left.Z == right.Z);
@@ -524,27 +514,25 @@ public struct Long4 : IEquatable<Long4>
     public Long4((long, long, long, long) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
 
-    public void Deconstruct(out long x, out long y, out long z, out long w) =>
-        (x, y, z, w) = (X, Y, Z, W);
+    public static implicit operator Long4((long, long, long, long) xyzw) => new(xyzw);
+    public void Deconstruct(out long x, out long y, out long z, out long w) => (x, y, z, w) = (X, Y, Z, W);
 
-    public bool Equals(Long4 other) =>
-        X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+    public bool Equals(Long4 other) => X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+    public override bool Equals(object? obj) => obj is Long4 other && Equals(other);
 
-    public override bool Equals(object? obj) =>
-        obj is Long4 other && Equals(other);
-
-    public override int GetHashCode() =>
-        HashCode.Combine(X, Y, Z, W);
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z, W);
 
     public static Bool4 operator ==(in Long4 left, in Long4 right) =>
         new(left.X == right.X, left.Y == right.Y, left.Z == right.Z, left.W == right.W);
@@ -626,12 +614,14 @@ public struct Bool2 : IEquatable<Bool2>
     public Bool2((bool, bool) xy) =>
         (X, Y) = xy;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }
@@ -676,12 +666,14 @@ public struct Bool3 : IEquatable<Bool3>
     public Bool3((bool, bool, bool) xyz) =>
         (X, Y, Z) = xyz;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }
@@ -726,12 +718,14 @@ public struct Bool4 : IEquatable<Bool4>
     public Bool4((bool, bool, bool, bool) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
+    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                throw new ArgumentOutOfRangeException(nameof(index));
+                ThrowIndexOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }
