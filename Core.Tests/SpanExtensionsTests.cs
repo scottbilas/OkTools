@@ -1,4 +1,4 @@
-﻿class ReadOnlySpanExtensionsTests
+class ReadOnlySpanExtensionsTests
 {
     [Test]
     public void SliceSafe()

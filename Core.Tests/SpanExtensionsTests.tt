@@ -1,4 +1,5 @@
-﻿<#@ output extension=".gen.cs" #>
+﻿<#@ output extension=".cs" #>
+<# // https://github.com/jgiannuzzi/T4.Build/issues/7    #@ output extension=".gen.cs" #>
 <# foreach (var type in new[] { "ReadOnlySpan", "Span" }) { #>
 class <#=type#>ExtensionsTests
 {

@@ -1,4 +1,4 @@
-﻿namespace OkTools.Core;
+namespace OkTools.Core;
 
 // the purpose of these types is programmer convenience, not SIMD. if you want SIMD types,
 // look at Unity Burst or System.Numerics.

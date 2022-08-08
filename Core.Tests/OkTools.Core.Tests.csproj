@@ -18,15 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="SpanExtensionsTests.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>SpanExtensionsTests.gen.cs</LastGenOutput>
-    </None>
-    <Compile Update="SpanExtensionsTests.gen.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SpanExtensionsTests.tt</DependentUpon>
-    </Compile>
+    <PackageReference Include="T4.Build" Version="0.2.4" />
   </ItemGroup>
 
 </Project>

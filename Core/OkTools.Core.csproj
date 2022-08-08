@@ -9,30 +9,7 @@
   <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" Version="0.7.104" />
     <PackageReference Include="PInvoke.NTDll" Version="0.7.104" />
-  </ItemGroup>
-
-  <!-- TODO: do globbing on this -->
-  <ItemGroup>
-    <None Update="SpanExtensions.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>SpanExtensions.gen.cs</LastGenOutput>
-    </None>
-    <Compile Update="SpanExtensions.gen.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>SpanExtensions.tt</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Update="WideTypes.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>WideTypes.gen.cs</LastGenOutput>
-    </None>
-    <Compile Update="WideTypes.gen.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>WideTypes.tt</DependentUpon>
-    </Compile>
+    <PackageReference Include="T4.Build" Version="0.2.4" />
   </ItemGroup>
 
 </Project>
