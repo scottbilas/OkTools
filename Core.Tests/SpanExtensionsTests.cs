@@ -39,4 +39,3 @@ class SpanExtensionsTests
         span.SliceSafe(7).ToArray().ShouldBeEmpty();
     }
 }
-

@@ -44,7 +44,7 @@ public struct <#=type#> : IEquatable<<#=type#>>
         <#=Fields(f => $"{f} == other.{f}", " && ")#>;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is <#=type#> other && Equals(other);
+        obj is <#=type#> other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(<#=Fields()#>);
@@ -57,19 +57,19 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly <#=type#> k_Zero = new(0), k_One = new(1);
-    static readonly <#=type#> k_MaxValue = new(<#=Repeat(size, $"{intType}.MaxValue")#>);
-    static readonly <#=type#> k_MinValue = new(<#=Repeat(size, $"{intType}.MinValue")#>);
+    static readonly <#=type#> k_zero = new(0), k_one = new(1);
+    static readonly <#=type#> k_maxValue = new(<#=Repeat(size, $"{intType}.MaxValue")#>);
+    static readonly <#=type#> k_minValue = new(<#=Repeat(size, $"{intType}.MinValue")#>);
 
-    public static ref readonly <#=type#> Zero => ref k_Zero;
-    public static ref readonly <#=type#> One => ref k_One;
-    public static ref readonly <#=type#> MaxValue => ref k_MaxValue;
-    public static ref readonly <#=type#> MinValue => ref k_MinValue;
+    public static ref readonly <#=type#> Zero => ref k_zero;
+    public static ref readonly <#=type#> One => ref k_one;
+    public static ref readonly <#=type#> MaxValue => ref k_maxValue;
+    public static ref readonly <#=type#> MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static <#=type#> operator-(in <#=type#> i) =>
+    public static <#=type#> operator -(in <#=type#> i /*unary negate*/) =>
         new(<#=Fields(f => $"-i.{f}")#>);
 
     public static <#=type#> operator +(in <#=type#> a, in <#=type#> b) =>
@@ -147,7 +147,7 @@ public struct <#=type#> : IEquatable<<#=type#>>
         <#=Fields(f => $"{f} == other.{f}", " && ")#>;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is <#=type#> other && Equals(other);
+        obj is <#=type#> other && Equals(other);
 
     public override int GetHashCode() =>
         <#=Listify(fields.Select((b, i) => $"({b}?1:0) << {i}"), " | ")#>;
@@ -163,17 +163,17 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly <#=type#> k_False = new(false), k_True = new(true);
+    static readonly <#=type#> k_false = new(false), k_true = new(true);
 
-    public static ref readonly <#=type#> False => ref k_False;
-    public static ref readonly <#=type#> True => ref k_True;
+    public static ref readonly <#=type#> False => ref k_false;
+    public static ref readonly <#=type#> True => ref k_true;
 
     public bool All() => <#=Fields(f => $"{f}", " && ")#>;
     public bool Any() => <#=Fields(f => $"{f}", " || ")#>;
 }
 
 <#}#>
-public static partial class Utils
+public static partial class StaticUtility
 {
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
     public static <#=type#> Abs(in <#=type#> a) =>
@@ -207,30 +207,30 @@ public static partial class Utils
 <#}#>
 }
 
-public static partial class Extensions
+public static class <#=type#>Extensions
 {
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
-    public static <#=type#> Abs(this in <#=type#> a) => Utils.Abs(a);
+    public static <#=type#> Abs(this in <#=type#> a) => StaticUtility.Abs(a);
 <#}#>
 
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
-    public static int LengthSq(this in <#=type#> a) => Utils.LengthSq(a);
-    public static int LengthSq(this in <#=type#> a, in <#=type#> b) => Utils.LengthSq(a, b);
+    public static int LengthSq(this in <#=type#> a) => StaticUtility.LengthSq(a);
+    public static int LengthSq(this in <#=type#> a, in <#=type#> b) => StaticUtility.LengthSq(a, b);
 <#}#>
 
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
-    public static <#=type#> Min(this in <#=type#> a, in <#=type#> b) => Utils.Min(in a, in b);
-    public static <#=type#> Max(this in <#=type#> a, in <#=type#> b) => Utils.Max(in a, in b);
+    public static <#=type#> Min(this in <#=type#> a, in <#=type#> b) => StaticUtility.Min(in a, in b);
+    public static <#=type#> Max(this in <#=type#> a, in <#=type#> b) => StaticUtility.Max(in a, in b);
 <#}#>
 
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
-    public static void Minimize(ref this <#=type#> a, in <#=type#> b) => Utils.Minimize(ref a, in b);
-    public static void Maximize(ref this <#=type#> a, in <#=type#> b) => Utils.Maximize(ref a, in b);
+    public static void Minimize(ref this <#=type#> a, in <#=type#> b) => StaticUtility.Minimize(ref a, in b);
+    public static void Maximize(ref this <#=type#> a, in <#=type#> b) => StaticUtility.Maximize(ref a, in b);
 <#}#>
 
 <#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
-    public static <#=type#> Midpoint(this in <#=type#> a, in <#=type#> b) => Utils.Midpoint(in a, in b);
-    public static <#=type#> Midpoint(this in <#=type#> a) => Utils.Midpoint(in a);
+    public static <#=type#> Midpoint(this in <#=type#> a, in <#=type#> b) => StaticUtility.Midpoint(in a, in b);
+    public static <#=type#> Midpoint(this in <#=type#> a) => StaticUtility.Midpoint(in a);
 <#}#>
 }
 <#+

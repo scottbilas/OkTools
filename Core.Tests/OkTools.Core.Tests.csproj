@@ -17,8 +17,4 @@
     <ProjectReference Include="..\TestUtils\OkTools.TestUtils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="T4.Build" Version="0.2.4" />
-  </ItemGroup>
-
 </Project>

@@ -31,7 +31,7 @@ public struct Int2 : IEquatable<Int2>
         X == other.X && Y == other.Y;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Int2 other && Equals(other);
+        obj is Int2 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y);
@@ -44,19 +44,19 @@ public struct Int2 : IEquatable<Int2>
     public override string ToString() => $"{X}, {Y}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Int2 k_Zero = new(0), k_One = new(1);
-    static readonly Int2 k_MaxValue = new(int.MaxValue, int.MaxValue);
-    static readonly Int2 k_MinValue = new(int.MinValue, int.MinValue);
+    static readonly Int2 k_zero = new(0), k_one = new(1);
+    static readonly Int2 k_maxValue = new(int.MaxValue, int.MaxValue);
+    static readonly Int2 k_minValue = new(int.MinValue, int.MinValue);
 
-    public static ref readonly Int2 Zero => ref k_Zero;
-    public static ref readonly Int2 One => ref k_One;
-    public static ref readonly Int2 MaxValue => ref k_MaxValue;
-    public static ref readonly Int2 MinValue => ref k_MinValue;
+    public static ref readonly Int2 Zero => ref k_zero;
+    public static ref readonly Int2 One => ref k_one;
+    public static ref readonly Int2 MaxValue => ref k_maxValue;
+    public static ref readonly Int2 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Int2 operator-(in Int2 i) =>
+    public static Int2 operator -(in Int2 i /*unary negate*/) =>
         new(-i.X, -i.Y);
 
     public static Int2 operator +(in Int2 a, in Int2 b) =>
@@ -133,7 +133,7 @@ public struct Int3 : IEquatable<Int3>
         X == other.X && Y == other.Y && Z == other.Z;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Int3 other && Equals(other);
+        obj is Int3 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y, Z);
@@ -146,19 +146,19 @@ public struct Int3 : IEquatable<Int3>
     public override string ToString() => $"{X}, {Y}, {Z}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Int3 k_Zero = new(0), k_One = new(1);
-    static readonly Int3 k_MaxValue = new(int.MaxValue, int.MaxValue, int.MaxValue);
-    static readonly Int3 k_MinValue = new(int.MinValue, int.MinValue, int.MinValue);
+    static readonly Int3 k_zero = new(0), k_one = new(1);
+    static readonly Int3 k_maxValue = new(int.MaxValue, int.MaxValue, int.MaxValue);
+    static readonly Int3 k_minValue = new(int.MinValue, int.MinValue, int.MinValue);
 
-    public static ref readonly Int3 Zero => ref k_Zero;
-    public static ref readonly Int3 One => ref k_One;
-    public static ref readonly Int3 MaxValue => ref k_MaxValue;
-    public static ref readonly Int3 MinValue => ref k_MinValue;
+    public static ref readonly Int3 Zero => ref k_zero;
+    public static ref readonly Int3 One => ref k_one;
+    public static ref readonly Int3 MaxValue => ref k_maxValue;
+    public static ref readonly Int3 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Int3 operator-(in Int3 i) =>
+    public static Int3 operator -(in Int3 i /*unary negate*/) =>
         new(-i.X, -i.Y, -i.Z);
 
     public static Int3 operator +(in Int3 a, in Int3 b) =>
@@ -235,7 +235,7 @@ public struct Int4 : IEquatable<Int4>
         X == other.X && Y == other.Y && Z == other.Z && W == other.W;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Int4 other && Equals(other);
+        obj is Int4 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y, Z, W);
@@ -248,19 +248,19 @@ public struct Int4 : IEquatable<Int4>
     public override string ToString() => $"{X}, {Y}, {Z}, {W}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Int4 k_Zero = new(0), k_One = new(1);
-    static readonly Int4 k_MaxValue = new(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
-    static readonly Int4 k_MinValue = new(int.MinValue, int.MinValue, int.MinValue, int.MinValue);
+    static readonly Int4 k_zero = new(0), k_one = new(1);
+    static readonly Int4 k_maxValue = new(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
+    static readonly Int4 k_minValue = new(int.MinValue, int.MinValue, int.MinValue, int.MinValue);
 
-    public static ref readonly Int4 Zero => ref k_Zero;
-    public static ref readonly Int4 One => ref k_One;
-    public static ref readonly Int4 MaxValue => ref k_MaxValue;
-    public static ref readonly Int4 MinValue => ref k_MinValue;
+    public static ref readonly Int4 Zero => ref k_zero;
+    public static ref readonly Int4 One => ref k_one;
+    public static ref readonly Int4 MaxValue => ref k_maxValue;
+    public static ref readonly Int4 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Int4 operator-(in Int4 i) =>
+    public static Int4 operator -(in Int4 i /*unary negate*/) =>
         new(-i.X, -i.Y, -i.Z, -i.W);
 
     public static Int4 operator +(in Int4 a, in Int4 b) =>
@@ -337,7 +337,7 @@ public struct Long2 : IEquatable<Long2>
         X == other.X && Y == other.Y;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Long2 other && Equals(other);
+        obj is Long2 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y);
@@ -350,19 +350,19 @@ public struct Long2 : IEquatable<Long2>
     public override string ToString() => $"{X}, {Y}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Long2 k_Zero = new(0), k_One = new(1);
-    static readonly Long2 k_MaxValue = new(long.MaxValue, long.MaxValue);
-    static readonly Long2 k_MinValue = new(long.MinValue, long.MinValue);
+    static readonly Long2 k_zero = new(0), k_one = new(1);
+    static readonly Long2 k_maxValue = new(long.MaxValue, long.MaxValue);
+    static readonly Long2 k_minValue = new(long.MinValue, long.MinValue);
 
-    public static ref readonly Long2 Zero => ref k_Zero;
-    public static ref readonly Long2 One => ref k_One;
-    public static ref readonly Long2 MaxValue => ref k_MaxValue;
-    public static ref readonly Long2 MinValue => ref k_MinValue;
+    public static ref readonly Long2 Zero => ref k_zero;
+    public static ref readonly Long2 One => ref k_one;
+    public static ref readonly Long2 MaxValue => ref k_maxValue;
+    public static ref readonly Long2 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Long2 operator-(in Long2 i) =>
+    public static Long2 operator -(in Long2 i /*unary negate*/) =>
         new(-i.X, -i.Y);
 
     public static Long2 operator +(in Long2 a, in Long2 b) =>
@@ -439,7 +439,7 @@ public struct Long3 : IEquatable<Long3>
         X == other.X && Y == other.Y && Z == other.Z;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Long3 other && Equals(other);
+        obj is Long3 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y, Z);
@@ -452,19 +452,19 @@ public struct Long3 : IEquatable<Long3>
     public override string ToString() => $"{X}, {Y}, {Z}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Long3 k_Zero = new(0), k_One = new(1);
-    static readonly Long3 k_MaxValue = new(long.MaxValue, long.MaxValue, long.MaxValue);
-    static readonly Long3 k_MinValue = new(long.MinValue, long.MinValue, long.MinValue);
+    static readonly Long3 k_zero = new(0), k_one = new(1);
+    static readonly Long3 k_maxValue = new(long.MaxValue, long.MaxValue, long.MaxValue);
+    static readonly Long3 k_minValue = new(long.MinValue, long.MinValue, long.MinValue);
 
-    public static ref readonly Long3 Zero => ref k_Zero;
-    public static ref readonly Long3 One => ref k_One;
-    public static ref readonly Long3 MaxValue => ref k_MaxValue;
-    public static ref readonly Long3 MinValue => ref k_MinValue;
+    public static ref readonly Long3 Zero => ref k_zero;
+    public static ref readonly Long3 One => ref k_one;
+    public static ref readonly Long3 MaxValue => ref k_maxValue;
+    public static ref readonly Long3 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Long3 operator-(in Long3 i) =>
+    public static Long3 operator -(in Long3 i /*unary negate*/) =>
         new(-i.X, -i.Y, -i.Z);
 
     public static Long3 operator +(in Long3 a, in Long3 b) =>
@@ -541,7 +541,7 @@ public struct Long4 : IEquatable<Long4>
         X == other.X && Y == other.Y && Z == other.Z && W == other.W;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Long4 other && Equals(other);
+        obj is Long4 other && Equals(other);
 
     public override int GetHashCode() =>
         HashCode.Combine(X, Y, Z, W);
@@ -554,19 +554,19 @@ public struct Long4 : IEquatable<Long4>
     public override string ToString() => $"{X}, {Y}, {Z}, {W}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Long4 k_Zero = new(0), k_One = new(1);
-    static readonly Long4 k_MaxValue = new(long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue);
-    static readonly Long4 k_MinValue = new(long.MinValue, long.MinValue, long.MinValue, long.MinValue);
+    static readonly Long4 k_zero = new(0), k_one = new(1);
+    static readonly Long4 k_maxValue = new(long.MaxValue, long.MaxValue, long.MaxValue, long.MaxValue);
+    static readonly Long4 k_minValue = new(long.MinValue, long.MinValue, long.MinValue, long.MinValue);
 
-    public static ref readonly Long4 Zero => ref k_Zero;
-    public static ref readonly Long4 One => ref k_One;
-    public static ref readonly Long4 MaxValue => ref k_MaxValue;
-    public static ref readonly Long4 MinValue => ref k_MinValue;
+    public static ref readonly Long4 Zero => ref k_zero;
+    public static ref readonly Long4 One => ref k_one;
+    public static ref readonly Long4 MaxValue => ref k_maxValue;
+    public static ref readonly Long4 MinValue => ref k_minValue;
 
     public bool IsZero => Equals(Zero);
     public bool IsOne  => Equals(One);
 
-    public static Long4 operator-(in Long4 i) =>
+    public static Long4 operator -(in Long4 i /*unary negate*/) =>
         new(-i.X, -i.Y, -i.Z, -i.W);
 
     public static Long4 operator +(in Long4 a, in Long4 b) =>
@@ -640,7 +640,7 @@ public struct Bool2 : IEquatable<Bool2>
         X == other.X && Y == other.Y;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Bool2 other && Equals(other);
+        obj is Bool2 other && Equals(other);
 
     public override int GetHashCode() =>
         (X?1:0) << 0 | (Y?1:0) << 1;
@@ -656,10 +656,10 @@ public struct Bool2 : IEquatable<Bool2>
     public override string ToString() => $"{X}, {Y}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Bool2 k_False = new(false), k_True = new(true);
+    static readonly Bool2 k_false = new(false), k_true = new(true);
 
-    public static ref readonly Bool2 False => ref k_False;
-    public static ref readonly Bool2 True => ref k_True;
+    public static ref readonly Bool2 False => ref k_false;
+    public static ref readonly Bool2 True => ref k_true;
 
     public bool All() => X && Y;
     public bool Any() => X || Y;
@@ -690,7 +690,7 @@ public struct Bool3 : IEquatable<Bool3>
         X == other.X && Y == other.Y && Z == other.Z;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Bool3 other && Equals(other);
+        obj is Bool3 other && Equals(other);
 
     public override int GetHashCode() =>
         (X?1:0) << 0 | (Y?1:0) << 1 | (Z?1:0) << 2;
@@ -706,10 +706,10 @@ public struct Bool3 : IEquatable<Bool3>
     public override string ToString() => $"{X}, {Y}, {Z}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Bool3 k_False = new(false), k_True = new(true);
+    static readonly Bool3 k_false = new(false), k_true = new(true);
 
-    public static ref readonly Bool3 False => ref k_False;
-    public static ref readonly Bool3 True => ref k_True;
+    public static ref readonly Bool3 False => ref k_false;
+    public static ref readonly Bool3 True => ref k_true;
 
     public bool All() => X && Y && Z;
     public bool Any() => X || Y || Z;
@@ -740,7 +740,7 @@ public struct Bool4 : IEquatable<Bool4>
         X == other.X && Y == other.Y && Z == other.Z && W == other.W;
 
     public override bool Equals(object? obj) =>
-        !ReferenceEquals(obj, null) && obj is Bool4 other && Equals(other);
+        obj is Bool4 other && Equals(other);
 
     public override int GetHashCode() =>
         (X?1:0) << 0 | (Y?1:0) << 1 | (Z?1:0) << 2 | (W?1:0) << 3;
@@ -756,16 +756,16 @@ public struct Bool4 : IEquatable<Bool4>
     public override string ToString() => $"{X}, {Y}, {Z}, {W}";
     public object ToDump() => ToString(); // linqpad
 
-    static readonly Bool4 k_False = new(false), k_True = new(true);
+    static readonly Bool4 k_false = new(false), k_true = new(true);
 
-    public static ref readonly Bool4 False => ref k_False;
-    public static ref readonly Bool4 True => ref k_True;
+    public static ref readonly Bool4 False => ref k_false;
+    public static ref readonly Bool4 True => ref k_true;
 
     public bool All() => X && Y && Z && W;
     public bool Any() => X || Y || Z || W;
 }
 
-public static partial class Utils
+public static partial class StaticUtility
 {
     public static Int2 Abs(in Int2 a) =>
         new(Math.Abs(a.X), Math.Abs(a.Y));
@@ -821,37 +821,37 @@ public static partial class Utils
         Midpoint(a, Int4.Zero);
 }
 
-public static partial class Extensions
+public static class Int4Extensions
 {
-    public static Int2 Abs(this in Int2 a) => Utils.Abs(a);
-    public static Int3 Abs(this in Int3 a) => Utils.Abs(a);
-    public static Int4 Abs(this in Int4 a) => Utils.Abs(a);
+    public static Int2 Abs(this in Int2 a) => StaticUtility.Abs(a);
+    public static Int3 Abs(this in Int3 a) => StaticUtility.Abs(a);
+    public static Int4 Abs(this in Int4 a) => StaticUtility.Abs(a);
 
-    public static int LengthSq(this in Int2 a) => Utils.LengthSq(a);
-    public static int LengthSq(this in Int2 a, in Int2 b) => Utils.LengthSq(a, b);
-    public static int LengthSq(this in Int3 a) => Utils.LengthSq(a);
-    public static int LengthSq(this in Int3 a, in Int3 b) => Utils.LengthSq(a, b);
-    public static int LengthSq(this in Int4 a) => Utils.LengthSq(a);
-    public static int LengthSq(this in Int4 a, in Int4 b) => Utils.LengthSq(a, b);
+    public static int LengthSq(this in Int2 a) => StaticUtility.LengthSq(a);
+    public static int LengthSq(this in Int2 a, in Int2 b) => StaticUtility.LengthSq(a, b);
+    public static int LengthSq(this in Int3 a) => StaticUtility.LengthSq(a);
+    public static int LengthSq(this in Int3 a, in Int3 b) => StaticUtility.LengthSq(a, b);
+    public static int LengthSq(this in Int4 a) => StaticUtility.LengthSq(a);
+    public static int LengthSq(this in Int4 a, in Int4 b) => StaticUtility.LengthSq(a, b);
 
-    public static Int2 Min(this in Int2 a, in Int2 b) => Utils.Min(in a, in b);
-    public static Int2 Max(this in Int2 a, in Int2 b) => Utils.Max(in a, in b);
-    public static Int3 Min(this in Int3 a, in Int3 b) => Utils.Min(in a, in b);
-    public static Int3 Max(this in Int3 a, in Int3 b) => Utils.Max(in a, in b);
-    public static Int4 Min(this in Int4 a, in Int4 b) => Utils.Min(in a, in b);
-    public static Int4 Max(this in Int4 a, in Int4 b) => Utils.Max(in a, in b);
+    public static Int2 Min(this in Int2 a, in Int2 b) => StaticUtility.Min(in a, in b);
+    public static Int2 Max(this in Int2 a, in Int2 b) => StaticUtility.Max(in a, in b);
+    public static Int3 Min(this in Int3 a, in Int3 b) => StaticUtility.Min(in a, in b);
+    public static Int3 Max(this in Int3 a, in Int3 b) => StaticUtility.Max(in a, in b);
+    public static Int4 Min(this in Int4 a, in Int4 b) => StaticUtility.Min(in a, in b);
+    public static Int4 Max(this in Int4 a, in Int4 b) => StaticUtility.Max(in a, in b);
 
-    public static void Minimize(ref this Int2 a, in Int2 b) => Utils.Minimize(ref a, in b);
-    public static void Maximize(ref this Int2 a, in Int2 b) => Utils.Maximize(ref a, in b);
-    public static void Minimize(ref this Int3 a, in Int3 b) => Utils.Minimize(ref a, in b);
-    public static void Maximize(ref this Int3 a, in Int3 b) => Utils.Maximize(ref a, in b);
-    public static void Minimize(ref this Int4 a, in Int4 b) => Utils.Minimize(ref a, in b);
-    public static void Maximize(ref this Int4 a, in Int4 b) => Utils.Maximize(ref a, in b);
+    public static void Minimize(ref this Int2 a, in Int2 b) => StaticUtility.Minimize(ref a, in b);
+    public static void Maximize(ref this Int2 a, in Int2 b) => StaticUtility.Maximize(ref a, in b);
+    public static void Minimize(ref this Int3 a, in Int3 b) => StaticUtility.Minimize(ref a, in b);
+    public static void Maximize(ref this Int3 a, in Int3 b) => StaticUtility.Maximize(ref a, in b);
+    public static void Minimize(ref this Int4 a, in Int4 b) => StaticUtility.Minimize(ref a, in b);
+    public static void Maximize(ref this Int4 a, in Int4 b) => StaticUtility.Maximize(ref a, in b);
 
-    public static Int2 Midpoint(this in Int2 a, in Int2 b) => Utils.Midpoint(in a, in b);
-    public static Int2 Midpoint(this in Int2 a) => Utils.Midpoint(in a);
-    public static Int3 Midpoint(this in Int3 a, in Int3 b) => Utils.Midpoint(in a, in b);
-    public static Int3 Midpoint(this in Int3 a) => Utils.Midpoint(in a);
-    public static Int4 Midpoint(this in Int4 a, in Int4 b) => Utils.Midpoint(in a, in b);
-    public static Int4 Midpoint(this in Int4 a) => Utils.Midpoint(in a);
+    public static Int2 Midpoint(this in Int2 a, in Int2 b) => StaticUtility.Midpoint(in a, in b);
+    public static Int2 Midpoint(this in Int2 a) => StaticUtility.Midpoint(in a);
+    public static Int3 Midpoint(this in Int3 a, in Int3 b) => StaticUtility.Midpoint(in a, in b);
+    public static Int3 Midpoint(this in Int3 a) => StaticUtility.Midpoint(in a);
+    public static Int4 Midpoint(this in Int4 a, in Int4 b) => StaticUtility.Midpoint(in a, in b);
+    public static Int4 Midpoint(this in Int4 a) => StaticUtility.Midpoint(in a);
 }
