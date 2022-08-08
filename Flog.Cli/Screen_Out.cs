@@ -1,6 +1,14 @@
+#if DEBUG && !DISABLE_SCREEN_RECORDER
+#define ENABLE_SCREEN_RECORDER
+#endif
+
 partial class Screen
 {
     readonly ControlBuilder _cb = new();
+
+    #if ENABLE_SCREEN_RECORDER
+    readonly Dictionary<Int2, int> _cells = new();
+    #endif
 
     public void OutFlush()
     {

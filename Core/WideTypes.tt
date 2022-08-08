@@ -1,0 +1,266 @@
+<#@ output extension=".gen.cs" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ import namespace="System.Linq" #>
+namespace OkTools.Core;
+
+// the purpose of these types is programmer convenience, not SIMD. if you want SIMD types,
+// look at Unity Burst or System.Numerics.
+
+<# // ----- INTS -----
+
+foreach (var intType in new[] { "int", "long" }) {
+    for (var size = 2; size <= IntMax; ++size) {
+        Init(intType, size);
+        var boolType = "Bool" + size;
+#>
+public struct <#=type#> : IEquatable<<#=type#>>
+{
+    public <#=intType#> <#=fieldList#>;
+
+    public <#=type#>(<#=Vars(v => $"{intType} {v}")#>) =>
+        (<#=fieldList#>) = (<#=varList#>);
+    public <#=type#>(<#=intType#> v) =>
+        (<#=fieldList#>) = (<#=Repeat(size, "v")#>);
+    public <#=type#>((<#=Repeat(size, intType)#>) <#=combinedVars#>) =>
+        (<#=fieldList#>) = <#=combinedVars#>;
+
+    public unsafe ref <#=intType#> this[int index]
+    {
+        get
+        {
+            if (index < 0 || index > <#=size-1#>)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            fixed (<#=intType#>* i = &X) { return ref i[index]; }
+        }
+    }
+
+    public void Deconstruct(<#=Vars(v => $"out {intType} {v}")#>) =>
+        (<#=Vars()#>) = (<#=Fields()#>);
+
+    public bool Equals(<#=type#> other) =>
+        <#=Fields(f => $"{f} == other.{f}", " && ")#>;
+
+    public override bool Equals(object? obj) =>
+        !ReferenceEquals(obj, null) && obj is <#=type#> other && Equals(other);
+
+    public override int GetHashCode() =>
+        HashCode.Combine(<#=Fields()#>);
+
+    public static <#=boolType#> operator ==(in <#=type#> left, in <#=type#> right) =>
+        new(<#=Fields(f => $"left.{f} == right.{f}")#>);
+    public static <#=boolType#> operator !=(in <#=type#> left, in <#=type#> right) =>
+        new(<#=Fields(f => $"left.{f} != right.{f}")#>);
+
+    public override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
+    public object ToDump() => ToString(); // linqpad
+
+    static readonly <#=type#> k_Zero = new(0), k_One = new(1);
+    static readonly <#=type#> k_MaxValue = new(<#=Repeat(size, $"{intType}.MaxValue")#>);
+    static readonly <#=type#> k_MinValue = new(<#=Repeat(size, $"{intType}.MinValue")#>);
+
+    public static ref readonly <#=type#> Zero => ref k_Zero;
+    public static ref readonly <#=type#> One => ref k_One;
+    public static ref readonly <#=type#> MaxValue => ref k_MaxValue;
+    public static ref readonly <#=type#> MinValue => ref k_MinValue;
+
+    public bool IsZero => Equals(Zero);
+    public bool IsOne  => Equals(One);
+
+    public static <#=type#> operator-(in <#=type#> i) =>
+        new(<#=Fields(f => $"-i.{f}")#>);
+
+    public static <#=type#> operator +(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} + b.{f}")#>);
+    public static <#=type#> operator +(in <#=type#> a, <#=intType#> d) =>
+        new(<#=Fields(f => $"a.{f} + d")#>);
+    public static <#=type#> operator -(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} - b.{f}")#>);
+    public static <#=type#> operator -(in <#=type#> a, <#=intType#> d) =>
+        new(<#=Fields(f => $"a.{f} - d")#>);
+    public static <#=type#> operator *(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} * b.{f}")#>);
+    public static <#=type#> operator *(in <#=type#> a, <#=intType#> d) =>
+        new(<#=Fields(f => $"a.{f} * d")#>);
+    public static <#=type#> operator /(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} / b.{f}")#>);
+    public static <#=type#> operator /(in <#=type#> a, <#=intType#> d) =>
+        new(<#=Fields(f => $"a.{f} / d")#>);
+
+    public static <#=boolType#> operator <(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} < b.{f}")#>);
+    public static <#=boolType#> operator <(in <#=type#> a, <#=intType#> b) =>
+        new(<#=Fields(f => $"a.{f} < b")#>);
+    public static <#=boolType#> operator <(<#=intType#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a < b.{f}")#>);
+
+    public static <#=boolType#> operator <=(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} <= b.{f}")#>);
+    public static <#=boolType#> operator <=(in <#=type#> a, <#=intType#> b) =>
+        new(<#=Fields(f => $"a.{f} <= b")#>);
+    public static <#=boolType#> operator <=(<#=intType#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a <= b.{f}")#>);
+
+    public static <#=boolType#> operator >(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} > b.{f}")#>);
+    public static <#=boolType#> operator >(in <#=type#> a, <#=intType#> b) =>
+        new(<#=Fields(f => $"a.{f} > b")#>);
+    public static <#=boolType#> operator >(<#=intType#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a > b.{f}")#>);
+
+    public static <#=boolType#> operator >=(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} >= b.{f}")#>);
+    public static <#=boolType#> operator >=(in <#=type#> a, <#=intType#> b) =>
+        new(<#=Fields(f => $"a.{f} >= b")#>);
+    public static <#=boolType#> operator >=(<#=intType#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a >= b.{f}")#>);
+}
+
+<#}}
+// ----- BOOLS -----
+
+for (var size = 2; size <= BoolMax; ++size) { Init("bool", size);#>
+public struct <#=type#> : IEquatable<<#=type#>>
+{
+    public bool <#=fieldList#>;
+
+    public <#=type#>(<#=Vars(v => $"bool {v}")#>) =>
+        (<#=fieldList#>) = (<#=varList#>);
+    public <#=type#>(bool v) =>
+        (<#=fieldList#>) = (<#=Repeat(size, "v")#>);
+    public <#=type#>((<#=Repeat(size, "bool")#>) <#=combinedVars#>) =>
+        (<#=fieldList#>) = <#=combinedVars#>;
+
+    public unsafe ref bool this[int index]
+    {
+        get
+        {
+            if (index < 0 || index > <#=size-1#>)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            fixed (bool* i = &X) { return ref i[index]; }
+        }
+    }
+
+    public bool Equals(<#=type#> other) =>
+        <#=Fields(f => $"{f} == other.{f}", " && ")#>;
+
+    public override bool Equals(object? obj) =>
+        !ReferenceEquals(obj, null) && obj is <#=type#> other && Equals(other);
+
+    public override int GetHashCode() =>
+        <#=Listify(fields.Select((b, i) => $"({b}?1:0) << {i}"), " | ")#>;
+
+    public static bool operator ==(in <#=type#> left, in <#=type#> right) => left.Equals(right);
+    public static bool operator !=(in <#=type#> left, in <#=type#> right) => !left.Equals(right);
+
+    public static <#=type#> operator |(in <#=type#> left, in <#=type#> right) =>
+        new(<#=Fields(f => $"left.{f} || right.{f}")#>);
+    public static <#=type#> operator &(in <#=type#> left, in <#=type#> right) =>
+        new(<#=Fields(f => $"left.{f} && right.{f}")#>);
+
+    public override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
+    public object ToDump() => ToString(); // linqpad
+
+    static readonly <#=type#> k_False = new(false), k_True = new(true);
+
+    public static ref readonly <#=type#> False => ref k_False;
+    public static ref readonly <#=type#> True => ref k_True;
+
+    public bool All() => <#=Fields(f => $"{f}", " && ")#>;
+    public bool Any() => <#=Fields(f => $"{f}", " || ")#>;
+}
+
+<#}#>
+public static partial class Utils
+{
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Abs(in <#=type#> a) =>
+        new(<#=Fields(f => $"Math.Abs(a.{f})")#>);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static int LengthSq(in <#=type#> a) =>
+         <#=Fields(f => $"a.{f} * a.{f}", " + ")#>;
+    public static int LengthSq(in <#=type#> a, in <#=type#> b) =>
+         <#=Fields(f => $"(a.{f} - b.{f}) * (a.{f} - b.{f})", " + ")#>;
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Min(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"Math.Min(a.{f}, b.{f})")#>);
+    public static <#=type#> Max(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"Math.Max(a.{f}, b.{f})")#>);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static void Minimize(ref <#=type#> a, in <#=type#> b) => a = Min(in a, in b);
+    public static void Maximize(ref <#=type#> a, in <#=type#> b) => a = Max(in a, in b);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Midpoint(in <#=type#> a, in <#=type#> b) =>
+        new(<#=Fields(f => $"a.{f} + (b.{f} - a.{f}) / 2")#>);
+    public static <#=type#> Midpoint(in <#=type#> a) =>
+        Midpoint(a, <#=type#>.Zero);
+<#}#>
+}
+
+public static partial class Extensions
+{
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Abs(this in <#=type#> a) => Utils.Abs(a);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static int LengthSq(this in <#=type#> a) => Utils.LengthSq(a);
+    public static int LengthSq(this in <#=type#> a, in <#=type#> b) => Utils.LengthSq(a, b);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Min(this in <#=type#> a, in <#=type#> b) => Utils.Min(in a, in b);
+    public static <#=type#> Max(this in <#=type#> a, in <#=type#> b) => Utils.Max(in a, in b);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static void Minimize(ref this <#=type#> a, in <#=type#> b) => Utils.Minimize(ref a, in b);
+    public static void Maximize(ref this <#=type#> a, in <#=type#> b) => Utils.Maximize(ref a, in b);
+<#}#>
+
+<#for (var size = 2; size <= IntMax; ++size) { Init("int", size);#>
+    public static <#=type#> Midpoint(this in <#=type#> a, in <#=type#> b) => Utils.Midpoint(in a, in b);
+    public static <#=type#> Midpoint(this in <#=type#> a) => Utils.Midpoint(in a);
+<#}#>
+}
+<#+
+const int IntMax = 4, BoolMax = 4;
+
+string type, fieldList, varList, combinedVars;
+char[] fields, vars;
+
+void Init(string baseType, int size)
+{
+    type         = char.ToUpper(baseType[0]) + baseType.Substring(1) + size;
+    fields       = new[] { 'X', 'Y', 'Z', 'W' }.Take(size).ToArray();
+    vars         = fields.Select(char.ToLower).ToArray();
+    fieldList    = string.Join(", ", fields);
+    varList      = string.Join(", ", vars);
+    combinedVars = new string(vars);
+}
+
+string Listify<T, TR>(IEnumerable<T> items, Func<T, TR> selector, string delim = ", ") =>
+    string.Join(delim, items.Select(selector));
+string Listify<T>(IEnumerable<T> items, string delim = ", ") =>
+    string.Join(delim, items);
+
+string Fields<T>(Func<char, T> selector, string delim = ", ") =>
+    Listify(fields, selector, delim);
+string Fields(string delim = ", ") =>
+    Listify(fields, delim);
+string Vars<T>(Func<char, T> selector, string delim = ", ") =>
+    Listify(vars, selector, delim);
+string Vars(string delim = ", ") =>
+    Listify(vars, delim);
+string Repeat<T>(int count, T str, string delim = ", ") =>
+    Listify(Enumerable.Repeat(str, count), delim);
+#>
