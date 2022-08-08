@@ -1,4 +1,6 @@
-﻿using System.Collections;
+using System.Collections;
+
+namespace OkTools.Core;
 
 public static class ArrayExtensions
 {
