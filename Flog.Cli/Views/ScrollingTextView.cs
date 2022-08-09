@@ -220,7 +220,7 @@ class ScrollingTextView : ViewBase
             Invalidate(); // wrap etc. could have changed while we were away
     }
 
-    int ClampY(int testY) => Math.Clamp(0, testY, _sourceLineCount - 1);
+    int ClampY(int testY) => Math.Clamp(testY, 0, _sourceLineCount - 1);
 
     public bool ScrollToY(int y) => ScrollToY(y, IsUserAction.Yes);
 
