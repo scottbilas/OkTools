@@ -1,13 +1,8 @@
-#if DEBUG && !DISABLE_SCREEN_RECORDER
-#define ENABLE_SCREEN_RECORDER
-#endif
-
 partial class Screen
 {
     readonly ControlBuilder _cb = new();
-
     #if ENABLE_SCREEN_RECORDER
-    readonly Dictionary<Int2, int> _cells = new();
+    readonly ScreenRecorder _recorder = new();
     #endif
 
     public void OutFlush()
@@ -15,8 +10,11 @@ partial class Screen
         if (_cb.Span.IsEmpty)
             return;
 
+        #if ENABLE_SCREEN_RECORDER
+        _recorder.Process(_cb.Span);
+        #endif
         _terminal.Out(_cb.Span);
-        _cb.Clear(100000);
+        _cb.Clear(50000);
     }
 
     public void OutClearScreen(ClearMode mode = ClearMode.Full) => _cb.ClearScreen(mode);

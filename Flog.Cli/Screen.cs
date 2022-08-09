@@ -39,6 +39,10 @@ partial class Screen : IDisposable
 	        t.TPuts(ti.Clear)
         */
 
+        #if ENABLE_SCREEN_RECORDER
+        _recorder.OnResized(_terminal.Size);
+        #endif
+
         Terminal.EnableRawMode();
         _cb.SetScreenBuffer(ScreenBuffer.Alternate);
         OutClearScreen();
@@ -116,7 +120,15 @@ partial class Screen : IDisposable
     }
 
     void OnSignaled(TerminalSignalContext signal) => PostEvent(new SignalEvent(signal.Signal));
-    void OnResized(TerminalSize size) => PostEvent(new ResizeEvent(size));
+
+    void OnResized(TerminalSize size)
+    {
+        PostEvent(new ResizeEvent(size));
+
+        #if ENABLE_SCREEN_RECORDER
+        _recorder.OnResized(size);
+        #endif
+    }
 
     async void TaskReadRawInput(ChannelWriter<ReadOnlyMemory<byte>> rawInput)
     {
