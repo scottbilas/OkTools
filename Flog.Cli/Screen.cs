@@ -80,6 +80,10 @@ partial class Screen : IDisposable
     public ChannelReader<ITerminalEvent> Events => _terminalEvents.Reader;
     public Options Options { get; } = new();
 
+    #if ENABLE_SCREEN_RECORDER
+    public ScreenRecorder Recorder => _recorder;
+    #endif
+
     public void Dispose()
     {
         if (_disposed.IsCancellationRequested)

@@ -10,10 +10,10 @@ partial class Screen
         if (_cb.Span.IsEmpty)
             return;
 
+        _terminal.Out(_cb.Span);
         #if ENABLE_SCREEN_RECORDER
         _recorder.Process(_cb.Span);
         #endif
-        _terminal.Out(_cb.Span);
         _cb.Clear(50000);
     }
 

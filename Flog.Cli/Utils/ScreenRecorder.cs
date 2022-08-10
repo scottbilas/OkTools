@@ -1,12 +1,15 @@
+using PInvoke;
+
 #if ENABLE_SCREEN_RECORDER
 
-class UnexpectedEscapeException : Exception
-{
-}
+class UnexpectedEscapeException : Exception {}
 
 class ScreenRecorder
 {
-    int[] _counts = Array.Empty<int>();
+    enum ShowType { None, Count, Chars };
+
+    (int count, int chars)[] _cells = Array.Empty<(int, int)>();
+    ShowType _show;
     Int2 _size = Int2.Zero;
     Int2 _cursor, _savedCursor;
 
@@ -17,15 +20,29 @@ class ScreenRecorder
             Math.Clamp(newCursor.Y, 0, _size.Y - 1));
     }
 
+    public bool ToggleShow()
+    {
+        if (++_show > ShowType.Chars)
+            _show = ShowType.None;
+
+        if (_show == ShowType.None)
+            return false;
+
+        Draw();
+        return true;
+    }
+
     public void OnResized(TerminalSize size)
     {
-        _counts = new int[size.Width * size.Height];
+        _cells = new (int, int)[size.Width * size.Height];
         _size = (size.Width, size.Height);
+        if (_show != ShowType.None)
+            Draw();
     }
 
     public void Process(ReadOnlySpan<char> span)
     {
-        Span<int> counts = stackalloc int[10];
+        Span<int> nums = stackalloc int[10];
         int pos = 0, startPos = 0, startCursor = 0;
 
         bool Accept(ReadOnlySpan<char> s, char c)
@@ -43,7 +60,7 @@ class ScreenRecorder
                 throw new UnexpectedEscapeException();
         }
 
-        for (; pos != span.Length; _counts[startCursor] += pos - startPos)
+        for (; pos != span.Length; ++_cells[startCursor].count, _cells[startCursor].chars += pos - startPos)
         {
             startPos = pos;
             startCursor = _cursor.Y * _size.X + _cursor.X;
@@ -78,9 +95,9 @@ class ScreenRecorder
                 else
                     prefix = (char)0;
 
-                // counts
+                // nums
 
-                var countsUsed = 0;
+                var numsUsed = 0;
 
                 for (var numStart = pos;; ++pos)
                 {
@@ -88,9 +105,9 @@ class ScreenRecorder
                         continue;
 
                     if (pos != numStart)
-                        counts[countsUsed++] = int.Parse(span.Slice(numStart, pos - numStart));
+                        nums[numsUsed++] = int.Parse(span.Slice(numStart, pos - numStart));
                     else if (span[pos] == ';')
-                        counts[countsUsed++] = 0;
+                        nums[numsUsed++] = 0;
 
                     if (span[pos] != ';')
                         break;
@@ -98,49 +115,49 @@ class ScreenRecorder
                     numStart = pos + 1;
                 }
 
-                int GetCount(ReadOnlySpan<int> c, int i = 0) => countsUsed > i ? c[i] : 0;
-                int GetCountOB(ReadOnlySpan<int> c, int i = 0) => Math.Max(GetCount(c, i), 1);
-                int GetCountZB(ReadOnlySpan<int> c, int i = 0) => GetCountOB(c, i) - 1;
+                int GetNum(ReadOnlySpan<int> c, int i = 0) => numsUsed > i ? c[i] : 0;
+                int GetNumOneBased(ReadOnlySpan<int> c, int i = 0) => Math.Max(GetNum(c, i), 1);
+                int GetNumZeroBased(ReadOnlySpan<int> c, int i = 0) => GetNumOneBased(c, i) - 1;
 
                 // code
 
                 switch (span[pos++])
                 {
                     case 'A': // CUU (move the cursor up n rows)
-                        SetCursor(_cursor - (0, GetCountOB(counts)));
+                        SetCursor(_cursor - (0, GetNumOneBased(nums)));
                         break;
 
                     case 'B': // CUD (move the cursor down n rows)
-                        SetCursor(_cursor + (0, GetCountOB(counts)));
+                        SetCursor(_cursor + (0, GetNumOneBased(nums)));
                         break;
 
                     case 'C': // CUF (move the cursor right n columns)
-                        SetCursor(_cursor + (GetCountOB(counts), 0));
+                        SetCursor(_cursor + (GetNumOneBased(nums), 0));
                         break;
 
                     case 'D': // CUB (move the cursor left n columns)
-                        SetCursor(_cursor - (GetCountOB(counts), 0));
+                        SetCursor(_cursor - (GetNumOneBased(nums), 0));
                         break;
 
                     case 'E': // CNL (move the cursor to the beginning of line n down)
-                        SetCursor((0, _cursor.Y + GetCountOB(counts)));
+                        SetCursor((0, _cursor.Y + GetNumOneBased(nums)));
                         break;
 
                     case 'F': // CPL (move the cursor to the beginning of line n up)
-                        SetCursor((0, _cursor.Y - GetCountOB(counts)));
+                        SetCursor((0, _cursor.Y - GetNumOneBased(nums)));
                         break;
 
                     case 'G': // CHA (move the cursor to absolute column n)
-                        SetCursor((GetCountZB(counts), _cursor.Y));
+                        SetCursor((GetNumZeroBased(nums), _cursor.Y));
                         break;
 
                     case 'd': // VPA (move the cursor to absolute row n)
-                        SetCursor((_cursor.X, GetCountZB(counts)));
+                        SetCursor((_cursor.X, GetNumZeroBased(nums)));
                         break;
 
                     case 'H': // CUP (move the cursor to absolute position)
                     case 'f': // HVP (same as CUP but older)
-                        SetCursor((GetCountZB(counts, 1), GetCountZB(counts)));
+                        SetCursor((GetNumZeroBased(nums, 1), GetNumZeroBased(nums)));
                         break;
 
                     case 's': // ANSISYSSC
@@ -166,7 +183,7 @@ class ScreenRecorder
 
                     case ' ': // DECSCUSR
                         Expect(span, 'q');
-                        if (GetCount(counts) > 6)
+                        if (GetNum(nums) > 6)
                             throw new UnexpectedEscapeException();
                         break; // ignore
 
@@ -177,7 +194,14 @@ class ScreenRecorder
                     case 'X': // ECH (overwrite chars from current with spaces)
                     case 'L': // IL (insert lines, shifting+clipping current and below down)
                     case 'M': // DL (delete lines, removing+shifting up from current, replacing from bottom end with blank lines)
+                        break; // ignore
+
                     case 'J': // ED (replace text on screen according to n mode with spaces)
+                        // special: reset tracking on a full screen reset
+                        if (GetNum(nums) == 2)
+                            Array.Fill(_cells, default);
+                        break; // ignore
+
                     case 'K': // ED (replace text in current line according to n mode with spaces)
                     case 'm': // SGR (set format of text)
                     case 'r': // DECSTBM (set scrolling region)
@@ -215,6 +239,49 @@ class ScreenRecorder
                     throw new UnexpectedEscapeException();
             }
         }
+
+        if (_show != ShowType.None)
+            Draw();
+    }
+
+    unsafe void Draw()
+    {
+        var stdout = Kernel32.GetStdHandle(Kernel32.StdHandle.STD_OUTPUT_HANDLE);
+        var cells = new Kernel32.CHAR_INFO[_size.X * _size.Y];
+        var rect = new SMALL_RECT { Left = 0, Top = 0, Right = (short)_size.X, Bottom = (short)_size.Y };
+
+        fixed (Kernel32.CHAR_INFO* cellsPtr = cells)
+        {
+            Kernel32.ReadConsoleOutput(stdout, cellsPtr,
+                new COORD { X = (short)_size.X, Y = (short)_size.Y },
+                new COORD { X = 0, Y = 0 },
+                ref rect);
+        }
+
+        for (var y = 0; y < _size.Y; ++y)
+        {
+            for (var x = 0; x < _size.X; ++x)
+            {
+                var off = y * _size.X + x;
+                var count = _show == ShowType.Count ? _cells[off].count : _cells[off].chars;
+                cells[off].Char.UnicodeChar = (char)(count switch
+                {
+                    0 => ' ',
+                    < 10 => '0' + count,
+                    < 36 => 'A' + count-10,
+                    _ => '#',
+                });
+            }
+        }
+
+        fixed (Kernel32.CHAR_INFO* cellsPtr = cells)
+        {
+            Kernel32.WriteConsoleOutput(stdout, cellsPtr,
+                new COORD { X = (short)_size.X, Y = (short)_size.Y },
+                new COORD { X = 0, Y = 0 },
+                &rect);
+        }
     }
 }
+
 #endif // ENABLE_SCREEN_RECORDER

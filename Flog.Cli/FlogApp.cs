@@ -145,6 +145,13 @@ class FlogApp : IDisposable
             _editFilterPane.Draw();
     }
 
+    void Refresh()
+    {
+        _screen.OutClearScreen();
+        UpdateLayout();
+        Draw();
+    }
+
     CliExitCode? ProcessGlobalEvents(EventBuffer<ITerminalEvent> events)
     {
         foreach (var evt in events)
@@ -167,9 +174,15 @@ class FlogApp : IDisposable
                     return UnixSignal.KeyboardInterrupt.AsCliExitCode();
 
                 case CharEvent { Char: 'l', Alt: false, Ctrl: true }:
-                    UpdateLayout();
-                    Draw();
+                    Refresh();
                     break;
+
+                #if ENABLE_SCREEN_RECORDER
+                case KeyEvent { Key: ConsoleKey.F12, Alt: false, Ctrl: false }:
+                    if (!_screen.Recorder.ToggleShow())
+                        Refresh();
+                    break;
+                #endif
 
                 case ResizeEvent:
                     UpdateLayout();
