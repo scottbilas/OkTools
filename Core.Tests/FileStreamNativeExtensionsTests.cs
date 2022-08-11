@@ -1,4 +1,6 @@
+#pragma warning disable CA1001
 class FileStreamNativeExtensionsTests : TestFileSystemFixture
+#pragma warning restore CA1001
 {
     NPath _path = null!;
     FileStream _stream = null!;

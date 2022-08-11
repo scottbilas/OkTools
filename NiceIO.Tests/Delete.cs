@@ -1,4 +1,6 @@
-﻿namespace NiceIO.Tests
+﻿// ReSharper disable StringLiteralTypo CommentTypo
+
+namespace NiceIO.Tests
 {
 	[TestFixture]
 	public class Delete : TestWithTempDir
@@ -12,7 +14,7 @@
 			Assert.IsTrue(path.FileExists());
 			path.Delete();
 
-			AssertTempDir(new string[0]);
+			AssertTempDir(Array.Empty<string>());
 		}
 
 		[Test]
@@ -29,7 +31,7 @@
 
 			path.Delete();
 
-			AssertTempDir(new string[0]);
+			AssertTempDir(Array.Empty<string>());
 		}
 
 		[Test]
@@ -99,12 +101,13 @@
 			var path = _tempPath.Combine("somedir");
 			Assert.IsTrue(path.DirectoryExists());
 
-			using (var writer = File.Open(path.Combine("somefile").ToString(), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
-			{
-				Assert.Throws<IOException>(() => path.DeleteContents());
-			}
+			using (File.Open(path.Combine("somefile").ToString(), FileMode.OpenOrCreate, FileAccess.Write, FileShare.None))
+            {
+                Assert.Throws<IOException>(() => path.DeleteContents());
+            }
 		}
 
+        [Test]
 		public void DeleteIfExistsOnFileThatExists()
 		{
 			PopulateTempDir(new[] { "somefile" });
@@ -112,16 +115,16 @@
 			var path = _tempPath.Combine("somefile");
 			path.DeleteIfExists();
 
-			AssertTempDir(new string[0]);
+			AssertTempDir(Array.Empty<string>());
 		}
 
 		[Test]
 		public void DeleteIfExistsOnFileThatDoesNotExist()
 		{
-			var path = _tempPath.Combine("somefile");
+            var path = _tempPath.Combine("somefile");
 			path.DeleteIfExists();
 
-			AssertTempDir(new string[0]);
+			AssertTempDir(Array.Empty<string>());
 		}
 	}
 }

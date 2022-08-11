@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Builders;
@@ -10,7 +9,7 @@ public struct DirectoryBackup : IDisposable
 {
     public DirectoryBackup(string folderPath)
     {
-        _backupPath = Path.GetTempPath().ToNPath().Combine(Process.GetCurrentProcess().Id.ToString());
+        _backupPath = Path.GetTempPath().ToNPath().Combine(Environment.ProcessId.ToString());
         _fullPath = folderPath.ToNPath().MakeAbsolute();
 
         Directory.CreateDirectory(_backupPath);

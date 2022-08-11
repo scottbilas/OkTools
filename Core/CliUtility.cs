@@ -34,7 +34,7 @@ public static class CliUtility
         }
     }
 
-    public enum StdStream
+    public enum StdChannel
     {
         Stdout,
         Stderr
@@ -43,7 +43,7 @@ public static class CliUtility
     // TODO: use initializer struct
     public static int Execute(
         string exePath, IEnumerable<object>? processArgs, string? workingDirectory,
-        Action<string, StdStream>? onLine, IEnumerable<string>? stdinLines = null)
+        Action<string, StdChannel>? onLine, IEnumerable<string>? stdinLines = null)
     {
         processArgs = processArgs.OrEmpty();
 
@@ -91,7 +91,7 @@ public static class CliUtility
             else if (onLine != null)
             {
                 lock (serializer)
-                    onLine(line.Data, StdStream.Stdout);
+                    onLine(line.Data, StdChannel.Stdout);
             }
         };
         process.ErrorDataReceived += (_, line) =>
@@ -101,7 +101,7 @@ public static class CliUtility
             else if (onLine != null)
             {
                 lock (serializer)
-                    onLine(line.Data, StdStream.Stderr);
+                    onLine(line.Data, StdChannel.Stderr);
             }
         };
         // ReSharper restore AccessToDisposedClosure
@@ -134,7 +134,7 @@ public static class CliUtility
     {
         return Execute(
             exePath, processArgs, workingDirectory,
-            (line, stream) => (stream == StdStream.Stdout ? stdout : stderr).Add(line),
+            (line, stream) => (stream == StdChannel.Stdout ? stdout : stderr).Add(line),
             stdin);
     }
 }

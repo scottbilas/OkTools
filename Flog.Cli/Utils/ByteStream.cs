@@ -36,14 +36,14 @@
     public void Seek(int offset = 1)
     {
         if ((_read + offset) > _write)
-            throw new IndexOutOfRangeException("Can't skip past end of stream");
+            throw new ArgumentOutOfRangeException(nameof(offset), "Can't skip past end of stream");
         _read += offset;
     }
 
     void ThrowIfEmpty()
     {
         if (_read >= _write)
-            throw new IndexOutOfRangeException("Stream is empty");
+            throw new OverflowException("Stream is empty");
     }
 
     void EnsureCanWrite(int count)

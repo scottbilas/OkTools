@@ -5,7 +5,7 @@ namespace OkTools.Core;
 
 public class DocoptReflowOptions
 {
-    public int MinWrapWidth = 0;
+    public int MinWrapWidth;
     public int IndentFallback = 15;
     public string Eol = "\n";
 }
@@ -23,9 +23,9 @@ public static class DocoptUtility
         // TODO: try to keep [default: foo] together on the same line
 
         if (wrapWidth <= 0)
-            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $" out of range 0 < {wrapWidth}");
+            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $"Out of range 0 < {wrapWidth}");
         if (options.MinWrapWidth < 0 || options.MinWrapWidth >= wrapWidth)
-            throw new ArgumentOutOfRangeException(nameof(options.MinWrapWidth), $" out of range 0 <= {options.MinWrapWidth} < {wrapWidth}");
+            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $"{nameof(options.MinWrapWidth)} out of range 0 <= {options.MinWrapWidth} < {wrapWidth}");
 
         var result = new StringBuilder();
 

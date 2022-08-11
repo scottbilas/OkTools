@@ -14,14 +14,14 @@ public struct Int2 : IEquatable<Int2>
     public Int2((int, int) xy) =>
         (X, Y) = xy;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 1");
 
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
@@ -114,14 +114,14 @@ public struct Int3 : IEquatable<Int3>
     public Int3((int, int, int) xyz) =>
         (X, Y, Z) = xyz;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 2");
 
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
@@ -214,14 +214,14 @@ public struct Int4 : IEquatable<Int4>
     public Int4((int, int, int, int) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 3");
 
     public unsafe ref int this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (int* i = &X) { return ref i[index]; }
         }
     }
@@ -314,14 +314,14 @@ public struct Long2 : IEquatable<Long2>
     public Long2((long, long) xy) =>
         (X, Y) = xy;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 1");
 
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
@@ -414,14 +414,14 @@ public struct Long3 : IEquatable<Long3>
     public Long3((long, long, long) xyz) =>
         (X, Y, Z) = xyz;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 2");
 
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
@@ -514,14 +514,14 @@ public struct Long4 : IEquatable<Long4>
     public Long4((long, long, long, long) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 3");
 
     public unsafe ref long this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (long* i = &X) { return ref i[index]; }
         }
     }
@@ -614,14 +614,14 @@ public struct Bool2 : IEquatable<Bool2>
     public Bool2((bool, bool) xy) =>
         (X, Y) = xy;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 1");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 1");
 
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 1)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }
@@ -666,14 +666,14 @@ public struct Bool3 : IEquatable<Bool3>
     public Bool3((bool, bool, bool) xyz) =>
         (X, Y, Z) = xyz;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 2");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 2");
 
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 2)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }
@@ -718,14 +718,14 @@ public struct Bool4 : IEquatable<Bool4>
     public Bool4((bool, bool, bool, bool) xyzw) =>
         (X, Y, Z, W) = xyzw;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= 3");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 3");
 
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > 3)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }

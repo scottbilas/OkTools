@@ -174,7 +174,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
         if (Revision.HasValue && other.Revision.HasValue && Revision.Value != other.Revision.Value) return false;
         if (ReleaseType.HasValue && other.ReleaseType.HasValue && ReleaseType.Value != other.ReleaseType.Value) return false;
         if (Incremental.HasValue && other.Incremental.HasValue && Incremental.Value != other.Incremental.Value) return false;
-        if (Branch != null && other.Branch != null && string.Compare(Branch, other.Branch, StringComparison.OrdinalIgnoreCase) != 0) return false;
+        if (Branch != null && other.Branch != null && !string.Equals(Branch, other.Branch, StringComparison.OrdinalIgnoreCase)) return false;
         if (Hash != null && other.Hash != null && !IsHashSame(Hash, other.Hash)) return false;
 
         return true;

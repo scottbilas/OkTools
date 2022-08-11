@@ -13,7 +13,7 @@ public static class FileStreamNativeExtensions
         // ReSharper disable InconsistentNaming
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool GetFileInformationByHandleEx(IntPtr hFile, int FileInformationClass, IntPtr lpFileInformation, uint dwBufferSize);
+        public static extern bool GetFileInformationByHandleEx(nint hFile, int FileInformationClass, nint lpFileInformation, uint dwBufferSize);
 
         public struct FILE_STANDARD_INFO
         {

@@ -147,7 +147,7 @@ public class OkList<T> : IReadOnlyList<T>
         get
         {
             if ((uint)index >= (uint)_used)
-                throw new IndexOutOfRangeException($"Out of range 0 <= {index} < {_used} (count)");
+                throw new ArgumentOutOfRangeException(nameof(index), $"Out of range 0 <= {index} < {_used} (count)");
             return ref _items[index];
         }
     }
@@ -181,7 +181,7 @@ public class OkList<T> : IReadOnlyList<T>
     public void RemoveAtAndSwapBack(int index)
     {
         if ((uint)index >= (uint)_used)
-            throw new IndexOutOfRangeException($"Out of range 0 <= {index} < {_used} (count)");
+            throw new ArgumentOutOfRangeException(nameof(index), $"Out of range 0 <= {index} < {_used} (count)");
 
         _items[index] = _items[_used - 1];
         ReduceCountTo(_used - 1);

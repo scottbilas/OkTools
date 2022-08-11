@@ -27,8 +27,10 @@
 using System.Diagnostics;
 using System.Text;
 
-// TODO: niceio needs to be modernized..
-#pragma warning disable 1072, 8600, 8603, 8604, 8618, 8625, 8765, 8767
+// TODO: eliminate these
+#pragma warning disable CA1036
+#pragma warning disable CA1304
+#pragma warning disable CA1310
 
 namespace NiceIO
 {
@@ -56,14 +58,14 @@ namespace NiceIO
         public NPath(string path)
         {
             if (path == null)
-                throw new ArgumentNullException();
+                throw new ArgumentNullException(nameof(path));
 
             path = ParseDriveLetter(path, out _driveLetter);
 
             if (path == "/")
             {
                 _isRelative = false;
-                _elements = new string[] {};
+                _elements = Array.Empty<string>();
             }
             else
             {
@@ -74,7 +76,7 @@ namespace NiceIO
             }
         }
 
-        NPath(IEnumerable<string> elements, bool isRelative, string driveLetter)
+        NPath(IEnumerable<string> elements, bool isRelative, string? driveLetter)
         {
             _elements = elements.ToArray();
             _isRelative = isRelative;
@@ -109,15 +111,15 @@ namespace NiceIO
 
         static bool HasNonDotDotLastElement(List<string> stack)
         {
-            return stack.Count > 0 && stack[stack.Count - 1] != "..";
+            return stack.Count > 0 && stack[^1] != "..";
         }
 
-        string ParseDriveLetter(string path, out string driveLetter)
+        static string ParseDriveLetter(string path, out string? driveLetter)
         {
             if (path.Length >= 2 && path[1] == ':')
             {
                 driveLetter = path[0].ToString();
-                return path.Substring(2);
+                return path[2..];
             }
 
             driveLetter = null;
@@ -180,7 +182,7 @@ namespace NiceIO
         public (NPath basePath, NPath subPath) SplitAtElement(int elementIndex)
         {
             if (elementIndex < 0 || elementIndex >= Depth)
-                throw new IndexOutOfRangeException($"Index {elementIndex} out of range");
+                throw new ArgumentOutOfRangeException(nameof(elementIndex), $"Out of range 0 <= {elementIndex} < {Depth}");
 
             return (
                 new NPath(_elements.Take(elementIndex), _isRelative, _driveLetter),
@@ -194,7 +196,7 @@ namespace NiceIO
                 if (!IsRelative && !path.IsRelative && _driveLetter != path._driveLetter)
                     throw new ArgumentException("Path.RelativeTo() was invoked with two paths that are on different volumes. invoked on: " + ToString() + " asked to be made relative to: " + path);
 
-                NPath commonParent = null;
+                NPath? commonParent = null;
                 foreach (var parent in RecursiveParents)
                 {
                     commonParent = path.RecursiveParents.FirstOrDefault(otherParent => otherParent == parent);
@@ -281,7 +283,7 @@ namespace NiceIO
         }
 
         // TODO: throw on relative
-        public string DriveLetter
+        public string? DriveLetter
         {
             get { return _driveLetter; }
 		}
@@ -377,7 +379,7 @@ namespace NiceIO
             if (_driveLetter != null)
             {
                 sb.Append(_driveLetter);
-                sb.Append(":");
+                sb.Append(':');
             }
             if (!_isRelative)
                 sb.Append(Slash(slashMode));
@@ -412,32 +414,27 @@ namespace NiceIO
             }
         }
 
-        public override bool Equals(Object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj == null)
-                return false;
-
-            // If parameter cannot be cast to Point return false.
-            var p = obj as NPath;
-            if ((Object)p == null)
-                return false;
-
-            return Equals(p);
+            return obj is NPath path && Equals(path);
         }
 
-        public bool Equals(NPath p)
+        public bool Equals(NPath? other)
         {
-            if (p._isRelative != _isRelative)
+            if (other == null)
                 return false;
 
-            if (!string.Equals(p._driveLetter, _driveLetter, s_pathStringComparison))
+            if (other._isRelative != _isRelative)
                 return false;
 
-            if (p._elements.Length != _elements.Length)
+            if (!string.Equals(other._driveLetter, _driveLetter, s_pathStringComparison))
+                return false;
+
+            if (other._elements.Length != _elements.Length)
                 return false;
 
             for (var i = 0; i != _elements.Length; i++)
-                if (!string.Equals(p._elements[i], _elements[i], s_pathStringComparison))
+                if (!string.Equals(other._elements[i], _elements[i], s_pathStringComparison))
                     return false;
 
             return true;
@@ -473,8 +470,9 @@ namespace NiceIO
             }
         }
 
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
+            // TODO: wat? A < B if B==null?
             if (obj == null)
                 return -1;
 
@@ -619,17 +617,17 @@ namespace NiceIO
             return Copy(new NPath(dest));
         }
 
-        public NPath Copy(string dest, Func<NPath, bool> fileFilter)
+        public NPath? Copy(string dest, Func<NPath, bool> fileFilter)
         {
             return Copy(new NPath(dest), fileFilter);
         }
 
         public NPath Copy(NPath dest)
         {
-            return Copy(dest, p => true);
+            return Copy(dest, _ => true)!;
         }
 
-        public NPath Copy(NPath dest, Func<NPath, bool> fileFilter)
+        public NPath? Copy(NPath dest, Func<NPath, bool> fileFilter)
         {
             ThrowIfRelative();
             if (dest.IsRelative)
@@ -649,7 +647,7 @@ namespace NiceIO
             return NPath.CurrentDirectory.Combine (this);
         }
 
-        NPath CopyWithDeterminedDestination(NPath absoluteDestination, Func<NPath,bool> fileFilter)
+        NPath? CopyWithDeterminedDestination(NPath absoluteDestination, Func<NPath,bool> fileFilter)
         {
             if (absoluteDestination.IsRelative)
                 throw new ArgumentException ("absoluteDestination must be absolute");

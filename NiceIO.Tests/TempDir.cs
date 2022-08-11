@@ -1,6 +1,6 @@
 ﻿namespace NiceIO.Tests
 {
-	public class TempDir : IDisposable
+	public sealed class TempDir : IDisposable
 	{
 		private readonly NPath _path;
 

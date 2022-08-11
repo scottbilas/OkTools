@@ -57,7 +57,7 @@ public static class ArrayExtensions
     public static void ShiftLeftFixed(this BitArray @this, int count)
     {
         if ((uint)count > (uint)@this.Length)
-            throw new ArgumentOutOfRangeException(nameof(count), $" out of range 0 <= {count} <= {@this.Length}");
+            throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {@this.Length}");
         @this.RightShift(count);
     }
 
@@ -74,7 +74,7 @@ public static class ArrayExtensions
     public static void ShiftRightFixed(this BitArray @this, int count)
     {
         if ((uint)count > (uint)@this.Length)
-            throw new ArgumentOutOfRangeException(nameof(count), $" out of range 0 <= {count} <= {@this.Length}");
+            throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {@this.Length}");
         @this.LeftShift(count);
     }
 

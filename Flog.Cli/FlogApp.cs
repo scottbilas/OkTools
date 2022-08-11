@@ -360,7 +360,7 @@ class FlogApp : IDisposable
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidOperationException();
 
             }
 

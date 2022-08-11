@@ -10,8 +10,8 @@ class NativeWindowsTests
         // we're using npaths to normalize trailing slashes
 
         var expected = Directory.GetCurrentDirectory().ToNPath();
-        var actual0 = NativeWindows.GetProcessCurrentDirectory(Process.GetCurrentProcess().Id)!.ToNPath();
-        var actual1 = NativeWindows.SafeGetProcessCurrentDirectory(Process.GetCurrentProcess().Id)!.ToNPath();
+        var actual0 = NativeWindows.GetProcessCurrentDirectory(Environment.ProcessId)!.ToNPath();
+        var actual1 = NativeWindows.SafeGetProcessCurrentDirectory(Environment.ProcessId)!.ToNPath();
 
         actual0.ShouldBe(expected);
         actual1.ShouldBe(expected);
@@ -26,14 +26,14 @@ class NativeWindowsTests
 
     // can't use Environment.CommandLine as it has been processed by .net and won't match
     [DllImport("kernel32.dll", CharSet = CharSet.Auto)]
-    static extern IntPtr GetCommandLine();
+    static extern nint GetCommandLine();
 
     [Test]
     public void XGetProcessCommandLine_WithValidProcessId_ReturnsCommandLine()
     {
         var expected = Marshal.PtrToStringAuto(GetCommandLine());
-        var actual0 = NativeWindows.GetProcessCommandLine(Process.GetCurrentProcess().Id);
-        var actual1 = NativeWindows.SafeGetProcessCommandLine(Process.GetCurrentProcess().Id);
+        var actual0 = NativeWindows.GetProcessCommandLine(Environment.ProcessId);
+        var actual1 = NativeWindows.SafeGetProcessCommandLine(Environment.ProcessId);
 
         actual0.ShouldBe(expected);
         actual1.ShouldBe(expected);

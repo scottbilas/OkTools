@@ -1,5 +1,8 @@
 using System.Runtime.CompilerServices;
 
+// ReSharper disable IdentifierTypo
+// ReSharper disable CommentTypo
+
 static class OkListTestExtensions
 {
     public static ref T RefAtDirect<T>(this OkList<T> @this, int index) => ref @this.AsArraySegment.Array![index];
@@ -204,7 +207,7 @@ class OkListTests
     }
 
     // return true if clear with this trimCapacityTo causes a realloc
-    bool TestRealloc<T>(OkList<T> list, int trimCapacityTo)
+    static bool TestRealloc<T>(OkList<T> list, int trimCapacityTo)
     {
         var old = list.AsArraySegment.Array;
 
@@ -393,17 +396,17 @@ class OkListTests
     public void Indexer_WithInvalidIndex_Throws()
     {
         var list = new OkList<S>(10) { new() { V = 1 }, new() { V = 2 }, new() { V = 3 }, new() { V = 4 } };
-        Should.Throw<IndexOutOfRangeException>(() => _ = list[ -1]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = list[-50]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = list[  4]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = list[100]);
-        Should.Throw<IndexOutOfRangeException>(() => list[ -1].V = 42);
-        Should.Throw<IndexOutOfRangeException>(() => list[-50].V = 42);
-        Should.Throw<IndexOutOfRangeException>(() => list[  4].V = 42);
-        Should.Throw<IndexOutOfRangeException>(() => list[100].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ -1]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[-50]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[  4]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[100]);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[ -1].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[-50].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[  4].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[100].V = 42);
     }
 
-    void Validate<T>(OkList<T> list, params T[] contents)
+    static void Validate<T>(OkList<T> list, params T[] contents)
     {
         var rolist = (IReadOnlyList<T>)list;
         var array = list.AsArraySegment;
@@ -504,12 +507,12 @@ class OkListTests
     [Test]
     public void RemoveAtAndSwapBack_WithInvalidIndex_Throws()
     {
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 0).RemoveAtAndSwapBack(0));
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-1));
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-100));
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(5));
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(6));
-        Should.Throw<IndexOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(100));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 0).RemoveAtAndSwapBack(0));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-1));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(-100));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(5));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(6));
+        Should.Throw<ArgumentOutOfRangeException>(() => new OkList<int>(null, 5).RemoveAtAndSwapBack(100));
     }
 
     [Test]

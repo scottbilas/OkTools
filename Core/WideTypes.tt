@@ -27,14 +27,14 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public <#=type#>((<#=Repeat(size, intType)#>) <#=combinedVars#>) =>
         (<#=fieldList#>) = <#=combinedVars#>;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= <#=size-1#>");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= <#=size-1#>");
 
     public unsafe ref <#=intType#> this[int index]
     {
         get
         {
             if (index < 0 || index > <#=size-1#>)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (<#=intType#>* i = &X) { return ref i[index]; }
         }
     }
@@ -131,14 +131,14 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public <#=type#>((<#=Repeat(size, "bool")#>) <#=combinedVars#>) =>
         (<#=fieldList#>) = <#=combinedVars#>;
 
-    void ThrowIndexOutOfRange(int index) => throw new IndexOutOfRangeException($"Failed 0 <= {index} <= <#=size-1#>");
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= <#=size-1#>");
 
     public unsafe ref bool this[int index]
     {
         get
         {
             if (index < 0 || index > <#=size-1#>)
-                ThrowIndexOutOfRange(index);
+                ThrowArgumentOutOfRange(index);
             fixed (bool* i = &X) { return ref i[index]; }
         }
     }

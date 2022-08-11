@@ -1,6 +1,7 @@
 namespace OkTools.Core;
 
 // TODO: consider ditching this and going with https://github.com/TylerBrinkley/Enums.NET or similar
+// TODO: also look at recent api changes to Enum in .net 6, may have eliminated need for most of this
 
 [PublicAPI]
 public static class EnumUtility
@@ -54,7 +55,7 @@ public static class EnumUtility
 
             // EnumUtility doesn't care about this, but it is probably a sign of a bug elsewhere
             if (names.Count != lowerNames.Length)
-                throw new Exception($"Unexpected case insensitive duplicates found in enum {enumType.FullName}");
+                throw new InvalidOperationException($"Unexpected case insensitive duplicates found in enum {enumType.FullName}");
 
             return lowerNames;
         });

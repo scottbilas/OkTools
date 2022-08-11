@@ -68,7 +68,7 @@ class EnumerableExtensionsTests
     public void WhereNotNull_WithItemsWithNulls_ReturnsFilteredForNull()
     {
         var dummy1 = Enumerable.Empty<float>();
-        var dummy2 = new Exception();
+        var dummy2 = new InvalidOperationException();
         var enumerable = new object?[] { null, "abc", dummy1, dummy2, null, null, "ghi" };
 
         enumerable.WhereNotNull().ShouldBe(new object[] { "abc", dummy1, dummy2, "ghi" });

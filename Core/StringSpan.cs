@@ -5,7 +5,7 @@ namespace OkTools.Core;
 
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString()}")]
-public readonly struct StringSpan
+public readonly struct StringSpan : IEquatable<StringSpan>
 {
     // TODO: TESTS
 
@@ -22,9 +22,9 @@ public readonly struct StringSpan
     public StringSpan(string text, int start, int end)
     {
         if (start < 0 || start > text.Length)
-            throw new IndexOutOfRangeException(nameof(start) + $" out of range 0 <= {start} <= {text.Length}");
+            throw new ArgumentOutOfRangeException(nameof(start), $"Out of range 0 <= {start} <= {text.Length}");
         if (end < start || end > text.Length)
-            throw new IndexOutOfRangeException(nameof(end) + $" out of range {start} <= {end} <= {text.Length}");
+            throw new ArgumentOutOfRangeException(nameof(end), $"Out of range {start} <= {end} <= {text.Length}");
 
         Text = text;
         Start = start;
@@ -86,4 +86,22 @@ public readonly struct StringSpan
     }
 
     public override string ToString() => Text.Substring(Start, Length);
+
+    public bool Equals(StringSpan other)
+    {
+        return Text == other.Text && Start == other.Start && End == other.End;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is StringSpan other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Text, Start, End);
+    }
+
+    public static bool operator ==(StringSpan left, StringSpan right) => left.Equals(right);
+    public static bool operator !=(StringSpan left, StringSpan right) => !left.Equals(right);
 }

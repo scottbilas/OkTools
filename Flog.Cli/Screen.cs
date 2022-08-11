@@ -54,7 +54,7 @@ partial class Screen : IDisposable
         // initial size event to kick off a layout and refresh
         OnResized(Terminal.Size);
 
-        void Wrap(Action action)
+        async void Wrap(Action action)
         {
             try
             {
@@ -62,7 +62,7 @@ partial class Screen : IDisposable
             }
             catch (Exception x)
             {
-                _terminalEvents.Writer.WriteAsync(new ErrorEvent(x), _disposed.Token);
+                await _terminalEvents.Writer.WriteAsync(new ErrorEvent(x), _disposed.Token);
             }
         }
 

@@ -45,7 +45,7 @@ public static partial class Program
                 'k' => 1024,
                 'm' => 1024 * 1024,
                 'g' => 1024 * 1024 * 1024,
-                _ => throw new Exception("Regex fail")
+                _ => throw new FormatException("Regex fail")
             };
         }
 

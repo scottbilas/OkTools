@@ -21,9 +21,9 @@ public static class StringExtensions
         // TODO: use span/unsafe and optimize a bit (see string.IndexOf for example)
 
         if (startIndex < 0 || startIndex > @this.Length)
-            throw new ArgumentOutOfRangeException(nameof(startIndex), $"not in range 0 <= {startIndex} <= {@this.Length}");
+            throw new ArgumentOutOfRangeException(nameof(startIndex), $"Out of range 0 <= {startIndex} <= {@this.Length}");
         if (count < 0 || count > @this.Length - startIndex)
-            throw new ArgumentOutOfRangeException(nameof(count), $"not in range 0 <= {count} <= {@this.Length - startIndex}");
+            throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {@this.Length - startIndex}");
 
         for (var (i, iend) = (startIndex, startIndex + count); i != iend; ++i)
         {
@@ -45,9 +45,9 @@ public static class StringExtensions
         // TODO: use span/unsafe and optimize a bit (see string.IndexOf for example)
 
         if (startIndex < 0 || startIndex > @this.Length)
-            throw new ArgumentOutOfRangeException(nameof(startIndex), $"not in range 0 <= {startIndex} <= {@this.Length}");
+            throw new ArgumentOutOfRangeException(nameof(startIndex), $"Out of range 0 <= {startIndex} <= {@this.Length}");
         if (count < 0 || count > @this.Length - startIndex)
-            throw new ArgumentOutOfRangeException(nameof(count), $"not in range 0 <= {count} <= {@this.Length - startIndex}");
+            throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {@this.Length - startIndex}");
 
         for (var i = startIndex + count - 1; i >= startIndex; --i)
         {

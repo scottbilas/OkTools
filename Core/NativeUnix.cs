@@ -13,13 +13,13 @@ namespace OkTools.Core;
 [PublicAPI]
 public static class NativeUnix
 {
+    #pragma warning disable
     struct timespec
     {
-        #pragma warning disable CS0169
         ulong tv_sec;
         ulong tv_nsec;
-        #pragma warning restore CS0169
     }
+    #pragma warning restore
 
     static class Mac
     {
@@ -47,7 +47,10 @@ public static class NativeUnix
             public ulong st_qspare2;
         }
 
-        [DllImport("libc", EntryPoint = "stat$INODE64", SetLastError = true)]
+        #pragma warning disable CA2101
+        [DllImport("libc", EntryPoint = "stat$INODE64", SetLastError = true,
+            CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
+        #pragma warning restore CA2101
         public static extern int stat(string file, ref STAT64 buf);
     }
 
@@ -78,13 +81,18 @@ public static class NativeUnix
         public static int stat(string file, ref STAT64 buf) =>
             __xstat(k_StatVersion, file, ref buf);
 
-        [DllImport("libc", SetLastError = true)]
+        #pragma warning disable CA2101
+        [DllImport("libc", SetLastError = true,
+            CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
+        #pragma warning restore CA2101
         static extern int __xstat(int statVersion, string file, ref STAT64 buf);
     }
 
     [Flags]
     public enum UnixFilePermissions
     {
+        #pragma warning disable CA1707
+
         // user permissions
         S_IRUSR = 0x100,
         S_IWUSR = 0x80,
@@ -100,6 +108,8 @@ public static class NativeUnix
         S_IWOTH = 0x02,
         S_IXOTH = 0x01,
 
+        #pragma warning restore CA1707
+
         None = 0,
         All = 0x1FF
     }
@@ -107,7 +117,10 @@ public static class NativeUnix
     public static int SetFileMode(string pathname, UnixFilePermissions mode) =>
         chmod(pathname, mode);
 
-    [DllImport("libc", SetLastError = true, CharSet = CharSet.Ansi)]
+    #pragma warning disable CA2101
+    [DllImport("libc", SetLastError = true,
+        CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, ExactSpelling = true)]
+    #pragma warning restore CA2101
     static extern int chmod(string pathname, UnixFilePermissions mode);
 
     public static int GetFileMode(string filePath, out UnixFilePermissions permission)

@@ -6,7 +6,7 @@
     public void OutOfRange_Throws(string path, int[] badIndices)
     {
         foreach (var badIndex in badIndices)
-            Should.Throw<IndexOutOfRangeException>(() => path.ToNPath().SplitAtElement(badIndex));
+            Should.Throw<ArgumentOutOfRangeException>(() => path.ToNPath().SplitAtElement(badIndex));
     }
 
     [TestCase("q:/path/to/thing.txt", "q")]

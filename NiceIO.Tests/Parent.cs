@@ -1,4 +1,6 @@
-﻿namespace NiceIO.Tests
+﻿// ReSharper disable StringLiteralTypo
+
+namespace NiceIO.Tests
 {
 	[TestFixture]
 	public class Parent
@@ -27,7 +29,7 @@
 		[Test]
 		public void ParentFromEmpty()
 		{
-			Assert.Throws<InvalidOperationException>(() => { var p = new NPath ("/").Parent; });
+			Assert.Throws<InvalidOperationException>(() => { _ = new NPath ("/").Parent; });
 		}
 
 		[Test]
@@ -82,7 +84,7 @@
 		{
 			var path = new NPath("C:\\");
 
-			Assert.That(path.RecursiveParents, Is.EqualTo(new NPath[] {}));
+			Assert.That(path.RecursiveParents, Is.EqualTo(Array.Empty<NPath>()));
 		}
 
 		[Test]

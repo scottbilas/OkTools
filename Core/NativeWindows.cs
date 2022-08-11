@@ -50,12 +50,12 @@ public static class NativeWindows
             byte* processParametersPtr;
             if (!Kernel32.ReadProcessMemory(handle,
                     (byte*)processBasicInformation.PebBaseAddress + k_processParametersOffset,
-                    &processParametersPtr, new UIntPtr((uint)sizeof(byte*)), out _))
+                    &processParametersPtr, (nuint)sizeof(byte*), out _))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             var processParameterUStr = new NTDll.UNICODE_STRING();
             if (!Kernel32.ReadProcessMemory(handle,
-                    processParametersPtr + offset, &processParameterUStr, new UIntPtr((uint)Marshal.SizeOf(processParameterUStr)), out _))
+                    processParametersPtr + offset, &processParameterUStr, (nuint)Marshal.SizeOf(processParameterUStr), out _))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
 
             if (processParameterUStr.Buffer == null || processParameterUStr.Length == 0)
@@ -65,7 +65,7 @@ public static class NativeWindows
             fixed (char* strBuffer = processParameterStr)
             {
                 if (!Kernel32.ReadProcessMemory(handle,
-                        processParameterUStr.Buffer, strBuffer, new UIntPtr(processParameterUStr.Length), out _))
+                        processParameterUStr.Buffer, strBuffer, (nuint)processParameterUStr.Length, out _))
                     throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             return processParameterStr;

@@ -49,9 +49,9 @@
     public void Indexer_WithOutOfRange_Throws()
     {
         var i = new Int2();
-        Should.Throw<IndexOutOfRangeException>(() => _ = i[-1]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = i[-99]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = i[2]);
-        Should.Throw<IndexOutOfRangeException>(() => _ = i[50]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = i[-1]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = i[-99]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = i[2]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = i[50]);
     }
 }

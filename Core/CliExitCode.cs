@@ -39,6 +39,7 @@ public enum UnixSignal
 {
     // https://www.man7.org/linux/man-pages/man7/signal.7.html
 
+    None = 0,
     Lost = 1,              // SIGHUP  = Hangup detected on controlling terminal or death of controlling process
     KeyboardInterrupt = 2, // SIGINT  = Interrupt from keyboard (ctrl-c)
     KeyboardQuit = 3,      // SIGQUIT = Quit from keyboard (ctrl-d)
@@ -53,7 +54,7 @@ public static class UnixSignalUtils
     public static CliExitCode FromSignal(int signal)
     {
         if (signal is < 1 or > 31)
-            throw new ArgumentOutOfRangeException(nameof(signal), signal, $"not in range 1 <= {signal} <= 31");
+            throw new ArgumentOutOfRangeException(nameof(signal), signal, $"Out of range 1 <= {signal} <= 31");
 
         return (CliExitCode)(128 + signal);
     }

@@ -56,7 +56,7 @@ public static class Unity
 
     public static Process? TryFindMainUnityProcess(IEnumerable<Process> unityProcesses)
     {
-        foreach (var unityProcess in unityProcesses.Where(p => p.MainWindowHandle != IntPtr.Zero))
+        foreach (var unityProcess in unityProcesses.Where(p => p.MainWindowHandle != default))
         {
             var unityCommandLine = NativeWindows.SafeGetProcessCommandLine(unityProcess.Id);
             if (unityCommandLine == null)

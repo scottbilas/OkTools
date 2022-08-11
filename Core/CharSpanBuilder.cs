@@ -114,11 +114,11 @@ public ref struct CharSpanBuilder
 
     void Use(int count)
     {
-        _used = _buffer[..(_used.Length + count)];
+        _used = _buffer.AsSpan(0, _used.Length + count);
     }
 
     void ThrowInsufficientSpace<T>(T value)
     {
-        throw new Exception($"Insufficient space to store '{value}' ({UnusedSpan.Length} remain)");
+        throw new OverflowException($"Insufficient space to store '{value}' ({UnusedSpan.Length} remain)");
     }
 }

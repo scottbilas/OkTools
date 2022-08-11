@@ -439,7 +439,7 @@ Debugging:
 
             var unityProcess = Process.Start(unityStartInfo);
             if (unityProcess == null)
-                throw new Exception($"Unexpected failure to start process '{unityStartInfo.FileName}'");
+                throw new InvalidProgramException($"Unexpected failure to start process '{unityStartInfo.FileName}'");
 
             Console.WriteLine("Launched Unity as pid " + unityProcess.Id);
 
@@ -473,7 +473,7 @@ Debugging:
     }
 
     [DllImport("user32.dll")]
-    static extern bool SetForegroundWindow(IntPtr hWnd);
+    static extern bool SetForegroundWindow(nint hWnd);
 
     static CliExitCode? TryActivateExistingUnity(UnityProject project, bool activateMainWindow)
     {
