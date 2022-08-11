@@ -173,6 +173,15 @@ class InputParser
         new("\x1b[23~",  ConsoleKey.F11),
         new("\x1b[24~",  ConsoleKey.F12),
 
+        new("\x1b[15;2~",  ConsoleKey.F5, shift: true),
+        new("\x1b[17;2~",  ConsoleKey.F6, shift: true),
+        new("\x1b[18;2~",  ConsoleKey.F7, shift: true),
+        new("\x1b[19;2~",  ConsoleKey.F8, shift: true),
+        new("\x1b[20;2~",  ConsoleKey.F9, shift: true),
+        new("\x1b[21;2~",  ConsoleKey.F10, shift: true),
+        new("\x1b[23;2~",  ConsoleKey.F11, shift: true),
+        new("\x1b[24;2~",  ConsoleKey.F12, shift: true),
+
         // TODO: do a better way of mapping this
         // note that ^M == \r == Enter key..could be we really do want Console+CharKey unified..or maybe ctrl-keys are
         // *always* a ConsoleKey because they're ctrl sequences. also less confusing when trying to figure out what to

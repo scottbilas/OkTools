@@ -178,11 +178,17 @@ class FlogApp : IDisposable
                     break;
 
                 #if ENABLE_SCREEN_RECORDER
-                case KeyEvent { Key: ConsoleKey.F12, Alt: false, Ctrl: false }:
-                    if (!_screen.Recorder.ToggleShow())
+                case KeyEvent { Key: ConsoleKey.F12, Alt: false, Ctrl: false } key:
+                    var target = key.Shift ? ScreenRecorder.ShowType.Chars : ScreenRecorder.ShowType.Count;
+                    if (_screen.Recorder.Show == target)
+                    {
+                        _screen.Recorder.Show = ScreenRecorder.ShowType.None;
                         Refresh();
+                    }
+                    else
+                        _screen.Recorder.Show = target;
                     break;
-                #endif
+                #endif // ENABLE_SCREEN_RECORDER
 
                 case ResizeEvent:
                     UpdateLayout();

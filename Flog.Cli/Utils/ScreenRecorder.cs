@@ -6,7 +6,7 @@ class UnexpectedEscapeException : Exception {}
 
 class ScreenRecorder
 {
-    enum ShowType { None, Count, Chars };
+    public enum ShowType { None, Count, Chars };
 
     (int count, int chars)[] _cells = Array.Empty<(int, int)>();
     ShowType _show;
@@ -20,16 +20,16 @@ class ScreenRecorder
             Math.Clamp(newCursor.Y, 0, _size.Y - 1));
     }
 
-    public bool ToggleShow()
+    public ShowType Show
     {
-        if (++_show > ShowType.Chars)
-            _show = ShowType.None;
+        get => _show;
 
-        if (_show == ShowType.None)
-            return false;
-
-        Draw();
-        return true;
+        set
+        {
+            _show = value;
+            if (_show != ShowType.None)
+                Draw();
+        }
     }
 
     public void OnResized(TerminalSize size)
