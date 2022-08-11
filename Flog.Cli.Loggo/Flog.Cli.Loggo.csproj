@@ -7,9 +7,6 @@
     <AssemblyName>loggo</AssemblyName>
     <RootNamespace />
 
-    <!-- TODO: Remove in .NET 7. -->
-    <EnablePreviewFeatures>true</EnablePreviewFeatures>
-
     <!-- single-file publish options -->
 
     <PublishSingleFile>true</PublishSingleFile>

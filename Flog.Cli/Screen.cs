@@ -148,7 +148,6 @@ partial class Screen : IDisposable
         // get rid of this unnecessary extra _rawInput protocol (needs a timeout in order to detect standalone ESC).
         // (keep the combined read+process in a task off the main thread, though.)
 
-
         // TODO: turn this into async enumerable (??)
         while (!_disposed.IsCancellationRequested)
         {

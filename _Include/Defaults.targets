@@ -8,6 +8,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!-- TODO: Remove in .NET 7. -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+
   </PropertyGroup>
 
   <ItemGroup>
