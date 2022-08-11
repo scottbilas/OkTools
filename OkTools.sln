@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "Flog.Cli\Flog.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli.Loggo", "Flog.Cli.Loggo\Flog.Cli.Loggo.csproj", "{4E370F2A-75A3-4EA5-A9DE-F426A7E55024}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Showkeys.Cli", "Showkeys.Cli\Showkeys.Cli.csproj", "{7D1179D4-ED84-4104-92E1-96EFC61340DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +100,10 @@ Global
 		{4E370F2A-75A3-4EA5-A9DE-F426A7E55024}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4E370F2A-75A3-4EA5-A9DE-F426A7E55024}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4E370F2A-75A3-4EA5-A9DE-F426A7E55024}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D1179D4-ED84-4104-92E1-96EFC61340DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D1179D4-ED84-4104-92E1-96EFC61340DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D1179D4-ED84-4104-92E1-96EFC61340DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D1179D4-ED84-4104-92E1-96EFC61340DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{B1B77DB9-0635-4432-9327-26800B9D93DE} = {078A18EE-E782-4E50-98AC-FA4D6877D79A}
