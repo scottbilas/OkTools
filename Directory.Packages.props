@@ -1,0 +1,44 @@
+﻿<!-- declare all packages that may be used by projects here; versions will be shared -->
+
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+
+    <!-- general -->
+
+    <PackageVersion Include="docopt.net" Version="0.7.0" />
+    <PackageVersion Include="DotNetConfig" Version="1.0.6" />
+    <PackageVersion Include="LibGit2Sharp" Version="0.27.0-preview-0175" />
+    <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="7.0.0-preview.1.22076.8" />
+    <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.3.0-preview.1" />
+    <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
+    <PackageVersion Include="PInvoke.NTDll" Version="0.7.124" />
+    <PackageVersion Include="Spectre.Console" Version="0.44.0" />
+    <PackageVersion Include="System.Interactive" Version="6.0.1" />
+    <PackageVersion Include="System.IO.Pipelines" Version="7.0.0-preview.4.22229.4" />
+    <PackageVersion Include="Vezel.Cathode" Version="0.8.23" />
+    <PackageVersion Include="YamlDotNet" Version="12.0.0" />
+
+    <!-- analysis -->
+
+    <PackageVersion Include="JetBrains.Annotations" Version="2022.1.0" />
+    <!--PackageVersion Include="Meziantou.Analyzer" Version="1.0.688" /  NOT READY FOR THIS YET -->
+
+    <!-- builds -->
+
+    <PackageVersion Include="T4.Build" Version="0.2.4" />
+
+    <!-- testing and debugging -->
+
+    <PackageVersion Include="coverlet.collector" Version="3.1.2" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.3.0" />
+    <PackageVersion Include="NUnit" Version="3.13.3" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="4.2.1" />
+    <PackageVersion Include="ObjectDumper.NET" Version="3.4.6" />
+    <PackageVersion Include="Shouldly" Version="4.0.3" />
+
+  </ItemGroup>
+</Project>

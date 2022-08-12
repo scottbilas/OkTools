@@ -1,0 +1,28 @@
+﻿<!-- this file is imported after all NuGet targets are imported, so it can apply overrides before we get to the projects -->
+
+<Project>
+  <PropertyGroup>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugType>embedded</DebugType>
+    <EmbedAllSources>true</EmbedAllSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="System.Linq" />
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <PackageReference Include="ObjectDumper.NET" />
+    <Compile Include="$(OkSrcRoot)_Include\ObjectDumperExtensions.cs">
+      <Link>_Include\ObjectDumperExtensions.cs</Link>
+    </Compile>
+  </ItemGroup>
+</Project>

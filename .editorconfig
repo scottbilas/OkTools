@@ -16,27 +16,5 @@ insert_final_newline = true
 trim_trailing_whitespace = false
 indent_size = 2
 
-[*.{csproj,targets,yml,yaml}]
+[*.{csproj,targets,props,config,json,yml,yaml}]
 indent_size = 2
-
-# code analysis
-
-[*.cs]
-
-; public instance fields are ok when used with discretion
-dotnet_diagnostic.CA1050.severity = silent
-; top level names are fine
-dotnet_diagnostic.CA1051.severity = silent
-
-; locale warnings - i don't want to deal with these right now
-dotnet_diagnostic.CA1304.severity = silent
-dotnet_diagnostic.CA1305.severity = silent
-dotnet_diagnostic.CA1310.severity = silent
-
-;dotnet_diagnostic.CA1014.severity = silent
-;dotnet_code_quality.CA1062.exclude_extension_method_this_parameter = true
-
-[*.Tests/**.cs]
-
-; underscores are fine in test function names
-dotnet_diagnostic.CA1707.severity = none

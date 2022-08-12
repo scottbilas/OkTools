@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <Compile Remove="*Unix*" Condition=" '$(OS)' == 'Windows_NT' " />
+    <Compile Remove="*Windows*" Condition=" '$(OS)' != 'Windows_NT' " />
+
+    <!-- TODO: temporarily disabling until fix on rpi.. -->
+    <Compile Remove="*Unix*" />
+
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+  </ItemGroup>
+
+</Project>

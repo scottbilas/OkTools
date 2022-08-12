@@ -1,0 +1,43 @@
+<!-- this file is imported very early and sets defaults for all projects -->
+
+<Project>
+  <PropertyGroup>
+    <Product>OkTools</Product>
+    <Description>These tools are ok.</Description>
+    <Company>scottbilas</Company>
+    <Authors>$(Company) Contributors</Authors>
+    <Copyright>Copyright © $(Authors)</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup>
+
+    <!-- framework -->
+    <TargetFramework>net6.0</TargetFramework>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- TODO: Remove in .NET 7. -->
+
+    <!-- build -->
+    <OutputPath>$(MSBuildThisFileDirectory)temp\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
+    <OkExeOutputPath>$(MSBuildThisFileDirectory)builds\$(MSBuildProjectName)</OkExeOutputPath>
+    <OkExeOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkExeOutputPath)\$(Configuration)</OkExeOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)temp\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!-- compiler -->
+    <DebugSymbols>false</DebugSymbols>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!-- language -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OkSrcRoot>$(MSBuildThisFileDirectory)\src\</OkSrcRoot>
+    <OkTestsRoot>$(MSBuildThisFileDirectory)\tests\</OkTestsRoot>
+  </PropertyGroup>
+</Project>

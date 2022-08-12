@@ -8,8 +8,8 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-$loggo = 'Flog.Cli.Loggo\bin\release\net6.0\win-x64\loggo.exe'
-$patternFile = 'Flog.Cli.Loggo\TestData\aoc.unity-editor.log'
+$loggo = 'builds\Flog.Cli.Loggo\loggo.exe'
+$patternFile = 'src\Flog.Cli.Loggo\TestData\aoc.unity-editor.log'
 $where = 'c:\temp\log.out'
 
 switch ($which) {

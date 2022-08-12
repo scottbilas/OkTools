@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <AssemblyName>showkeys</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vezel.Cathode" />
+  </ItemGroup>
+
+</Project>

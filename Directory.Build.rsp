@@ -1,0 +1,4 @@
+﻿# this adds flags to any command-line build
+
+-err
+-nologo

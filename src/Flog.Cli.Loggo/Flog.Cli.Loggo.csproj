@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <AssemblyName>loggo</AssemblyName>
+    <RootNamespace />
+
+    <!-- single-file publish options -->
+
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+
+    <!--
+    see Unity.Cli.csproj for single-file publish
+    -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="docopt.net" />
+  </ItemGroup>
+
+</Project>

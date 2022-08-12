@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>OkTools.Flog</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetConfig" />
+    <PackageReference Include="System.IO.Pipelines" />
+  </ItemGroup>
+
+</Project>
