@@ -16,5 +16,5 @@ insert_final_newline = true
 trim_trailing_whitespace = false
 indent_size = 2
 
-[*.{csproj,targets,props,config,json,yml,yaml}]
+[*.{csproj,targets,props,config,runsettings,json,yml,yaml}]
 indent_size = 2

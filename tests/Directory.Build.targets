@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <RootNamespace />
     <GenerateDependencyFile>true</GenerateDependencyFile> <!-- needed for nunit runner -->
+    <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
