@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Platform>x64</Platform> <!-- match the main project -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- match the main project -->
   </PropertyGroup>
 
   <ItemGroup>
