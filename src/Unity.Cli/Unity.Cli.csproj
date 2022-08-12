@@ -9,6 +9,7 @@
     <!-- single-file publish options -->
 
     <PublishSingleFile>true</PublishSingleFile>
+    <Platform>x64</Platform>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>
 
