@@ -14,4 +14,5 @@ jobs:
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '6.0.x'
-      - run: dotnet test OkTools.sln
+      # https://stackoverflow.com/a/70552262/14582
+      - run: dotnet test --nologo -l:"console;verbosity=normal"
