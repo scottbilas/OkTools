@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <Platform>x64</Platform> <!-- match the main project -->
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Unity.Cli\Unity.Cli.csproj" />
     <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj" />
