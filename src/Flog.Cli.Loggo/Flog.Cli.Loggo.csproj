@@ -20,8 +20,10 @@
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
   </ItemGroup>
 
+  <!-- $$$ remove this central management disabling once rider supports version overrides and central management -->
+  <PropertyGroup><ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally></PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="docopt.net" />
+    <PackageReference Include="docopt.net" Version="0.8.1" />
   </ItemGroup>
 
 </Project>

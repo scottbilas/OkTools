@@ -1,0 +1,29 @@
+{0}, the logfile generator v{1}
+
+Usage:
+  {0}  [options] [DESTINATION]
+  {0}  --version
+
+Options:
+  --stdout            Mirror to stdout as well (defaults to true if DESTINATION not specified)
+  --line-nums         Prefix each line with a line number
+  --delay DELAY       Delay between each line being added to the log in ms [default: 1,5]
+  --width WIDTH       Width of generated lines [default: 1,200]
+  --size SIZE         Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
+  --lines LINES       Stop generating after LINES lines
+  --pattern PATTERN   Pattern to use for generated lines (one of: lorem, nums, loggy, PATH) [default: nums]
+  --eol EOL           End of line character to use (one of: crlf, lf, mix) [default: lf]
+  --overwrite         Overwrite existing log file if it already exists
+  --delete-on-exit    Delete log file when program exits for any reason
+  --intra-line-delay  Use some of the time from DELAY to delay randomly in the middle of writing each line. This is
+                      useful for testing that a tail-follow utility can handle partially written lines.
+
+Notes:
+  * DELAY and WIDTH can be ""min,max"" entries separated by a comma (for example `1MB,50GB`). Both min and max will be
+    the same if there is only one entry.
+  * PATTERN can be the PATH to a file, which would be used as the source material for the generator. If SIZE and/or
+    LINES are also specified, then the file at PATH will be repeated as needed until the SIZE/LINES conditions are met.
+  * WIDTH is ignored if a file path is specified for PATTERN
+
+Alternative:
+  go install github.com/mingrammer/flog@latest

@@ -20,20 +20,20 @@ public static partial class Program
         return (min, max);
     }
 
-    static int? TryParseInt(string str)
+    static int? TryParseInt(string? str)
     {
         if (str.IsNullOrEmpty())
             return null;
 
-        return int.Parse(str);
+        return int.Parse(str!);
     }
 
-    static long? TryParseSize(string str)
+    static long? TryParseSize(string? str)
     {
         if (str.IsNullOrEmpty())
             return null;
 
-        var match = Regex.Match(str, @"(\d+)([kmg]b)?$", RegexOptions.IgnoreCase);
+        var match = Regex.Match(str!, @"(\d+)([kmg]b)?$", RegexOptions.IgnoreCase);
         if (!match.Success)
             throw new DocoptInputErrorException($"`{str}` is not a valid size");
 
