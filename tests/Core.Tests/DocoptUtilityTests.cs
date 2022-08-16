@@ -226,4 +226,23 @@
             "  on top of it"
             );
     }
+
+    [Test, Category("TODO")]
+    public void Reflow_Bug_UsageLinesGettingJoined()
+    {
+        // TODO: something about the '--version' in there is causing the bad wrapping
+        Reflow(
+            "Usage:\n"+
+            "  loggo  [options] [DESTINATION]\n"+
+            "  loggo  --version\n",
+            50).ShouldBe(
+        //  WHAT WE WANT
+        //  "Usage:\n"+
+        //  "  loggo  [options] [DESTINATION]\n"+
+        //  "  loggo  --version",
+        //  WHAT WE ACTUALLY GET
+            "Usage:\n"+
+            "  loggo  [options] [DESTINATION] loggo  --version"
+            );
+    }
 }
