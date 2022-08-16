@@ -20,10 +20,16 @@
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
   </ItemGroup>
 
-  <!-- $$$ remove this central management disabling once rider supports version overrides and central management -->
+  <!-- $$$ remove this entire block and enable the next block once rider supports version overrides and central management (or i upgrade everything to latest docopt..)-->
   <PropertyGroup><ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally></PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2022.1.0" />
+    <PackageReference Include="ObjectDumper.NET" Version="3.4.6" />
     <PackageReference Include="docopt.net" Version="0.8.1" />
   </ItemGroup>
+
+  <!--ItemGroup>
+    <PackageReference Include="docopt.net" />
+  </ItemGroup-->
 
 </Project>
