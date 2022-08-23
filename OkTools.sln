@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{C30F4B4B-DDBB-4D66-A7C0-6C71637CEC39}"
 EndProject
@@ -25,6 +25,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "src\Flog.Cli\Flog.Cli.csproj", "{345B2DD4-E1F3-4E21-A55C-FD85CBB009D2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Tests", "tests\Unity.Tests\Unity.Tests.csproj", "{157FA6DF-5AC6-442F-B261-7D509372CBE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DebugHelp", "external\Zodiacon.DebugHelp\DebugHelp.csproj", "{046E6BEE-A10D-41E3-8811-805CDC9CF772}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -84,5 +86,9 @@ Global
 		{157FA6DF-5AC6-442F-B261-7D509372CBE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{157FA6DF-5AC6-442F-B261-7D509372CBE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{157FA6DF-5AC6-442F-B261-7D509372CBE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{046E6BEE-A10D-41E3-8811-805CDC9CF772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{046E6BEE-A10D-41E3-8811-805CDC9CF772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{046E6BEE-A10D-41E3-8811-805CDC9CF772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{046E6BEE-A10D-41E3-8811-805CDC9CF772}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
