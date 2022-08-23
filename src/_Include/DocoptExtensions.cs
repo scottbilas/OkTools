@@ -8,7 +8,7 @@ using OkTools.Core;
 
 static class DocoptExtensions
 {
-    public static async Task<CliExitCode> Parse<T>(this IHelpFeaturingParser<T> @this,
+    public static async Task<CliExitCode> RunCli<T>(this IHelpFeaturingParser<T> @this,
         IReadOnlyCollection<string> args,
         string programVersion,
         string help,
@@ -80,5 +80,16 @@ static class DocoptExtensions
             Console.Error.WriteLine(x);
             return CliExitCode.ErrorSoftware;
         }
+    }
+    
+    public static CliExitCode RunCli<T>(this IHelpFeaturingParser<T> @this,
+        IReadOnlyCollection<string> args,
+        string programVersion,
+        string help,
+        string usage,
+        Func<T, CliExitCode> mainFunc)
+    {
+        var task = @this.RunCli(args, programVersion, help, usage, cliArgs => Task.FromResult(mainFunc(cliArgs)));
+        return task.Result;
     }
 }

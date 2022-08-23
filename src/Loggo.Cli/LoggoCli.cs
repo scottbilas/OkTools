@@ -3,63 +3,12 @@ using OkTools.Core;
 
 const string programVersion = "0.1";
 
-try
-{
-    return LoggoCliArguments.CreateParser()
-        .WithVersion(programVersion)
-        .Parse(args)
-        .Match(
-            argsResult => (int)Main(argsResult),
-            _ /*helpResult*/ =>
-            {
-                var helpText = FormatHelp(LoggoCliArguments.Help);
-                Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
-                return (int)CliExitCode.Help;
-            },
-            _ /*versionResult*/ =>
-            {
-                var shortDescription = FormatHelp(LoggoCliArguments.Help[..LoggoCliArguments.Help.IndexOf('\n')].Trim());
-                Console.WriteLine(shortDescription);
-                return (int)CliExitCode.Help;
-            },
-            errorResult =>
-            {
-                var printed = false;
-
-                if (args.Length != 0)
-                {
-                    Console.Error.WriteLine("Bad command line: " + args.StringJoin(' '));
-                    printed = true;
-                }
-
-                if (errorResult.Error.Any())
-                {
-                    Console.Error.WriteLine(errorResult.Error);
-                    printed = true;
-                }
-
-                if (printed)
-                    Console.Error.WriteLine();
-
-                var usageText = FormatHelp(LoggoCliArguments.Usage);
-                Console.Error.WriteLine(DocoptUtility.Reflow(usageText, Console.WindowWidth));
-
-                return (int)CliExitCode.ErrorUsage;
-            });
-
-    static string FormatHelp(string helpText)
-    {
-        var programName = Path.GetFileNameWithoutExtension(Environment.ProcessPath!);
-        return string.Format(helpText, programName, programVersion);
-    }
-}
-catch (Exception x)
-{
-    Console.Error.WriteLine("Internal error!");
-    Console.Error.WriteLine();
-    Console.Error.WriteLine(x);
-    return (int)CliExitCode.ErrorSoftware;
-}
+return (int)LoggoCliArguments.CreateParser().RunCli(
+    args,
+    programVersion,
+    LoggoCliArguments.Help,
+    LoggoCliArguments.Usage,
+    Main);
 
 static CliExitCode Main(LoggoCliArguments args)
 {

@@ -9,7 +9,7 @@ var debugMode = false;
 
 try
 {
-    return (int)await FlogCliArguments.CreateParser().Parse(
+    return (int)await FlogCliArguments.CreateParser().RunCli(
         args,
         programVersion,
         FlogCliArguments.Help,
