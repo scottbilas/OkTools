@@ -12,7 +12,6 @@ var debugMode = false;
 try
 {
     var result = FlogCliArguments.CreateParser()
-        .EnableHelp()
         .WithVersion(programVersion)
         .Parse(args);
 

@@ -6,7 +6,6 @@ const string programVersion = "0.1";
 try
 {
     return LoggoCliArguments.CreateParser()
-        .EnableHelp()
         .WithVersion(programVersion)
         .Parse(args)
         .Match(
