@@ -31,9 +31,21 @@ public readonly struct StringSpan : IEquatable<StringSpan>
         End = end;
     }
 
+    public ReadOnlySpan<char> Span => Text.AsSpan(Start, Length);
+
     public int Length => End - Start;
     public bool IsEmpty => Start == End;
     public bool Any => Start != End;
+
+    public char this[int index]
+    {
+        get
+        {
+            if (index < 0 || index >= Length)
+                throw new ArgumentOutOfRangeException(nameof(index), $"Out of range 0 <= {index} < {Length}");
+            return Text[Start + index];
+        }
+    }
 
     public StringSpan WithStart(int start) => new(Text, start, End);
     public StringSpan WithOffsetStart(int offset) => new(Text, Start + offset, End);
@@ -92,10 +104,18 @@ public readonly struct StringSpan : IEquatable<StringSpan>
         return Text == other.Text && Start == other.Start && End == other.End;
     }
 
-    public override bool Equals(object? obj)
+    public bool Equals(string other)
     {
-        return obj is StringSpan other && Equals(other);
+        return string.Compare(Text, Start, other, 0, Length, StringComparison.Ordinal) == 0;
     }
+
+    public override bool Equals(object? obj) =>
+        obj switch
+        {
+            StringSpan other when Equals(other) => true,
+            string other when Equals(other) => true,
+            _ => false,
+        };
 
     public override int GetHashCode()
     {
@@ -104,4 +124,10 @@ public readonly struct StringSpan : IEquatable<StringSpan>
 
     public static bool operator ==(StringSpan left, StringSpan right) => left.Equals(right);
     public static bool operator !=(StringSpan left, StringSpan right) => !left.Equals(right);
+
+    public static bool operator ==(StringSpan left, string right) => left.Equals(right);
+    public static bool operator !=(StringSpan left, string right) => !left.Equals(right);
+
+    public static bool operator ==(string left, StringSpan right) => right.Equals(left);
+    public static bool operator !=(string left, StringSpan right) => !right.Equals(left);
 }
