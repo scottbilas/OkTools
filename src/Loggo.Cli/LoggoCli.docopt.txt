@@ -2,6 +2,7 @@
 
 Usage:
   {0}  [options] [DESTINATION]
+  {0}  --help
   {0}  --version
 
 Options:

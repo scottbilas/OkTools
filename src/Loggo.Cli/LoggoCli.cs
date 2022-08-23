@@ -5,7 +5,7 @@ const string programVersion = "0.1";
 
 try
 {
-    return ProgramArguments.CreateParser()
+    return LoggoCliArguments.CreateParser()
         .EnableHelp()
         .WithVersion(programVersion)
         .Parse(args)
@@ -13,23 +13,38 @@ try
             argsResult => (int)Main(argsResult),
             _ /*helpResult*/ =>
             {
-                var helpText = FormatHelp(ProgramArguments.Help);
+                var helpText = FormatHelp(LoggoCliArguments.Help);
                 Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
                 return (int)CliExitCode.Help;
             },
             _ /*versionResult*/ =>
             {
-                var shortDescription = FormatHelp(ProgramArguments.Help[..ProgramArguments.Help.IndexOf('\n')].Trim());
+                var shortDescription = FormatHelp(LoggoCliArguments.Help[..LoggoCliArguments.Help.IndexOf('\n')].Trim());
                 Console.WriteLine(shortDescription);
                 return (int)CliExitCode.Help;
             },
             errorResult =>
             {
-                Console.Error.WriteLine("Bad command line: " + args.StringJoin(' '));
+                var printed = false;
+
+                if (args.Length != 0)
+                {
+                    Console.Error.WriteLine("Bad command line: " + args.StringJoin(' '));
+                    printed = true;
+                }
+
                 if (errorResult.Error.Any())
+                {
                     Console.Error.WriteLine(errorResult.Error);
-                Console.Error.WriteLine();
-                Console.Error.WriteLine(FormatHelp(ProgramArguments.Usage));
+                    printed = true;
+                }
+
+                if (printed)
+                    Console.Error.WriteLine();
+
+                var usageText = FormatHelp(LoggoCliArguments.Usage);
+                Console.Error.WriteLine(DocoptUtility.Reflow(usageText, Console.WindowWidth));
+
                 return (int)CliExitCode.ErrorUsage;
             });
 
@@ -47,7 +62,7 @@ catch (Exception x)
     return (int)CliExitCode.ErrorSoftware;
 }
 
-static CliExitCode Main(ProgramArguments args)
+static CliExitCode Main(LoggoCliArguments args)
 {
     StreamWriter? fileWriter = null;
     var optPath = args.ArgDestination!;

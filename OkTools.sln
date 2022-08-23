@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{C30F4B4B-DDBB-4D66-A7C0-6C71637CEC39}"
 EndProject
@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "tests\TestUtil
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog", "src\Flog\Flog.csproj", "{3FA9D639-9F10-4D03-A980-060314CB2E95}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli.Loggo", "src\Flog.Cli.Loggo\Flog.Cli.Loggo.csproj", "{32E37DBC-9AB9-4B3F-A60C-E819ECE42934}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loggo.Cli", "src\Loggo.Cli\Loggo.Cli.csproj", "{32E37DBC-9AB9-4B3F-A60C-E819ECE42934}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Showkeys.Cli", "src\Showkeys.Cli\Showkeys.Cli.csproj", "{58851E4B-66C3-4378-84F5-99AB99CA8A0D}"
 EndProject
