@@ -1,22 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <OkOutputType>Docopt</OkOutputType>
     <AssemblyName>okflog</AssemblyName>
-    <RootNamespace />
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace />
 
     <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
 
-    <!-- single-file publish options -->
-
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
-
-    <!--
-    see Unity.Cli.csproj for single-file publish
-    -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="docopt.net" />
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="System.Interactive" />

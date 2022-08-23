@@ -1,37 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <OkOutputType>Docopt</OkOutputType>
     <AssemblyName>okunity</AssemblyName>
     <RootNamespace />
-
-    <!-- single-file publish options -->
-
-    <PublishSingleFile>true</PublishSingleFile>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <SelfContained>false</SelfContained>
-
-    <!--
-    sizes with single-file publish..
-
-    * not self-contained = 0.3MB
-    * not self-contained+AOT = 0.5MB
-    * self-contained = 62MB
-    * self-contained+trimmed = 11MB
-    * self-contained+trimmed+AOT = 15MB
-
-    # enable AOT - start experimenting with this if startup time becomes noticeable
-    <PublishReadyToRun>true</PublishReadyToRun>
-    # bundle .net core libraries and runtime to avoid OS dependency (makes EXE humongo)
-    <SelfContained>true</SelfContained>
-    # effectively required by SelfContained..still have humongo EXE but about 4-5x reduced size
-    <PublishTrimmed>true</PublishTrimmed>
-    -->
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="docopt.net" />
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.Interactive" />

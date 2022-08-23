@@ -1,8 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <OkOutputType>Cli</OkOutputType>
     <AssemblyName>showkeys</AssemblyName>
   </PropertyGroup>
 
