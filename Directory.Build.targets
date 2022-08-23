@@ -32,64 +32,13 @@
     <PackageReference Include="JetBrains.Annotations" />
   </ItemGroup>
 
-  <!-- exe types -->
+  <!-- docopt -->
 
-  <Choose>
-    <When Condition=" '$(OkOutputType)' == 'Docopt' ">
-      <PropertyGroup>
-        <OkOutputIsDocopt>true</OkOutputIsDocopt>
-        <OkOutputIsCli>true</OkOutputIsCli>
-        <OkOutputIsExe>true</OkOutputIsExe>
-      </PropertyGroup>
-    </When>
-    <When Condition=" '$(OkOutputType)' == 'Cli' ">
-      <PropertyGroup>
-        <OkOutputIsCli>true</OkOutputIsCli>
-        <OkOutputIsExe>true</OkOutputIsExe>
-      </PropertyGroup>
-    </When>
-    <When Condition=" '$(OkOutputType)' == 'Exe' ">
-      <PropertyGroup>
-        <OkOutputIsExe>true</OkOutputIsExe>
-      </PropertyGroup>
-    </When>
-  </Choose>
-
-  <ItemGroup Condition=" '$(OkOutputIsDocopt)' == 'true' ">
+  <ItemGroup Condition=" '$(OkDocopt)' == 'true' ">
     <PackageReference Include="docopt.net" />
     <Compile Include="$(OkSrcRoot)_Include\DocoptExtensions.cs">
       <Link>_Include\DocoptExtensions.cs</Link>
     </Compile>
   </ItemGroup>
-
-  <PropertyGroup Condition=" '$(OkOutputIsExe)' == 'true' ">
-    <OutputType>Exe</OutputType>
-    <OutputPath>$(OkExeOutputPath)</OutputPath>
-
-    <!-- single-file publish options -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>false</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-
-    <!-- some experiments i did on okunity...
-
-    sizes with single-file publish..
-
-    * not self-contained = 0.3MB
-    * not self-contained+AOT = 0.5MB
-    * self-contained = 62MB
-    * self-contained+trimmed = 11MB
-    * self-contained+trimmed+AOT = 15MB
-
-    # enable AOT - start experimenting with this if startup time becomes noticeable
-    <PublishReadyToRun>true</PublishReadyToRun>
-    # bundle .net core libraries and runtime to avoid OS dependency (makes EXE humongo)
-    <SelfContained>true</SelfContained>
-    # effectively required by SelfContained..still have humongo EXE but about 4-5x reduced size
-    <PublishTrimmed>true</PublishTrimmed>
-
-    -->
-
-  </PropertyGroup>
 
 </Project>

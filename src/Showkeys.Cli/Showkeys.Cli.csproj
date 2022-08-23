@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OkOutputType>Cli</OkOutputType>
+    <OutputType>Exe</OutputType>
     <AssemblyName>showkeys</AssemblyName>
   </PropertyGroup>
 

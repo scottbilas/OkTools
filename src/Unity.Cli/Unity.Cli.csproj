@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OkOutputType>Docopt</OkOutputType>
+    <OutputType>Exe</OutputType>
+    <OkDocopt>true</OkDocopt>
     <AssemblyName>okunity</AssemblyName>
     <RootNamespace />
   </PropertyGroup>

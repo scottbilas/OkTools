@@ -2,14 +2,13 @@
 
 <Project>
   <PropertyGroup>
+
+    <!-- default attributes -->
     <Product>OkTools</Product>
     <Description>These tools are ok.</Description>
     <Company>scottbilas</Company>
     <Authors>$(Company) Contributors</Authors>
     <Copyright>Copyright © $(Authors)</Copyright>
-  </PropertyGroup>
-
-  <PropertyGroup>
 
     <!-- framework -->
     <TargetFramework>net6.0</TargetFramework>
@@ -34,10 +33,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
+    <!-- useful paths -->
+    <OkSrcRoot>$(MSBuildThisFileDirectory)src\</OkSrcRoot>
+    <OkTestsRoot>$(MSBuildThisFileDirectory)tests\</OkTestsRoot>
+
+    <!-- we cannot override OutputPath in a .targets unless we do it this way -->
+    <!-- (https://github.com/dotnet/msbuild/discussions/7669#discussioncomment-3040456) -->
+    <BeforeTargetFrameworkInferenceTargets>$(MSBuildThisFileDirectory)ProjectPreClose.targets</BeforeTargetFrameworkInferenceTargets>
+
   </PropertyGroup>
 
-  <PropertyGroup>
-    <OkSrcRoot>$(MSBuildThisFileDirectory)\src\</OkSrcRoot>
-    <OkTestsRoot>$(MSBuildThisFileDirectory)\tests\</OkTestsRoot>
-  </PropertyGroup>
 </Project>
