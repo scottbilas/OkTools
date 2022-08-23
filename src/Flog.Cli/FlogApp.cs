@@ -22,13 +22,13 @@ class FlogApp : IDisposable
 
     State _state = State.LogView;
 
-    public FlogApp(IDictionary<string, ValueObject> options)
+    public FlogApp(FlogCliArguments args)
     {
         _screen.OutShowCursor(false);
 
         // main view
 
-        var logFilePath = options["PATH"].ToString();
+        var logFilePath = args.ArgPath!;
         _logModel = new LogModel(logFilePath);
         _logPane = new LogView(_screen, _logModel) { Enabled = true };
 

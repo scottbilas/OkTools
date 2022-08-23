@@ -25,6 +25,7 @@ $@"{k_docName}
 
 Usage:
   okunity  [options] COMMAND [ARG]...
+  okunity  --help
   okunity  --version
 
 Commands:

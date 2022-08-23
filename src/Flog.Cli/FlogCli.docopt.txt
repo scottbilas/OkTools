@@ -1,0 +1,9 @@
+{0}, the logfile analyzer v{1}
+
+Usage:
+  {0}  [options] PATH
+  {0}  --help
+  {0}  --version
+
+Options:
+  --debug  Enable extra debug features
