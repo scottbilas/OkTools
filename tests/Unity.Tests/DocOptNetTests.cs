@@ -15,7 +15,7 @@ class DocOptNetTests
         var docOpt = new Docopt();
         if (valid)
         {
-            var opt = docOpt.Apply(usage, args);
+            var opt = docOpt.Apply(usage, args)!;
             try
             {
                 opt["f"].IsTrue.ShouldBeTrue();
@@ -77,7 +77,7 @@ class DocOptNetTests
         Should.Throw<DocoptInputErrorException>(() =>
             new Docopt().Apply("usage: exename command [-n]", new[] { "command", "-n" }, optionsFirst: true));
 
-        var opt = new Docopt().Apply("usage: exename command [-n]", new[] { "command", "-n" });
+        var opt = new Docopt().Apply("usage: exename command [-n]", new[] { "command", "-n" })!;
         opt["-n"].IsTrue.ShouldBeTrue();
     }
 }
