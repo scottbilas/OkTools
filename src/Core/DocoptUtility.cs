@@ -46,7 +46,7 @@ public static class DocoptUtility
 
             // do the indent here so its whitespace doesn't get caught up in the calculations below
             // (TODO: this breaks very narrow wrapping..)
-            result.Append(section.Span.WithLength(section.Indent));
+            result.Append(section.Span.WithLength(section.Indent).Span);
             var span = section.Span.WithOffsetStart(section.Indent);
 
             // special: if we have a really wide column indent, let's fall back to non aligned
@@ -140,14 +140,20 @@ public static class DocoptUtility
     {
         Section? lastSection = null;
 
+        var inUsage = false; // TODO: remove this hack. there's a bug where the usage section tends to get combined into one line. fix that (see Reflow_Bug_UsageLinesGettingJoined), then remove this!
         foreach (var span in SelectLines(text))
         {
             var newSection = new Section(span);
 
+            if (span == "Usage:")
+                inUsage = true;
+            else if (span.Length != 0 && span[0] != ' ')
+                inUsage = false;
+
             if (lastSection != null)
             {
                 var merged = lastSection.Value.MergeWith(newSection);
-                if (merged != null)
+                if (!inUsage && merged != null)
                     lastSection = merged;
                 else
                 {

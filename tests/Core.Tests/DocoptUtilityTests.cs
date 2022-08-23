@@ -230,6 +230,8 @@
     [Test, Category("TODO")]
     public void Reflow_Bug_UsageLinesGettingJoined()
     {
+        // TODO: once this bug is resolved, remove the hack from DocoptUtility.SelectSections
+
         // TODO: something about the '--version' in there is causing the bad wrapping
         Reflow(
             "Usage:\n"+
