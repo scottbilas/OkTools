@@ -9,6 +9,7 @@
 
     <!-- general -->
 
+    <PackageVersion Include="BetterWin32Errors" Version="0.2.0" />
     <PackageVersion Include="docopt.net" Version="0.8.1" />
     <PackageVersion Include="DotNetConfig" Version="1.0.6" />
     <PackageVersion Include="LibGit2Sharp" Version="0.27.0-preview-0175" />
