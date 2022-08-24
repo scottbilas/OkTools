@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OkFeatures>NiceIO</OkFeatures>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- match the main project -->
   </PropertyGroup>
 

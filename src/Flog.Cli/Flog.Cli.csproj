@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OkDocopt>true</OkDocopt>
+    <OkFeatures>Core;NiceIO;Docopt</OkFeatures>
     <AssemblyName>okflog</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace />
@@ -12,12 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Using Include="NiceIO" />
-    <Using Include="OkTools.Core" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
     <ProjectReference Include="$(OkSrcRoot)Flog\Flog.csproj" />
   </ItemGroup>
 

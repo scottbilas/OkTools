@@ -1,5 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <OkFeatures>NiceIO</OkFeatures>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="*Unix*" Condition=" '$(OS)' == 'Windows_NT' " />
     <Compile Remove="*Windows*" Condition=" '$(OS)' != 'Windows_NT' " />

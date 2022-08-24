@@ -31,4 +31,23 @@
 
   </PropertyGroup>
 
+  <!-- extensions -->
+
+  <ItemGroup Condition=" $(OkFeatures.Contains('Core')) or $(OkFeatures.Contains('Docopt')) ">
+    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+    <Using Include="OkTools.Core" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(OkFeatures.Contains('NiceIO')) ">
+    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
+    <Using Include="NiceIO" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(OkFeatures.Contains('Docopt')) ">
+    <PackageReference Include="docopt.net" />
+    <Compile Include="$(OkSrcRoot)_Include\DocoptExtensions.cs">
+      <Link>_Include\DocoptExtensions.cs</Link>
+    </Compile>
+  </ItemGroup>
+
 </Project>

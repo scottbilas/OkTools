@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OkDocopt>true</OkDocopt>
+    <OkFeatures>Docopt</OkFeatures>
     <AssemblyName>okunity</AssemblyName>
     <RootNamespace />
   </PropertyGroup>

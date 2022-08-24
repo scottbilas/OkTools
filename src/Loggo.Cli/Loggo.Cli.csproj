@@ -2,13 +2,9 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OkDocopt>true</OkDocopt>
+    <OkFeatures>Core;Docopt</OkFeatures>
     <AssemblyName>loggo</AssemblyName>
     <RootNamespace />
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
-  </ItemGroup>
 
 </Project>

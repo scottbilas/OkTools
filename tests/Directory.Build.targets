@@ -12,7 +12,6 @@
   <ItemGroup>
     <Using Include="OkTools.Core" />
     <Using Include="OkTools.TestUtils" />
-    <Using Include="NiceIO" />
     <Using Include="NUnit.Framework" />
     <Using Include="Shouldly" />
     <Using Include="System.Text" />
@@ -20,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
-    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
     <ProjectReference Include="$(OkTestsRoot)\TestUtils\TestUtils.csproj" Condition="'$(MSBuildProjectName)' != 'TestUtils'" />
   </ItemGroup>
 

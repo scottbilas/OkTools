@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <OkFeatures>Core</OkFeatures>
     <RootNamespace>OkTools.Flog</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
-    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="DotNetConfig" />
