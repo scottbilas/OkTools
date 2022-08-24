@@ -23,9 +23,8 @@ public static class Program
 $@"{k_docName}
 
 Usage:
-  okunity  [options] COMMAND [ARG]...
-  okunity  --help
-  okunity  --version
+  okunity [options] COMMAND [ARG]...
+  okunity --version
 
 Commands:
 {docUsageCommands}
@@ -80,7 +79,7 @@ Print help for COMMAND.
             // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
             // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
 
-            var mainCommand = optGlobal["COMMAND"].Value!.ToString();
+            var mainCommand = optGlobal["COMMAND"].Value?.ToString();
             if (!k_commandSpecs.TryFirst(s => s.Name == mainCommand, out var mainFound))
                 throw new DocoptInputErrorException($"Unknown command '{mainCommand}'"); // TODO: "did you mean ...?" :)
 
