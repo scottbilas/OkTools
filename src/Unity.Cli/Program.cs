@@ -66,7 +66,7 @@ Print help for COMMAND.
                 // skip global options when parsing for commands, as they are applied before the command
                 var offset = first ? 0 : args.IndexOf(a => a[0] != '-');
 
-                var opt = new Docopt().Apply(usage, args[offset..], version: $"{k_docName} {k_docVersion}", optionsFirst: first, help: false);
+                var opt = new Docopt().Apply(usage, args[offset..], version: $"{k_docName} {k_docVersion}", optionsFirst: first, help: false)!;
                 first = false;
                 return opt;
             }
@@ -80,7 +80,7 @@ Print help for COMMAND.
             // TODO: move config into lib (and cache in static..eventually will need a way to manually refresh on resident gui app on focus; see how vscode does this with editorconfig)
             // TODO: add general CLI override for config (override needs to be applied and stored, so a refresh can have cli overloads reapplied on top)
 
-            var mainCommand = optGlobal["COMMAND"].Value.ToString();
+            var mainCommand = optGlobal["COMMAND"].Value!.ToString();
             if (!k_commandSpecs.TryFirst(s => s.Name == mainCommand, out var mainFound))
                 throw new DocoptInputErrorException($"Unknown command '{mainCommand}'"); // TODO: "did you mean ...?" :)
 
@@ -89,7 +89,7 @@ Print help for COMMAND.
                 if (args.Length == 1)
                     throw new DocoptExitException(k_docUsageGlobal);
 
-                var helpCommand = ParseOpt(k_docUsageHelp)["COMMAND"].Value.ToString()!;
+                var helpCommand = ParseOpt(k_docUsageHelp)["COMMAND"].Value!.ToString()!;
                 throw k_commandSpecs.TryFirst(s => s.Name == helpCommand, out var helpFound)
                     ? new DocoptExitException(helpFound.FullDoc)
                     : new DocoptInputErrorException($"Unknown command '{helpCommand}'");
