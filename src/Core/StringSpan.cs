@@ -106,7 +106,7 @@ public readonly struct StringSpan : IEquatable<StringSpan>
 
     public bool Equals(string other)
     {
-        return string.Compare(Text, Start, other, 0, Length, StringComparison.Ordinal) == 0;
+        return string.Compare(Text, Start, other, 0, Math.Max(Length, other.Length), StringComparison.Ordinal) == 0;
     }
 
     public override bool Equals(object? obj) =>
