@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <OkFeatures>Docopt</OkFeatures>
+    <AssemblyName>pmltool</AssemblyName>
     <RootNamespace />
   </PropertyGroup>
 
