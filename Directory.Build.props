@@ -18,7 +18,7 @@
 
     <!-- build -->
     <OutputPath>$(MSBuildThisFileDirectory)temp\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
-    <OkExeOutputPath>$(MSBuildThisFileDirectory)builds\$(MSBuildProjectName)</OkExeOutputPath>
+    <OkExeOutputPath>$(MSBuildThisFileDirectory)build\$(MSBuildProjectName)</OkExeOutputPath>
     <OkExeOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkExeOutputPath)\$(Configuration)</OkExeOutputPath>
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)temp\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
