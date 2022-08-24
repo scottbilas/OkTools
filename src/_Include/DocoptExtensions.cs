@@ -7,13 +7,12 @@ using DocoptNet;
 
 static class DocoptExtensions
 {
-    public static async Task<CliExitCode> RunCli<T>(this IHelpFeaturingParser<T> @this,
+    public static (CliExitCode? code, T parsed) Parse<T>(this IHelpFeaturingParser<T> @this,
         IReadOnlyCollection<string> args,
-        string programVersion,
-        string help,
-        string usage,
-        Func<T, Task<CliExitCode>> mainFunc)
+        string programVersion, string help, string usage)
     {
+        (CliExitCode? code, T parsed) rc = default; // note the T instead of T? because it will never be null if CliExitCode is null
+
         try
         {
             var result = @this
@@ -23,23 +22,22 @@ static class DocoptExtensions
             switch (result)
             {
                 case IArgumentsResult<T> cliArgs:
-                {
-                    return await mainFunc(cliArgs.Arguments);
-                }
+                    rc.parsed = cliArgs.Arguments;
+                    break;
+
                 case IHelpResult:
-                {
                     var helpText = FormatHelp(help, programVersion);
                     Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
-                    return CliExitCode.Help;
-                }
+                    rc.code = CliExitCode.Help;
+                    break;
+
                 case IVersionResult:
-                {
                     var shortDescription = FormatHelp(help[..help.IndexOf('\n')].Trim(), programVersion);
                     Console.WriteLine(shortDescription);
-                    return CliExitCode.Help;
-                }
+                    rc.code = CliExitCode.Help;
+                    break;
+
                 case IInputErrorResult errorResult:
-                {
                     var printed = false;
 
                     if (args.Count != 0)
@@ -60,8 +58,9 @@ static class DocoptExtensions
                     var usageText = FormatHelp(usage, programVersion);
                     Console.Error.WriteLine(DocoptUtility.Reflow(usageText, Console.WindowWidth));
 
-                    return CliExitCode.ErrorUsage;
-                }
+                    rc.code = CliExitCode.ErrorUsage;
+                    break;
+
                 default:
                     throw new InvalidOperationException($"Unexpected result type {result.GetType().FullName}");
             }
@@ -77,18 +76,9 @@ static class DocoptExtensions
             Console.Error.WriteLine("Internal error!");
             Console.Error.WriteLine();
             Console.Error.WriteLine(x);
-            return CliExitCode.ErrorSoftware;
+            rc.code = CliExitCode.ErrorSoftware;
         }
-    }
-    
-    public static CliExitCode RunCli<T>(this IHelpFeaturingParser<T> @this,
-        IReadOnlyCollection<string> args,
-        string programVersion,
-        string help,
-        string usage,
-        Func<T, CliExitCode> mainFunc)
-    {
-        var task = @this.RunCli(args, programVersion, help, usage, cliArgs => Task.FromResult(mainFunc(cliArgs)));
-        return task.Result;
+
+        return rc;
     }
 }

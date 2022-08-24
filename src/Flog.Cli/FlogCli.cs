@@ -7,20 +7,16 @@
 
 var debugMode = false;
 
+var (exitCode, cliOptions) = FlogCliArguments.CreateParser().Parse(args, programVersion, FlogCliArguments.Help, FlogCliArguments.Usage);
+if (exitCode != null)
+    return (int)exitCode.Value;
+
 try
 {
-    return (int)await FlogCliArguments.CreateParser().RunCli(
-        args,
-        programVersion,
-        FlogCliArguments.Help,
-        FlogCliArguments.Usage,
-        cliArgs =>
-        {
-            debugMode = cliArgs.OptDebug;
+    debugMode = cliOptions.OptDebug;
 
-            using var flogApp = new FlogApp(cliArgs);
-            return flogApp.Run();
-        });
+    using var flogApp = new FlogApp(cliOptions);
+    return (int)await flogApp.Run();
 }
 catch (CliExitException x)
 {
