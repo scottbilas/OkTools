@@ -3,5 +3,6 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>DebugHelp</RootNamespace>
   </PropertyGroup>
 </Project>

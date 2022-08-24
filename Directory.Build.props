@@ -35,6 +35,7 @@
 
     <!-- useful paths -->
     <OkSrcRoot>$(MSBuildThisFileDirectory)src\</OkSrcRoot>
+    <OkExternalRoot>$(MSBuildThisFileDirectory)external\</OkExternalRoot>
     <OkTestsRoot>$(MSBuildThisFileDirectory)tests\</OkTestsRoot>
 
     <!-- we cannot override OutputPath in a .targets unless we do it this way -->

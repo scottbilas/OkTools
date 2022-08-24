@@ -26,7 +26,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "src\Flog.Cli\Fl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Tests", "tests\Unity.Tests\Unity.Tests.csproj", "{157FA6DF-5AC6-442F-B261-7D509372CBE8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DebugHelp", "external\Zodiacon.DebugHelp\DebugHelp.csproj", "{046E6BEE-A10D-41E3-8811-805CDC9CF772}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Zodiacon.DebugHelp", "external\Zodiacon.DebugHelp\Zodiacon.DebugHelp.csproj", "{046E6BEE-A10D-41E3-8811-805CDC9CF772}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
