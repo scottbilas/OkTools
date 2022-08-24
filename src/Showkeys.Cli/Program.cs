@@ -24,7 +24,7 @@ try
     {
         Out((next = queue.Take()) switch
         {
-            3 => "^c",
+            3 => "^C",
             0x1b => "^[",
             '\r' => "\n",
             _ => ((char)next).ToString()
