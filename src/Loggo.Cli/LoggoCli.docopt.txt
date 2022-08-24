@@ -1,9 +1,9 @@
 {0}, the logfile generator v{1}
 
 Usage:
-  {0}  [options] [DESTINATION]
-  {0}  --help
-  {0}  --version
+  {0} [options] [DESTINATION]
+  {0} --help
+  {0} --version
 
 Options:
   --stdout            Mirror to stdout as well (defaults to true if DESTINATION not specified)

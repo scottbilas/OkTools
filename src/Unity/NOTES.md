@@ -51,7 +51,7 @@ Problems:
 
 Nice:
 
-[Try DocOpt](try.docopt.org) yay!
+[Try Docopt](try.docopt.org) yay!
 
 Future:
 
