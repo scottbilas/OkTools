@@ -66,7 +66,7 @@ namespace NiceIO.Tests
 
 			var result = twoPaths.Delete();
 
-			CollectionAssert.AreEqual(twoPaths, result);
+			Assert.AreEqual(twoPaths.Length, result);
 
 			AssertTempDir(new [] {"somefile2"});
 		}

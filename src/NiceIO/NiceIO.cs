@@ -825,32 +825,6 @@ namespace NiceIO
             return parent;
         }
 
-        public NPath FileMustExist()
-        {
-            if (!FileExists())
-            {
-                if (DirectoryExists())
-                    throw new FileNotFoundException($"Found directory instead of file '{ToString()}'", ToString());
-
-                throw new FileNotFoundException($"Could not find file '{ToString()}'", ToString());
-            }
-
-            return this;
-        }
-
-        public NPath DirectoryMustExist()
-        {
-            if (!DirectoryExists())
-            {
-                if (FileExists())
-                    throw new DirectoryNotFoundException($"Found file instead of directory '{ToString()}'");
-
-                throw new DirectoryNotFoundException($"Could not find directory '{ToString()}'");
-            }
-
-            return this;
-        }
-
         public bool IsChildOf(string potentialBasePath)
         {
             return IsChildOf(new NPath(potentialBasePath));
@@ -974,6 +948,38 @@ namespace NiceIO
 
     public static class NPathExtensions
     {
+        // note: NPath is nullable on *MustExist because of functions like ParentContaining that may return null
+
+        public static NPath FileMustExist(this NPath? @this)
+        {
+            if (@this == null)
+                throw new ArgumentNullException(nameof(@this), "Path is null; did a previous NPath operation fail?");
+
+            if (@this.FileExists())
+                return @this;
+
+            if (@this.DirectoryExists())
+                throw new FileNotFoundException($"Found directory instead of file '{@this}'", @this);
+
+            throw new FileNotFoundException($"Could not find file '{@this}'", @this);
+
+        }
+
+        public static NPath DirectoryMustExist(this NPath? @this)
+        {
+            if (@this == null)
+                throw new ArgumentNullException(nameof(@this), "Path is null; did a previous NPath operation fail?");
+
+            if (@this.DirectoryExists())
+                return @this;
+
+            if (@this.FileExists())
+                throw new DirectoryNotFoundException($"Found file instead of directory '{@this}'");
+
+            throw new DirectoryNotFoundException($"Could not find directory '{@this}'");
+
+        }
+
         public static IEnumerable<NPath> Copy(this IEnumerable<NPath> self, string dest)
         {
             return Copy(self, new NPath(dest));
@@ -1000,11 +1006,16 @@ namespace NiceIO
             return self.Select(p => p.Move(dest.Combine(p.FileName))).ToArray();
         }
 
-        public static IEnumerable<NPath> Delete(this IEnumerable<NPath> self)
+        public static int Delete(this IEnumerable<NPath> self)
         {
+            var deleted = 0;
             foreach (var p in self)
+            {
                 p.Delete();
-            return self;
+                ++deleted;
+            }
+
+            return deleted;
         }
 
         public static IEnumerable<string> InQuotes(this IEnumerable<NPath> self, SlashMode forward = SlashMode.Native)
@@ -1031,4 +1042,6 @@ namespace NiceIO
         Normal,
         Soft
     }
+
+
 }
