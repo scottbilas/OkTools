@@ -9,10 +9,11 @@ Usage:
   {0} (-h|--help)
   {0} (-v|--version)
 
+Baking:
   bake      Bake symbols from PML into <PML>.pmlbaked
 
   resolve   Try to resolve symbols for every module found in PML. If your
-            {k_NtSymbolPath} is set to download symbols, this will preload
+            _NT_SYMBOL_PATH is set to download symbols, this will preload
             PDB's for the PML into your local symbol store.
 
             Example _NT_SYMBOL_PATH:
@@ -22,14 +23,15 @@ Usage:
             of the PDB's caught up in a broad capture session can be very
             large.
 
-  query     Run basic queries against the given PMLBAKED file.
-
   PML       Path to the PML (Process Monitor Log) file to process. The folder
             containing this file will also be used for:
 
             * Finding mono pmip jit log files (copy them here before Unity exits)
             * Writing a .pmlbaked file with the same filename as PML with the
               symbolicated data, to be used for a `query`.
+
+Querying:
+  query     Run basic queries against the given PMLBAKED file.
 
   PMLBAKED  Path to a .pmlbaked file (file extension optional) for running queries.
 
