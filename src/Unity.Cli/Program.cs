@@ -1,6 +1,5 @@
 ﻿using DocoptNet;
 using DotNetConfig;
-using OkTools.Core;
 
 public static class Program
 {

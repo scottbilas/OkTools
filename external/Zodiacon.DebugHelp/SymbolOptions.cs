@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Zodiacon.DebugHelp {
+﻿namespace Zodiacon.DebugHelp {
 	[Flags]
 	public enum SymbolOptions : uint {
 		None = 0,

@@ -1,5 +1,4 @@
 using PInvoke;
-using Vezel.Cathode;
 
 #if ENABLE_SCREEN_RECORDER
 

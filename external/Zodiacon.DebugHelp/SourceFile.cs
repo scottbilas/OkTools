@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Zodiacon.DebugHelp {
+﻿namespace Zodiacon.DebugHelp {
     public class SourceFile {
         public ulong BaseAddress { get; set; }
         public string FileName { get; set; }

@@ -7,7 +7,7 @@ using DocoptNet;
 // note that this site is helpful: http://try.docopt.org/
 
 #if DEBUG
-class DocOptNetTests
+class DocoptNetTests
 {
     [TestCaseSource(nameof(Usages))]
     public void Validate(string usage, string[] args, bool valid, bool hasOpt, string[] inc)

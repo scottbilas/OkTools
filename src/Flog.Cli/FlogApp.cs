@@ -1,5 +1,4 @@
-﻿using DocoptNet;
-using OkTools.Flog;
+﻿using OkTools.Flog;
 
 class FlogApp : IDisposable
 {

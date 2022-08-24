@@ -1,6 +1,4 @@
-﻿using OkTools.Core;
-
-static partial class Commands
+﻿static partial class Commands
 {
     public const string DocUsageInstall =
 @"Usage: okunity install [options] SPEC [-- EXTRA...]

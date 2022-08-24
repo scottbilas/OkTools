@@ -1,5 +1,4 @@
 using DocoptNet;
-using OkTools.Core;
 
 // fine to use console directly here, it's outside of any tui work
 #pragma warning disable RS0030

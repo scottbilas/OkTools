@@ -1,6 +1,4 @@
-﻿using OkTools.Core;
-
-static class LoremIpsum
+﻿static class LoremIpsum
 {
     public static void Fill(ref CharSpanBuilder csb)
     {

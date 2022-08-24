@@ -1,5 +1,3 @@
-using Vezel.Cathode.Text.Control;
-
 partial class Screen
 {
     readonly ControlBuilder _cb = new();
