@@ -1,9 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace OkTools.ProcMonUtils;
 
+[DebuggerDisplay("{AssemblyName}!{Symbol}")]
 public class MonoJitSymbol : IAddressRange
 {
     public AddressRange Address;
