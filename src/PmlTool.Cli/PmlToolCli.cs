@@ -174,7 +174,13 @@ else if (cliOptions.CmdQuery)
     foreach (var query in cliOptions.ArgQuery)
     {
         if (int.TryParse(query, out var eventIdArg))
-            Dump(pmlQuery.GetRecordBySequence(eventIdArg));
+        {
+            var eventRecord = pmlQuery.FindRecordBySequence(eventIdArg);
+            if (eventRecord != null)
+                Dump(eventRecord.Value);
+            else
+                Console.WriteLine("No event found matching sequence ID " + eventIdArg);
+        }
         else if (DateTime.TryParse(query, out var captureTime))
         {
             var eventRecord = pmlQuery.FindRecordByCaptureTime(captureTime);
@@ -191,7 +197,11 @@ else if (cliOptions.CmdQuery)
                 pmlQuery.MatchRecordsBySymbol(regex));
 
             foreach (var eventId in eventIds)
-                Dump(pmlQuery.GetRecordBySequence(eventId));
+            {
+                var eventRecord = pmlQuery.FindRecordBySequence(eventId);
+                if (eventRecord != null)
+                    Dump(eventRecord.Value);
+            }
         }
     }
 }

@@ -61,7 +61,7 @@ class Tests
 
         var pmlQuery = new PmlQuery(_pmlBakedPath);
 
-        var frame = pmlQuery.GetRecordBySequence(36).Frames[2];
+        var frame = pmlQuery.FindRecordBySequence(36)!.Value.Frames[2];
         pmlQuery.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
         frame.Type.ShouldBe(FrameType.Kernel);
         pmlQuery.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
@@ -81,7 +81,8 @@ class Tests
         var matches = pmlQuery
             .MatchRecordsBySymbol(new Regex("`"))
             .OrderBy(seq => seq)
-            .Select(seq => pmlQuery.GetRecordBySequence(seq))
+            .Select(seq => pmlQuery.FindRecordBySequence(seq))
+            .WhereNotNull()
             .ToList();
 
         matches.First().Sequence.ShouldBe(3);

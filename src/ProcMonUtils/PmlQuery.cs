@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace OkTools.ProcMonUtils;
 
+[DebuggerDisplay("PID={ProcessId}; Frames={Frames.Length}")]
 public struct EventRecord
 {
     public int Sequence;
@@ -206,7 +208,15 @@ public class PmlQuery
 
     public IReadOnlyList<EventRecord> AllRecords => _events;
 
-    public EventRecord GetRecordBySequence(int sequence) => _events[sequence];
+    public EventRecord? FindRecordBySequence(int sequence)
+    {
+        ref var e = ref _events[sequence];
+        if (e.ProcessId != 0)
+            return e;
+
+        return null;
+    }
+
     public EventRecord? FindRecordByCaptureTime(DateTime dateTime) => _eventsByTime.TryGetValue(dateTime, out var foundIndex) ? _events[foundIndex] : null;
 
     static IEnumerable<int> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<int>>> items, Regex regex) =>
