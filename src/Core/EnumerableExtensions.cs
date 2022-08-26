@@ -76,6 +76,9 @@ public static class EnumerableExtensions
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: class =>
         @this.Where(item => item is not null)!;
 
+    public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: struct =>
+        @this.Where(item => item.HasValue).Select(item => item!.Value);
+
     public static IEnumerable<TResult> SelectWhere<TSource, TResult>(
         this IEnumerable<TSource> @this,
         Func<TSource, (TResult selected, bool shouldSelect)> selectWhere)
