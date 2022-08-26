@@ -32,7 +32,7 @@ public class MonoSymbolReader
         // parse pmip
 
         var lines = File.ReadAllLines(monoPmipPath);
-        if (lines[0] != "UnityMixedCallstacks:1.0")
+        if (lines[0] != "UnityMixedCallstacks:1.0") // 2.0 coming in https://github.com/Unity-Technologies/mono/pull/1635 (merged jun 14)
             throw new FileLoadException("Mono pmip file has unexpected header or version", monoPmipPath);
 
         var rx = new Regex(
