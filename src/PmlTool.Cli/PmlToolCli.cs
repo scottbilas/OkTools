@@ -206,5 +206,15 @@ else if (cliOptions.CmdQuery)
         }
     }
 }
+else if (cliOptions.CmdIoflame)
+{
+    var pmlPath = cliOptions.ArgPml!.ToNPath().FileMustExist();
+
+    using var pmlReader = new PmlReader(pmlPath);
+    foreach (var pmlEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Details).Take(50))
+    {
+        pmlEvent.DumpConsole(5);
+    }
+}
 
 return 0;

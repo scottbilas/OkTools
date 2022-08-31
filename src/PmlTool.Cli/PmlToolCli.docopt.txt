@@ -6,6 +6,7 @@ Usage:
   {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] PML
   {0} resolve PML
   {0} query PMLBAKED QUERY...
+  {0} ioflame PML
   {0} (-h|--help)
   {0} (-v|--version)
 
@@ -22,6 +23,8 @@ Baking:
             Note that the symbol server is fairly slow to download and many
             of the PDB's caught up in a broad capture session can be very
             large.
+
+  ioflame   Render a flame graph of the file activity.
 
   PML       Path to the PML (Process Monitor Log) file to process. The folder
             containing this file will also be used for:
