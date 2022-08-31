@@ -178,7 +178,7 @@ public static class PmlUtils
                 {
                     sb.AppendFormat("{0:x}:{1:x};{2:x};",
                         pmlEvent.EventIndex,
-                        pmlEvent.CaptureDateTime,
+                        pmlEvent.CaptureTime,
                         process.ProcessId);
                 }
 

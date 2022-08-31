@@ -70,16 +70,16 @@ record struct PmlEventInit(int EventIndex, PmlRawEvent RawEvent, ulong[]? Frames
 [PublicAPI, DebuggerDisplay("#{EventIndex}; {Process.ProcessName}; ({Frames.Length} frames)")]
 public class PmlEvent
 {
-    readonly ulong _captureTime;  // FILETIME
     readonly ulong _duration;
 
     public readonly int      EventIndex;
     public readonly uint     ProcessIndex;
     public readonly uint     ThreadId;
+    public readonly ulong    CaptureTime;  // FILETIME
     public readonly uint     Result;       // HRESULT (probably)
     public readonly ulong[]? Frames;
 
-    public DateTime CaptureDateTime => DateTime.FromFileTime((long)_captureTime);
+    public DateTime CaptureDateTime => DateTime.FromFileTime((long)CaptureTime);
     public TimeSpan DurationSpan => new((long)_duration);
 
     internal PmlEvent(PmlEventInit init)
@@ -87,7 +87,7 @@ public class PmlEvent
         EventIndex   = init.EventIndex;
         ProcessIndex = init.RawEvent.ProcessIndex;
         ThreadId     = init.RawEvent.ThreadId;
-        _captureTime = init.RawEvent.CaptureTime;
+        CaptureTime  = init.RawEvent.CaptureTime;
         _duration    = init.RawEvent.Duration;
         Result       = init.RawEvent.Result;
         Frames       = init.Frames;
