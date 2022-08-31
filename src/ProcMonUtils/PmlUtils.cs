@@ -156,35 +156,37 @@ public static class PmlUtils
 
             var sb = new StringBuilder();
 
-            var eventStacks = pmlReader.SelectEventStacks(options.StartAtEventIndex);
+            var pmlEvents = pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Stacks, options.StartAtEventIndex);
             if (options.EventProcessCount > 0)
-                eventStacks = eventStacks.Take(options.EventProcessCount);
+                pmlEvents = pmlEvents.Take(options.EventProcessCount);
 
-            foreach (var eventStack in eventStacks)
+            foreach (var pmlEvent in pmlEvents)
             {
-                if (!symCacheDb.TryGetValue(eventStack.Process.ProcessId, out var symCache))
-                    symCacheDb.Add(eventStack.Process.ProcessId, symCache = new SymCache(options));
+                var process = pmlReader.ResolveProcess(pmlEvent.ProcessIndex);
+
+                if (!symCacheDb.TryGetValue(process.ProcessId, out var symCache))
+                    symCacheDb.Add(process.ProcessId, symCache = new SymCache(options));
 
                 if (options.DebugFormat)
                 {
                     sb.AppendFormat("{0}:{1};{2};",
-                        eventStack.EventIndex,
-                        new DateTime(eventStack.CaptureTime).ToString(CaptureTimeFormat),
-                        eventStack.Process.ProcessId);
+                        pmlEvent.EventIndex,
+                        pmlEvent.CaptureDateTime.ToString(CaptureTimeFormat),
+                        process.ProcessId);
                 }
                 else
                 {
                     sb.AppendFormat("{0:x}:{1:x};{2:x};",
-                        eventStack.EventIndex,
-                        eventStack.CaptureTime,
-                        eventStack.Process.ProcessId);
+                        pmlEvent.EventIndex,
+                        pmlEvent.CaptureDateTime,
+                        process.ProcessId);
                 }
 
-                for (var iframe = 0; iframe < eventStack.FrameCount; ++iframe)
+                for (var iframe = 0; iframe < pmlEvent.Frames!.Length; ++iframe)
                 {
-                    var address = eventStack.Frames[iframe];
+                    var address = pmlEvent.Frames[iframe];
 
-                    if (eventStack.Process.TryFindModule(address, out var module))
+                    if (process.TryFindModule(address, out var module))
                     {
                         try
                         {
@@ -231,7 +233,7 @@ public static class PmlUtils
                 bakedFile.Write(sb.ToString());
                 sb.Clear();
 
-                options.Progress?.Invoke(eventStack.EventIndex, (int)pmlReader.EventCount);
+                options.Progress?.Invoke(pmlEvent.EventIndex, (int)pmlReader.EventCount);
             }
 
             foreach (var cache in symCacheDb.Values)

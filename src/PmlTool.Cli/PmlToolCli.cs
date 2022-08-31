@@ -24,6 +24,7 @@ if (cliOptions.CmdBake)
         DateTime? lastModuleUpdateTime = DateTime.Now;
         string? lastModule = null;
 
+        // ReSharper disable once AccessToModifiedClosure LoopVariableIsNeverChangedInsideLoop
         while (!cancel)
         {
             var localCurrentModule = currentModule;
@@ -98,11 +99,11 @@ else if (cliOptions.CmdResolve)
     var iter = 0;
     using (var pmlReader = new PmlReader(pmlPath))
     {
-        foreach (var eventStack in pmlReader.SelectEventStacks())
+        foreach (var pmlEvent in pmlReader.SelectEvents())
         {
-            foreach (var address in eventStack.Frames)
+            foreach (var address in pmlEvent.Frames!)
             {
-                if (eventStack.Process.TryFindModule(address, out var module))
+                if (pmlReader.ResolveProcess(pmlEvent.ProcessIndex).TryFindModule(address, out var module))
                     modulePaths.Add(module.ImagePath);
 
                 if (iter++ % 10000000 == 0)

@@ -1,72 +1,10 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Runtime.InteropServices;
 using System.Text;
+using OkTools.ProcMonUtils.FileSystem;
 
 // PML format: https://github.com/eronnen/procmon-parser/blob/master/docs/PML%20Format.md
-// consts.py: https://github.com/eronnen/procmon-parser/blob/master/procmon_parser/consts.py
 
 namespace OkTools.ProcMonUtils;
-
-[DebuggerDisplay("{ProcessName}")]
-public class PmlProcess
-{
-    public readonly uint ProcessId;
-    public readonly string ProcessName;
-    public IReadOnlyList<PmlModule> Modules => _modules;
-
-    readonly PmlModule[] _modules;
-
-    public PmlProcess(uint processId, string processName, PmlModule[] takeModules)
-    {
-        ProcessId = processId;
-        ProcessName = processName;
-        _modules = takeModules;
-
-        // keep sorted for bsearch
-        Array.Sort(_modules, (a, b) => a.Address.Base.CompareTo(b.Address.Base));
-    }
-
-    public bool TryFindModule(ulong address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
-        _modules.TryFindAddressIn(address, out module);
-}
-
-[DebuggerDisplay("{ImagePath}")]
-public class PmlModule : IAddressRange
-{
-    public readonly string ImagePath;
-    public readonly string ModuleName;
-    public readonly AddressRange Address;
-
-    public PmlModule(string imagePath, AddressRange address)
-    {
-        ImagePath = imagePath;
-        ModuleName = Path.GetFileName(ImagePath);
-        Address = address;
-    }
-
-    ref readonly AddressRange IAddressRange.AddressRef => ref Address;
-}
-
-[DebuggerDisplay("#{EventIndex} ({FrameCount} frames)")]
-public class PmlEventStackTrace
-{
-    public int EventIndex;
-    public long CaptureTime; // FILETIME
-    public PmlProcess Process = null!;
-    public ulong[] Frames = new ulong[200];
-    public int FrameCount;
-}
-
-// from consts.py
-public enum PmlEventClass
-{
-    Unknown = 0,
-    Process = 1,
-    Registry = 2,
-    FileSystem = 3,
-    Profiling = 4,
-    Network = 5,
-}
 
 public sealed class PmlReader : IDisposable
 {
@@ -82,7 +20,7 @@ public sealed class PmlReader : IDisposable
 
     public PmlReader(string pmlPath)
     {
-        _reader = new BinaryReader(new FileStream(pmlPath, FileMode.Open, FileAccess.Read, FileShare.Read), Encoding.Unicode);
+        _reader = new BinaryReader(new FileStream(pmlPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete), Encoding.Unicode);
 
         if (_reader.ReadByte() != 'P' || // Signature - "PML_"
             _reader.ReadByte() != 'M' ||
@@ -227,8 +165,23 @@ public sealed class PmlReader : IDisposable
 
     public IEnumerable<PmlProcess> Processes => _processesByPmlIndex.Values;
 
-    // one instance is created per call, then updated and yielded on each iteration
-    public IEnumerable<PmlEventStackTrace> SelectEventStacks(int startAtIndex = 0)
+    [Flags]
+    public enum Filter
+    {
+        Process    = 1 << 0,
+        Registry   = 1 << 1,
+        FileSystem = 1 << 2,
+        Profiling  = 1 << 3,
+        Network    = 1 << 4,
+        AllClasses = Process | Registry | FileSystem | Profiling | Network,
+
+        Stacks     = 1 << 5,
+        Details    = 1 << 6,
+
+        Everything = AllClasses | Stacks | Details,
+    }
+
+    public IEnumerable<PmlEvent> SelectEvents(Filter filter = Filter.Everything, int startAtIndex = 0)
     {
         var offsets = new UInt64[_eventCount - startAtIndex];
         SeekBegin(_eventOffsetsOffset);
@@ -239,50 +192,178 @@ public sealed class PmlReader : IDisposable
             SeekCurrent(1); // Unknown flags
         }
 
-        var eventStack = new PmlEventStackTrace();
-
         for (var ioffset = 0; ioffset < offsets.Length; ++ioffset)
         {
-            eventStack.EventIndex = ioffset + startAtIndex;
-            SeekBegin(offsets[ioffset]);
+            var eventIndex = ioffset + startAtIndex;
+            var eventStartOffset = offsets[ioffset];
+            SeekBegin(eventStartOffset);
 
-            var processIndex = _reader.ReadUInt32(); // The index to the process of the event.
-            SeekCurrent(4); // Thread Id.
-            var eventClass = (PmlEventClass)_reader.ReadUInt32();
+            var rawEvent = ReadRawEvent();
 
-            if (eventClass == PmlEventClass.FileSystem)
+            if (rawEvent.EventClass switch
             {
-                eventStack.Process = _processesByPmlIndex[processIndex];
+                PmlProcessEvent.EventClass    => (filter & Filter.Process)    == 0,
+                PmlRegistryEvent.EventClass   => (filter & Filter.Registry)   == 0,
+                PmlFileSystemEvent.EventClass => (filter & Filter.FileSystem) == 0,
+                PmlProfilingEvent.EventClass  => (filter & Filter.Profiling)  == 0,
+                PmlNetworkEvent.EventClass    => (filter & Filter.Network)    == 0,
+                _ => true,
+            }) continue;
 
-                SeekCurrent(
-                    2 + // see ProcessOperation, RegistryOperation, NetworkOperation, FilesystemOperation in consts.py
-                    6 + // Unknown.
-                    8); // Duration of the operation in 100 nanoseconds interval.
+            ulong[]? frames = null;
+            if ((filter & Filter.Stacks) != 0)
+                frames = ReadArray<ulong>(rawEvent.StackTraceDepth);
+            else
+                SeekCurrent(rawEvent.StackTraceDepth * 8);
 
-                eventStack.CaptureTime = (long)_reader.ReadUInt64(); // (FILETIME) The time when the event was captured.
+            var pmlInit = new PmlEventInit(eventIndex, rawEvent, frames);
+            PmlEvent? pmlEvent = null;
 
-                SeekCurrent(4); // The value of the event result.
-
-                eventStack.FrameCount = _reader.ReadUInt16(); // The depth of the captured stack trace.
-                if (eventStack.FrameCount > 0)
+            if ((filter & Filter.Details) != 0 && rawEvent.DetailsSize != 0)
+            {
+                #pragma warning disable CS8509
+                pmlEvent = rawEvent.EventClass switch
+                #pragma warning restore CS8509
                 {
-                    SeekCurrent(
-                        2 + // Unknown
-                        4 + // The size of the specific detail structure (contains path and other details)
-                        4); // The offset from the start of the event to extra detail structure (not necessarily continuous with this structure).
-
-                    for (var iframe = 0; iframe < eventStack.FrameCount; ++iframe)
-                        eventStack.Frames[iframe] = _reader.ReadUInt64();
-
-                    yield return eventStack;
-                }
+                    //PmlProcessEvent.EventClass    => ,
+                    //PmlRegistryEvent.EventClass   => ,
+                    PmlFileSystemEvent.EventClass => ReadFileSystemDetailedEvent(eventStartOffset, pmlInit),
+                    //PmlProfilingEvent.EventClass  => ,
+                    //PmlNetworkEvent.EventClass    => ,
+                };
             }
+
+            yield return pmlEvent ?? new PmlEvent(pmlInit);
         }
+    }
+
+    public IEnumerable<PmlEvent> SelectEvents(int startAtIndex) => SelectEvents(Filter.Everything, startAtIndex);
+
+    public PmlProcess ResolveProcess(uint processIndex) => _processesByPmlIndex[processIndex];
+
+    unsafe PmlRawEvent ReadRawEvent()
+    {
+        var rawEvent = new PmlRawEvent();
+
+        if (_reader.BaseStream.Read(new Span<byte>(&rawEvent, sizeof(PmlRawEvent))) != sizeof(PmlRawEvent))
+            throw new IOException("Unexpected EOF");
+
+        return rawEvent;
+    }
+
+    unsafe T[] ReadArray<T>(int count) where T : unmanaged
+    {
+        var array = new T[count];
+        if (count == 0)
+            return array;
+
+        if (_reader.BaseStream.Read(MemoryMarshal.Cast<T, byte>(array)) != sizeof(T)*count)
+            throw new IOException("Unexpected EOF");
+
+        return array;
+    }
+
+    record StringInfo(bool IsAscii, int Length)
+    {
+        public StringInfo(ushort raw) : this((raw & 0x8000) != 0, raw & 0x7fff) {}
+    }
+
+    StringInfo ReadDetailStringInfo() => new(_reader.ReadUInt16());
+
+    string ReadDetailString(StringInfo stringInfo)
+    {
+        if (!stringInfo.IsAscii)
+            throw new ArgumentException("Only ascii supported currently");
+            //return read_utf16(io, character_count * 2)
+
+        return Encoding.ASCII.GetString(_reader.ReadBytes(stringInfo.Length));
     }
 
     public PmlProcess? FindProcessByProcessId(uint processId) =>
         _processesByPmlIndex.Values.FirstOrDefault(p => p.ProcessId == processId);
 
-    void SeekBegin(ulong offset) => _reader.BaseStream.Seek((long)offset, SeekOrigin.Begin);
+    PmlFileSystemDetailedEvent ReadFileSystemDetailedEvent(ulong eventStartOffset, PmlEventInit init)
+    {
+        var subOperation = _reader.ReadByte();
+        SeekCurrent(3); // padding
+
+        var detailsPathPos = _reader.BaseStream.Position + 8*5 + 0x14; // past the filesystem details block
+
+        string SeekAndReadDetailsPath()
+        {
+            SeekBegin(detailsPathPos);
+            var pathInfo = ReadDetailStringInfo();
+            SeekCurrent(2); // padding
+            return ReadDetailString(pathInfo);
+        }
+
+        switch ((FileSystemOperation)init.RawEvent.Operation)
+        {
+            case FileSystemOperation.CreateFile:
+                // TODO: get_filesystem_create_file_details
+                break;
+
+            case FileSystemOperation.ReadFile:
+            case FileSystemOperation.WriteFile:
+                SeekCurrent(4);
+                var ioFlagsAndPriority = _reader.ReadUInt32();
+                var ioFlags = (FileOperationIoFlags)(ioFlagsAndPriority & 0xe000ff);
+                var priority = (FileOperationPriority)((ioFlagsAndPriority >> 0x11) & 7);
+                SeekCurrent(4);
+                var length = _reader.ReadUInt64();
+                SeekCurrent(8);
+                var offset = _reader.ReadInt64();
+
+                if (init.RawEvent.ExtraDetailsOffset != 0)
+                {
+                    SeekBegin(eventStartOffset + init.RawEvent.ExtraDetailsOffset);
+                    var extraSize = _reader.ReadUInt16();
+                    var extraPos = _reader.BaseStream.Position;
+
+                    length = _reader.ReadUInt32();
+
+                    if (_reader.BaseStream.Position > extraPos + extraSize)
+                        throw new InvalidOperationException("Unexpected offset");
+                }
+
+                return new PmlFileSystemReadWriteEvent(
+                    init, subOperation, SeekAndReadDetailsPath(),
+                    ioFlags, priority, length, offset);
+
+            case FileSystemOperation.FileSystemControl:
+            case FileSystemOperation.DeviceIoControl:
+                // TODO: get_filesystem_ioctl_details
+                break;
+
+            case FileSystemOperation.DirectoryControl:
+                var directoryControlOperation = (DirectoryControlOperation)subOperation;
+                if (directoryControlOperation == DirectoryControlOperation.QueryDirectory)
+                {
+                    // TODO: get_filesystem_query_directory_details
+                }
+                else if (directoryControlOperation == DirectoryControlOperation.NotifyChangeDirectory)
+                {
+                    // TODO: get_filesystem_notify_change_directory_details
+                }
+                break;
+
+            case FileSystemOperation.QueryInformationFile:
+                var queryInformationFileOperation = (QueryInformationFileOperation)subOperation;
+                if (queryInformationFileOperation is QueryInformationFileOperation.QueryIdInformation or QueryInformationFileOperation.QueryRemoteProtocolInformation)
+                {
+                    // TODO: get_filesystem_read_metadata_details
+                }
+                break;
+
+            case FileSystemOperation.SetInformationFile when (SetInformationFileOperation)subOperation is SetInformationFileOperation.SetDispositionInformationFile:
+                // TODO: get_filesystem_setdispositioninformation_details
+                break;
+        }
+
+        return new PmlFileSystemDetailedEvent(init, subOperation, SeekAndReadDetailsPath());
+    }
+
+    void SeekBegin(ulong offset) => SeekBegin((long)offset);
+    void SeekBegin(long offset) => _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
     void SeekCurrent(int offset) => _reader.BaseStream.Seek(offset, SeekOrigin.Current);
 }
