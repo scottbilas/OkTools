@@ -1,4 +1,6 @@
-﻿namespace OkTools.ProcMonUtils;
+﻿using System.Diagnostics;
+
+namespace OkTools.ProcMonUtils;
 
 class SimpleParserException : Exception
 {
@@ -6,6 +8,7 @@ class SimpleParserException : Exception
         : base(message) {}
 }
 
+[DebuggerDisplay("Remaining: {Text.Substring(Offset)}")]
 struct SimpleParser
 {
     public string Text;

@@ -16,6 +16,7 @@ public enum FrameType
     Mono,
 }
 
+[DebuggerDisplay("{Type} {ModuleStringIndex}!{SymbolStringIndex}+{Offset}")]
 public struct FrameRecord
 {
     public FrameType Type;
@@ -180,6 +181,7 @@ public class SymbolicatedEventsDb
                 // symbol frame
                 case ',':
                     ref var frameRecord = ref eventRecord.Frames[iframe];
+                    frameRecord.Type = type;
                     frameRecord.ModuleStringIndex = (int)first;
                     parser.Advance(1); // already read
                     frameRecord.SymbolStringIndex = (int)parser.ReadULongHex();

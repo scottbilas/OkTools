@@ -67,6 +67,8 @@ class Tests
         frame.Type.ShouldBe(FrameType.Kernel);
         eventsDb.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
 
+        // TODO: also test other frame types, at least User
+
         // TODO: this is unstable; as the OS gets updated, offsets change..pack in the PDB probably..?
         frame.Offset.ShouldBe(0x752ul);
     }

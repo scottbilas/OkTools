@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using NiceIO;
 using OkTools.ProcMonUtils;
@@ -174,7 +175,7 @@ else if (cliOptions.CmdQuery)
                 for (var i = 0; i < eventRecord.Value.Frames.Length; ++i)
                 {
                     ref var frame = ref eventRecord.Value.Frames[i];
-                    sb.Append($"    {i:00} {frame.Type.ToString()[0]}");
+                    sb.Append($"    {eventRecord.Value.Frames.Length-i-1:00} {frame.Type.ToString()[0]}");
                     if (frame.ModuleStringIndex != 0)
                         sb.Append($" [{symbolicatedEventsDb.GetString(frame.ModuleStringIndex)}]");
 
@@ -196,6 +197,10 @@ else if (cliOptions.CmdQuery)
     foreach (var query in cliOptions.ArgQuery)
     {
         if (uint.TryParse(query, out var eventIdArg))
+        {
+            Dump(eventIdArg);
+        }
+        else if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out eventIdArg))
         {
             Dump(eventIdArg);
         }
