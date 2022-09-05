@@ -22,6 +22,12 @@ public static class DocoptUtility
 
         // TODO: try to keep [default: foo] together on the same line
 
+        // TODO: make the max wrap width optional. right now i'm just arbitrarily picking something big-ish. too big and
+        // it's just ridiculous to try to read..
+
+        if (wrapWidth > 120)
+            wrapWidth = 120;
+
         if (wrapWidth <= 0)
             throw new ArgumentOutOfRangeException(nameof(wrapWidth), $"Out of range 0 < {wrapWidth}");
         if (options.MinWrapWidth < 0 || options.MinWrapWidth >= wrapWidth)
