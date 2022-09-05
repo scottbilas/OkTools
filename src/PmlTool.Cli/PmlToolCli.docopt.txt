@@ -8,6 +8,7 @@ Usage:
   {0} query PML QUERY...
   {0} convert [--mergethreads] PML [CONVERTED]
   {0} (-h|--help)
+  {0} (help|-h|--help)
   {0} (-v|--version)
 
 Commands:
@@ -30,6 +31,8 @@ Commands:
 
   query      Run basic queries against the given PML file. If there is a .pmlbaked
              file (generated with `bake`) then stacks will be symbolicated.
+
+  help       Show this screen.
 
 Arguments:
   PML        Path to the PML (Process Monitor Log) file to process. An extension

@@ -9,7 +9,8 @@ static class DocoptExtensions
 {
     public static (CliExitCode? code, T parsed) Parse<T>(this IHelpFeaturingParser<T> @this,
         IReadOnlyCollection<string> args,
-        string programVersion, string help, string usage)
+        string programVersion, string help, string usage,
+        Func<T, bool>? isHelpCommandSet = null)
     {
         (CliExitCode? code, T parsed) rc = default; // note the T instead of T? because it will never be null if CliExitCode is null
 
@@ -19,16 +20,22 @@ static class DocoptExtensions
                 .WithVersion(programVersion)
                 .Parse(args);
 
+            var doHelp = false;
+            if (result is IArgumentsResult<T> cliArgs)
+            {
+                if (isHelpCommandSet?.Invoke(cliArgs.Arguments) == true)
+                    doHelp = true;
+                else
+                    rc.parsed = cliArgs.Arguments;
+            }
+
             switch (result)
             {
-                case IArgumentsResult<T> cliArgs:
-                    rc.parsed = cliArgs.Arguments;
+                case IArgumentsResult<T>: // already handled
                     break;
 
                 case IHelpResult:
-                    var helpText = FormatHelp(help, programVersion);
-                    Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
-                    rc.code = CliExitCode.Help;
+                    doHelp = true;
                     break;
 
                 case IVersionResult:
@@ -63,6 +70,13 @@ static class DocoptExtensions
 
                 default:
                     throw new InvalidOperationException($"Unexpected result type {result.GetType().FullName}");
+            }
+
+            if (doHelp)
+            {
+                var helpText = FormatHelp(help, programVersion);
+                Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
+                rc.code = CliExitCode.Help;
             }
 
             static string FormatHelp(string helpText, string version)
