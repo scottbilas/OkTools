@@ -65,17 +65,17 @@ record struct PmlRawEvent(         // {from PML Format.md}
                                 // 0x34+n | Byte[]    | A **detail** structure based on the operation type.
 // ReSharper restore NotAccessedPositionalProperty.Global
 
-record struct PmlEventInit(int EventIndex, PmlRawEvent RawEvent, ulong[]? Frames);
+record struct PmlEventInit(uint EventIndex, PmlRawEvent RawEvent, ulong[]? Frames);
 
-[PublicAPI, DebuggerDisplay("#{EventIndex}; {Process.ProcessName}; ({Frames.Length} frames)")]
+[PublicAPI, DebuggerDisplay("#{EventIndex}")]
 public class PmlEvent
 {
     readonly ulong _duration;
 
-    public readonly int      EventIndex;
+    public readonly uint     EventIndex;
     public readonly uint     ProcessIndex;
     public readonly uint     ThreadId;
-    public readonly ulong    CaptureTime;  // FILETIME
+    public readonly ulong    CaptureTime;  // FILETIME (100ns intervals since 1601-01-01 UTC)
     public readonly uint     Result;       // HRESULT (probably)
     public readonly ulong[]? Frames;
 

@@ -69,11 +69,11 @@ if (cliOptions.CmdBake)
     else if ((Environment.GetEnvironmentVariable(ntSymbolPathName)?.IndexOf("http") ?? -1) != -1)
         Console.WriteLine($"{ntSymbolPathName} appears to be set to use a symbol server, which may slow down processing greatly..");
 
-    var pmlPath = cliOptions.ArgPml!.ToNPath().FileMustExist();
-    var bakedFile = pmlPath.ChangeExtension(".pmlbaked");
+    using var pmlReader = new PmlReader(cliOptions.ArgPml!.ToNPath());
+    var bakedFile = pmlReader.PmlPath.ChangeExtension(".pmlbaked");
 
     var iter = 0;
-    PmlUtils.Symbolicate(pmlPath, new SymbolicateOptions {
+    PmlUtils.Symbolicate(pmlReader, new SymbolicateOptions {
         DebugFormat = cliOptions.OptDebug,
         NtSymbolPath = ntSymbolPath,
         ModuleLoadProgress = name => currentModule = name,
@@ -94,10 +94,9 @@ else if (cliOptions.CmdResolve)
 
     Console.Write("Scanning call stacks for modules...");
 
-    var pmlPath = cliOptions.ArgPml!.ToNPath().FileMustExist();
     var modulePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     var iter = 0;
-    using (var pmlReader = new PmlReader(pmlPath))
+    using (var pmlReader = new PmlReader(cliOptions.ArgPml!.ToNPath()))
     {
         foreach (var pmlEvent in pmlReader.SelectEvents())
         {
@@ -126,94 +125,178 @@ else if (cliOptions.CmdResolve)
         }
         catch (Exception e)
         {
-            Console.WriteLine($"fail! {e.GetType().Name}: {e.Message}");
+            Console.Error.WriteLine($"fail! {e.GetType().Name}: {e.Message}");
         }
     }
 }
 else if (cliOptions.CmdQuery)
 {
-    var pmlBakedPath = cliOptions.ArgPmlbaked!.ToNPath();
-    if (!pmlBakedPath.HasExtension())
-        pmlBakedPath = pmlBakedPath.ChangeExtension(".pmlbaked");
-    pmlBakedPath.FileMustExist();
+    var pmlPath = cliOptions.ArgPml!.ToNPath();
+    if (!pmlPath.HasExtension())
+        pmlPath = pmlPath.ChangeExtension(".pml");
 
-    Console.WriteLine($"Reading {pmlBakedPath}...");
-    var pmlQuery = new PmlQuery(pmlBakedPath);
+    using var pmlReader = new PmlReader(pmlPath);
 
-    void Dump(EventRecord eventRecord)
+    var pmlBakedPath = pmlPath.ChangeExtension(".pmlbaked").FileMustExist();
+
+    SymbolicatedEventsDb? symbolicatedEventsDb = null;
+    void EnsureHaveEventsDb()
     {
+        if (symbolicatedEventsDb != null)
+            return;
+
+        Console.Write("Loading symbolicated events db...");
+        symbolicatedEventsDb = new SymbolicatedEventsDb(pmlBakedPath!);
+        Console.Write("\r                                 \r");
+    }
+
+    void Dump(uint pmlEventIndex)
+    {
+        var pmlEvent = pmlReader.GetEvent((int)pmlEventIndex);
+
         Console.WriteLine();
-        Console.WriteLine("Sequence = " + eventRecord.Sequence);
-        Console.WriteLine("CaptureTime = " + eventRecord.CaptureTime.ToString(PmlUtils.CaptureTimeFormat));
-        Console.WriteLine("PID = " + eventRecord.ProcessId);
+        Console.WriteLine($"[{pmlEvent.EventIndex}]");
+        Console.WriteLine("  CaptureTime = " + pmlEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+        var process = pmlReader.ResolveProcess(pmlEvent.ProcessIndex);
+        Console.WriteLine($"  Process = {process.ProcessId} ({process.ProcessName})");
+        Console.WriteLine($"  Thread ID = {pmlEvent.ThreadId}");
 
-        if (eventRecord.Frames.Length > 0)
+        if (pmlEvent.Frames?.Length > 0)
         {
-            Console.WriteLine("Frames:");
-
-            var sb = new StringBuilder();
-
-            for (var i = 0; i < eventRecord.Frames.Length; ++i)
+            EnsureHaveEventsDb();
+            var eventRecord = symbolicatedEventsDb!.GetRecord(pmlEventIndex);
+            if (eventRecord != null)
             {
-                ref var frame = ref eventRecord.Frames[i];
-                sb.Append($"    {i:00} {frame.Type.ToString()[0]}");
-                if (frame.ModuleStringIndex != 0)
-                    sb.Append($" [{pmlQuery.GetString(frame.ModuleStringIndex)}]");
+                Console.WriteLine("  Frames:");
 
-                sb.Append(frame.SymbolStringIndex != 0
-                    ? $" {pmlQuery.GetString(frame.SymbolStringIndex)} + 0x{frame.Offset:x}"
-                    : $" 0x{frame.Offset:x}");
+                var sb = new StringBuilder();
 
-                Console.WriteLine(sb);
-                sb.Clear();
+                for (var i = 0; i < eventRecord.Value.Frames.Length; ++i)
+                {
+                    ref var frame = ref eventRecord.Value.Frames[i];
+                    sb.Append($"    {i:00} {frame.Type.ToString()[0]}");
+                    if (frame.ModuleStringIndex != 0)
+                        sb.Append($" [{symbolicatedEventsDb.GetString(frame.ModuleStringIndex)}]");
+
+                    sb.Append(frame.SymbolStringIndex != 0
+                        ? $" {symbolicatedEventsDb.GetString(frame.SymbolStringIndex)} + 0x{frame.Offset:x}"
+                        : $" 0x{frame.Offset:x}");
+
+                    Console.WriteLine(sb);
+                    sb.Clear();
+                }
             }
+            else
+                Console.WriteLine("  Frames: <failed pmlbaked lookup>");
         }
         else
-            Console.WriteLine("Frames: <none>");
+            Console.WriteLine("  Frames: <none>");
     }
 
     foreach (var query in cliOptions.ArgQuery)
     {
-        if (int.TryParse(query, out var eventIdArg))
+        if (uint.TryParse(query, out var eventIdArg))
         {
-            var eventRecord = pmlQuery.FindRecordBySequence(eventIdArg);
-            if (eventRecord != null)
-                Dump(eventRecord.Value);
-            else
-                Console.WriteLine("No event found matching sequence ID " + eventIdArg);
+            Dump(eventIdArg);
         }
         else if (DateTime.TryParse(query, out var captureTime))
         {
-            var eventRecord = pmlQuery.FindRecordByCaptureTime(captureTime);
-            if (eventRecord != null)
-                Dump(eventRecord.Value);
-            else
-                Console.WriteLine("No event found matching " + captureTime.ToString(PmlUtils.CaptureTimeFormat));
+            // just have to seek for it, no easy way to find
+            var found = false;
+            foreach (var pmlEvent in pmlReader.SelectEvents())
+            {
+                if (pmlEvent.CaptureDateTime == captureTime)
+                {
+                    Dump(pmlEvent.EventIndex);
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                Console.Error.WriteLine("No event found matching " + captureTime.ToString(PmlUtils.CaptureTimeFormat));
         }
         else
         {
+            EnsureHaveEventsDb();
+
             var regex = new Regex(query);
             var eventIds = Enumerable.Concat(
-                pmlQuery.MatchRecordsByModule(regex),
-                pmlQuery.MatchRecordsBySymbol(regex));
+                symbolicatedEventsDb!.MatchRecordsByModule(regex),
+                symbolicatedEventsDb!.MatchRecordsBySymbol(regex));
 
+            var found = false;
             foreach (var eventId in eventIds)
             {
-                var eventRecord = pmlQuery.FindRecordBySequence(eventId);
-                if (eventRecord != null)
-                    Dump(eventRecord.Value);
+                Dump(eventId);
+                found = true;
             }
+
+            if (!found)
+                Console.Error.WriteLine($"No events found matching module/symbol regex '{query}'");
         }
     }
 }
-else if (cliOptions.CmdIoflame)
+else if (cliOptions.CmdConvert)
 {
     var pmlPath = cliOptions.ArgPml!.ToNPath().FileMustExist();
+    using var converted = File.CreateText((cliOptions.ArgConverted ?? pmlPath + ".json").ToNPath());
+
+    converted.WriteLine('[');
 
     using var pmlReader = new PmlReader(pmlPath);
-    foreach (var pmlEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Details).Take(50))
+    ulong? baseTime = null;
+
+    var seenProcessIds = new HashSet<uint>();
+
+    var pairId = 1;
+    foreach (var rwEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Details).OfType<PmlFileSystemReadWriteEvent>().SkipWhile(e => e.EventIndex < 137900))
     {
-        pmlEvent.DumpConsole(5);
+        baseTime ??= rwEvent.CaptureTime / 10;
+
+        var process = pmlReader.ResolveProcess(rwEvent.ProcessIndex);
+        if (seenProcessIds.Add(process.ProcessId))
+        {
+            converted.WriteLine("{"+
+                $"\"name\":\"process_name\",\"ph\":\"M\",\"pid\":{process.ProcessId},"+
+                $"\"args\":{{\"name\":\"{process.ProcessName}\"}}"+
+                "},");
+            if (cliOptions.OptMergethreads)
+            {
+                converted.WriteLine("{"+
+                    $"\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":{process.ProcessId},\"tid\":1,"+
+                    "\"args\":{\"name\":\"(merged)\"}"+
+                    "},");
+            }
+        }
+
+        var start = rwEvent.CaptureTime/10 - baseTime;
+        var end = start + (ulong)rwEvent.DurationSpan.Ticks/10;
+
+        if (cliOptions.OptMergethreads)
+        {
+            converted.WriteLine("{"+
+                $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+
+                $"\"ph\":\"b\",\"pid\":{process.ProcessId},\"tid\":{1},\"ts\":{start},\"id\":{pairId},"+
+                $"\"args\":{{\"path\":\"{rwEvent.Path.Replace('\\', '/')}\",\"eidx\":{rwEvent.EventIndex}}}"+
+                "},");
+            converted.WriteLine("{"+
+                $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+ // tracing needs both name and cat to be here also (docs claim key is cat+scope+
+                $"\"ph\":\"e\",\"pid\":{process.ProcessId},\"tid\":{1},\"ts\":{end},\"id\":{pairId}"+
+                "},");
+            ++pairId;
+        }
+        else
+        {
+            converted.WriteLine("{"+
+                $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+
+                $"\"ph\":\"B\",\"pid\":{process.ProcessId},\"tid\":{rwEvent.ThreadId},\"ts\":{start},\"cname\":\"{(rwEvent.Path.Contains("ArtifactDB") ? "bad" : "good")}\","+
+                $"\"args\":{{\"path\":\"{rwEvent.Path.Replace('\\', '/')}\",\"eidx\":{rwEvent.EventIndex}}}"+
+                "},");
+            converted.WriteLine("{"+
+                $"\"ph\":\"E\",\"pid\":{process.ProcessId},\"tid\":{rwEvent.ThreadId},\"ts\":{end}"+
+                "},");
+        }
     }
 }
 

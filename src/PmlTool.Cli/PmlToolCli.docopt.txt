@@ -5,46 +5,53 @@ Tools for baking and querying symbols from a Process Monitor Log (PML) file.
 Usage:
   {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] PML
   {0} resolve PML
-  {0} query PMLBAKED QUERY...
-  {0} ioflame PML
+  {0} query PML QUERY...
+  {0} convert [--mergethreads] PML [CONVERTED]
   {0} (-h|--help)
   {0} (-v|--version)
 
-Baking:
-  bake      Bake symbols from PML into <PML>.pmlbaked
+Commands:
+  bake       Bake symbols from PML into <PML>.pmlbaked
 
-  resolve   Try to resolve symbols for every module found in PML. If your
-            _NT_SYMBOL_PATH is set to download symbols, this will preload
-            PDB's for the PML into your local symbol store.
+  resolve    Try to resolve symbols for every module found in PML. If your
+             _NT_SYMBOL_PATH is set to download symbols, this will preload
+             PDB's for the PML into your local symbol store.
 
-            Example _NT_SYMBOL_PATH:
-                srv*C:\Symbols*https://msdl.microsoft.com/download/symbols
+             Example _NT_SYMBOL_PATH:
+                 srv*C:\Symbols*https://msdl.microsoft.com/download/symbols
 
-            Note that the symbol server is fairly slow to download and many
-            of the PDB's caught up in a broad capture session can be very
-            large.
+             Note that the symbol server is fairly slow to download and many
+             of the PDB's caught up in a broad capture session can be very
+             large.
 
-  ioflame   Render a flame graph of the file activity.
+  convert    Render file IO events from the PML to a chrome://tracing file.
+             Drag the resulting .json file onto Chrome or Edge to visualize and
+             browse. Converted file will be overwritten if it already exists.
 
-  PML       Path to the PML (Process Monitor Log) file to process. The folder
-            containing this file will also be used for:
+  query      Run basic queries against the given PML file. If there is a .pmlbaked
+             file (generated with `bake`) then stacks will be symbolicated.
 
-            * Finding mono pmip jit log files (copy them here before Unity exits)
-            * Writing a .pmlbaked file with the same filename as PML with the
-              symbolicated data, to be used for a `query`.
+Arguments:
+  PML        Path to the PML (Process Monitor Log) file to process. An extension
+             of `.pml` will be added if missing. The folder containing this file
+             will also be used for:
 
-Querying:
-  query     Run basic queries against the given PMLBAKED file.
+             * Finding mono pmip jit log files (copy them here before Unity exits)
+             * Writing a .pmlbaked file with the same filename as PML with the
+               symbolicated data, to be used for a `query`.
 
-  PMLBAKED  Path to a .pmlbaked file (file extension optional) for running queries.
+  CONVERTED  Optional filename for converted PML. If not specified, the
+             converted PML will be written to <PML>.json.
 
-  QUERY     {{int,datetime}} Print the stack for the matching event.
-            {{regex}}        Print ID's for events that match symbol or module name.
+  QUERY      {{int,datetime}} Print the stack for the matching event.
+             {{regex}}        Print ID's for events that match symbol or module name.
+
 
 Options:
   --debug               Write PMLBAKED in a more readable text debug format. (3-4x bigger)
   --no-ntsymbolpath     Don't use _NT_SYMBOL_PATH
   --no-symbol-download  Strip any http* from _NT_SYMBOL_PATH to avoid slow downloads
+  --mergethreads        Pretend that all processes are single-threaded.
   -h --help             Show this screen.
   -v --version          Show version.x
 

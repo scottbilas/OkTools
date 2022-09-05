@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OkFeatures>NiceIO</OkFeatures>
+    <OkFeatures>NiceIO;Core</OkFeatures>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>OkTools.ProcMonUtils</RootNamespace>
   </PropertyGroup>

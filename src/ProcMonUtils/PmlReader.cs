@@ -16,10 +16,12 @@ public sealed class PmlReader : IDisposable
 
     public void Dispose() => _reader.Dispose();
 
+    public NPath PmlPath { get; }
     public uint EventCount => _eventCount;
 
-    public PmlReader(string pmlPath)
+    public PmlReader(NPath pmlPath)
     {
+        PmlPath = pmlPath;
         _reader = new BinaryReader(new FileStream(pmlPath, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete), Encoding.Unicode);
 
         if (_reader.ReadByte() != 'P' || // Signature - "PML_"
@@ -27,17 +29,17 @@ public sealed class PmlReader : IDisposable
             _reader.ReadByte() != 'L' ||
             _reader.ReadByte() != '_')
         {
-            throw new FileLoadException("Not a PML file", pmlPath);
+            throw new FileLoadException("Not a PML file", PmlPath);
         }
 
         const int expectedVersion = 9;
         var version = _reader.ReadUInt32();
         if (version != expectedVersion) // The version of the PML file. I assume its 9
-            throw new FileLoadException($"PML has version {version}, expected {expectedVersion}", pmlPath);
+            throw new FileLoadException($"PML has version {version}, expected {expectedVersion}", PmlPath);
 
         var is64Bit = _reader.ReadUInt32(); // 1 if the system is 64 bit, 0 otherwise
         if (is64Bit != 1)
-            throw new FileLoadException($"PML must be 64-bit", pmlPath);
+            throw new FileLoadException("PML must be 64-bit", PmlPath);
 
         SeekCurrent(
             0x20 +  // The computer name
@@ -51,7 +53,7 @@ public sealed class PmlReader : IDisposable
 
         // don't pskill your procmon or it won't update the header; use /terminate instead
         if (_eventOffsetsOffset == 0)
-            throw new FileLoadException($"File was not closed cleanly during capture and is corrupt", pmlPath);
+            throw new FileLoadException("File was not closed cleanly during capture and is corrupt", PmlPath);
 
         var processesOffset = _reader.ReadUInt64();
         var stringsOffset = _reader.ReadUInt64();
@@ -60,7 +62,7 @@ public sealed class PmlReader : IDisposable
         SeekBegin(_eventOffsetsOffset);
         var eventOffset0 = _reader.ReadUInt32();
         if (eventOffset0 != eventsDataOffset)
-            throw new FileLoadException($"PML has mismatched first event offset ({eventOffset0} and {eventsDataOffset})", pmlPath);
+            throw new FileLoadException($"PML has mismatched first event offset ({eventOffset0} and {eventsDataOffset})", PmlPath);
 
         _strings = ReadStringData(stringsOffset);
         ReadProcessData(processesOffset);
@@ -173,12 +175,12 @@ public sealed class PmlReader : IDisposable
         FileSystem = 1 << 2,
         Profiling  = 1 << 3,
         Network    = 1 << 4,
-        AllClasses = Process | Registry | FileSystem | Profiling | Network,
+        AllEventClasses = Process | Registry | FileSystem | Profiling | Network,
 
         Stacks     = 1 << 5,
         Details    = 1 << 6,
 
-        Everything = AllClasses | Stacks | Details,
+        Everything = AllEventClasses | Stacks | Details,
     }
 
     public IEnumerable<PmlEvent> SelectEvents(Filter filter = Filter.Everything, int startAtIndex = 0)
@@ -216,7 +218,7 @@ public sealed class PmlReader : IDisposable
             else
                 SeekCurrent(rawEvent.StackTraceDepth * 8);
 
-            var pmlInit = new PmlEventInit(eventIndex, rawEvent, frames);
+            var pmlInit = new PmlEventInit((uint)eventIndex, rawEvent, frames);
             PmlEvent? pmlEvent = null;
 
             if ((filter & Filter.Details) != 0 && rawEvent.DetailsSize != 0)
@@ -238,6 +240,14 @@ public sealed class PmlReader : IDisposable
     }
 
     public IEnumerable<PmlEvent> SelectEvents(int startAtIndex) => SelectEvents(Filter.Everything, startAtIndex);
+
+    public PmlEvent GetEvent(int index)
+    {
+        var pmlEvent = SelectEvents(index).First();
+        if (pmlEvent.EventIndex != index)
+            throw new InvalidOperationException("Unexpected mismatch of found event and requested index");
+        return pmlEvent;
+    }
 
     public PmlProcess ResolveProcess(uint processIndex) => _processesByPmlIndex[processIndex];
 

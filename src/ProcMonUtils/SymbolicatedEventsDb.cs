@@ -3,12 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace OkTools.ProcMonUtils;
 
-[DebuggerDisplay("PID={ProcessId}; Frames={Frames.Length}")]
-public struct EventRecord
+[DebuggerDisplay("Frames={Frames.Length}")]
+public struct SymbolicatedEvent
 {
-    public int Sequence;
-    public DateTime CaptureTime;
-    public int ProcessId;
     public FrameRecord[] Frames;
 }
 
@@ -22,9 +19,9 @@ public enum FrameType
 public struct FrameRecord
 {
     public FrameType Type;
-    public int ModuleStringIndex;
-    public int SymbolStringIndex;
-    public ulong Offset; // will be the full address if no symbol
+    public int       ModuleStringIndex;
+    public int       SymbolStringIndex;
+    public ulong     Offset; // will be the full address if no symbol
 }
 
 public class PmlBakedParseException : Exception
@@ -32,41 +29,40 @@ public class PmlBakedParseException : Exception
     public PmlBakedParseException(string message) : base(message) { }
 }
 
-public class PmlQuery
+public class SymbolicatedEventsDb
 {
     readonly List<string> _strings = new();
-    readonly Dictionary<DateTime, int> _eventsByTime = new();
-    readonly Dictionary<string, List<int>> _symbolsToEvents = new();
-    readonly Dictionary<string, List<int>> _modulesToEvents = new();
+    readonly Dictionary<string, List<uint>> _symbolsToEvents = new();
+    readonly Dictionary<string, List<uint>> _modulesToEvents = new();
 
-    EventRecord[] _events;
+    SymbolicatedEvent[] _events;
+    bool[] _validEvents;
 
     enum State { Seeking, Config, Events, Strings }
 
-    public PmlQuery(string pmlBakedPath)
+    public SymbolicatedEventsDb(string pmlBakedPath)
     {
         Load(pmlBakedPath);
 
-        if (_events == null)
+        if (_events == null || _validEvents == null)
             throw new FileLoadException($"No events found in {pmlBakedPath}");
 
-        foreach (var evt in _events)
+        for (var i = 0u; i < _events.Length; ++i)
         {
-            // uninitialized events will happen when there are gaps in the sequencing
-            if (evt.ProcessId == 0)
+            if (!_validEvents[i])
                 continue;
 
-            foreach (var frame in evt.Frames)
+            foreach (var frame in _events[i].Frames)
             {
-                Add(_modulesToEvents, evt.Sequence, frame.ModuleStringIndex);
-                Add(_symbolsToEvents, evt.Sequence, frame.SymbolStringIndex);
+                Add(_modulesToEvents, i, frame.ModuleStringIndex);
+                Add(_symbolsToEvents, i, frame.SymbolStringIndex);
             }
         }
     }
 
     public string GetString(int stringIndex) => _strings[stringIndex];
 
-    void Add(Dictionary<string, List<int>> dict, int eventIndex, int stringIndex)
+    void Add(Dictionary<string, List<uint>> dict, uint eventIndex, int stringIndex)
     {
         var value = GetString(stringIndex);
         if (!dict.TryGetValue(value, out var list))
@@ -114,7 +110,8 @@ public class PmlQuery
                         {
                             case "EventCount":
                                 var eventCount = int.Parse(m.Groups[2].Value);
-                                _events = new EventRecord[eventCount];
+                                _events = new SymbolicatedEvent[eventCount];
+                                _validEvents = new bool[eventCount];
                                 break;
                             case "DebugFormat":
                                 if (bool.Parse(m.Groups[2].Value))
@@ -150,29 +147,22 @@ public class PmlQuery
     {
         var parser = new SimpleParser(line);
 
-        var sequence = (int)parser.ReadULongHex();
-        ref var eventRecord = ref _events[sequence];
-        eventRecord.Sequence = sequence;
-        parser.Expect(':');
+        var eventIndex = (uint)parser.ReadULongHex();
+        _validEvents[eventIndex] = true;
 
-        eventRecord.CaptureTime = DateTime.FromFileTime((long)parser.ReadULongHex());
-        _eventsByTime[eventRecord.CaptureTime] = sequence;
-        parser.Expect(';');
-
-        eventRecord.ProcessId = (int)parser.ReadULongHex();
+        ref var eventRecord = ref _events[eventIndex];
         eventRecord.Frames = new FrameRecord[parser.Count(';')];
 
         for (var iframe = 0; iframe < eventRecord.Frames.Length; ++iframe)
         {
             parser.Expect(';');
 
-            var typec = parser.ReadChar();
-            var type = typec switch
+            var type = parser.ReadChar() switch
             {
                 'K' => FrameType.Kernel,
                 'U' => FrameType.User,
                 'M' => FrameType.Mono,
-                _ => throw new ArgumentOutOfRangeException($"Unknown type '{typec}' for frame {iframe}")
+                var c => throw new ArgumentOutOfRangeException($"Unknown type '{c}' for frame {iframe}")
             };
 
             parser.Expect(',');
@@ -206,22 +196,12 @@ public class PmlQuery
             throw new PmlBakedParseException("Unexpected extra frames");
     }
 
-    public IReadOnlyList<EventRecord> AllRecords => _events;
+    public SymbolicatedEvent? GetRecord(uint eventIndex) =>
+        _validEvents[eventIndex] ? _events[eventIndex] : null;
 
-    public EventRecord? FindRecordBySequence(int sequence)
-    {
-        ref var e = ref _events[sequence];
-        if (e.ProcessId != 0)
-            return e;
-
-        return null;
-    }
-
-    public EventRecord? FindRecordByCaptureTime(DateTime dateTime) => _eventsByTime.TryGetValue(dateTime, out var foundIndex) ? _events[foundIndex] : null;
-
-    static IEnumerable<int> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<int>>> items, Regex regex) =>
+    static IEnumerable<uint> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<uint>>> items, Regex regex) =>
         items.Where(kv => regex.IsMatch(kv.Key)).SelectMany(kv => kv.Value).Distinct();
 
-    public IEnumerable<int> MatchRecordsBySymbol(Regex regex) => MatchRecordsByText(_symbolsToEvents, regex);
-    public IEnumerable<int> MatchRecordsByModule(Regex regex) => MatchRecordsByText(_modulesToEvents, regex);
+    public IEnumerable<uint> MatchRecordsBySymbol(Regex regex) => MatchRecordsByText(_symbolsToEvents, regex);
+    public IEnumerable<uint> MatchRecordsByModule(Regex regex) => MatchRecordsByText(_modulesToEvents, regex);
 }

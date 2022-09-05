@@ -73,12 +73,8 @@ public struct SymbolicateOptions
     public string[]? MonoPmipPaths; // defaults to looking for matching pmip's in pml folder
     public string? BakedPath;       // defaults to <pmlname>.pmlbaked
     public string? NtSymbolPath;    // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
-    public Action<int, int>? Progress;
+    public Action<uint, uint>? Progress;
     public Action<string?>? ModuleLoadProgress;
-    public string[]? NoSymbolModuleNames;
-
-    public int StartAtEventIndex;
-    public int EventProcessCount; // 0 means "all remaining events"
 }
 
 public class SymbolicateException : Exception
@@ -89,19 +85,17 @@ public class SymbolicateException : Exception
 
 public static class PmlUtils
 {
-    public const string CaptureTimeFormat = "hh:mm:ss.fffffff tt";
+    public const string CaptureTimeFormat = "HH:mm:ss.fffffff";
 
     // the purpose of this function is to bake text symbols (for native and mono jit) so the data can be transferred
     // to another machine without needing the exact same binaries and pdb's.
-    public static int Symbolicate(string inPmlPath, SymbolicateOptions options = default)
+    public static void Symbolicate(PmlReader pmlReader, SymbolicateOptions options = default)
     {
         // MISSING: support for domain reloads. pass in a timestamp to use (which would in non-test scenarios just come from
         // a stat for create-time on the pmip file itself) and the symbolicator can use the event create time to figure out
         // which pmip set to use.
 
-        var pmlPath = inPmlPath.ToNPath();
-        using var pmlReader = new PmlReader(pmlPath);
-        options.Progress?.Invoke(0, (int)pmlReader.EventCount);
+        options.Progress?.Invoke(0, pmlReader.EventCount);
 
         var symCacheDb = new Dictionary<uint /*pid*/, SymCache>();
         var strings = new List<string> { "" };
@@ -124,7 +118,7 @@ public static class PmlUtils
             return index;
         }
 
-        var monoPmipPaths = options.MonoPmipPaths ?? pmlPath.Parent.Files("pmip*.txt").Select(p => p.ToString()).ToArray();
+        var monoPmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip*.txt").Select(p => p.ToString()).ToArray();
 
         foreach (var monoPmipPath in monoPmipPaths)
         {
@@ -137,13 +131,13 @@ public static class PmlUtils
             symCacheDb.Add((uint)pid, symCache);
         }
 
-        var bakedPath = options.BakedPath ?? pmlPath.ChangeExtension(".pmlbaked");
+        var bakedPath = options.BakedPath ?? pmlReader.PmlPath.ChangeExtension(".pmlbaked");
         var tmpBakedPath = bakedPath + ".tmp";
         using (var bakedFile = File.CreateText(tmpBakedPath))
         {
             if (options.DebugFormat)
             {
-                bakedFile.Write("# Events: Sequence:Time of Day;PID;Frame[0];Frame[1];Frame[..n]\n");
+                bakedFile.Write("# Events: Sequence:Frame[0];Frame[1];Frame[..n]\n");
                 bakedFile.Write("# Frames: $type [$module] $symbol + $offset (type: K=kernel, U=user, M=mono)\n");
                 bakedFile.Write("\n");
             }
@@ -155,10 +149,7 @@ public static class PmlUtils
             bakedFile.Write("[Events]\n");
 
             var sb = new StringBuilder();
-
-            var pmlEvents = pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Stacks, options.StartAtEventIndex);
-            if (options.EventProcessCount > 0)
-                pmlEvents = pmlEvents.Take(options.EventProcessCount);
+            var pmlEvents = pmlReader.SelectEvents(PmlReader.Filter.AllEventClasses | PmlReader.Filter.Stacks);
 
             foreach (var pmlEvent in pmlEvents)
             {
@@ -167,20 +158,10 @@ public static class PmlUtils
                 if (!symCacheDb.TryGetValue(process.ProcessId, out var symCache))
                     symCacheDb.Add(process.ProcessId, symCache = new SymCache(options));
 
-                if (options.DebugFormat)
-                {
-                    sb.AppendFormat("{0}:{1};{2};",
-                        pmlEvent.EventIndex,
-                        pmlEvent.CaptureDateTime.ToString(CaptureTimeFormat),
-                        process.ProcessId);
-                }
-                else
-                {
-                    sb.AppendFormat("{0:x}:{1:x};{2:x};",
-                        pmlEvent.EventIndex,
-                        pmlEvent.CaptureTime,
-                        process.ProcessId);
-                }
+                if (pmlEvent.Frames!.Length == 0)
+                    continue;
+
+                sb.Append(pmlEvent.EventIndex.ToString(options.DebugFormat ? null : "x"));
 
                 for (var iframe = 0; iframe < pmlEvent.Frames!.Length; ++iframe)
                 {
@@ -200,16 +181,15 @@ public static class PmlUtils
                         }
                     }
 
-                    var type = (address & 1UL << 63) != 0 ? 'K' : 'U';
-                    if (iframe != 0)
-                        sb.Append(';');
+                    var type = (address & (1UL << 63)) != 0 ? 'K' : 'U';
+                    sb.Append(';');
 
                     if (module != null && symCache.TryGetNativeSymbol(address, out var nativeSymbol))
                     {
                         var name = nativeSymbol.symbol.Name;
 
                         // sometimes we get noisy symbols like Microsoft.CodeAnalysis.CommitHashAttribute..ctor(System.String)$##6000AE6
-                        var found = name.IndexOf("$##");
+                        var found = name.IndexOf("$##", StringComparison.Ordinal);
                         if (found != -1)
                             name = name[..found];
 
@@ -233,7 +213,7 @@ public static class PmlUtils
                 bakedFile.Write(sb.ToString());
                 sb.Clear();
 
-                options.Progress?.Invoke(pmlEvent.EventIndex, (int)pmlReader.EventCount);
+                options.Progress?.Invoke(pmlEvent.EventIndex, pmlReader.EventCount);
             }
 
             foreach (var cache in symCacheDb.Values)
@@ -254,7 +234,5 @@ public static class PmlUtils
 
         File.Delete(bakedPath);
         File.Move(tmpBakedPath, bakedPath);
-
-        return (int)pmlReader.EventCount;
     }
 }

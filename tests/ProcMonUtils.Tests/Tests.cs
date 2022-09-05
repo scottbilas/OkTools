@@ -26,7 +26,8 @@ class Tests
 
     void Symbolicate()
     {
-        PmlUtils.Symbolicate(_pmlPath, new SymbolicateOptions
+        using var pmlReader = new PmlReader(_pmlPath);
+        PmlUtils.Symbolicate(pmlReader, new SymbolicateOptions
         {
             MonoPmipPaths = new[] { _pmipPath.ToString() },
             BakedPath = _pmlBakedPath,
@@ -59,12 +60,12 @@ class Tests
     {
         Symbolicate();
 
-        var pmlQuery = new PmlQuery(_pmlBakedPath);
+        var eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
 
-        var frame = pmlQuery.FindRecordBySequence(36)!.Value.Frames[2];
-        pmlQuery.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
+        var frame = eventsDb.GetRecord(36)!.Value.Frames[2];
+        eventsDb.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
         frame.Type.ShouldBe(FrameType.Kernel);
-        pmlQuery.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
+        eventsDb.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
 
         // TODO: this is unstable; as the OS gets updated, offsets change..pack in the PDB probably..?
         frame.Offset.ShouldBe(0x752ul);
@@ -75,17 +76,15 @@ class Tests
     {
         Symbolicate();
 
-        var pmlQuery = new PmlQuery(_pmlBakedPath);
+        var eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
 
         // find all events where someone is calling a dotnet generic
-        var matches = pmlQuery
+        var matches = eventsDb
             .MatchRecordsBySymbol(new Regex("`"))
             .OrderBy(seq => seq)
-            .Select(seq => pmlQuery.FindRecordBySequence(seq))
-            .WhereNotNull()
             .ToList();
 
-        matches.First().Sequence.ShouldBe(3);
-        matches.Last().Sequence.ShouldBe(311);
+        matches.First().ShouldBe(3u);
+        matches.Last().ShouldBe(311u);
     }
 }
