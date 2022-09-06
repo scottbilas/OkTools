@@ -1,17 +1,21 @@
 ﻿const string programVersion = "0.1";
 
-var (exitCode, cliOptions) = PmlToolCliArguments.CreateParser().Parse(args, programVersion,
-    PmlToolCliArguments.Help, PmlToolCliArguments.Usage, cliArgs => cliArgs.CmdHelp);
+var rc = PmlToolCliArguments.CreateParser().Parse(args,
+    programVersion, PmlToolCliArguments.Help, PmlToolCliArguments.Usage,
+    cliArgs => cliArgs.CmdHelp)
+    switch
+    {
+        // the main commands
+        (_, { CmdBake:    true } cliOptions) => Bake   (cliOptions),
+        (_, { CmdResolve: true } cliOptions) => Resolve(cliOptions),
+        (_, { CmdQuery:   true } cliOptions) => Query  (cliOptions),
+        (_, { CmdConvert: true } cliOptions) => Convert(cliOptions),
 
-if (exitCode != null)
-    return (int)exitCode.Value;
-if (cliOptions.CmdBake)
-    return (int)Bake(cliOptions);
-if (cliOptions.CmdResolve)
-    return (int)Resolve(cliOptions);
-if (cliOptions.CmdQuery)
-    return (int)Query(cliOptions);
-if (cliOptions.CmdConvert)
-    return (int)Convert(cliOptions);
+        // parser handled printing help or whatever
+        ({ } exitCode, _) => exitCode,
 
-return 0;
+        // nothing to do
+        _ => CliExitCode.ErrorUsage,
+    };
+
+return (int)rc;
