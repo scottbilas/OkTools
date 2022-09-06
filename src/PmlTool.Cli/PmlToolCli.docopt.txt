@@ -6,7 +6,7 @@ Usage:
   {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] PML
   {0} resolve PML
   {0} query PML QUERY...
-  {0} convert [--mergethreads STRATEGY] PML [CONVERTED]
+  {0} convert [--mergethreads=STRATEGY] PML [CONVERTED]
   {0} (help|-h|--help)
   {0} (-v|--version)
 
@@ -48,19 +48,19 @@ Arguments:
   CONVERTED  Optional filename for converted PML. If not specified, the
              converted PML will be written to <PML>.json.
 
-  STRATEGY   Strategy for merging threads, case insensitive. One of:
-
-             none  Do not merge threads (same as no --merge-threads)
-             all   Merge all threads into a single thread called `(merged)`
-             min   Merge threads down to the minimum required to do the IO in parallel
-
 Options:
-  --debug               Write PMLBAKED in a more readable text debug format. (3-4x bigger)
-  --no-ntsymbolpath     Don't use _NT_SYMBOL_PATH
-  --no-symbol-download  Strip any http* from _NT_SYMBOL_PATH to avoid slow downloads
-  --mergethreads        Pretend that all processes are single-threaded.
-  -h --help             Show this screen.
-  -v --version          Show version.x
+  --debug                  Write PMLBAKED in a more readable text debug format. (3-4x bigger)
+  --no-ntsymbolpath        Don't use _NT_SYMBOL_PATH
+  --no-symbol-download     Strip any http* from _NT_SYMBOL_PATH to avoid slow downloads
+
+  --mergethreads STRATEGY  Strategy for merging threads, case insensitive. One of:
+
+                           * none: Do not merge threads (same as no --merge-threads)
+                           * all:  Merge all threads into a single thread called `(merged)`
+                           * min:  Merge threads down to the minimum required to do the IO in parallel
+
+  -h --help                Show this screen.
+  -v --version             Show version.x
 
 IMPORTANT: baking should be done before any DLL's are replaced, such as from a
 Windows Update or rebuilding Unity. No validation is done to ensure that DLL's

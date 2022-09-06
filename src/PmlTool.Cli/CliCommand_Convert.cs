@@ -3,65 +3,91 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
-    static CliExitCode Convert(PmlToolCliArguments cliOptions)
+    static CliExitCode Convert(PmlToolCliArguments opts)
     {
-        var pmlPath = cliOptions.ArgPml!.ToNPath().FileMustExist();
-        using var converted = File.CreateText((cliOptions.ArgConverted ?? pmlPath + ".json").ToNPath());
-
-        converted.WriteLine('[');
-
+        var pmlPath = opts.ArgPml!.ToNPath().FileMustExist();
         using var pmlReader = new PmlReader(pmlPath);
+        using var converted = TraceWriter.CreateJsonFile(opts.ArgConverted ?? pmlPath + ".json");
+
         ulong? baseTime = null;
-
         var seenProcessIds = new HashSet<uint>();
-
         var pairId = 1;
-        foreach (var rwEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Details).OfType<PmlFileSystemReadWriteEvent>().SkipWhile(e => e.EventIndex < 137900))
+
+        foreach (var rwEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Details).OfType<PmlFileSystemReadWriteEvent>())
         {
             baseTime ??= rwEvent.CaptureTime / 10;
 
             var process = pmlReader.ResolveProcess(rwEvent.ProcessIndex);
             if (seenProcessIds.Add(process.ProcessId))
             {
-                converted.WriteLine("{"+
-                    $"\"name\":\"process_name\",\"ph\":\"M\",\"pid\":{process.ProcessId},"+
-                    $"\"args\":{{\"name\":\"{process.ProcessName}\"}}"+
-                    "},");
-                if (cliOptions.OptMergethreads)
-                {
-                    converted.WriteLine("{"+
-                        $"\"name\":\"thread_name\",\"ph\":\"M\",\"pid\":{process.ProcessId},\"tid\":1,"+
-                        "\"args\":{\"name\":\"(merged)\"}"+
-                        "},");
-                }
+                converted.WriteProcessMetadata(process.ProcessId, process.ProcessName);
+                if (opts.OptMergethreads == "all")
+                    converted.WriteThreadMetadata(process.ProcessId, 1, "(merged)");
             }
 
-            var start = rwEvent.CaptureTime/10 - baseTime;
+            var start = rwEvent.CaptureTime/10 - baseTime.Value;
             var end = start + (ulong)rwEvent.DurationSpan.Ticks/10;
 
-            if (cliOptions.OptMergethreads)
+            void WritePre(char phase, uint tid)
             {
-                converted.WriteLine("{"+
-                    $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+
-                    $"\"ph\":\"b\",\"pid\":{process.ProcessId},\"tid\":{1},\"ts\":{start},\"id\":{pairId},"+
-                    $"\"args\":{{\"path\":\"{rwEvent.Path.Replace('\\', '/')}\",\"eidx\":{rwEvent.EventIndex}}}"+
-                    "},");
-                converted.WriteLine("{"+
-                    $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+ // tracing needs both name and cat to be here also (docs claim key is cat+scope+
-                    $"\"ph\":\"e\",\"pid\":{process.ProcessId},\"tid\":{1},\"ts\":{end},\"id\":{pairId}"+
-                    "},");
-                ++pairId;
+                converted
+                    .Open()
+                        .Write("name", rwEvent.Operation.ToString()!)
+                        .Write("cat", "file_io")
+                        .Write("ph", phase)
+                        .Write("pid", process.ProcessId)
+                        .Write("tid", tid);
+                // leave open
             }
-            else
+
+            void WritePathArgs(string path, uint eventIndex, bool includeColor)
             {
-                converted.WriteLine("{"+
-                    $"\"name\":\"{rwEvent.Operation}\",\"cat\":\"file_io\","+
-                    $"\"ph\":\"B\",\"pid\":{process.ProcessId},\"tid\":{rwEvent.ThreadId},\"ts\":{start},\"cname\":\"{(rwEvent.Path.Contains("ArtifactDB") ? "bad" : "good")}\","+
-                    $"\"args\":{{\"path\":\"{rwEvent.Path.Replace('\\', '/')}\",\"eidx\":{rwEvent.EventIndex}}}"+
-                    "},");
-                converted.WriteLine("{"+
-                    $"\"ph\":\"E\",\"pid\":{process.ProcessId},\"tid\":{rwEvent.ThreadId},\"ts\":{end}"+
-                    "},");
+                path = path.Replace('\\', '/');
+                if (includeColor)
+                    converted.Write("cname", path.Contains("/Library/Artifacts/") ? "bad" : "good");
+
+                converted
+                    .Open("args")
+                        .Write("path", path)
+                        .Write("eidx", eventIndex)
+                    .Close();
+            }
+
+            switch (opts.OptMergethreads)
+            {
+                case "none":
+                case null:
+                    // B/E is normal nested event
+                    WritePre('B', rwEvent.ThreadId);
+                        converted.Write("ts", start);
+                        WritePathArgs(rwEvent.Path, rwEvent.EventIndex, true);
+                    converted.Close(); // close pre
+                    converted
+                        .Open()
+                            .Write("ph", "E")
+                            .Write("pid", process.ProcessId)
+                            .Write("tid", rwEvent.ThreadId)
+                            .Write("ts", end)
+                        .Close();
+                    break;
+
+                case "all":
+                    // b/e is independent async event
+                    WritePre('b', 1);
+                        converted.Write("ts", start);
+                        converted.Write("id", pairId);
+                        WritePathArgs(rwEvent.Path, rwEvent.EventIndex, false);
+                    converted.Close(); // close pre
+                    WritePre('e', 1);
+                    converted
+                        .Write("ts", end)
+                        .Write("id", pairId)
+                        .Close(); // close pre
+                    ++pairId;
+                    break;
+
+                case "min":
+                    break;
             }
         }
 
