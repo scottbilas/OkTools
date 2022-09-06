@@ -6,9 +6,9 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
-    static CliExitCode Query(PmlToolCliArguments cliOptions)
+    static CliExitCode Query(PmlToolCliArguments opts)
     {
-        var pmlPath = cliOptions.ArgPml!.ToNPath();
+        var pmlPath = opts.ArgPml!.ToNPath();
         if (!pmlPath.HasExtension())
             pmlPath = pmlPath.ChangeExtension(".pml");
 
@@ -70,7 +70,7 @@ static partial class Program
                 Console.WriteLine("  Frames: <none>");
         }
 
-        foreach (var query in cliOptions.ArgQuery)
+        foreach (var query in opts.ArgQuery)
         {
             if (uint.TryParse(query, out var eventIdArg))
             {

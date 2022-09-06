@@ -6,7 +6,7 @@ static partial class Program
 {
     const string k_ntSymbolPathName = "_NT_SYMBOL_PATH";
 
-    static CliExitCode Bake(PmlToolCliArguments cliOptions)
+    static CliExitCode Bake(PmlToolCliArguments opts)
     {
         // FUTURE: this eats up a ton of native memory, probably from loading and using all the PDB's and never unloading them.
         // can probably set up some kind of LRU+pdbsize unload strategy to keep it manageable.
@@ -45,11 +45,11 @@ static partial class Program
         monitor.Start();
 
         string? ntSymbolPath = null;
-        if (cliOptions.OptNoNtsymbolpath)
+        if (opts.OptNoNtsymbolpath)
         {
             ntSymbolPath = "";
         }
-        else if (cliOptions.OptNoSymbolDownload)
+        else if (opts.OptNoSymbolDownload)
         {
             var oldvar = Environment.GetEnvironmentVariable(k_ntSymbolPathName);
             if (oldvar != null)
@@ -65,12 +65,12 @@ static partial class Program
         else if ((Environment.GetEnvironmentVariable(k_ntSymbolPathName)?.IndexOf("http") ?? -1) != -1)
             Console.WriteLine($"{k_ntSymbolPathName} appears to be set to use a symbol server, which may slow down processing greatly..");
 
-        using var pmlReader = new PmlReader(cliOptions.ArgPml!.ToNPath());
+        using var pmlReader = new PmlReader(opts.ArgPml!.ToNPath());
         var bakedFile = pmlReader.PmlPath.ChangeExtension(".pmlbaked");
 
         var iter = 0;
         PmlUtils.Symbolicate(pmlReader, new SymbolicateOptions {
-            DebugFormat = cliOptions.OptDebug,
+            DebugFormat = opts.OptDebug,
             NtSymbolPath = ntSymbolPath,
             ModuleLoadProgress = name => currentModule = name,
             Progress = (_, total) =>

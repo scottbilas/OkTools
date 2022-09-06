@@ -3,7 +3,7 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
-    static CliExitCode Resolve(PmlToolCliArguments cliOptions)
+    static CliExitCode Resolve(PmlToolCliArguments opts)
     {
         if ((Environment.GetEnvironmentVariable(k_ntSymbolPathName)?.IndexOf("http") ?? -1) == -1)
             Console.WriteLine($"{k_ntSymbolPathName} appears to be not set to use a symbol server!");
@@ -12,7 +12,7 @@ static partial class Program
 
         var modulePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var iter = 0;
-        using (var pmlReader = new PmlReader(cliOptions.ArgPml!.ToNPath()))
+        using (var pmlReader = new PmlReader(opts.ArgPml!.ToNPath()))
         {
             foreach (var pmlEvent in pmlReader.SelectEvents())
             {
