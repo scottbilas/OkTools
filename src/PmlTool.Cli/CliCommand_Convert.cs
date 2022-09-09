@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using NiceIO;
 using OkTools.ProcMonUtils;
 
@@ -49,20 +50,22 @@ static partial class Program
     cq_build_attempt_failed: new tr.b.Color(197, 81, 81)
 */
 
-    record FileOp(string Path, ulong Expire)
+    record FileOp(object Operation, string Path, ulong Expire)
     {
         List<ulong>? _children;
 
-        public bool TryAdd(string path, ulong end)
+        public bool TryAdd(object operation, string path, ulong end)
         {
             if (Expire < end)
                 return false;
             if (!Path.EqualsIgnoreCase(path))
                 return false;
+            if (!Operation.Equals(operation))
+                return false;
 
             if (_children == null)
                 _children = new();
-            else if (_children[^1] < end)
+            else if (_children.Count != 0 && _children[^1] < end)
                 return false;
 
             _children.Add(end);
@@ -76,7 +79,7 @@ static partial class Program
 
             if (_children != null)
             {
-                while (_children[^1] <= start)
+                while (_children.Count != 0 && _children[^1] <= start)
                     _children.DropBack();
             }
 
@@ -114,7 +117,7 @@ static partial class Program
             // flags on them like "Non-cached, Paging I/O". i can only guess at what the later reads are about, but none
             // of them have stacks on them, so that's an easy way to detect these extra reads. i'm going to ignore them
             // because they don't add any more information than the large read and just end up as noise in the trace.
-            if (rwEvent.Frames == null)
+            if (!opts.OptShowall && rwEvent.Frames == null)
                 continue;
 
             var process = pmlReader.ResolveProcess(rwEvent.ProcessIndex);
@@ -185,6 +188,7 @@ static partial class Program
                 case "min":
 
                     var best = (index: -1, expire: (ulong?)null);
+                    var taken = false;
 
                     for (var i = 0; i < fileOps.Length; ++i)
                     {
@@ -192,9 +196,10 @@ static partial class Program
                         if (fileOp != null)
                         {
                             // are we a sub-operation of this one?
-                            if (fileOp.TryAdd(rwEvent.Path, end))
+                            if (fileOp.TryAdd(rwEvent.Operation, rwEvent.Path, end))
                             {
                                 best.index = i;
+                                taken = true;
                                 break;
                             }
 
@@ -214,7 +219,15 @@ static partial class Program
                     if (best.index < 0)
                         throw new OverflowException("vtidExpirePool too small");
 
-                    WriteEvent((uint)best.index + 1);
+                    if (!taken)
+                    {
+                        Debug.Assert(fileOps[best.index] == null);
+                        fileOps[best.index] = new FileOp(rwEvent.Operation, rwEvent.Path, end);
+                    }
+
+                    if (!taken || opts.OptShowall)
+                        WriteEvent((uint)best.index + 1);
+
                     break;
 
                 case "all":
