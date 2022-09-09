@@ -146,7 +146,7 @@ public class PmlFileSystemDetailedEvent : PmlFileSystemEvent
 {
     readonly byte _subOperation;
 
-    public readonly string Path;
+    public readonly NPath Path;
 
     internal PmlFileSystemDetailedEvent(PmlEventInit init, byte subOperation, string path) : base(init)
     {

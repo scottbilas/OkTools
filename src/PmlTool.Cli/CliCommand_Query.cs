@@ -13,6 +13,7 @@ static partial class Program
             pmlPath = pmlPath.ChangeExtension(".pml");
 
         using var pmlReader = new PmlReader(pmlPath);
+        var baseTime = pmlReader.GetEvent(0).CaptureDateTime;
 
         var pmlBakedPath = pmlPath.ChangeExtension(".pmlbaked").FileMustExist();
 
@@ -33,7 +34,7 @@ static partial class Program
 
             Console.WriteLine();
             Console.WriteLine($"[{pmlEvent.EventIndex}]");
-            Console.WriteLine("  CaptureTime = " + pmlEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+            Console.WriteLine($"  CaptureTime = {pmlEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat)} (abs: {(pmlEvent.CaptureDateTime - baseTime).ToString()})");
             var process = pmlReader.ResolveProcess(pmlEvent.ProcessIndex);
             Console.WriteLine($"  Process = {process.ProcessId} ({process.ProcessName})");
             Console.WriteLine($"  Thread ID = {pmlEvent.ThreadId}");
@@ -70,51 +71,82 @@ static partial class Program
                 Console.WriteLine("  Frames: <none>");
         }
 
-        foreach (var query in opts.ArgQuery)
+        uint? RunQuery(string query, out bool parsed)
         {
+            parsed = true;
+
             if (uint.TryParse(query, out var eventIdArg))
-            {
-                Dump(eventIdArg);
-            }
-            else if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out eventIdArg))
-            {
-                Dump(eventIdArg);
-            }
-            else if (DateTime.TryParse(query, out var captureTime))
+                return eventIdArg;
+            if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out eventIdArg))
+                return eventIdArg;
+
+            if (DateTime.TryParse(query, out var captureTime))
             {
                 // just have to seek for it, no easy way to find
-                var found = false;
-                foreach (var pmlEvent in pmlReader.SelectEvents())
+                foreach (var pmlEvent in pmlReader!.SelectEvents())
                 {
                     if (pmlEvent.CaptureDateTime == captureTime)
-                    {
-                        Dump(pmlEvent.EventIndex);
-                        found = true;
-                        break;
-                    }
+                        return pmlEvent.EventIndex;
                 }
+            }
+            else
+                parsed = false;
 
-                if (!found)
-                    Console.Error.WriteLine("No event found matching " + captureTime.ToString(PmlUtils.CaptureTimeFormat));
+            return null;
+        }
+
+        foreach (var query in opts.ArgQuery)
+        {
+            var parts = query.Split("..", 2);
+            if (parts.Length == 1)
+            {
+                var startEnd = RunQuery(parts[0], out var parsed);
+                if (parsed)
+                {
+                    if (startEnd != null)
+                        Dump(startEnd.Value);
+                    else
+                        Console.Error.WriteLine($"No events found for given query '{parts[0]}'");
+                }
+                else
+                {
+                    EnsureHaveEventsDb();
+
+                    var regex = new Regex(query);
+                    var eventIds = Enumerable.Concat(
+                        symbolicatedEventsDb!.MatchRecordsByModule(regex),
+                        symbolicatedEventsDb!.MatchRecordsBySymbol(regex));
+
+                    var found = false;
+                    foreach (var eventId in eventIds)
+                    {
+                        Dump(eventId);
+                        found = true;
+                    }
+
+                    if (!found)
+                        Console.Error.WriteLine($"No events found matching module/symbol regex '{query}'");
+                }
             }
             else
             {
-                EnsureHaveEventsDb();
+                var start = RunQuery(parts[0], out var parsed);
+                if (!parsed)
+                    Console.Error.WriteLine($"Unable to parse query '{parts[0]}'");
+                else if (start == null)
+                    Console.Error.WriteLine($"No events found for given query '{parts[0]}'");
 
-                var regex = new Regex(query);
-                var eventIds = Enumerable.Concat(
-                    symbolicatedEventsDb!.MatchRecordsByModule(regex),
-                    symbolicatedEventsDb!.MatchRecordsBySymbol(regex));
+                var end = RunQuery(parts[1], out parsed);
+                if (!parsed)
+                    Console.Error.WriteLine($"Unable to parse query '{parts[1]}'");
+                else if (end == null)
+                    Console.Error.WriteLine($"No events found for given query '{parts[1]}'");
 
-                var found = false;
-                foreach (var eventId in eventIds)
+                if (start != null && end != null)
                 {
-                    Dump(eventId);
-                    found = true;
+                    for (var i = start.Value; i <= end.Value; ++i)
+                        Dump(i);
                 }
-
-                if (!found)
-                    Console.Error.WriteLine($"No events found matching module/symbol regex '{query}'");
             }
         }
 
