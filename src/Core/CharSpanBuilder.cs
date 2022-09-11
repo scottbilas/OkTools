@@ -3,20 +3,13 @@
 // TODO: look at ArrayBufferWriter and ArrayPool<char>.Shared(.Rent)
 public ref struct CharSpanBuilder
 {
-    readonly char[] _buffer;
+    readonly Span<char> _buffer;
+    readonly char[]? _array; // null if ctor only given a span to work with
     Span<char> _used;
 
-    public CharSpanBuilder(char[] buffer)
-    {
-        _buffer = buffer;
-        _used = default;
-    }
-
-    public CharSpanBuilder(int capacity)
-    {
-        _buffer = new char[capacity];
-        _used = default;
-    }
+    public CharSpanBuilder(Span<char> buffer) => _buffer = buffer;
+    public CharSpanBuilder(char[] array) => _buffer = _array = array;
+    public CharSpanBuilder(int capacity) => _buffer = _array = new char[capacity];
 
     public override string ToString() => new(Span);
     public static implicit operator ReadOnlySpan<char>(in CharSpanBuilder @this) => @this._used;
@@ -24,7 +17,7 @@ public ref struct CharSpanBuilder
     public int Length
     {
         get => _used.Length;
-        set => _used = _buffer.AsSpan(0, value);
+        set => _used = _buffer[..value];
     }
 
     public readonly int UnusedLength => _buffer.Length - _used.Length;
@@ -32,8 +25,11 @@ public ref struct CharSpanBuilder
     public void Clear() => _used = default;
 
     public Span<char> Span => _used;
-    public ArraySegment<char> Chars => new(_buffer, 0, _used.Length); // for older API's that can't take spans and require char[]
-    public Span<char> UnusedSpan => _buffer.AsSpan(_used.Length);
+    public Span<char> UnusedSpan => _buffer[_used.Length..];
+
+    public ArraySegment<char> Chars => _array != null
+        ? new(_array, 0, _used.Length)
+        : throw new InvalidOperationException("Span-only CharSpanBuilder cannot implicitly convert to Chars"); // for older API's that can't take spans and require char[]
 
     public bool TryAppend(int value)
     {
@@ -65,13 +61,13 @@ public ref struct CharSpanBuilder
 
     public int AppendTrunc(ReadOnlySpan<char> value)
     {
-        var count = Math.Min(value.Length, UnusedLength);
-        if (count != 0)
+        var use = Math.Min(value.Length, UnusedLength);
+        if (use != 0)
         {
-            value[..count].CopyTo(UnusedSpan);
-            Use(count);
+            value[..use].CopyTo(UnusedSpan);
+            Use(use);
         }
-        return count;
+        return use;
     }
 
     public bool TryAppend(char value)
@@ -95,7 +91,7 @@ public ref struct CharSpanBuilder
             return true;
         if ( _used.Length + count > _buffer.Length)
             return false;
-        Array.Fill(_buffer, value, _used.Length, count);
+        _buffer.Slice(_used.Length, count).Fill(value);
         Use(count);
         return true;
 
@@ -114,7 +110,7 @@ public ref struct CharSpanBuilder
 
     void Use(int count)
     {
-        _used = _buffer.AsSpan(0, _used.Length + count);
+        _used = _buffer[..(_used.Length + count)];
     }
 
     void ThrowInsufficientSpace<T>(T value)
