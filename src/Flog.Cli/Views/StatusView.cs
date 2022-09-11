@@ -107,7 +107,7 @@ class StatusView : ViewBase
 
         for (var i = 0; i < _filterStatuses.Length && text.UnusedLength > right.Length; ++i)
         {
-            var mid = new CharSpanBuilder(_buffer);
+            var mid = new CharSpanBuilder(right.UnusedSpan);
 
             if (i != 0)
                 mid.Append(" -> ");
