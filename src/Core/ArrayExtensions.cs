@@ -51,7 +51,7 @@ public static class ArrayExtensions
     ///
     /// Other notes:
     ///
-    /// * The underlying implementation will always fill with 0's, we aren't given a choice.
+    /// * The underlying implementation will always fill with undefined values (not necessarily 0's); we aren't given a choice. So we have to patch it up.
     /// * We throw if count > Length, to match `T[].ShiftLeft`.
     /// </summary>
     public static void ShiftLeftFixed(this BitArray @this, int count)
@@ -85,5 +85,13 @@ public static class ArrayExtensions
             @this.ShiftRightFixed(count);
         else
             @this.ShiftLeftFixed(-count);
+    }
+
+    // really for debugging only, this is not fast
+    public static bool[] ToArray(this BitArray @this)
+    {
+        var bits = new bool[@this.Length];
+        @this.CopyTo(bits, 0);
+        return bits;
     }
 }
