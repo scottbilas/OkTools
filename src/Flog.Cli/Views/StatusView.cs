@@ -134,7 +134,7 @@ class StatusView : ViewBase
         text.AppendTrunc(right);
 
         Screen.OutSetCursorPos(0, Top);
-        Screen.OutSetForegroundColor(128, 128, 128);
+        Screen.OutSetForegroundColor(Screen.Options.StatusColor);
         Screen.OutPrint(text, Width, true);
         Screen.OutResetAttributes();
 

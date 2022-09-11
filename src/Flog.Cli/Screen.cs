@@ -1,11 +1,5 @@
 using System.Threading.Channels;
 
-class Options
-{
-    public readonly int TabWidth = 4;
-    public readonly int HorizScrollSize = 10;
-}
-
 partial class Screen : IDisposable
 {
     static int s_instanceCount;

@@ -18,7 +18,7 @@ class ScrollingTextView : ViewBase
     uint _sourceVersion;                    // detect if raw source totally changes (e.g. file truncated)
     // visible region
     DisplayLine[] _displayLines;            // the screen.height set of actual lines we're showing
-    readonly BitArray _displayLinesValid;   // mutable state of each display line
+    readonly BitArray _displayLinesValid;   // track when we need to recalculate line contents
 
     readonly StringBuilder _sb = new();
     int _scrollX, _scrollY; // TODO: _scrollSubY;
@@ -117,6 +117,7 @@ class ScrollingTextView : ViewBase
 
         // validate and draw
 
+        var inVirtualSpace = false;
         for (var i = 0; i < _displayLinesValid.Length; ++i)
         {
             if (_displayLinesValid[i])
@@ -143,13 +144,20 @@ class ScrollingTextView : ViewBase
             else
             {
                 // TODO: make this char optional
-                // TODO: render in dark gray
 
-                Screen.OutPrint("~", Width, true);
+                if (!inVirtualSpace)
+                {
+                    inVirtualSpace = true;
+                    Screen.OutSetForegroundColor(Screen.Options.VirtualSpaceColor);
+                }
+                Screen.OutPrint(Screen.Options.VirtualSpaceText, Width, true);
             }
 
             _displayLinesValid[i] = true;
         }
+
+        if (inVirtualSpace)
+            Screen.OutResetAttributes();
     }
 
     public int ScrollPos => _scrollY;
@@ -220,7 +228,13 @@ class ScrollingTextView : ViewBase
             Invalidate(); // wrap etc. could have changed while we were away
     }
 
-    int ClampY(int testY) => Math.Clamp(testY, 0, _sourceLineCount - 1);
+    int ClampY(int testY)
+    {
+        var clamp = Screen.Options.VirtualSpaceEnabled
+            ? _sourceLineCount - 1
+            : Math.Max(0, _sourceLineCount - Height);
+        return Math.Clamp(testY, 0, clamp);
+    }
 
     public bool ScrollToY(int y) => ScrollToY(y, IsUserAction.Yes);
 

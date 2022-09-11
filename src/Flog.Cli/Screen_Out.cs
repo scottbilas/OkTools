@@ -1,3 +1,5 @@
+using System.Drawing;
+
 partial class Screen
 {
     readonly ControlBuilder _cb = new();
@@ -24,8 +26,8 @@ partial class Screen
     public void OutInsertChars(int count) => _cb.InsertCharacters(count);
     public void OutDeleteChars(int count) => _cb.DeleteCharacters(count);
 
-    public void OutSetForegroundColor(byte r, byte g, byte b) => _cb.SetForegroundColor(r, g, b);
-    public void OutSetBackgroundColor(byte r, byte g, byte b) => _cb.SetBackgroundColor(r, g, b);
+    public void OutSetForegroundColor(Color color) => _cb.SetForegroundColor(color.R, color.G, color.B);
+    public void OutSetBackgroundColor(Color color) => _cb.SetBackgroundColor(color.R, color.G, color.B);
     public void OutResetAttributes() => _cb.ResetAttributes();
 
     public void OutShowCursor(bool visible) => _cb.SetCursorVisibility(visible);
