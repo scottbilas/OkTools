@@ -140,7 +140,16 @@ class ScrollingTextView : ViewBase
                 var start = _wrapType == WrapType.None ? _scrollX : 0;
                 var span = _displayLines[i].Span.SliceSafe(start);
 
-                Screen.OutPrint(span, Width, true);
+                if (span.Length > Width && Screen.Options.TruncateMarkerEnabled)
+                {
+                    // TODO: consider putting a number to show how far offscreen the end is (# screen widths perhaps? or char count of course..)
+                    Screen.OutPrint(span[..(Width - Screen.Options.TruncateMarkerText.Length)]);
+                    Screen.OutSetForegroundColor(Screen.Options.TruncateMarkerColor);
+                    Screen.OutPrint(Screen.Options.TruncateMarkerText);
+                    Screen.OutResetAttributes();
+                }
+                else
+                    Screen.OutPrint(span, Width, true);
             }
             else
             {

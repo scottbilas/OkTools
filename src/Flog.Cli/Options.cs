@@ -10,4 +10,8 @@ class Options
     public bool VirtualSpaceEnabled = true;
     public string VirtualSpaceText = "~";
     public Color VirtualSpaceColor = Color.FromArgb(100, 100, 100);
+
+    public bool TruncateMarkerEnabled = true;
+    public string TruncateMarkerText = "\u2026"; // ...
+    public Color TruncateMarkerColor = Color.CornflowerBlue;
 }
