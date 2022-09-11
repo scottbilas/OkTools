@@ -11,7 +11,7 @@ namespace OkTools.Core;
 
 <# // ----- INTS -----
 
-foreach (var intType in new[] { "int", "long" }) {
+foreach (var intType in new[] { "byte", "int", "long" }) {
     for (var size = 2; size <= IntMax; ++size) {
         Init(intType, size);
         var boolType = "Bool" + size;
@@ -68,24 +68,24 @@ public struct <#=type#> : IEquatable<<#=type#>>
     public bool IsOne  => Equals(One);
 
     public static <#=type#> operator -(in <#=type#> i /*unary negate*/) =>
-        new(<#=Fields(f => $"-i.{f}")#>);
+        new(<#=Fields(f => Cast($"-i.{f}"))#>);
 
     public static <#=type#> operator +(in <#=type#> a, in <#=type#> b) =>
-        new(<#=Fields(f => $"a.{f} + b.{f}")#>);
+        new(<#=Fields(f => Cast($"a.{f} + b.{f}"))#>);
     public static <#=type#> operator +(in <#=type#> a, <#=intType#> d) =>
-        new(<#=Fields(f => $"a.{f} + d")#>);
+        new(<#=Fields(f => Cast($"a.{f} + d"))#>);
     public static <#=type#> operator -(in <#=type#> a, in <#=type#> b) =>
-        new(<#=Fields(f => $"a.{f} - b.{f}")#>);
+        new(<#=Fields(f => Cast($"a.{f} - b.{f}"))#>);
     public static <#=type#> operator -(in <#=type#> a, <#=intType#> d) =>
-        new(<#=Fields(f => $"a.{f} - d")#>);
+        new(<#=Fields(f => Cast($"a.{f} - d"))#>);
     public static <#=type#> operator *(in <#=type#> a, in <#=type#> b) =>
-        new(<#=Fields(f => $"a.{f} * b.{f}")#>);
+        new(<#=Fields(f => Cast($"a.{f} * b.{f}"))#>);
     public static <#=type#> operator *(in <#=type#> a, <#=intType#> d) =>
-        new(<#=Fields(f => $"a.{f} * d")#>);
+        new(<#=Fields(f => Cast($"a.{f} * d"))#>);
     public static <#=type#> operator /(in <#=type#> a, in <#=type#> b) =>
-        new(<#=Fields(f => $"a.{f} / b.{f}")#>);
+        new(<#=Fields(f => Cast($"a.{f} / b.{f}"))#>);
     public static <#=type#> operator /(in <#=type#> a, <#=intType#> d) =>
-        new(<#=Fields(f => $"a.{f} / d")#>);
+        new(<#=Fields(f => Cast($"a.{f} / d"))#>);
 
     public static <#=boolType#> operator <(in <#=type#> a, in <#=type#> b) =>
         new(<#=Fields(f => $"a.{f} < b.{f}")#>);
@@ -236,18 +236,23 @@ public static class <#=type#>Extensions
 <#+
 const int IntMax = 4, BoolMax = 4;
 
-string type, fieldList, varList, combinedVars;
+string baseType, type, fieldList, varList, combinedVars;
 char[] fields, vars;
 
-void Init(string baseType, int size)
+void Init(string baseTypeName, int size)
 {
-    type         = char.ToUpper(baseType[0]) + baseType.Substring(1) + size;
+    baseType     = baseTypeName;
+    type         = char.ToUpper(baseTypeName[0]) + baseTypeName.Substring(1) + size;
     fields       = new[] { 'X', 'Y', 'Z', 'W' }.Take(size).ToArray();
     vars         = fields.Select(char.ToLower).ToArray();
     fieldList    = string.Join(", ", fields);
     varList      = string.Join(", ", vars);
     combinedVars = new string(vars);
 }
+
+// byte operators auto promote to int, so have to cast it back down
+string Cast(string expr) =>
+    baseType == "byte" ? $"({baseType})({expr})" : expr;
 
 string Listify<T, TR>(IEnumerable<T> items, Func<T, TR> selector, string delim = ", ") =>
     string.Join(delim, items.Select(selector));

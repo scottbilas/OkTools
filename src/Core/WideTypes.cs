@@ -1,7 +1,307 @@
-namespace OkTools.Core;
+﻿namespace OkTools.Core;
 
 // the purpose of these types is programmer convenience, not SIMD. if you want SIMD types,
 // look at Unity Burst or System.Numerics.
+
+public struct Byte2 : IEquatable<Byte2>
+{
+    public byte X, Y;
+
+    public Byte2(byte x, byte y) =>
+        (X, Y) = (x, y);
+    public Byte2(byte v) =>
+        (X, Y) = (v, v);
+    public Byte2((byte, byte) xy) =>
+        (X, Y) = xy;
+
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 1");
+
+    public unsafe ref byte this[int index]
+    {
+        get
+        {
+            if (index < 0 || index > 1)
+                ThrowArgumentOutOfRange(index);
+            fixed (byte* i = &X) { return ref i[index]; }
+        }
+    }
+
+    public static implicit operator Byte2((byte, byte) xy) => new(xy);
+    public void Deconstruct(out byte x, out byte y) => (x, y) = (X, Y);
+
+    public bool Equals(Byte2 other) => X == other.X && Y == other.Y;
+    public override bool Equals(object? obj) => obj is Byte2 other && Equals(other);
+
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+
+    public static Bool2 operator ==(in Byte2 left, in Byte2 right) =>
+        new(left.X == right.X, left.Y == right.Y);
+    public static Bool2 operator !=(in Byte2 left, in Byte2 right) =>
+        new(left.X != right.X, left.Y != right.Y);
+
+    public override string ToString() => $"{X}, {Y}";
+    public object ToDump() => ToString(); // linqpad
+
+    static readonly Byte2 k_zero = new(0), k_one = new(1);
+    static readonly Byte2 k_maxValue = new(byte.MaxValue, byte.MaxValue);
+    static readonly Byte2 k_minValue = new(byte.MinValue, byte.MinValue);
+
+    public static ref readonly Byte2 Zero => ref k_zero;
+    public static ref readonly Byte2 One => ref k_one;
+    public static ref readonly Byte2 MaxValue => ref k_maxValue;
+    public static ref readonly Byte2 MinValue => ref k_minValue;
+
+    public bool IsZero => Equals(Zero);
+    public bool IsOne  => Equals(One);
+
+    public static Byte2 operator -(in Byte2 i /*unary negate*/) =>
+        new((byte)(-i.X), (byte)(-i.Y));
+
+    public static Byte2 operator +(in Byte2 a, in Byte2 b) =>
+        new((byte)(a.X + b.X), (byte)(a.Y + b.Y));
+    public static Byte2 operator +(in Byte2 a, byte d) =>
+        new((byte)(a.X + d), (byte)(a.Y + d));
+    public static Byte2 operator -(in Byte2 a, in Byte2 b) =>
+        new((byte)(a.X - b.X), (byte)(a.Y - b.Y));
+    public static Byte2 operator -(in Byte2 a, byte d) =>
+        new((byte)(a.X - d), (byte)(a.Y - d));
+    public static Byte2 operator *(in Byte2 a, in Byte2 b) =>
+        new((byte)(a.X * b.X), (byte)(a.Y * b.Y));
+    public static Byte2 operator *(in Byte2 a, byte d) =>
+        new((byte)(a.X * d), (byte)(a.Y * d));
+    public static Byte2 operator /(in Byte2 a, in Byte2 b) =>
+        new((byte)(a.X / b.X), (byte)(a.Y / b.Y));
+    public static Byte2 operator /(in Byte2 a, byte d) =>
+        new((byte)(a.X / d), (byte)(a.Y / d));
+
+    public static Bool2 operator <(in Byte2 a, in Byte2 b) =>
+        new(a.X < b.X, a.Y < b.Y);
+    public static Bool2 operator <(in Byte2 a, byte b) =>
+        new(a.X < b, a.Y < b);
+    public static Bool2 operator <(byte a, in Byte2 b) =>
+        new(a < b.X, a < b.Y);
+
+    public static Bool2 operator <=(in Byte2 a, in Byte2 b) =>
+        new(a.X <= b.X, a.Y <= b.Y);
+    public static Bool2 operator <=(in Byte2 a, byte b) =>
+        new(a.X <= b, a.Y <= b);
+    public static Bool2 operator <=(byte a, in Byte2 b) =>
+        new(a <= b.X, a <= b.Y);
+
+    public static Bool2 operator >(in Byte2 a, in Byte2 b) =>
+        new(a.X > b.X, a.Y > b.Y);
+    public static Bool2 operator >(in Byte2 a, byte b) =>
+        new(a.X > b, a.Y > b);
+    public static Bool2 operator >(byte a, in Byte2 b) =>
+        new(a > b.X, a > b.Y);
+
+    public static Bool2 operator >=(in Byte2 a, in Byte2 b) =>
+        new(a.X >= b.X, a.Y >= b.Y);
+    public static Bool2 operator >=(in Byte2 a, byte b) =>
+        new(a.X >= b, a.Y >= b);
+    public static Bool2 operator >=(byte a, in Byte2 b) =>
+        new(a >= b.X, a >= b.Y);
+}
+
+public struct Byte3 : IEquatable<Byte3>
+{
+    public byte X, Y, Z;
+
+    public Byte3(byte x, byte y, byte z) =>
+        (X, Y, Z) = (x, y, z);
+    public Byte3(byte v) =>
+        (X, Y, Z) = (v, v, v);
+    public Byte3((byte, byte, byte) xyz) =>
+        (X, Y, Z) = xyz;
+
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 2");
+
+    public unsafe ref byte this[int index]
+    {
+        get
+        {
+            if (index < 0 || index > 2)
+                ThrowArgumentOutOfRange(index);
+            fixed (byte* i = &X) { return ref i[index]; }
+        }
+    }
+
+    public static implicit operator Byte3((byte, byte, byte) xyz) => new(xyz);
+    public void Deconstruct(out byte x, out byte y, out byte z) => (x, y, z) = (X, Y, Z);
+
+    public bool Equals(Byte3 other) => X == other.X && Y == other.Y && Z == other.Z;
+    public override bool Equals(object? obj) => obj is Byte3 other && Equals(other);
+
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z);
+
+    public static Bool3 operator ==(in Byte3 left, in Byte3 right) =>
+        new(left.X == right.X, left.Y == right.Y, left.Z == right.Z);
+    public static Bool3 operator !=(in Byte3 left, in Byte3 right) =>
+        new(left.X != right.X, left.Y != right.Y, left.Z != right.Z);
+
+    public override string ToString() => $"{X}, {Y}, {Z}";
+    public object ToDump() => ToString(); // linqpad
+
+    static readonly Byte3 k_zero = new(0), k_one = new(1);
+    static readonly Byte3 k_maxValue = new(byte.MaxValue, byte.MaxValue, byte.MaxValue);
+    static readonly Byte3 k_minValue = new(byte.MinValue, byte.MinValue, byte.MinValue);
+
+    public static ref readonly Byte3 Zero => ref k_zero;
+    public static ref readonly Byte3 One => ref k_one;
+    public static ref readonly Byte3 MaxValue => ref k_maxValue;
+    public static ref readonly Byte3 MinValue => ref k_minValue;
+
+    public bool IsZero => Equals(Zero);
+    public bool IsOne  => Equals(One);
+
+    public static Byte3 operator -(in Byte3 i /*unary negate*/) =>
+        new((byte)(-i.X), (byte)(-i.Y), (byte)(-i.Z));
+
+    public static Byte3 operator +(in Byte3 a, in Byte3 b) =>
+        new((byte)(a.X + b.X), (byte)(a.Y + b.Y), (byte)(a.Z + b.Z));
+    public static Byte3 operator +(in Byte3 a, byte d) =>
+        new((byte)(a.X + d), (byte)(a.Y + d), (byte)(a.Z + d));
+    public static Byte3 operator -(in Byte3 a, in Byte3 b) =>
+        new((byte)(a.X - b.X), (byte)(a.Y - b.Y), (byte)(a.Z - b.Z));
+    public static Byte3 operator -(in Byte3 a, byte d) =>
+        new((byte)(a.X - d), (byte)(a.Y - d), (byte)(a.Z - d));
+    public static Byte3 operator *(in Byte3 a, in Byte3 b) =>
+        new((byte)(a.X * b.X), (byte)(a.Y * b.Y), (byte)(a.Z * b.Z));
+    public static Byte3 operator *(in Byte3 a, byte d) =>
+        new((byte)(a.X * d), (byte)(a.Y * d), (byte)(a.Z * d));
+    public static Byte3 operator /(in Byte3 a, in Byte3 b) =>
+        new((byte)(a.X / b.X), (byte)(a.Y / b.Y), (byte)(a.Z / b.Z));
+    public static Byte3 operator /(in Byte3 a, byte d) =>
+        new((byte)(a.X / d), (byte)(a.Y / d), (byte)(a.Z / d));
+
+    public static Bool3 operator <(in Byte3 a, in Byte3 b) =>
+        new(a.X < b.X, a.Y < b.Y, a.Z < b.Z);
+    public static Bool3 operator <(in Byte3 a, byte b) =>
+        new(a.X < b, a.Y < b, a.Z < b);
+    public static Bool3 operator <(byte a, in Byte3 b) =>
+        new(a < b.X, a < b.Y, a < b.Z);
+
+    public static Bool3 operator <=(in Byte3 a, in Byte3 b) =>
+        new(a.X <= b.X, a.Y <= b.Y, a.Z <= b.Z);
+    public static Bool3 operator <=(in Byte3 a, byte b) =>
+        new(a.X <= b, a.Y <= b, a.Z <= b);
+    public static Bool3 operator <=(byte a, in Byte3 b) =>
+        new(a <= b.X, a <= b.Y, a <= b.Z);
+
+    public static Bool3 operator >(in Byte3 a, in Byte3 b) =>
+        new(a.X > b.X, a.Y > b.Y, a.Z > b.Z);
+    public static Bool3 operator >(in Byte3 a, byte b) =>
+        new(a.X > b, a.Y > b, a.Z > b);
+    public static Bool3 operator >(byte a, in Byte3 b) =>
+        new(a > b.X, a > b.Y, a > b.Z);
+
+    public static Bool3 operator >=(in Byte3 a, in Byte3 b) =>
+        new(a.X >= b.X, a.Y >= b.Y, a.Z >= b.Z);
+    public static Bool3 operator >=(in Byte3 a, byte b) =>
+        new(a.X >= b, a.Y >= b, a.Z >= b);
+    public static Bool3 operator >=(byte a, in Byte3 b) =>
+        new(a >= b.X, a >= b.Y, a >= b.Z);
+}
+
+public struct Byte4 : IEquatable<Byte4>
+{
+    public byte X, Y, Z, W;
+
+    public Byte4(byte x, byte y, byte z, byte w) =>
+        (X, Y, Z, W) = (x, y, z, w);
+    public Byte4(byte v) =>
+        (X, Y, Z, W) = (v, v, v, v);
+    public Byte4((byte, byte, byte, byte) xyzw) =>
+        (X, Y, Z, W) = xyzw;
+
+    static void ThrowArgumentOutOfRange(int index) => throw new ArgumentOutOfRangeException(nameof(index), $"Failed 0 <= {index} <= 3");
+
+    public unsafe ref byte this[int index]
+    {
+        get
+        {
+            if (index < 0 || index > 3)
+                ThrowArgumentOutOfRange(index);
+            fixed (byte* i = &X) { return ref i[index]; }
+        }
+    }
+
+    public static implicit operator Byte4((byte, byte, byte, byte) xyzw) => new(xyzw);
+    public void Deconstruct(out byte x, out byte y, out byte z, out byte w) => (x, y, z, w) = (X, Y, Z, W);
+
+    public bool Equals(Byte4 other) => X == other.X && Y == other.Y && Z == other.Z && W == other.W;
+    public override bool Equals(object? obj) => obj is Byte4 other && Equals(other);
+
+    public override int GetHashCode() => HashCode.Combine(X, Y, Z, W);
+
+    public static Bool4 operator ==(in Byte4 left, in Byte4 right) =>
+        new(left.X == right.X, left.Y == right.Y, left.Z == right.Z, left.W == right.W);
+    public static Bool4 operator !=(in Byte4 left, in Byte4 right) =>
+        new(left.X != right.X, left.Y != right.Y, left.Z != right.Z, left.W != right.W);
+
+    public override string ToString() => $"{X}, {Y}, {Z}, {W}";
+    public object ToDump() => ToString(); // linqpad
+
+    static readonly Byte4 k_zero = new(0), k_one = new(1);
+    static readonly Byte4 k_maxValue = new(byte.MaxValue, byte.MaxValue, byte.MaxValue, byte.MaxValue);
+    static readonly Byte4 k_minValue = new(byte.MinValue, byte.MinValue, byte.MinValue, byte.MinValue);
+
+    public static ref readonly Byte4 Zero => ref k_zero;
+    public static ref readonly Byte4 One => ref k_one;
+    public static ref readonly Byte4 MaxValue => ref k_maxValue;
+    public static ref readonly Byte4 MinValue => ref k_minValue;
+
+    public bool IsZero => Equals(Zero);
+    public bool IsOne  => Equals(One);
+
+    public static Byte4 operator -(in Byte4 i /*unary negate*/) =>
+        new((byte)(-i.X), (byte)(-i.Y), (byte)(-i.Z), (byte)(-i.W));
+
+    public static Byte4 operator +(in Byte4 a, in Byte4 b) =>
+        new((byte)(a.X + b.X), (byte)(a.Y + b.Y), (byte)(a.Z + b.Z), (byte)(a.W + b.W));
+    public static Byte4 operator +(in Byte4 a, byte d) =>
+        new((byte)(a.X + d), (byte)(a.Y + d), (byte)(a.Z + d), (byte)(a.W + d));
+    public static Byte4 operator -(in Byte4 a, in Byte4 b) =>
+        new((byte)(a.X - b.X), (byte)(a.Y - b.Y), (byte)(a.Z - b.Z), (byte)(a.W - b.W));
+    public static Byte4 operator -(in Byte4 a, byte d) =>
+        new((byte)(a.X - d), (byte)(a.Y - d), (byte)(a.Z - d), (byte)(a.W - d));
+    public static Byte4 operator *(in Byte4 a, in Byte4 b) =>
+        new((byte)(a.X * b.X), (byte)(a.Y * b.Y), (byte)(a.Z * b.Z), (byte)(a.W * b.W));
+    public static Byte4 operator *(in Byte4 a, byte d) =>
+        new((byte)(a.X * d), (byte)(a.Y * d), (byte)(a.Z * d), (byte)(a.W * d));
+    public static Byte4 operator /(in Byte4 a, in Byte4 b) =>
+        new((byte)(a.X / b.X), (byte)(a.Y / b.Y), (byte)(a.Z / b.Z), (byte)(a.W / b.W));
+    public static Byte4 operator /(in Byte4 a, byte d) =>
+        new((byte)(a.X / d), (byte)(a.Y / d), (byte)(a.Z / d), (byte)(a.W / d));
+
+    public static Bool4 operator <(in Byte4 a, in Byte4 b) =>
+        new(a.X < b.X, a.Y < b.Y, a.Z < b.Z, a.W < b.W);
+    public static Bool4 operator <(in Byte4 a, byte b) =>
+        new(a.X < b, a.Y < b, a.Z < b, a.W < b);
+    public static Bool4 operator <(byte a, in Byte4 b) =>
+        new(a < b.X, a < b.Y, a < b.Z, a < b.W);
+
+    public static Bool4 operator <=(in Byte4 a, in Byte4 b) =>
+        new(a.X <= b.X, a.Y <= b.Y, a.Z <= b.Z, a.W <= b.W);
+    public static Bool4 operator <=(in Byte4 a, byte b) =>
+        new(a.X <= b, a.Y <= b, a.Z <= b, a.W <= b);
+    public static Bool4 operator <=(byte a, in Byte4 b) =>
+        new(a <= b.X, a <= b.Y, a <= b.Z, a <= b.W);
+
+    public static Bool4 operator >(in Byte4 a, in Byte4 b) =>
+        new(a.X > b.X, a.Y > b.Y, a.Z > b.Z, a.W > b.W);
+    public static Bool4 operator >(in Byte4 a, byte b) =>
+        new(a.X > b, a.Y > b, a.Z > b, a.W > b);
+    public static Bool4 operator >(byte a, in Byte4 b) =>
+        new(a > b.X, a > b.Y, a > b.Z, a > b.W);
+
+    public static Bool4 operator >=(in Byte4 a, in Byte4 b) =>
+        new(a.X >= b.X, a.Y >= b.Y, a.Z >= b.Z, a.W >= b.W);
+    public static Bool4 operator >=(in Byte4 a, byte b) =>
+        new(a.X >= b, a.Y >= b, a.Z >= b, a.W >= b);
+    public static Bool4 operator >=(byte a, in Byte4 b) =>
+        new(a >= b.X, a >= b.Y, a >= b.Z, a >= b.W);
+}
 
 public struct Int2 : IEquatable<Int2>
 {
