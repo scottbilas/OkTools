@@ -2,7 +2,7 @@
 
 class StatusView : ViewBase
 {
-    record struct FilterStatus(int Count, int CountWhenLastActive, int ScrollPos, bool IsFollowing, WrapType WrapType)
+    record struct FilterStatus(int Count, int CountWhenLastActive, Int2 ScrollPos, bool IsFollowing, WrapType WrapType)
     {
         public bool HasNewData => Count != CountWhenLastActive;
     }
@@ -99,10 +99,19 @@ class StatusView : ViewBase
         }
 
         var right = new CharSpanBuilder(_buffer);
-        right.Append(" | ");
+        var currentX = _filterStatuses[_currentFilterIndex].ScrollPos.X;
+        if (currentX != 0)
+        {
+            right.Append(" | x:");
+            right.Append(currentX);
+            // TDOO: would be really useful to show max length for visible lines (user knows how far they can scroll)
+            // TODO: hmm, maybe a small horiz "scroll indicator".. would also be cool to have that vertical as well, like micro editor does
+        }
+        right.Append(" [");
         right.Append(_filterStatuses[_currentFilterIndex].IsFollowing ? 'f' : ' ');
         right.Append(_filterStatuses[_currentFilterIndex].WrapType switch
             { WrapType.Rigid => 'w', WrapType.Word => 'W', _ => ' ' });
+        right.Append("]");
 
         for (var i = 0; i < _filterStatuses.Length && text.UnusedLength > right.Length; ++i)
         {
@@ -116,7 +125,7 @@ class StatusView : ViewBase
 
             mid.Append(i + 1);
             mid.Append(':');
-            mid.Append(_filterStatuses[i].ScrollPos + 1);
+            mid.Append(_filterStatuses[i].ScrollPos.Y + 1);
             mid.Append('/');
             mid.Append(_filterStatuses[i].Count);
             if (_filterStatuses[i].HasNewData)

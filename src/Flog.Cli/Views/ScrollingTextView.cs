@@ -170,7 +170,7 @@ class ScrollingTextView : ViewBase
             Screen.OutResetAttributes();
     }
 
-    public int ScrollPos => _scrollY;
+    public Int2 ScrollPos => (_scrollX, _scrollY);
 
     public void ScrollDown() => ScrollY(-1);
     public void ScrollUp() => ScrollY(1);
