@@ -1,4 +1,5 @@
 using PInvoke;
+using System.Diagnostics;
 
 #if ENABLE_SCREEN_RECORDER
 
@@ -11,6 +12,7 @@ class ScreenRecorder
     (int count, int chars)[] _cells = Array.Empty<(int, int)>();
     ShowType _show;
     Int2 _size = Int2.Zero;
+    Int2 _nextSize; // from OnResize, which may fire on another thread
     Int2 _cursor, _savedCursor;
 
     void SetCursor(Int2 newCursor)
@@ -34,14 +36,19 @@ class ScreenRecorder
 
     public void OnResized(TerminalSize size)
     {
-        _cells = new (int, int)[size.Width * size.Height];
-        _size = (size.Width, size.Height);
-        if (_show != ShowType.None)
-            Draw();
+        _nextSize = new Int2(size.Width, size.Height);
     }
 
     public void Process(ReadOnlySpan<char> span)
     {
+        var nextSize = _nextSize;
+        if ((nextSize != _size).Any())
+        {
+            _cells = new (int, int)[nextSize.X * nextSize.Y];
+            _size = nextSize;
+            _cursor = _cursor.Min(_size - 1); // clamp to screen
+        }
+
         Span<int> nums = stackalloc int[10];
         int pos = 0, startPos, startCursor;
 
