@@ -1,4 +1,4 @@
-using System.Collections;
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Flog;
@@ -18,13 +18,14 @@ class ScrollingTextView : ViewBase
     uint _sourceVersion;                    // detect if raw source totally changes (e.g. file truncated)
     // visible region
     DisplayLine[] _displayLines;            // the screen.height set of actual lines we're showing
-    readonly BitArray _displayLinesValid;   // track when we need to recalculate line contents
+    bool[] _displayLinesValid;              // track when we need to recalculate line contents
 
     readonly StringBuilder _sb = new();
     int _scrollX, _scrollY; // TODO: _scrollSubY;
 
     WrapType _wrapType;
 
+    [DebuggerDisplay("{Span} (len={Length})")]
     readonly record struct DisplayLine(int LineIndex, string? Chars, int Begin, int End)
     {
         public int Length => End - Begin;
@@ -37,7 +38,7 @@ class ScrollingTextView : ViewBase
         _source = source;
         _sourceVersion = source.Version - 1;
         _displayLines = new DisplayLine[screen.Size.Height];
-        _displayLinesValid = new BitArray(screen.Size.Height);
+        _displayLinesValid = new bool[screen.Size.Height];
     }
 
     public ILineDataSource Processor => _source;
@@ -45,7 +46,7 @@ class ScrollingTextView : ViewBase
 
     void Invalidate()
     {
-        _displayLinesValid.SetAll(false);
+        Array.Clear(_displayLinesValid);
 
         #if DEBUG
         Array.Fill(_displayLines, default);
@@ -200,7 +201,7 @@ class ScrollingTextView : ViewBase
         base.SetBounds(width, top, bottom);
 
         Array.Resize(ref _displayLines, Height);
-        _displayLinesValid.Length = Height;
+        Array.Resize(ref _displayLinesValid, Height);
 
         // TODO: maintain scroll position regardless of origin (minimize distracting text movement)
         //_scrollY = ClampY(oldScrollY + Top - oldTop);
@@ -261,7 +262,7 @@ class ScrollingTextView : ViewBase
                 Screen.OutScrollBufferUp(-offset);
 
             // scroll our display lines/state, invalidating newly exposed lines
-            _displayLinesValid.Shift(offset);
+            _displayLinesValid.Shift(offset, false);
             _displayLines.Shift(offset
                 #if DEBUG
                 , default
