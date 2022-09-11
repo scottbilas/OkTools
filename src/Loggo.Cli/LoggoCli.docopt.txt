@@ -7,7 +7,8 @@ Usage:
 
 Options:
   --stdout            Mirror to stdout as well (defaults to true if DESTINATION not specified)
-  --line-nums         Prefix each line with a line number
+  --line-nums         Prefix each line with a line number. Note that a minimum length specified with `--width` will get
+                      overridden to ensure that the line number+colon prefix is always printed.
   --delay DELAY       Delay between each line being added to the log in ms [default: 1,5]
   --width WIDTH       Width of generated lines [default: 1,200]
   --size SIZE         Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
@@ -18,6 +19,8 @@ Options:
   --delete-on-exit    Delete log file when program exits for any reason
   --intra-line-delay  Use some of the time from DELAY to delay randomly in the middle of writing each line. This is
                       useful for testing that a tail-follow utility can handle partially written lines.
+  --rng-seed SEED     Use the provided SEED (an integer) to initialize the random number generator. (Good for tests and
+                      anything else that requires determinism.)
 
 Notes:
   * DELAY and WIDTH can be ""min,max"" entries separated by a comma (for example `1MB,50GB`). Both min and max will be

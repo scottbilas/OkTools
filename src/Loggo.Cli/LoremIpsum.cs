@@ -1,20 +1,22 @@
 ﻿static class LoremIpsum
 {
-    public static void Fill(ref CharSpanBuilder csb)
+    public static void Fill(ref CharSpanBuilder csb, Random? rng = null)
     {
+        rng ??= Random.Shared;
+
         for (;;)
         {
-            var firstWord = s_words[Random.Shared.Next(s_words.Length)];
+            var firstWord = s_words[rng.Next(s_words.Length)];
             if (!csb.TryAppend(char.ToUpper(firstWord[0])))
                 return;
             if (!csb.TryAppend(firstWord[1..]))
                 return;
 
-            for (var i = Random.Shared.Next(5, 15); i >= 0; --i)
+            for (var i = rng.Next(5, 15); i >= 0; --i)
             {
                 if (!csb.TryAppend(' '))
                     return;
-                if (!csb.TryAppend(s_words[Random.Shared.Next(s_words.Length)]))
+                if (!csb.TryAppend(s_words[rng.Next(s_words.Length)]))
                     return;
             }
 
