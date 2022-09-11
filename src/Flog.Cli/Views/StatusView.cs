@@ -23,10 +23,9 @@ class StatusView : ViewBase
         base.SetBounds(width, top, bottom);
 
         if (_text.Length != Width)
-        {
             _text = new char[width];
-            _changed = true;
-        }
+
+        _changed = true;
     }
 
     public void SetLogPath(NPath path)
