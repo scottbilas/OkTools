@@ -31,6 +31,24 @@ public ref struct CharSpanBuilder
         ? new(_array, 0, _used.Length)
         : throw new InvalidOperationException("Span-only CharSpanBuilder cannot implicitly convert to Chars"); // for older API's that can't take spans and require char[]
 
+    public void TrimEnd()
+    {
+        for (var i = _used.Length; ; --i)
+        {
+            if (i == 0)
+            {
+                _used = _buffer[..0];
+                break;
+            }
+
+            if (_used[i-1] != ' ')
+            {
+                _used = _used[..i];
+                break;
+            }
+        }
+    }
+
     public bool TryAppend(int value)
     {
         if (!value.TryFormat(UnusedSpan, out var used))

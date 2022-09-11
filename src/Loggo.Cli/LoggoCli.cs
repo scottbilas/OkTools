@@ -69,7 +69,7 @@ try
 
         if (opt.OptLineNums)
         {
-            csb.Append(lineNum);
+            csb.Append(lineNum+1);
             csb.Append(": ");
         }
 
@@ -80,7 +80,8 @@ try
         {
             case "lorem":
                 LoremIpsum.Fill(ref csb, rng);
-                csb.Length = width;
+                if (csb.Length > width)
+                    csb.Length = width;
                 break;
 
             case "nums":
@@ -109,6 +110,9 @@ try
                 csb.Append(patternLines[lineNum % patternLines.Length]);
                 break;
         }
+
+        // trailing whitespace is unexpected
+        csb.TrimEnd();
 
         var eol = opt.OptEol switch
         {
