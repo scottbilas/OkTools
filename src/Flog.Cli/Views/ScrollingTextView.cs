@@ -311,6 +311,19 @@ class ScrollingTextView : ViewBase
 
     void ScrollX(int offset) => ScrollToX(_scrollX + offset);
 
+    void ScrollToMaxX()
+    {
+        var max = 0;
+        for (var i = 0; i < Height; ++i)
+        {
+            if (!_displayLinesValid[i])
+                continue;
+
+            max = Math.Max(max, _displayLines[i].Length);
+        }
+        ScrollToX(max - Width);
+    }
+
     public bool HandleEvent(ITerminalEvent evt)
     {
         CheckEnabled();
@@ -353,6 +366,10 @@ class ScrollingTextView : ViewBase
 
             case CharEvent { Char: 'H', NoModifiers: true }:
                 ScrollToX(0);
+                break;
+
+            case CharEvent { Char: 'L', NoModifiers: true }:
+                ScrollToMaxX();
                 break;
 
             case KeyEvent { Key: ConsoleKey.PageUp, NoModifiers: true }:
