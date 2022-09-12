@@ -21,13 +21,16 @@ class FlogApp : IDisposable
 
     State _state = State.LogView;
 
-    public FlogApp(FlogCliArguments args)
+    public FlogApp(FlogCliArguments opts)
     {
+        _screen.Options.FollowByDefault = !opts.OptNoFollow;
+        _screen.Options.WrapByDefault = Enum.Parse<WrapType>(opts.OptWrap, true);
+
         _screen.OutShowCursor(false);
 
         // main view
 
-        var logFilePath = args.ArgPath!;
+        var logFilePath = opts.ArgPath!;
         _logModel = new LogModel(logFilePath);
         _logPane = new LogView(_screen, _logModel) { Enabled = true };
 

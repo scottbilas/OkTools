@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 using OkTools.Flog;
@@ -6,8 +5,8 @@ using OkTools.Flog;
 enum WrapType
 {
     None,
-    Rigid,
-    Word,
+    Exact,
+    Nice,
 }
 
 class ScrollingTextView : ViewBase
@@ -25,20 +24,13 @@ class ScrollingTextView : ViewBase
 
     WrapType _wrapType;
 
-    [DebuggerDisplay("{Span} (len={Length})")]
-    readonly record struct DisplayLine(int LineIndex, string? Chars, int Begin, int End)
-    {
-        public int Length => End - Begin;
-
-        public ReadOnlySpan<char> Span => Chars.AsSpan(Begin, Length);
-    }
-
     public ScrollingTextView(Screen screen, ILineDataSource source) : base(screen)
     {
         _source = source;
         _sourceVersion = source.Version - 1;
         _displayLines = new DisplayLine[screen.Size.Height];
         _displayLinesValid = new bool[screen.Size.Height];
+        _wrapType = screen.Options.WrapByDefault;
     }
 
     public ILineDataSource Processor => _source;
@@ -98,7 +90,7 @@ class ScrollingTextView : ViewBase
 
             for (var i = 0; i < _displayLines.Length; ++i)
             {
-                if (_displayLines[i].Chars == null)
+                if (!_displayLines[i].IsValid)
                 {
                     Invalidate(i, _displayLines.Length);
                     break;
@@ -116,7 +108,82 @@ class ScrollingTextView : ViewBase
                 ScrollToBottom(false);
         }
 
-        // validate and draw
+        // validate
+
+        var truncMarkerLength = Screen.Options.TruncateMarkerEnabled ? Screen.Options.TruncateMarkerText.Length : 0;
+
+        switch (_wrapType)
+        {
+            case WrapType.Exact:
+            {
+                // TODO: handle full page - the shift has to do a mini wrap to seed the first/last line from previous page
+                // TODO: fill out last line first if scrollpos is at bottom
+
+                var (firstValid, lastValid) = (_displayLinesValid[0], _displayLinesValid[^1]);
+
+                // no valid lines at all means we need to build a starting place
+                if (!firstValid && !lastValid)
+                {
+                    var processedLine = GetProcessedLine(_scrollY);
+                    if (processedLine != null)
+                    {
+                        _displayLines[0] = DisplayLine.NewTruncated(_scrollY, processedLine, Width, truncMarkerLength);
+                        firstValid = true;
+                    }
+                    else
+                        Array.Fill(_displayLines, default); // ok we don't even have any source lines here
+                }
+
+                if (firstValid)
+                {
+                    for (var displayIdx = 1; displayIdx < _displayLinesValid.Length; ++displayIdx)
+                    {
+                        if (_displayLinesValid[displayIdx])
+                            continue;
+
+                        ref var last = ref _displayLines[displayIdx-1];
+                        var remain = last.Remain;
+                        if (remain > 0)
+                            _displayLines[displayIdx] = last.RemainTruncated(Width, truncMarkerLength);
+                        else
+                        {
+                            var processedLine = GetProcessedLine(last.LineIndex + 1);
+                            if (processedLine == null)
+                            {
+                                Array.Fill(_displayLines, default, displayIdx, _displayLines.Length - displayIdx);
+                                break;
+                            }
+
+                            _displayLines[displayIdx] = DisplayLine.NewTruncated(last.LineIndex + 1, processedLine, Width, truncMarkerLength);
+                        }
+                    }
+                }
+                else if (lastValid)
+                {
+                }
+                break;
+            }
+
+            case WrapType.Nice:
+                // fallthrough TODO: implement me
+            case WrapType.None:
+            {
+                for (var displayIdx = 0; displayIdx < _displayLinesValid.Length; ++displayIdx)
+                {
+                    if (_displayLinesValid[displayIdx])
+                        continue;
+
+                    var processedIdx = _scrollY + displayIdx;
+                    var processedLine = GetProcessedLine(processedIdx);
+                    _displayLines[displayIdx] = processedLine != null
+                        ? DisplayLine.NewOrDefault(processedIdx, processedLine)
+                        : default;
+                }
+                break;
+            }
+        }
+
+        // draw
 
         var inVirtualSpace = false;
         for (var i = 0; i < _displayLinesValid.Length; ++i)
@@ -124,37 +191,36 @@ class ScrollingTextView : ViewBase
             if (_displayLinesValid[i])
                 continue;
 
-            var index = _scrollY + i;
-            if (index < _sourceLineCount)
-            {
-                var line = GetProcessedLine(index);
-                _displayLines[i] = new DisplayLine(index, line, 0, line.Length);
-            }
-            else
-                _displayLines[i] = default;
-
             Screen.OutSetCursorPos(0, i);
 
-            if (_displayLines[i].Chars != null)
+            ref var displayLine = ref _displayLines[i];
+            if (displayLine.IsValid)
             {
                 var start = _wrapType == WrapType.None ? _scrollX : 0;
-                var span = _displayLines[i].Span.SliceSafe(start);
+                var span = displayLine.Span.SliceSafe(start);
 
-                if (span.Length > Width && Screen.Options.TruncateMarkerEnabled)
+                if (Screen.Options.TruncateMarkerEnabled)
                 {
-                    // TODO: consider putting a number to show how far offscreen the end is (# screen widths perhaps? or char count of course..)
-                    Screen.OutPrint(span[..(Width - Screen.Options.TruncateMarkerText.Length)]);
-                    Screen.OutSetForegroundColor(Screen.Options.TruncateMarkerColor);
-                    Screen.OutPrint(Screen.Options.TruncateMarkerText);
-                    Screen.OutResetAttributes();
+                    if (displayLine.NeedsLeadingTruncateMarker)
+                        Screen.OutTruncateMarker();
+
+                    if (displayLine.Length > Width)
+                    {
+                        // TODO: consider putting a number to show how far offscreen the end is (# screen widths perhaps? or char count of course..)
+                        Screen.OutPrint(span[..(Width - truncMarkerLength)]);
+                        Screen.OutTruncateMarker();
+                    }
+                    else
+                        Screen.OutPrint(span, Width, true);
+
+                    if (displayLine.NeedsTrailingTruncateMarker)
+                        Screen.OutTruncateMarker();
                 }
                 else
                     Screen.OutPrint(span, Width, true);
             }
             else
             {
-                // TODO: make this char optional
-
                 if (!inVirtualSpace)
                 {
                     inVirtualSpace = true;
@@ -392,8 +458,11 @@ class ScrollingTextView : ViewBase
         "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)|" +
         "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))");
 
-    string GetProcessedLine(int lineIndex)
+    string? GetProcessedLine(int lineIndex)
     {
+        if (lineIndex >= _sourceLineCount)
+            return null;
+
         var line = _source.Lines[lineIndex];
 
         var hasEscapeSeqs = false;

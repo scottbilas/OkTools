@@ -7,15 +7,21 @@
 
 var debugMode = false;
 
-var (exitCode, cliOptions) = FlogCliArguments.CreateParser().Parse(args, programVersion, FlogCliArguments.Help, FlogCliArguments.Usage);
+var (exitCode, opt) = FlogCliArguments.CreateParser().Parse(args, programVersion, FlogCliArguments.Help, FlogCliArguments.Usage,
+    opts =>
+    {
+        if (!Enum.TryParse(opts.OptWrap, true, out WrapType _))
+            throw new DocoptNet.DocoptInputErrorException("Unrecognized wrap type: " + opts.OptWrap);
+        return false;
+    });
 if (exitCode != null)
     return (int)exitCode.Value;
 
 try
 {
-    debugMode = cliOptions.OptDebug;
+    debugMode = opt.OptDebug;
 
-    using var flogApp = new FlogApp(cliOptions);
+    using var flogApp = new FlogApp(opt);
     return (int)await flogApp.Run();
 }
 catch (CliExitException x)

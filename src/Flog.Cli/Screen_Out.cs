@@ -57,4 +57,11 @@ partial class Screen
                 OutClearChars(fillWidth - len);
         }
     }
+
+    public void OutTruncateMarker()
+    {
+        OutSetForegroundColor(Options.TruncateMarkerColor);
+        OutPrint(Options.TruncateMarkerText);
+        OutResetAttributes();
+    }
 }

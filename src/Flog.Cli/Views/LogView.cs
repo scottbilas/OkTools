@@ -11,7 +11,7 @@ class LogView : ViewBase
     {
         _model = model;
         AddAndActivate(new PassThruProcessor());
-        Current.IsFollowing = true;
+        Current.IsFollowing = screen.Options.FollowByDefault;
     }
 
     public int CurrentIndex => _currentIndex;
@@ -74,9 +74,9 @@ class LogView : ViewBase
     {
         Current.WrapType = Current.WrapType switch
         {
-            WrapType.None => WrapType.Rigid,
-            WrapType.Rigid => WrapType.Word,
-            WrapType.Word => WrapType.None,
+            WrapType.None => WrapType.Exact,
+            WrapType.Exact => WrapType.Nice,
+            WrapType.Nice => WrapType.None,
             _ => throw new ArgumentOutOfRangeException()
         };
     }

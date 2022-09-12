@@ -2,6 +2,9 @@ using System.Drawing;
 
 class Options
 {
+    public bool FollowByDefault = true;
+    public WrapType WrapByDefault = WrapType.None;
+
     public int TabWidth = 4;
     public int HorizScrollSize = 10;
 

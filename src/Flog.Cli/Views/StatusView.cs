@@ -110,7 +110,7 @@ class StatusView : ViewBase
         right.Append(" [");
         right.Append(_filterStatuses[_currentFilterIndex].IsFollowing ? 'f' : ' ');
         right.Append(_filterStatuses[_currentFilterIndex].WrapType switch
-            { WrapType.Rigid => 'w', WrapType.Word => 'W', _ => ' ' });
+            { WrapType.Exact => 'w', WrapType.Nice => 'W', _ => ' ' });
         right.Append("]");
 
         for (var i = 0; i < _filterStatuses.Length && text.UnusedLength > right.Length; ++i)
