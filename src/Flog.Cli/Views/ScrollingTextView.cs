@@ -204,7 +204,7 @@ class ScrollingTextView : ViewBase
                     if (displayLine.NeedsLeadingTruncateMarker)
                         Screen.OutTruncateMarker();
 
-                    if (displayLine.Length > Width)
+                    if (span.Length > Width)
                     {
                         // TODO: consider putting a number to show how far offscreen the end is (# screen widths perhaps? or char count of course..)
                         Screen.OutPrint(span[..(Width - truncMarkerLength)]);
