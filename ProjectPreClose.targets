@@ -36,6 +36,7 @@
   <ItemGroup Condition=" $(OkFeatures.Contains('Core')) or $(OkFeatures.Contains('Docopt')) ">
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
     <Using Include="OkTools.Core" />
+    <Using Include="OkTools.Core.StaticUtility" Static="true" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(OkFeatures.Contains('NiceIO')) ">

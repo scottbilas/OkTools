@@ -22,14 +22,19 @@
   <!-- global usings -->
 
   <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.IO" />
     <Using Include="System.Linq" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
   </ItemGroup>
 
   <!-- jetbrains annotations -->
 
   <ItemGroup>
-    <Using Include="JetBrains.Annotations" />
     <PackageReference Include="JetBrains.Annotations" />
+    <Using Include="JetBrains.Annotations" />
   </ItemGroup>
 
 </Project>

@@ -19,7 +19,13 @@
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="System.Interactive" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Vezel.Cathode" />
+    <Using Include="Vezel.Cathode" />
+    <Using Include="Vezel.Cathode.Text" />
+    <Using Include="Vezel.Cathode.Text.Control" />
   </ItemGroup>
 
 </Project>
