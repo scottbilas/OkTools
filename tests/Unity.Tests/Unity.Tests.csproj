@@ -7,7 +7,9 @@
 
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Unity.Cli\Unity.Cli.csproj" />
-    <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj" />
+    <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj">
+      <Aliases>Unity</Aliases><!-- disambiguate `_Include`-ref'd files (TODO: find better way..this happens because of InternalsVisibleTo)-->
+    </ProjectReference>
   </ItemGroup>
 
   <!-- pass location of test data files into an attribute for tests to use -->
