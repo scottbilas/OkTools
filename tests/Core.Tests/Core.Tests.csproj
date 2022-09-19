@@ -10,11 +10,14 @@
 
     <!-- TODO: temporarily disabling until fix on rpi.. -->
     <Compile Remove="*Unix*" />
-
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="T4.Build" />
   </ItemGroup>
 
 </Project>
