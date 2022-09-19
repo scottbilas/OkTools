@@ -22,7 +22,7 @@ public class OkList<T> : IReadOnlyList<T>
     public OkList(int? capacity, int count)
         : this(capacity ?? count)
     {
-        if ((uint)count > (uint)_items.Length)
+        if ((uint)count > (uint)Capacity)
             throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {Capacity} (capacity)");
 
         _used = count;
@@ -44,14 +44,14 @@ public class OkList<T> : IReadOnlyList<T>
                 return;
             }
 
-            if (value <= _items.Length)
+            if (value <= Capacity)
             {
                 Array.Clear(_items, _used, value - _used); // whether ref or not, all these newly-used elements need to be set to default
                 _used = value;
                 return;
             }
 
-            // no need to do an Array.Clear because this will always get a new array (filled with defaults)
+            // no need to do an Array.Clear because this will always get a new array (with unused elements filled with defaults)
             GrowToAtLeast(value);
             _used = value;
         }
@@ -62,8 +62,6 @@ public class OkList<T> : IReadOnlyList<T>
 
     void ReduceCountTo(int count)
     {
-        Assert(count >= 0 && count <= _used);
-
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
             Array.Clear(_items, count, _used - count); // gc will reclaim these
         _used = count;
@@ -71,13 +69,12 @@ public class OkList<T> : IReadOnlyList<T>
 
     public void SetCountDirect(int count)
     {
-        if ((uint)count > (uint)_items.Length)
+        if ((uint)count > (uint)Capacity)
             throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {Capacity} (capacity)");
 
         _used = count;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Clear()
     {
         ReduceCountTo(0);
@@ -116,28 +113,28 @@ public class OkList<T> : IReadOnlyList<T>
 
     public int Capacity
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _items.Length;
+
         set
         {
             if (value < _used)
                 throw new ArgumentOutOfRangeException(nameof(value), $"Out of range {_used} (count) <= {value}");
 
-            if (value != _items.Length)
+            if (value != Capacity)
                 SetCapacity(value);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _items.Length;
     }
 
     // try to reduce capacity to a reasonable number based on the number of used items and a minimum.
     // (note that this will never _increase_ capacity - "minimum" is just used to prevent the used*1.5 heuristic going too far.)
     public void TrimCapacity(int minimum)
     {
-        var capacity = _used + _used / 2;
-        if (capacity < minimum)
-            capacity = minimum;
-        if (capacity < Capacity)
-            SetCapacity(capacity);
+        var newCapacity = _used + _used / 2;
+        if (newCapacity < minimum)
+            newCapacity = minimum;
+        if (newCapacity < Capacity)
+            SetCapacity(newCapacity);
     }
 
     T IReadOnlyList<T>.this[int index] => this[index];
@@ -152,22 +149,22 @@ public class OkList<T> : IReadOnlyList<T>
         }
     }
 
-    public ArraySegment<T> AsArraySegment => new(_items, 0, _used);
     public Span<T> AsSpan => _items.AsSpan(0, _used);
     public Memory<T> AsMemory => new(_items, 0, _used);
+    public ArraySegment<T> AsArraySegment => new(_items, 0, _used);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Add(T item)
     {
-        if (_used == _items.Length)
-            GrowToAtLeast(_items.Length + 1);
+        if (_used == Capacity)
+            GrowToAtLeast(Capacity + 1);
         _items[_used++] = item;
     }
 
     public void AddRange(ReadOnlySpan<T> items)
     {
         var want = _used + items.Length;
-        if (want > _items.Length)
+        if (want > Capacity)
             GrowToAtLeast(want);
         items.CopyTo(_items.AsSpan(_used));
         _used += items.Length;
@@ -205,11 +202,12 @@ public class OkList<T> : IReadOnlyList<T>
         return item;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     void GrowToAtLeast(int minCapacity)
     {
-        Assert(minCapacity > _items.Length);
+        Assert(minCapacity > Capacity);
 
-        SetCapacity(Math.Max(minCapacity, _items.Length + _items.Length / 2));
+        SetCapacity(Math.Max(minCapacity, Capacity + Capacity / 2));
     }
 
     void SetCapacity(int capacity)
