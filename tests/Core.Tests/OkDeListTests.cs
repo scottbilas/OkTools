@@ -7,6 +7,8 @@ partial class OkDeListTests
 {
     static void Validate<T>(OkDeList<T> list, params T[] contents)
     {
+        var head = list.GetType().GetField("_head", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(list);
+
         var rolist = (IReadOnlyList<T>)list;
         var segs = list.AsArraySegments;
         var memories = list.AsMemories;
@@ -14,9 +16,9 @@ partial class OkDeListTests
 
         list.Count.ShouldBe(contents.Length);
         rolist.Count.ShouldBe(contents.Length);
-        segs.seg0.Offset.ShouldBe(0);
+        segs.seg0.Offset.ShouldBe(head);
         if (segs.seg1.Array != null)
-            segs.seg1.Offset.ShouldBe(segs.seg0.Count);
+            segs.seg1.Offset.ShouldBe(0);
         (segs.seg0.Count + segs.seg1.Count).ShouldBe(contents.Length);
         (memories.mem0.Length + memories.mem1.Length).ShouldBe(contents.Length);
         (spans.Span0.Length + spans.Span1.Length).ShouldBe(contents.Length);
@@ -56,7 +58,7 @@ partial class OkDeListTests
         int c0, int f0, int c1, int f1) // unused
     {
         // meh i just don't like exposing stuff with `internals`
-        static OkDeList<T> Make<T>(T[] items, int head, int used)
+        static OkDeList<T> MakeDirect<T>(T[] items, int head, int used)
         {
             var list = new OkDeList<T>(0);
             list.GetType().GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(list, items);
@@ -68,7 +70,7 @@ partial class OkDeListTests
         // make
 
         var array = Enumerable.Range(0, capacity).ToArray();
-        var list = Make(array, head, used);
+        var list = MakeDirect(array, head, used);
 
         // used spans
 
