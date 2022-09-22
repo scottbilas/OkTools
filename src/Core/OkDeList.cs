@@ -105,6 +105,7 @@ public class OkDeList<T> : IReadOnlyList<T>
         _used = count;
     }
 
+    #if NO // keep this around in case I ever add a Count removal that operates on the front
     void FrontReduceCountTo(int count)
     {
         var clear = _used - count;
@@ -126,6 +127,7 @@ public class OkDeList<T> : IReadOnlyList<T>
 
         _used = count;
     }
+    #endif
 
     public void SetCountDirect(int count)
     {
@@ -383,6 +385,7 @@ public class OkDeList<T> : IReadOnlyList<T>
             GrowToAtLeast(want, items.Length);
             items.CopyTo(_items.AsSpan());
             _used += items.Length;
+            _head = 0;
             return;
         }
 
@@ -485,10 +488,9 @@ public class OkDeList<T> : IReadOnlyList<T>
         if (_used == 0)
             throw new InvalidOperationException("Collection cannot be empty");
 
-        var index = AdjustUnchecked(_head);
-        var item = _items[index];
+        var item = _items[_head];
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-            _items[index] = default!;
+            _items[_head] = default!;
 
         if (++_head == Capacity)
             _head = 0;
