@@ -449,27 +449,27 @@ partial class OkListTests
     [Test]
     public void AddRange_WithSpan()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
-        var array = new[] { 1, 2 }.AsSpan();
-        list.AddRange(array);
+        var span = new[] { 1, 2 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 }.AsSpan();
-        list.AddRange(array);
+        span = new[] { 3, 4, 5 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
 
-        array = Array.Empty<int>().AsSpan();
-        list.AddRange(array);
+        span = Array.Empty<int>().AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
     }
 
     [Test]
     public void AddRange_WithArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -489,7 +489,7 @@ partial class OkListTests
     [Test]
     public void AddRange_WithParamsArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -589,23 +589,31 @@ partial class OkListTests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var vlist = Make(10, new[] { 1, 2, 3, 4, 5, 6 });
         vlist.DropBack();
-        vlist.PopBack().ShouldBe(4);
+        vlist.PopBack().ShouldBe(5);
         vlist.RemoveAtAndSwapBack(1);
-        Validate(vlist, 0, 3, 2 );
-        vlist.PrivateRefAt(3).ShouldBe(3);
-        vlist.PrivateRefAt(4).ShouldBe(4);
-        vlist.PrivateRefAt(5).ShouldBe(5);
+        Validate(vlist, 1, 4, 3 );
+        // valuetypes should not have been cleared
+        vlist.PrivateRefAt(3).ShouldBe(4);
+        vlist.PrivateRefAt(4).ShouldBe(5);
+        vlist.PrivateRefAt(5).ShouldBe(6);
 
         var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+
+        rlist.PrivateRefAt(5).ShouldBe("f");
         rlist.DropBack();
-        rlist.PopBack().ShouldBe("e");
-        rlist.RemoveAtAndSwapBack(1);
-        Validate(rlist, "a", "d", "c");
-        rlist.PrivateRefAt(3).ShouldBeNull();
-        rlist.PrivateRefAt(4).ShouldBeNull();
         rlist.PrivateRefAt(5).ShouldBeNull();
+
+        rlist.PrivateRefAt(4).ShouldBe("e");
+        rlist.PopBack().ShouldBe("e");
+        rlist.PrivateRefAt(4).ShouldBeNull();
+
+        rlist.PrivateRefAt(3).ShouldBe("d");
+        rlist.RemoveAtAndSwapBack(1);
+        rlist.PrivateRefAt(3).ShouldBeNull();
+
+        Validate(rlist, "a", "d", "c");
     }
 }
 
@@ -1049,27 +1057,27 @@ partial class OkDeListTests
     [Test]
     public void AddRange_WithSpan()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
-        var array = new[] { 1, 2 }.AsSpan();
-        list.AddRange(array);
+        var span = new[] { 1, 2 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 }.AsSpan();
-        list.AddRange(array);
+        span = new[] { 3, 4, 5 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
 
-        array = Array.Empty<int>().AsSpan();
-        list.AddRange(array);
+        span = Array.Empty<int>().AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
     }
 
     [Test]
     public void AddRange_WithArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -1089,7 +1097,7 @@ partial class OkDeListTests
     [Test]
     public void AddRange_WithParamsArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -1189,23 +1197,31 @@ partial class OkDeListTests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var vlist = Make(10, new[] { 1, 2, 3, 4, 5, 6 });
         vlist.DropBack();
-        vlist.PopBack().ShouldBe(4);
+        vlist.PopBack().ShouldBe(5);
         vlist.RemoveAtAndSwapBack(1);
-        Validate(vlist, 0, 3, 2 );
-        vlist.PrivateRefAt(0).ShouldBe(3);
-        vlist.PrivateRefAt(1).ShouldBe(4);
-        vlist.PrivateRefAt(2).ShouldBe(5);
+        Validate(vlist, 1, 4, 3 );
+        // valuetypes should not have been cleared
+        vlist.PrivateRefAt(0).ShouldBe(4);
+        vlist.PrivateRefAt(1).ShouldBe(5);
+        vlist.PrivateRefAt(2).ShouldBe(6);
 
         var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+
+        rlist.PrivateRefAt(2).ShouldBe("f");
         rlist.DropBack();
-        rlist.PopBack().ShouldBe("e");
-        rlist.RemoveAtAndSwapBack(1);
-        Validate(rlist, "a", "d", "c");
-        rlist.PrivateRefAt(0).ShouldBeNull();
-        rlist.PrivateRefAt(1).ShouldBeNull();
         rlist.PrivateRefAt(2).ShouldBeNull();
+
+        rlist.PrivateRefAt(1).ShouldBe("e");
+        rlist.PopBack().ShouldBe("e");
+        rlist.PrivateRefAt(1).ShouldBeNull();
+
+        rlist.PrivateRefAt(0).ShouldBe("d");
+        rlist.RemoveAtAndSwapBack(1);
+        rlist.PrivateRefAt(0).ShouldBeNull();
+
+        Validate(rlist, "a", "d", "c");
     }
 }
 

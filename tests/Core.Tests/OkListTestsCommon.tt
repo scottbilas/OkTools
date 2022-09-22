@@ -497,27 +497,27 @@ partial class <#=type#>Tests
     [Test]
     public void AddRange_WithSpan()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
-        var array = new[] { 1, 2 }.AsSpan();
-        list.AddRange(array);
+        var span = new[] { 1, 2 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 }.AsSpan();
-        list.AddRange(array);
+        span = new[] { 3, 4, 5 }.AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
 
-        array = Array.Empty<int>().AsSpan();
-        list.AddRange(array);
+        span = Array.Empty<int>().AsSpan();
+        list.AddRange(span);
         Validate(list, 1, 2, 3, 4, 5);
     }
 
     [Test]
     public void AddRange_WithArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -537,7 +537,7 @@ partial class <#=type#>Tests
     [Test]
     public void AddRange_WithParamsArray()
     {
-        var list = Make<int>(3);
+        var list = Make<int>(4);
 
         Validate(list);
 
@@ -637,23 +637,31 @@ partial class <#=type#>Tests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = <#=Make(10, new[] { 0, 1, 2, 3, 4, 5 })#>
+        var vlist = <#=Make(10, new[] { 1, 2, 3, 4, 5, 6 })#>
         vlist.DropBack();
-        vlist.PopBack().ShouldBe(4);
+        vlist.PopBack().ShouldBe(5);
         vlist.RemoveAtAndSwapBack(1);
-        Validate(vlist, 0, 3, 2 );
-        vlist.PrivateRefAt(<#=Adjust(3)#>).ShouldBe(3);
-        vlist.PrivateRefAt(<#=Adjust(4)#>).ShouldBe(4);
-        vlist.PrivateRefAt(<#=Adjust(5)#>).ShouldBe(5);
+        Validate(vlist, 1, 4, 3 );
+        // valuetypes should not have been cleared
+        vlist.PrivateRefAt(<#=Adjust(3)#>).ShouldBe(4);
+        vlist.PrivateRefAt(<#=Adjust(4)#>).ShouldBe(5);
+        vlist.PrivateRefAt(<#=Adjust(5)#>).ShouldBe(6);
 
         var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+
+        rlist.PrivateRefAt(<#=Adjust(5)#>).ShouldBe("f");
         rlist.DropBack();
-        rlist.PopBack().ShouldBe("e");
-        rlist.RemoveAtAndSwapBack(1);
-        Validate(rlist, "a", "d", "c");
-        rlist.PrivateRefAt(<#=Adjust(3)#>).ShouldBeNull();
-        rlist.PrivateRefAt(<#=Adjust(4)#>).ShouldBeNull();
         rlist.PrivateRefAt(<#=Adjust(5)#>).ShouldBeNull();
+
+        rlist.PrivateRefAt(<#=Adjust(4)#>).ShouldBe("e");
+        rlist.PopBack().ShouldBe("e");
+        rlist.PrivateRefAt(<#=Adjust(4)#>).ShouldBeNull();
+
+        rlist.PrivateRefAt(<#=Adjust(3)#>).ShouldBe("d");
+        rlist.RemoveAtAndSwapBack(1);
+        rlist.PrivateRefAt(<#=Adjust(3)#>).ShouldBeNull();
+
+        Validate(rlist, "a", "d", "c");
     }
 }
 
