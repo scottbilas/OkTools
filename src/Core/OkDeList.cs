@@ -4,18 +4,6 @@ using static System.Diagnostics.Debug;
 
 namespace OkTools.Core;
 
-// needed because https://stackoverflow.com/questions/52484998/the-type-spanchar-may-not-be-used-as-a-type-argument#comment130237088_52485647
-public readonly ref struct SpanPair<T>
-{
-    public readonly Span<T> Span0, Span1;
-
-    public SpanPair(Span<T> span0, Span<T> span1 = default)
-    {
-        Span0 = span0;
-        Span1 = span1;
-    }
-}
-
 // like a OkList<T>, but double-ended. it does this using a ring buffer, so up to two spans are needed to efficiently access the underlying storage.
 [PublicAPI]
 public class OkDeList<T> : IReadOnlyList<T>
