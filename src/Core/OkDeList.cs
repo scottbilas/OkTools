@@ -161,7 +161,10 @@ public class OkDeList<T> : IReadOnlyList<T>
 
     public IEnumerator<T> GetEnumerator()
     {
-        var memories = AsMemories; // can't use AsSpans; needs to be storable in yield state
+        // use OkDeList.GetEnumerator when doing IEnumerable things
+        // use OkDeList.GetEnumerator.AsSpans when wanting to iterate over the data with minimal overhead
+
+        var memories = AsMemories;
 
         for (var i = 0; i < memories.mem0.Length; i++)
             yield return memories.mem0.Span[i];
@@ -247,7 +250,6 @@ public class OkDeList<T> : IReadOnlyList<T>
 
     internal SpanPair<T> UnusedSpans
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var itemsSpan = _items.AsSpan();
