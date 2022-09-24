@@ -1,48 +1,8 @@
-using System.Reflection;
-
 // ReSharper disable IdentifierTypo
 // ReSharper disable CommentTypo
 
 partial class OkDeListTests
 {
-    static void Validate<T>(OkDeList<T> list, params T[] contents)
-    {
-        var head = list.GetType().GetField("_head", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(list);
-
-        var rolist = (IReadOnlyList<T>)list;
-        var segs = list.AsArraySegments;
-        var memories = list.AsMemories;
-        var spans = list.AsSpans;
-
-        list.Count.ShouldBe(contents.Length);
-        rolist.Count.ShouldBe(contents.Length);
-        segs.seg0.Offset.ShouldBe(head);
-        if (segs.seg1.Array != null)
-            segs.seg1.Offset.ShouldBe(0);
-        (segs.seg0.Count + segs.seg1.Count).ShouldBe(contents.Length);
-        (memories.mem0.Length + memories.mem1.Length).ShouldBe(contents.Length);
-        (spans.Span0.Length + spans.Span1.Length).ShouldBe(contents.Length);
-
-        for (var i = 0; i < contents.Length; ++i)
-        {
-            list[i].ShouldBe(contents[i]);
-            rolist[i].ShouldBe(contents[i]);
-
-            if (i < segs.seg0.Count)
-            {
-                segs.seg0[i].ShouldBe(contents[i]);
-                memories.mem0.Span[i].ShouldBe(contents[i]);
-                spans.Span0[i].ShouldBe(contents[i]);
-            }
-            else
-            {
-                segs.seg1[i - segs.seg0.Count].ShouldBe(contents[i]);
-                memories.mem1.Span[i - memories.mem0.Length].ShouldBe(contents[i]);
-                spans.Span1[i - spans.Span0.Length].ShouldBe(contents[i]);
-            }
-        }
-    }
-
     //           cap  h  u b0 e0 b1 e1 c0 f0 c1 f1
     [TestCase('a', 9, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0)] // [h........]
     [TestCase('b', 9, 2, 0, 2, 2, 0, 0, 2, 9, 0, 2)] // [..h......]
@@ -61,9 +21,9 @@ partial class OkDeListTests
         static OkDeList<T> MakeDirect<T>(T[] items, int head, int used)
         {
             var list = new OkDeList<T>(0);
-            list.GetType().GetField("_items", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(list, items);
-            list.GetType().GetField("_head", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(list, head);
-            list.GetType().GetField("_used", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(list, used);
+            list.PrivateSetItems(items);
+            list.PrivateSetHead(head);
+            list.PrivateSetUsed(used);
             return list;
         }
 
@@ -301,26 +261,26 @@ partial class OkDeListTests
         Should.Throw<ArgumentOutOfRangeException>(() => Make<int>(null, 5).RemoveAtAndSwapFront(100));
     }
 
-    [Test]
-    public void RemoveAtAndSwapFront()
+    [TestCase(true), TestCase(false)]
+    public void RemoveAtAndSwapFront(bool wrap)
     {
-        var list = Make<int>(10);
-        list.AddRangeFront(1, 2, 3);
+        var rlist = new OkDeList<int>(10);
+        rlist.AddRangeFront(1, 2, 3);
 
-        list.RemoveAtAndSwapFront(0);
-        Validate(list, 2, 3);
-        list.RemoveAtAndSwapFront(0);
-        Validate(list, 3);
-        list.RemoveAtAndSwapFront(0);
-        Validate(list);
+        rlist.RemoveAtAndSwapFront(0);
+        Validate(rlist, 2, 3);
+        rlist.RemoveAtAndSwapFront(0);
+        Validate(rlist, 3);
+        rlist.RemoveAtAndSwapFront(0);
+        Validate(rlist);
 
-        list = Make(10, new[] { 1, 2, 3 });
-        list.RemoveAtAndSwapFront(2);
-        Validate(list, 2, 1);
-        list.RemoveAtAndSwapFront(1);
-        Validate(list, 2);
-        list.RemoveAtAndSwapFront(0);
-        Validate(list);
+        var flist = Make(10, new[] { 1, 2, 3 }, wrap);
+        flist.RemoveAtAndSwapFront(2);
+        Validate(flist, 2, 1);
+        flist.RemoveAtAndSwapFront(1);
+        Validate(flist, 2);
+        flist.RemoveAtAndSwapFront(0);
+        Validate(flist);
     }
 
     [Test]
@@ -329,10 +289,10 @@ partial class OkDeListTests
         Should.Throw<InvalidOperationException>(() => Make<int>(null, 0).DropFront());
     }
 
-    [Test]
-    public void DropFront_WithNonEmpty_Removes()
+    [TestCase(true), TestCase(false)]
+    public void DropFront_WithNonEmpty_Removes(bool wrap)
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 }, wrap);
         list[0].ShouldBe(0);
         list.DropFront();
         list[0].ShouldBe(1);
@@ -354,10 +314,10 @@ partial class OkDeListTests
         Should.Throw<InvalidOperationException>(() => Make<int>(null, 0).PopFront());
     }
 
-    [Test]
-    public void PopFront_WithNonEmpty_RemovesAndReturnsItem()
+    [TestCase(true), TestCase(false)]
+    public void PopFront_WithNonEmpty_RemovesAndReturnsItem(bool wrap)
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 }, wrap);
         list[0].ShouldBe(0);
         list.PopFront().ShouldBe(0);
         list[0].ShouldBe(1);
@@ -404,4 +364,98 @@ partial class OkDeListTests
 
         Validate(rlist, "c", "e", "f");
     }
+
+    [TestCase(true), TestCase(false)]
+    public void Rotate_WithModuloZero_DoesNothing(bool wrap)
+    {
+        var list = Make(5, new[] { 1, 2, 3 }, wrap);
+        var saved = list.PrivateGetFields();
+
+        list.Rotate(0);
+        list.PrivateGetFields().ShouldBe(saved);
+
+        list.Rotate(3);
+        list.PrivateGetFields().ShouldBe(saved);
+
+        list.Rotate(-3);
+        list.PrivateGetFields().ShouldBe(saved);
+
+        list.Rotate(9);
+        list.PrivateGetFields().ShouldBe(saved);
+    }
+
+    [TestCaseSource(nameof(RotateCaseSource))]
+    public void Rotate_WithFullArray((int count, int[] final) rotateCase)
+    {
+        var source = Enumerable.Range(1, rotateCase.final.Length).ToArray();
+
+        for (var head = 0; head < rotateCase.final.Length; ++head)
+        {
+            var list = new OkDeList<int>(rotateCase.final.Length);
+            list.PrivateSetHead(head);
+
+            list.AddRange(source);
+            list.ShouldBe(source);
+
+            var saved = list.PrivateGetFields();
+            var items = saved.items.ToArray();
+
+            // ensure rotation on a full array doesn't do anything except move the head
+            void Rotate(int rotate)
+            {
+                list.Rotate(rotate);
+                var rotated = list.PrivateGetFields();
+
+                rotated.items.ShouldBeSameAs(saved.items); // same reference
+                rotated.items.ShouldBe(items); // no change to elements
+                rotated.used.ShouldBe(saved.used);
+            }
+
+            Rotate(rotateCase.count);
+            list.ShouldBe(rotateCase.final);
+
+            Rotate(-rotateCase.count);
+            list.ShouldBe(source);
+        }
+    }
+
+    // head==4 && capacity==8 && rotateCase.count==2
+
+    [TestCaseSource(nameof(RotateCaseSource))]
+    public void Rotate_WithGapArray((int count, int[] final) rotateCase)
+    {
+        var source = Enumerable.Range(1, rotateCase.final.Length).ToArray();
+
+        // combos with capacity and head are for various gap sizes and locations
+        for (var capacity = rotateCase.final.Length + 1; capacity < rotateCase.final.Length + 5; ++capacity)
+        {
+            for (var head = 0; head < capacity; ++head)
+            {
+                var list = new OkDeList<int>(capacity);
+                list.PrivateSetHead(head);
+
+                list.AddRange(source);
+                list.ShouldBe(source);
+
+                list.Rotate(rotateCase.count);
+                list.ShouldBe(rotateCase.final);
+
+                list.Rotate(-rotateCase.count);
+                list.ShouldBe(source);
+            }
+        }
+    }
+
+    static (int, int[])[] RotateCaseSource => new[]
+    {
+        (-4, new[] { 5, 1, 2, 3, 4 }), // 12345 rot -4 ->    51234
+        (-3, new[] { 4, 5, 1, 2, 3 }), // 12345 rot -3 ->   45123
+        (-2, new[] { 3, 4, 5, 1, 2 }), // 12345 rot -2 ->  34512
+        (-1, new[] { 2, 3, 4, 5, 1 }), // 12345 rot -1 -> 23451
+        ( 0, new[] { 1, 2, 3, 4, 5 }), // 12345 rot           12345 (identity)
+        (+1, new[] { 5, 1, 2, 3, 4 }), // 12345 rot +1 ->    51234
+        (+2, new[] { 4, 5, 1, 2, 3 }), // 12345 rot +2 ->   45123
+        (+3, new[] { 3, 4, 5, 1, 2 }), // 12345 rot +3 ->  34512
+        (+4, new[] { 2, 3, 4, 5, 1 }), // 12345 rot +4 -> 23451
+    };
 }

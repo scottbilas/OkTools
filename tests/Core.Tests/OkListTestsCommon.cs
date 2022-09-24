@@ -14,20 +14,6 @@ static class OkListExtensions
 
 partial class OkListTests
 {
-    static OkList<T> Add<T>(OkList<T> list, T[]? items)
-    {
-        if (items == null)
-            return list;
-
-        list.AddRange(items);
-        list.ToArray().ShouldBe(items);
-        return list;
-    }
-
-    static OkList<T> Make<T>(int? capacity, int count, T[]? items = null) =>
-        Add(new OkList<T>(capacity, count), items);
-    static OkList<T> Make<T>(int capacity, T[]? items = null) =>
-        Add(new OkList<T>(capacity), items);
 
     [Test]
     public void ValidateAssumptions()
@@ -619,22 +605,6 @@ partial class OkListTests
 
 partial class OkDeListTests
 {
-    static OkDeList<T> Add<T>(OkDeList<T> list, T[]? items)
-    {
-        if (items == null)
-            return list;
-
-        // this will test wrapping
-        list.AddRange(items[(items.Length/2)..]); // add about half normally
-        list.AddRangeFront(items[..^list.Count]);  // add the remainder at the front
-        list.ToArray().ShouldBe(items);
-        return list;
-    }
-
-    static OkDeList<T> Make<T>(int? capacity, int count, T[]? items = null) =>
-        Add(new OkDeList<T>(capacity, count), items);
-    static OkDeList<T> Make<T>(int capacity, T[]? items = null) =>
-        Add(new OkDeList<T>(capacity), items);
 
     [Test]
     public void ValidateAssumptions()

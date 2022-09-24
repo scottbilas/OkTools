@@ -489,6 +489,51 @@ public class OkDeList<T> : IReadOnlyList<T>
         return item;
     }
 
+    /// <summary>
+    /// Rotate the array forward or backward by `count`. After a rotate, an element that was found at list[x] will be
+    /// found at list[x+count].
+    /// </summary>
+    /// <remarks>For best performance, `Count` should be close to `Capacity` so that only the head and a few items need to move.</remarks>
+    public void Rotate(int count)
+    {
+        // unwrap
+        if (count >= _used || count <= -_used)
+            count %= _used;
+
+        // nothing to do?
+        if (count == 0)
+            return;
+
+        // rotating negative is same as forward offset by count
+        if (count < 0)
+            count += _used;
+
+        var capacity = Capacity;
+        var oldHead = _head;
+
+        _head -= count;
+        if (_head < 0)
+            _head += capacity;
+
+        // full array means we don't need to move any elements
+        if (_used == capacity)
+            return;
+
+        // count backward to avoid stomping if there is range overlap
+        for (var i = count - 1; i >= 0; --i)
+        {
+            var dst = _head + i;
+            if (dst >= capacity)
+                dst -= capacity;
+
+            var src = oldHead + i + (_used - count);
+            if (src >= capacity)
+                src -= capacity;
+
+            _items[dst] = _items[src];
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     void GrowToAtLeast(int minCapacity, int newHead)
     {

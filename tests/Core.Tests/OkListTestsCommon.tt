@@ -53,26 +53,6 @@ partial class <#=type#>Tests
         return (index + last.head) % last.capacity;
     }
 #>
-    static <#=type#><T> Add<T>(<#=type#><T> list, T[]? items)
-    {
-        if (items == null)
-            return list;
-
-<# if (type == "OkList") { #>
-        list.AddRange(items);
-<# } else { #>
-        // this will test wrapping
-        list.AddRange(items[(items.Length/2)..]); // add about half normally
-        list.AddRangeFront(items[..^list.Count]);  // add the remainder at the front
-<# } #>
-        list.ToArray().ShouldBe(items);
-        return list;
-    }
-
-    static <#=type#><T> Make<T>(int? capacity, int count, T[]? items = null) =>
-        Add(new <#=type#><T>(capacity, count), items);
-    static <#=type#><T> Make<T>(int capacity, T[]? items = null) =>
-        Add(new <#=type#><T>(capacity), items);
 
     [Test]
     public void ValidateAssumptions()
