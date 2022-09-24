@@ -17,10 +17,10 @@
     <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- TODO: Remove in .NET 7. -->
 
     <!-- build -->
-    <OutputPath>$(MSBuildThisFileDirectory)temp\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)artifacts\build\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
     <OkExeOutputPath>$(MSBuildThisFileDirectory)build\$(MSBuildProjectName)</OkExeOutputPath>
     <OkExeOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkExeOutputPath)\$(Configuration)</OkExeOutputPath>
-    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)temp\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
 
     <!-- compiler -->
