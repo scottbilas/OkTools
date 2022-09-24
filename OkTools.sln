@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcMonUtils.Tests", "tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PmlTool.Cli", "src\PmlTool.Cli\PmlTool.Cli.csproj", "{1AF04C97-7446-4E15-9C6E-55B005D76002}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.PerfTests", "perftests\Core.PerfTests\Core.PerfTests.csproj", "{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -108,5 +110,9 @@ Global
 		{1AF04C97-7446-4E15-9C6E-55B005D76002}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AF04C97-7446-4E15-9C6E-55B005D76002}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AF04C97-7446-4E15-9C6E-55B005D76002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
