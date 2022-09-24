@@ -8,6 +8,8 @@ These tools are ok.
 
 `dotnet build` should do it. Currently requires .NET 6. Only tested on Windows, and some tools will always be Windows-only (like okunity).
 
+Perf testing: `dotnet run -c Release --project perftests/Core.PerfTests/Core.PerfTests.csproj -- --filter * --disasm --artifacts artifacts/perf/Core.PerfTests`
+
 ## okflog (Flog.Cli)
 
 TUI app. A progressive filtering `tail` + `less` for incremental analysis. Very early in development.
