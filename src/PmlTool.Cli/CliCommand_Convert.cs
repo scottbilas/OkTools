@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Text;
 using NiceIO;
 using OkTools.ProcMonUtils;
+
+// ReSharper disable CommentTypo StringLiteralTypo
 
 static partial class Program
 {
@@ -97,6 +100,16 @@ static partial class Program
         var seenProcessIds = new HashSet<uint>();
         var pairId = 1;
         var fileOps = new FileOp?[25];
+        var stackSb = new StringBuilder();
+
+        SymbolicatedEventsDb? symbolicatedEventsDb = null;
+        if (opts.OptIncludeStacks)
+        {
+            Console.Write("Loading symbolicated events db...");
+            var pmlBakedPath = pmlPath.ChangeExtension(".pmlbaked").FileMustExist();
+            symbolicatedEventsDb = new SymbolicatedEventsDb(pmlBakedPath);
+            Console.Write("\r                                 \r");
+        }
 
         // need this to set the start of the profile, otherwise edge tracing will shift everything to first visible as 0 offset,
         // which makes it hard to align with event offsets from `pmltool query`.
@@ -117,7 +130,7 @@ static partial class Program
             // flags on them like "Non-cached, Paging I/O". i can only guess at what the later reads are about, but none
             // of them have stacks on them, so that's an easy way to detect these extra reads. i'm going to ignore them
             // because they don't add any more information than the large read and just end up as noise in the trace.
-            if (!opts.OptShowall && rwEvent.Frames == null)
+            if (!opts.OptShowall && (rwEvent.Frames == null || rwEvent.Frames.Length == 0))
                 continue;
 
             var process = pmlReader.ResolveProcess(rwEvent.ProcessIndex);
@@ -130,35 +143,93 @@ static partial class Program
 
             var start = rwEvent.CaptureTime/10 - baseTime;
             var end = start + (ulong)rwEvent.DurationSpan.Ticks/10;
+            var path = rwEvent.Path.ToString(SlashMode.Forward);
 
             void WritePre(char phase, uint tid)
             {
+                var name = rwEvent.Operation.ToString()!;
+                string? color = null;
+
+                if (name == "ReadFile")
+                {
+                    if (path.Contains("/Library/ShaderCache/shader/", StringComparison.OrdinalIgnoreCase))
+                        name += " ShaderCache/shader";
+                    else if (path.EndsWith("/Library/ArtifactDB", StringComparison.OrdinalIgnoreCase))
+                        name += " ArtifactDB";
+                    else if (path.Contains("/Library/Artifacts/", StringComparison.OrdinalIgnoreCase))
+                        name += " Artifacts";
+                    else if (path.Contains("/Library/PackageCache/", StringComparison.OrdinalIgnoreCase))
+                        name += " PackageCache";
+                    else if (path.Contains("/Data/Resources/", StringComparison.OrdinalIgnoreCase))
+                        name += " Data/Resources";
+                    else if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                             path.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) ||
+                             path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        name += " Binary";
+                    else
+                        color = "grey";
+                }
+                else
+                {
+                    if (path.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+                    {
+                        name += " Log";
+                        color = "bad"; // not really "bad"! just want the color
+                    }
+                    else
+                        color = "terrible"; // not really "terrible"! just want the color
+                }
+
                 converted
                     .Open()
-                        .Write("name", $"{rwEvent.Operation} {rwEvent.Path.Parent.FileName}/{rwEvent.Path.FileName}")
+                        .Write("name", name)
                         .Write("cat", "file_io")
                         .Write("ph", phase)
                         .Write("pid", process.ProcessId)
                         .Write("tid", tid);
+
+                if (color != null && phase != 'b') // async ('b') doesn't allow color
+                    converted.Write("cname", color);
+
                 // leave open
             }
 
-            void WriteArgs(bool includeColor)
+            void WriteArgs()
             {
-                var path = rwEvent.Path.ToString(SlashMode.Forward);
-                if (includeColor)
-                {
-                    if (path.EndsWith("/Library/ArtifactDB"))
-                        converted.Write("cname", "yellow");
-                    else if (path.Contains("/Library/Artifacts/"))
-                        converted.Write("cname", "olive");
-                }
-
                 converted
                     .Open("args")
                         .Write("path", path)
                         .Write("eidx", rwEvent.EventIndex)
-                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat))
+                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+
+                var symRecord = symbolicatedEventsDb?.GetRecord(rwEvent.EventIndex);
+                if (symRecord != null)
+                {
+                    for (var i = 0; i < symRecord.Value.Frames.Length; ++i)
+                    {
+                        if (i != 0)
+                            stackSb.Append("\\n");
+
+                        ref var frame = ref symRecord.Value.Frames[i];
+                        stackSb.Append($"{symRecord.Value.Frames.Length-i-1:00} {frame.Type.ToString()[0]}");
+                        if (frame.ModuleStringIndex != 0)
+                            stackSb.Append($" [{symbolicatedEventsDb!.GetString(frame.ModuleStringIndex)}]");
+
+                        if (frame.SymbolStringIndex != 0)
+                        {
+                            stackSb.Append(' ');
+                            stackSb.Append(symbolicatedEventsDb!.GetString(frame.SymbolStringIndex));
+                            stackSb.Append(" +");
+                        }
+
+                        stackSb.Append($" 0x{frame.Offset:x}");
+                    }
+
+                    converted.Write("stack", stackSb);
+                    stackSb.Clear();
+                }
+
+                converted
                     .Close();
             }
 
@@ -167,7 +238,7 @@ static partial class Program
                 // B/E is normal nested event
                 WritePre('B', tid);
                     converted.Write("ts", start);
-                    WriteArgs(true);
+                    WriteArgs();
                 converted.Close(); // close pre
                 converted
                     .Open()
@@ -235,7 +306,7 @@ static partial class Program
                     WritePre('b', 1);
                         converted.Write("ts", start);
                         converted.Write("id", pairId);
-                        WriteArgs(false); // async doesn't support color
+                        WriteArgs();
                     converted.Close(); // close pre
                     WritePre('e', 1);
                     converted

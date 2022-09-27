@@ -6,7 +6,7 @@ Usage:
   {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] PML
   {0} resolve PML
   {0} query PML QUERY...
-  {0} convert [--mergethreads=STRATEGY] [--showall] PML [CONVERTED]
+  {0} convert [--mergethreads=STRATEGY] [--showall] [--include-stacks] PML [CONVERTED]
   {0} (help|-h|--help)
   {0} (-v|--version)
 
@@ -63,6 +63,8 @@ Options:
 
                            * Events with no frames (grep for `rwEvent.Frames == null` in source for more info)
                            * Nested events processing the same file with the same operation
+
+  --include-stacks         Include stack traces in the `args` of each event. Will make the file gig@nt0r.
 
   -h --help                Show this screen.
   -v --version             Show version.x
