@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Text;
 
 class TraceWriter : IDisposable
 {
@@ -12,7 +13,7 @@ class TraceWriter : IDisposable
         _writer.WriteLine('[');
     }
 
-    public static TraceWriter CreateJsonFile(string path) => new TraceWriter(path);
+    public static TraceWriter CreateJsonFile(string path) => new(path);
 
     public void Dispose() => _writer.Dispose();
 
@@ -36,7 +37,22 @@ class TraceWriter : IDisposable
     {
         if (_continuing)
             _writer.Write(',');
-        _writer.Write(quoted ? $"\"{name}\":\"{value}\"" : $"\"{name}\":{value}");
+
+        _writer.Write('\"');
+        _writer.Write(name);
+
+        if (quoted)
+        {
+            _writer.Write("\":\"");
+            _writer.Write(value);
+            _writer.Write('\"');
+        }
+        else
+        {
+            _writer.Write("\":");
+            _writer.Write(value);
+        }
+
         _continuing = true;
         return this;
     }
@@ -46,6 +62,24 @@ class TraceWriter : IDisposable
     public TraceWriter Write(string name, int value) => Write(name, value, false);
     public TraceWriter Write(string name, uint value) => Write(name, value, false);
     public TraceWriter Write(string name, ulong value) => Write(name, value, false);
+
+    public TraceWriter Write(string name, StringBuilder value)
+    {
+        if (_continuing)
+            _writer.Write(',');
+
+        _writer.Write('\"');
+        _writer.Write(name);
+        _writer.Write("\":\"");
+
+        foreach (var chunk in value.GetChunks())
+            _writer.Write(chunk.Span);
+
+        _writer.Write('\"');
+
+        _continuing = true;
+        return this;
+    }
 
     public TraceWriter Close()
     {
