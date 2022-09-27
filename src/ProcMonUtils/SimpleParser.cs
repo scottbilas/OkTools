@@ -146,34 +146,22 @@ struct SimpleParser
         return result;
     }
 
-    /*  String.Join(", ", Enumerable.Range(0, 256).Select(i => i switch
+    static readonly sbyte[] k_hexLut = Enumerable
+        .Range(0, 256)
+        .Select(i => (sbyte)(i switch
         {
             >= '0' and <= '9' => i - '0',
             >= 'a' and <= 'f' => i - 'a' + 10,
             >= 'A' and <= 'F' => i - 'A' + 10,
             _ => -1
-        })) */
-    static readonly sbyte[] k_HexLut = {
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-        -1, -1, -1, -1, -1, -1, -1,
-        10, 11, 12, 13, 14, 15,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        10, 11, 12, 13, 14, 15,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-        -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+        }))
+        .ToArray();
 
     // 30% faster than ReadULongHex../shrug..
     public unsafe ulong ReadULongHexUnsafe()
     {
         fixed (char* text = Text)
-        fixed (sbyte* lut = k_HexLut)
+        fixed (sbyte* lut = k_hexLut)
         {
             var result = 0ul;
 
@@ -187,7 +175,7 @@ struct SimpleParser
                     break;
 
                 var old = result;
-                result = 16*result + (ulong)digit;
+                result = 16*result + (byte)digit;
 
                 if (result < old)
                     throw new OverflowException($"Integer starting at offset {Offset} too big in line: {Text}");
