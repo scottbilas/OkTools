@@ -1,9 +1,11 @@
 #Requires -Version 7
 
+# TODO: split this better into "working with a template" and "working with an existing project"
+
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]$TestDir,  # root for project and other artifacts
-    [Parameter(Mandatory=$true)]$UnityDir, # path to unity build
+    [Parameter(Mandatory=$true)]$UnityDir, # path to unity build # TODO: use okunity instead to detect if opening existing project, or also support specifying a version or "latest" etc.
     [string]$Template,                     # template to create project from, opens existing project if missing
     [switch]$NukeCache,                    # set to nuke the global unity cache
     [switch]$NoSymbolDownload              # when running `pmltool bake`, tell it not to download pdb's via _NT_SYMBOL_PATH
@@ -77,17 +79,19 @@ if ($Template) {
 Write-Host "*** Killing processes"
 KillProcs
 
-if ($template -and (Test-Path $TestDir)) {
-    Write-Host "*** Deleting old test folder '$TestDir'"
-    KillDir $TestDir
-    mkdir $TestDir >$null
-}
-elseif (Test-Path $TestDir/project/ProjectSettings/ProjectVersion.txt) {
-    Write-Host "*** Deleting old test artifacts in '$TestDir'"
-    remove-item $TestDir/*.*
-}
-else {
-    Write-Error "No project at $TestDir"
+if ($Template) {
+    if (Test-Path $TestDir) {
+        Write-Host "*** Deleting old test folder '$TestDir'"
+        KillDir $TestDir
+        mkdir $TestDir >$null
+    }
+    elseif (Test-Path $TestDir/project/ProjectSettings/ProjectVersion.txt) {
+        Write-Host "*** Deleting old test artifacts in '$TestDir'"
+        remove-item $TestDir/*.*
+    }
+    else {
+        Write-Error "No project at $TestDir"
+    }
 }
 
 if ($NukeCache) {
@@ -98,18 +102,23 @@ if ($NukeCache) {
 $eventsPmlPath = join-path $TestDir events.pml
 
 Write-Host "*** Starting up Procmon; log=$eventsPmlPath, config=$PSScriptRoot\config.pmc"
-sudo procmon /accepteula /backingfile $eventsPmlPath /loadconfig $PSScriptRoot\config.pmc /profiling /minimized /quiet
-Write-Host "*** Waiting a bit for it to get going"
-start-sleep 5
+start-process procmon -WindowStyle Minimized "/accepteula /backingfile $eventsPmlPath /loadconfig $PSScriptRoot\config.pmc /minimized /quiet"
+Write-Host -nonew ">>> Press any key to start Unity: "
+[console]::ReadKey() >$null
+Write-Host
 
 Write-Host "*** Starting up Unity"
 $Env:UNITY_MIXED_CALLSTACK = 1
 $Env:UNITY_EXT_LOGGING = 1
+# TODO: use okunity
 if ($Template) {
-    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -createproject $TestDir\project -cloneFromTemplate $Template
+    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -createProject $TestDir\project -cloneFromTemplate $Template
+}
+elseif (test-path $TestDir\project) {
+    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -projectPath $TestDir\project
 }
 else {
-    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -openproject $TestDir\project
+    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -projectPath $TestDir
 }
 
 # TODO: have unity run script that waits until loaded then copies its pmip and shuts down, kills procmon too
