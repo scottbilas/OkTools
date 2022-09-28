@@ -15,8 +15,9 @@ var rc = PmlToolCliArguments.CreateParser().Parse(args,
                 { "convert", k_convertExtraHelp }
             };
 
+            // same as if user did `pmltool --help` or `pmltool -h`
             if (opts.ArgHelpcmd == null)
-                return new HelpCommandResult();
+                return new HelpCommandResult(PmlToolCliArguments.Help);
 
             if (extraHelp.TryGetValue(opts.ArgHelpcmd, out var extraHelpText))
                 return new HelpCommandResult(extraHelpText);
@@ -50,11 +51,3 @@ var rc = PmlToolCliArguments.CreateParser().Parse(args,
     };
 
 return (int)rc;
-
-class HelpCommandResult : IHelpResult
-{
-    public string Help { get; }
-
-    public HelpCommandResult() { Help = PmlToolCliArguments.Help; }
-    public HelpCommandResult(string altHelp) { Help = altHelp.TrimStart(); }
-}

@@ -5,6 +5,13 @@ using DocoptNet;
 
 // ReSharper disable MethodHasAsyncOverload
 
+class HelpCommandResult : IHelpResult
+{
+    public string Help { get; }
+
+    public HelpCommandResult(string help) { Help = help.TrimStart(); }
+}
+
 static class DocoptExtensions
 {
     class InputErrorResult : IInputErrorResult
