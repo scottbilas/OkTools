@@ -1,9 +1,15 @@
-using System.Diagnostics;
 using System.Text;
 using NiceIO;
 using OkTools.ProcMonUtils;
 
 // ReSharper disable CommentTypo StringLiteralTypo
+
+// TODO's for next options:
+//
+// * merge-processes: merge all processes with the same name (good for multicore stuff like lld.exe)
+// * strip-idle: strip out idle time with min size x (good for when a dialog pops up mid-import and i don't notice it for a while)
+// * special coloring for "compiling burst", "compiling shader", "compiling assembly"
+// * update the filtering to catch the compiler. seems to be missing.
 
 static partial class Program
 {
