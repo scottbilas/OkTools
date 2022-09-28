@@ -7,11 +7,6 @@ using DocoptNet;
 
 static class DocoptExtensions
 {
-    class HelpResultPlaceholder : IHelpResult
-    {
-        public string Help => throw new InvalidOperationException(); // using params
-    }
-
     class InputErrorResult : IInputErrorResult
     {
         public InputErrorResult(string error) { Error = error; }
@@ -22,7 +17,7 @@ static class DocoptExtensions
     public static (CliExitCode? code, T parsed) Parse<T>(this IHelpFeaturingParser<T> @this,
         IReadOnlyCollection<string> args,
         string programVersion, string help, string usage,
-        Func<T, bool>? isHelpCommandSet = null) // TODO: meh don't like this method of customizing behavior and doing additional validation
+        Func<T, object?>? postParse = null)
     {
         (CliExitCode? code, T parsed) rc = default; // note the T instead of T? because it will never be null if CliExitCode is null
 
@@ -33,12 +28,13 @@ static class DocoptExtensions
                 .Parse(args);
 
             {
-                if (isHelpCommandSet != null && result is IArgumentsResult<T> opts)
+                if (postParse != null && result is IArgumentsResult<T> opts)
                 {
                     try
                     {
-                        if (isHelpCommandSet(opts.Arguments))
-                            result = new HelpResultPlaceholder();
+                        var postResult = postParse(opts.Arguments);
+                        if (postResult != null)
+                            result = postResult;
                     }
                     catch (DocoptInputErrorException x)
                     {
@@ -53,8 +49,8 @@ static class DocoptExtensions
                     rc.parsed = opts.Arguments;
                     break;
 
-                case IHelpResult:
-                    var helpText = FormatHelp(help, programVersion);
+                case IHelpResult helpResult:
+                    var helpText = FormatHelp(helpResult.Help, programVersion);
                     Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
                     rc.code = CliExitCode.Help;
                     break;

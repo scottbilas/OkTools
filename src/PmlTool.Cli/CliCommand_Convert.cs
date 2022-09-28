@@ -7,6 +7,20 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
+    const string k_convertExtraHelp = @"
+# pmltool convert
+
+Render file IO events from the PML to CONVERTED in Chrome trace format (*). Go to `chrome://tracing` in Chrome or Edge
+and load the converted .json file to visualize and browse file read/write operations. The converted file will be
+overwritten if it already exists.
+
+Note that this file is not a 'real' tracing file - it has only been tested with Edge and is not going to have a lot of
+data that other tools will expect and a normal trace run recorded by the browser will include. Tools like Perfetto or
+Speedscope will not be able to read it.
+
+(*) The Chrome trace format is at https://tinyurl.com/chrome-tracing
+";
+
 /*  https://github.com/catapult-project/catapult/blob/master/tracing/tracing/base/color_scheme.html#L30
 
     thread_state_uninterruptible: new tr.b.Color(182, 125, 143),

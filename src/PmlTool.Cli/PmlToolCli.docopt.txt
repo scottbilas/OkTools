@@ -7,31 +7,16 @@ Usage:
   {0} resolve PML
   {0} query PML QUERY...
   {0} convert [--mergethreads=STRATEGY] [--showall] [--include-stacks] PML [CONVERTED]
-  {0} (help|-h|--help)
+  {0} help [HELPCMD]
+  {0} (-h|--help)
   {0} (-v|--version)
 
 Commands:
-  bake       Bake symbols from PML into <PML>.pmlbaked
-
-  resolve    Try to resolve symbols for every module found in PML. If your
-             _NT_SYMBOL_PATH is set to download symbols, this will preload
-             PDB's for the PML into your local symbol store.
-
-             Example _NT_SYMBOL_PATH:
-                 srv*C:\Symbols*https://msdl.microsoft.com/download/symbols
-
-             Note that the symbol server is fairly slow to download and many
-             of the PDB's caught up in a broad capture session can be very
-             large.
-
-  convert    Render file IO events from the PML to a chrome://tracing file.
-             Drag the resulting .json file onto Chrome or Edge to visualize and
-             browse. Converted file will be overwritten if it already exists.
-
-  query      Run basic queries against the given PML file. If there is a .pmlbaked
-             file (generated with `bake`) then stacks will be symbolicated.
-
-  help       Show this screen.
+  bake       Make a PML file portable by baking native and Mono symbols into <PML>.pmlbaked.
+  resolve    Try to resolve symbols for every module found in PML.
+  convert    Render file IO events from the PML to CONVERTED in Chrome trace format.
+  query      Run basic queries against the given PML file.
+  help       Show this screen. Optionally get help for a subcommand.
 
 Arguments:
   PML        Path to the PML (Process Monitor Log) file to process. An extension
@@ -66,8 +51,7 @@ Options:
 
   --include-stacks         Include stack traces in the `args` of each event. Will make the file gig@nt0r.
 
-  -h --help                Show this screen.
-  -v --version             Show version.x
+  -v --version             Show version.
 
 IMPORTANT: baking should be done before any DLL's are replaced, such as from a
 Windows Update or rebuilding Unity. No validation is done to ensure that DLL's

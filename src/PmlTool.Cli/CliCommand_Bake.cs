@@ -6,6 +6,41 @@ static partial class Program
 {
     const string k_ntSymbolPathName = "_NT_SYMBOL_PATH";
 
+    const string k_bakeExtraHelp = $@"
+# pmltool bake
+
+Make a PML file portable by baking native and Mono symbols into <PML>.pmlbaked.
+
+The .pmlbaked file will be created in the same folder as the PML file. It will have all of the call stack frames from
+the PML resolved to their symbolic names. This not only makes the PML file portable, but avoids the need for PDB's or a
+Mono 'pmip' file to be present in order to have symbolic call stacks later. Baking is necessary for the `convert` and
+`query` commands.
+
+Symbolication happens two ways:
+
+  1. Native frames: `dbghelp.dll` and {k_ntSymbolPathName} are used to resolve native frames, same as Procmon does. (*)
+
+  2. Unity Mono jit frames: when Unity is run with with env var `UNITY_MIXED_CALLSTACK=1` (**) a `pmip_xxxxx_y.txt` file
+     will be created at `%LOCALAPPDATA%\Temp` where `xxxxx` is the Unity process ID and `y` is the domain iteration for
+     that session (domain reloads throw away jit'd code). This file contains all the jit'd method names and their
+     address ranges.
+
+     For Mono callstacks to be resolved, the matching pmip file needs to be in the same folder as the PML. Note that
+     when the Unity process exits, the OS will delete the pmip file, so you need to copy it out of the Temp folder
+     before that.
+
+There is a script `OkTools/src/PmlTool.Cli/Scripts/UnityCapture.ps1` that will do a test run in Unity, automatically
+running Unity and Procmon, capturing the pmip file, and doing a bake of the PML.
+
+(*) Note that you can use `pmltool resolve` to prefetch PDB's for all modules found in a PML file. This can be useful
+when iterating quickly and you don't want to be slowed down by repeatedly failing symbol server queries of private
+PDB's. Run the `resolve` on the first PML to ensure you've got all the relevant PDB's, and then for all the `bake` runs
+use `--no-symbol-download` to eliminate symbol server queries.
+
+(**) When using `okunity run` to run Unity, it always sets `UNITY_MIXED_CALLSTACK=1` automatically.
+
+";
+
     static CliExitCode Bake(PmlToolCliArguments opts)
     {
         // FUTURE: this eats up a ton of native memory, probably from loading and using all the PDB's and never unloading them.

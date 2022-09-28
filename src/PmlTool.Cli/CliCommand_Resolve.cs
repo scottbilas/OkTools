@@ -3,6 +3,22 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
+    const string k_resolveExtraHelp = @"
+# pmltool resolve
+
+Try to resolve symbols for every module found in PML.
+
+Your _NT_SYMBOL_PATH should be set to download symbols, so that this command will preload PDB's for the PML into your
+local symbol store. See the note in `pmltool help bake` for why this is useful.
+
+Example _NT_SYMBOL_PATH:
+
+   srv*C:\Symbols*https://msdl.microsoft.com/download/symbols
+
+Note that the symbol server is fairly slow to download and many of the PDB's caught up in a broad capture session
+can be very large.
+";
+
     static CliExitCode Resolve(PmlToolCliArguments opts)
     {
         if ((Environment.GetEnvironmentVariable(k_ntSymbolPathName)?.IndexOf("http") ?? -1) == -1)

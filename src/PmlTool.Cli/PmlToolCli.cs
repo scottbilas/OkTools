@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using DocoptNet;
 
 const string programVersion = "0.1";
 
@@ -6,13 +6,31 @@ var rc = PmlToolCliArguments.CreateParser().Parse(args,
     programVersion, PmlToolCliArguments.Help, PmlToolCliArguments.Usage,
     opts =>
     {
-        if (opts.CmdHelp)
-            return true;
+        if (opts.CmdHelp || opts.OptHelp)
+        {
+            var extraHelp = new Dictionary<string, string>
+            {
+                { "bake", k_bakeExtraHelp },
+                { "resolve", k_resolveExtraHelp },
+                { "convert", k_convertExtraHelp }
+            };
 
-        // TODO: not loving this validation going here. rethink that Parse helper..
-        // also would like to have this stored in the cliArgs object..
+            if (opts.ArgHelpcmd == null)
+                return new HelpCommandResult();
+
+            if (extraHelp.TryGetValue(opts.ArgHelpcmd, out var extraHelpText))
+                return new HelpCommandResult(extraHelpText);
+
+            var available = extraHelp.Keys
+                .Ordered()
+                .Select(h => $"'{h}'")
+                .StringJoin(", ");
+            throw new DocoptInputErrorException($"Extra help currently only available for {available} (unrecognized: '{opts.ArgHelpcmd}')");
+        }
+
+        // TODO: would like to have this stored in the cliArgs object..
         if (!new[] { "none", "all", "min", null }.Contains(opts.OptMergethreads))
-            throw new DocoptNet.DocoptInputErrorException("Unrecognized merge strategy: " + opts.OptMergethreads);
+            throw new DocoptInputErrorException("Unrecognized merge strategy: " + opts.OptMergethreads);
 
         return false;
     })
@@ -32,3 +50,11 @@ var rc = PmlToolCliArguments.CreateParser().Parse(args,
     };
 
 return (int)rc;
+
+class HelpCommandResult : IHelpResult
+{
+    public string Help { get; }
+
+    public HelpCommandResult() { Help = PmlToolCliArguments.Help; }
+    public HelpCommandResult(string altHelp) { Help = altHelp.TrimStart(); }
+}
