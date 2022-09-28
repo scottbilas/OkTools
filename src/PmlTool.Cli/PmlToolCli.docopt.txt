@@ -41,15 +41,18 @@ Options:
   --mergethreads STRATEGY  Strategy for merging threads, case insensitive. One of:
 
                            * none: Do not merge threads (same as no --merge-threads)
-                           * all:  Merge all threads into a single thread called `(merged)`
+                           * all:  Merge all threads into a single thread called `(merged)`. This will allow
+                                   categorization in the trace view.
                            * min:  Merge threads down to the minimum required to do the IO in parallel
 
   --showall                Include events that are normally filtered out:
 
                            * Events with no frames (grep for `rwEvent.Frames == null` in source for more info)
                            * Nested events processing the same file with the same operation
+                           * Debug-type events such as writing to the Mono/Unity pmip_* file
 
-  --include-stacks         Include stack traces in the `args` of each event. Will make the file gig@nt0r.
+  --include-stacks         Include stack traces in the `args` of each event. Will make the file gig@nt0r and possibly
+                           Chrome/Edge will fail to load it.
 
   -v --version             Show version.
 

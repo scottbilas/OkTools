@@ -14,6 +14,8 @@ Render file IO events from the PML to CONVERTED in Chrome trace format (*). Go t
 and load the converted .json file to visualize and browse file read/write operations. The converted file will be
 overwritten if it already exists.
 
+The rendering is highly Unity-specific currently, in terms of grouping/coloring and filtering.
+
 Note that this file is not a 'real' tracing file - it has only been tested with Edge and is not going to have a lot of
 data that other tools will expect and a normal trace run recorded by the browser will include. Tools like Perfetto or
 Speedscope will not be able to read it.
@@ -67,31 +69,45 @@ Speedscope will not be able to read it.
     cq_build_attempt_failed: new tr.b.Color(197, 81, 81)
 */
 
-    record FileOp(object Operation, string Path, ulong Expire)
+    struct FileOp
     {
+        readonly PmlFileSystemReadWriteEvent _rwEvent;
         List<ulong>? _children;
 
-        public bool TryAdd(object operation, string path, ulong end)
+        public readonly string Path;
+        public readonly ulong Start, End;
+
+        public FileOp(PmlFileSystemReadWriteEvent rwEvent, ulong baseTime)
         {
-            if (Expire < end)
+            _rwEvent = rwEvent;
+            Start = _rwEvent.CaptureTime/10 - baseTime;
+            End = Start + (ulong)_rwEvent.DurationSpan.Ticks/10;
+            Path = _rwEvent.Path.ToString(SlashMode.Forward);
+        }
+
+        public bool TryAdd(FileOp other)
+        {
+            if (End < other.End)
                 return false;
-            if (!Path.EqualsIgnoreCase(path))
+            if (_rwEvent.ThreadId != other._rwEvent.ThreadId)
                 return false;
-            if (!Operation.Equals(operation))
+            if (!Path.EqualsIgnoreCase(other.Path))
+                return false;
+            if (!_rwEvent.Operation.Equals(other._rwEvent.Operation))
                 return false;
 
             if (_children == null)
                 _children = new();
-            else if (_children.Count != 0 && _children[^1] < end)
+            else if (_children.Count != 0 && _children[^1] < other.End)
                 return false;
 
-            _children.Add(end);
+            _children.Add(other.End);
             return true;
         }
 
         public bool TryExpire(ulong start)
         {
-            if (Expire <= start)
+            if (End <= start)
                 return true;
 
             if (_children != null)
@@ -155,9 +171,11 @@ Speedscope will not be able to read it.
                     converted.WriteThreadMetadata(process.ProcessId, 1, "(merged)");
             }
 
-            var start = rwEvent.CaptureTime/10 - baseTime;
-            var end = start + (ulong)rwEvent.DurationSpan.Ticks/10;
-            var path = rwEvent.Path.ToString(SlashMode.Forward);
+            // debug feature, ignore
+            if (!opts.OptShowall && rwEvent.Path.FileName.StartsWith("pmip_"))
+                continue;
+
+            var fileOp = new FileOp(rwEvent, baseTime);
 
             void WritePre(char phase, uint tid)
             {
@@ -166,26 +184,28 @@ Speedscope will not be able to read it.
 
                 if (name == "ReadFile")
                 {
-                    if (path.Contains("/Library/ShaderCache/shader/", StringComparison.OrdinalIgnoreCase))
+                    if (fileOp.Path.Contains("/Library/ShaderCache/shader/", StringComparison.OrdinalIgnoreCase))
                         name += " ShaderCache/shader";
-                    else if (path.EndsWith("/Library/ArtifactDB", StringComparison.OrdinalIgnoreCase))
+                    else if (fileOp.Path.EndsWith("/Library/ArtifactDB", StringComparison.OrdinalIgnoreCase))
                         name += " ArtifactDB";
-                    else if (path.Contains("/Library/Artifacts/", StringComparison.OrdinalIgnoreCase))
+                    else if (fileOp.Path.Contains("/Library/Artifacts/", StringComparison.OrdinalIgnoreCase))
                         name += " Artifacts";
-                    else if (path.Contains("/Library/PackageCache/", StringComparison.OrdinalIgnoreCase))
+                    else if (fileOp.Path.Contains("/Library/PackageCache/", StringComparison.OrdinalIgnoreCase))
                         name += " PackageCache";
-                    else if (path.Contains("/Data/Resources/", StringComparison.OrdinalIgnoreCase))
+                    else if (fileOp.Path.Contains("/Data/Resources/", StringComparison.OrdinalIgnoreCase))
                         name += " Data/Resources";
-                    else if (path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
-                             path.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) ||
-                             path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                        name += " Binary";
+                    else if (fileOp.Path.Contains("/Library/Bee/", StringComparison.OrdinalIgnoreCase))
+                        name += " Bee";
+                    else if (fileOp.Path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
+                             fileOp.Path.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase) ||
+                             fileOp.Path.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        name += " Executable";
                     else
                         color = "grey";
                 }
                 else
                 {
-                    if (path.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+                    if (fileOp.Path.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
                     {
                         name += " Log";
                         color = "bad"; // not really "bad"! just want the color
@@ -212,9 +232,10 @@ Speedscope will not be able to read it.
             {
                 converted
                     .Open("args")
-                        .Write("path", path)
+                        .Write("path", fileOp.Path)
                         .Write("eidx", rwEvent.EventIndex)
-                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat))
+                        .Write("tid", rwEvent.ThreadId);
 
                 var symRecord = symbolicatedEventsDb?.GetRecord(rwEvent.EventIndex);
                 if (symRecord != null)
@@ -247,11 +268,67 @@ Speedscope will not be able to read it.
                     .Close();
             }
 
-            void WriteEvent(uint tid)
+            int? slot = null;
+            var skip = false;
+            for (var i = 0; i != fileOps.Length; ++i)
             {
+                var curFileOp = fileOps[i];
+                if (curFileOp != null)
+                {
+                    // are we a sub-operation of this one?
+                    if (curFileOp.Value.TryAdd(fileOp))
+                    {
+                        if (opts.OptShowall)
+                            slot = i;
+                        else
+                            skip = true;
+                        break;
+                    }
+
+                    // if can't expire this then we need to go to the next
+                    if (!curFileOp.Value.TryExpire(fileOp.Start))
+                        continue;
+                }
+
+                fileOps[i] = fileOp;
+                slot = i;
+                break;
+            }
+
+            if (skip)
+                continue;
+
+            if (slot == null)
+                throw new OverflowException("vtidExpirePool too small");
+
+            if (opts.OptMergethreads == "all")
+            {
+                // b/e is independent async event
+                WritePre('b', 1);
+                    converted.Write("ts", fileOp.Start);
+                    converted.Write("id", pairId);
+                    WriteArgs();
+                converted.Close(); // close pre
+                WritePre('e', 1);
+                converted
+                    .Write("ts", fileOp.End)
+                    .Write("id", pairId)
+                    .Close(); // close pre
+
+                ++pairId;
+            }
+            else
+            {
+                var tid = opts.OptMergethreads switch
+                {
+                    "none" or null => rwEvent.ThreadId,
+                    "min" => (uint)slot + 1,
+                    _ => throw new InvalidOperationException() // should never get here unless there's a bug
+                };
+
                 // B/E is normal nested event
                 WritePre('B', tid);
-                    converted.Write("ts", start);
+                    converted.Write("ts", fileOp.Start);
                     WriteArgs();
                 converted.Close(); // close pre
                 converted
@@ -259,79 +336,8 @@ Speedscope will not be able to read it.
                         .Write("ph", "E")
                         .Write("pid", process.ProcessId)
                         .Write("tid", tid)
-                        .Write("ts", end)
+                        .Write("ts", fileOp.End)
                     .Close();
-            }
-
-            switch (opts.OptMergethreads)
-            {
-                case "none":
-                case null:
-                    WriteEvent(rwEvent.ThreadId);
-                    break;
-
-                case "min":
-
-                    var best = (index: -1, expire: (ulong?)null);
-                    var taken = false;
-
-                    for (var i = 0; i < fileOps.Length; ++i)
-                    {
-                        var fileOp = fileOps[i];
-                        if (fileOp != null)
-                        {
-                            // are we a sub-operation of this one?
-                            if (fileOp.TryAdd(rwEvent.Operation, rwEvent.Path, end))
-                            {
-                                best.index = i;
-                                taken = true;
-                                break;
-                            }
-
-                            // can we expire this one?
-                            if (fileOp.TryExpire(start))
-                            {
-                                if (best.expire == null || fileOp.Expire < best.expire)
-                                    best = (i, fileOp.Expire);
-                                fileOp = fileOps[i] = null;
-                            }
-                        }
-
-                        if (fileOp == null && best.index == -1)
-                            best = (i, null);
-                    }
-
-                    if (best.index < 0)
-                        throw new OverflowException("vtidExpirePool too small");
-
-                    if (!taken)
-                    {
-                        Debug.Assert(fileOps[best.index] == null);
-                        fileOps[best.index] = new FileOp(rwEvent.Operation, rwEvent.Path, end);
-                    }
-
-                    if (!taken || opts.OptShowall)
-                        WriteEvent((uint)best.index + 1);
-
-                    break;
-
-                case "all":
-                    // b/e is independent async event
-                    WritePre('b', 1);
-                        converted.Write("ts", start);
-                        converted.Write("id", pairId);
-                        WriteArgs();
-                    converted.Close(); // close pre
-                    WritePre('e', 1);
-                    converted
-                        .Write("ts", end)
-                        .Write("id", pairId)
-                        .Close(); // close pre
-                    ++pairId;
-                    break;
-
-                default:
-                    throw new InvalidOperationException(); // should never get here unless there's a bug
             }
         }
 
