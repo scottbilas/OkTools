@@ -33,7 +33,7 @@ var rc = PmlToolCliArguments.CreateParser().Parse(args,
         if (!new[] { "none", "all", "min", null }.Contains(opts.OptMergethreads))
             throw new DocoptInputErrorException("Unrecognized merge strategy: " + opts.OptMergethreads);
 
-        return false;
+        return null;
     })
     switch
     {

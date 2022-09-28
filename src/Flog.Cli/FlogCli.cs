@@ -12,7 +12,7 @@ var (exitCode, opt) = FlogCliArguments.CreateParser().Parse(args, programVersion
     {
         if (!Enum.TryParse(opts.OptWrap, true, out WrapType _))
             throw new DocoptNet.DocoptInputErrorException("Unrecognized wrap type: " + opts.OptWrap);
-        return false;
+        return null;
     });
 if (exitCode != null)
     return (int)exitCode.Value;
