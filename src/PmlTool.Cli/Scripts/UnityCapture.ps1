@@ -6,7 +6,7 @@ param(
     [Parameter(Mandatory=$true)]$UnityDir, # path to unity build
     [string]$Template,                     # template to create project from, opens existing project if missing
     [switch]$NukeCache,                    # set to nuke the global unity cache
-    [switch]$NoSymbolDownload              # when running pmlbaker, tell it not to download pdb's via _NT_SYMBOL_PATH
+    [switch]$NoSymbolDownload              # when running `pmltool bake`, tell it not to download pdb's via _NT_SYMBOL_PATH
 )
 
 Set-StrictMode -Version Latest
@@ -140,4 +140,4 @@ Write-Host "*** Killing processes"
 KillProcs
 
 Write-Host "*** Baking"
-& $PSScriptRoot\..\builds\pmlbaker.exe bake $eventsPmlPath
+& $PSScriptRoot\..\pmltool.exe bake $eventsPmlPath

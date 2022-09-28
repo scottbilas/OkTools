@@ -29,8 +29,8 @@ Symbolication happens two ways:
      when the Unity process exits, the OS will delete the pmip file, so you need to copy it out of the Temp folder
      before that.
 
-There is a script `OkTools/src/PmlTool.Cli/Scripts/UnityCapture.ps1` that will do a test run in Unity, automatically
-running Unity and Procmon, capturing the pmip file, and doing a bake of the PML.
+There is a script `<OkTools>/build/PmlTool.Cli/Scripts/UnityCapture.ps1` that will run Unity and Procmon, capture the
+pmip file, and bake the PML.
 
 (*) Note that you can use `pmltool resolve` to prefetch PDB's for all modules found in a PML file. This can be useful
 when iterating quickly and you don't want to be slowed down by repeatedly failing symbol server queries of private
