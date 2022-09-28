@@ -34,13 +34,15 @@ function KillProcs {
 
 function KillDir($where) {
     if (test-path $where) {
-        if (get-command byenow) { # scoop install byenow
+        #if (get-command byenow) { # scoop install byenow
+        #    #byenow --staged --delete-ntapi --one-liner --list-errors --show-bytes --yolo --yes $where
+        #}
+        #else {
+            # TODO: this runs into problems with paths like C:\Users\scott\AppData\Local\Unity\cache/packages/artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates/com.unity.netcode.gameobjects@1.0.0-pre.9/Tests/Runtime/NetworkAnimator/Resources
+            # remove-item doesn't work, rm -rf doesn't work..explorer will do it.
+            # not sure if it's the length that is the problem or something else wrong. figure it out!
             remove-item -r $where
-            #byenow --staged --delete-ntapi --one-liner --list-errors --show-bytes --yolo --yes $where
-        }
-        else {
-            remove-item -r $where
-        }
+        #}
     }
 }
 
