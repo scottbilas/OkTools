@@ -131,6 +131,7 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
 
     // Because Equals() uses IsHashSame we risk separate UnityVersions getting different hashcodes but comparing
     // equal. The caller needs to figure out how to handle this, can't have an automatic solution here.
+    // TODO: well, yamldotnet wants to call this.. throws because it tries to put the version in a dictionary. easy repro is `okunity info <projectdir> -dy`
     public override int GetHashCode() =>
         throw new NotSupportedException("Must hash explicitly");
 
