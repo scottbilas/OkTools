@@ -7,8 +7,8 @@
     <explicitIncludes />
     <explicitExcludes>
       <Path>.idea</Path>
-      <Path>builds</Path>
-      <Path>temp</Path>
+      <Path>artifacts</Path>
+      <Path>build</Path>
     </explicitExcludes>
   </component>
 </project>
