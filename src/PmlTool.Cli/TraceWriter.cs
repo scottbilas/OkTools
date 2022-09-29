@@ -3,23 +3,22 @@ using System.Text;
 
 class TraceWriter : IDisposable
 {
-    readonly StreamWriter _writer;
     int _depth;
     bool _continuing;
 
     TraceWriter(string path)
     {
-        _writer = File.CreateText(path);
-        _writer.WriteLine('[');
+        Writer = File.CreateText(path);
+        Writer.WriteLine('[');
     }
 
     public static TraceWriter CreateJsonFile(string path) => new(path);
 
-    public void Dispose() => _writer.Dispose();
+    public void Dispose() => Writer.Dispose();
 
     public TraceWriter Open()
     {
-        _writer.Write('{');
+        Writer.Write('{');
         _continuing = false;
         ++_depth;
         return this;
@@ -28,29 +27,31 @@ class TraceWriter : IDisposable
     public TraceWriter Open(string name)
     {
         if (_continuing)
-            _writer.Write(',');
-        _writer.Write($"\"{name}\":");
+            Writer.Write(',');
+        Writer.Write($"\"{name}\":");
         return Open();
     }
+
+    public StreamWriter Writer { get; }
 
     TraceWriter Write<T>(string name, T value, bool quoted)
     {
         if (_continuing)
-            _writer.Write(',');
+            Writer.Write(',');
 
-        _writer.Write('\"');
-        _writer.Write(name);
+        Writer.Write('\"');
+        Writer.Write(name);
 
         if (quoted)
         {
-            _writer.Write("\":\"");
-            _writer.Write(value);
-            _writer.Write('\"');
+            Writer.Write("\":\"");
+            Writer.Write(value);
+            Writer.Write('\"');
         }
         else
         {
-            _writer.Write("\":");
-            _writer.Write(value);
+            Writer.Write("\":");
+            Writer.Write(value);
         }
 
         _continuing = true;
@@ -66,16 +67,16 @@ class TraceWriter : IDisposable
     public TraceWriter Write(string name, StringBuilder value)
     {
         if (_continuing)
-            _writer.Write(',');
+            Writer.Write(',');
 
-        _writer.Write('\"');
-        _writer.Write(name);
-        _writer.Write("\":\"");
+        Writer.Write('\"');
+        Writer.Write(name);
+        Writer.Write("\":\"");
 
         foreach (var chunk in value.GetChunks())
-            _writer.Write(chunk.Span);
+            Writer.Write(chunk.Span);
 
-        _writer.Write('\"');
+        Writer.Write('\"');
 
         _continuing = true;
         return this;
@@ -83,10 +84,10 @@ class TraceWriter : IDisposable
 
     public TraceWriter Close()
     {
-        _writer.Write('}');
+        Writer.Write('}');
         if (--_depth == 0)
         {
-            _writer.WriteLine(',');
+            Writer.WriteLine(',');
             Debug.Assert(_depth >= 0);
         }
         else

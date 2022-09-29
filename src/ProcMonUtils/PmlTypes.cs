@@ -26,6 +26,24 @@ public class PmlProcess
 
     public bool TryFindModule(ulong address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
         _modules.TryFindAddressIn(address, out module);
+
+    // may return null for process names like "System" and "Idle"
+    public string? GetImagePath()
+    {
+        PmlModule? found = null;
+        foreach (var module in _modules)
+        {
+            if (!Path.GetFileName(module.ImagePath).EqualsIgnoreCase(ProcessName))
+                continue;
+
+            if (found != null)
+                throw new InvalidOperationException($"Unexpected process name found at multiple image paths: '{found.ImagePath}' and {module.ImagePath}");
+
+            found = module;
+        }
+
+        return found?.ImagePath;
+    }
 }
 
 [PublicAPI, DebuggerDisplay("{ImagePath}")]

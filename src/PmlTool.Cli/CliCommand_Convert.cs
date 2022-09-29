@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using NiceIO;
 using OkTools.ProcMonUtils;
@@ -6,10 +7,10 @@ using OkTools.ProcMonUtils;
 
 // TODO's for next options:
 //
-// * merge-processes: merge all processes with the same name (good for multicore stuff like lld.exe)
 // * strip-idle: strip out idle time with min size x (good for when a dialog pops up mid-import and i don't notice it for a while)
 // * special coloring for "compiling burst", "compiling shader", "compiling assembly"
 // * update the filtering to catch the compiler. seems to be missing.
+// * go further with extra help to just move all the help out, at least for convert
 
 static partial class Program
 {
@@ -126,25 +127,55 @@ Speedscope will not be able to read it.
         }
     }
 
+    class VirtualProc
+    {
+        readonly string? _imagePath;
+        readonly List<PmlProcess> _processes = new();
+
+        public VirtualProc(PmlProcess process)
+        {
+            _imagePath = process.GetImagePath();
+            _processes.Add(process);
+        }
+
+        public IReadOnlyList<PmlProcess> Processes => _processes;
+
+        public bool TryAdd(PmlProcess process, out int index)
+        {
+            Debug.Assert(!_processes.Select(p => p.ProcessId).Contains(process.ProcessId));
+
+            index = -1;
+
+            if (!_processes[0].ProcessName.EqualsIgnoreCase(process.ProcessName))
+                return false;
+
+            if (!((ImagePath: _imagePath, process.GetImagePath()) switch
+                {
+                    (null, null) => true,
+                    (null,    _) => false,
+                    (   _, null) => false,
+                    var (a, b)   => a.EqualsIgnoreCase(b)
+                }))
+                return false;
+
+            index = _processes.Count;
+            _processes.Add(process);
+            return true;
+        }
+    }
+
     static CliExitCode Convert(PmlToolCliArguments opts)
     {
         var pmlPath = opts.ArgPml!.ToNPath().FileMustExist();
         using var pmlReader = new PmlReader(pmlPath);
         using var converted = TraceWriter.CreateJsonFile(opts.ArgConverted ?? pmlPath + ".json");
 
-        var baseTime = pmlReader.GetEvent(0).CaptureTime / 10;
-        var seenProcessIds = new HashSet<uint>();
-        var pairId = 1;
-        var fileOps = new FileOp?[25];
-        var stackSb = new StringBuilder();
-
         SymbolicatedEventsDb? symbolicatedEventsDb = null;
         if (opts.OptIncludeStacks)
         {
-            Console.Write("Loading symbolicated events db...");
+            Console.WriteLine("Loading symbolicated events db...");
             var pmlBakedPath = pmlPath.ChangeExtension(".pmlbaked").FileMustExist();
             symbolicatedEventsDb = new SymbolicatedEventsDb(pmlBakedPath);
-            Console.Write("\r                                 \r");
         }
 
         // need this to set the start of the profile, otherwise edge tracing will shift everything to first visible as 0 offset,
@@ -159,29 +190,98 @@ Speedscope will not be able to read it.
                 .Write("s", "g")
             .Close();
 
-        foreach (var rwEvent in pmlReader.SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Stacks | PmlReader.Filter.Details).OfType<PmlFileSystemReadWriteEvent>())
-        {
-            // sometimes i see a large read of a file in procmon, followed by a series of smaller and iteratively-offset
-            // reads on the same file+process+thread, that total to the same size as the large one. the later reads have
-            // flags on them like "Non-cached, Paging I/O". i can only guess at what the later reads are about, but none
-            // of them have stacks on them, so that's an easy way to detect these extra reads. i'm going to ignore them
-            // because they don't add any more information than the large read and just end up as noise in the trace.
-            if (!opts.OptShowall && (rwEvent.Frames == null || rwEvent.Frames.Length == 0))
-                continue;
 
-            var process = pmlReader.ResolveProcess(rwEvent.ProcessIndex);
-            if (seenProcessIds.Add(process.ProcessId))
+        Console.WriteLine("Reading rw file events...");
+
+        var rwEvents = pmlReader
+            .SelectEvents(PmlReader.Filter.FileSystem | PmlReader.Filter.Stacks | PmlReader.Filter.Details)
+            .OfType<PmlFileSystemReadWriteEvent>()
+            .Where(e => opts.OptShowall switch
             {
-                converted.WriteProcessMetadata(process.ProcessId, process.ProcessName);
+                // sometimes i see a large read of a file in procmon, followed by a series of smaller and iteratively-
+                // offset reads on the same file+process+thread, that total to the same size as the large one. the later
+                // reads have flags on them like "Non-cached, Paging I/O". i can only guess at what the later reads are
+                // about, but none of them have stacks on them, so that's an easy way to detect these extra reads. i'm
+                // going to ignore them because they don't add any more information than the large read and just end up
+                // as noise in the trace.
+                false when e.Frames == null || e.Frames.Length == 0 => false,
+
+                // debug feature, ignore
+                false when e.Path.FileName.StartsWith("pmip_") => false,
+
+                _ => true
+            })
+            .ToArray();
+
+        var virtualProcs = new List<VirtualProc>();
+        var processesByIndex = new Dictionary<uint, (VirtualProc vproc, int index)>();
+
+        Console.WriteLine("Writing process metadata...");
+
+        foreach (var processIndex in rwEvents
+            .Select(e => e.ProcessIndex)
+            .Where(i => !processesByIndex.ContainsKey(i)))
+        {
+            var eventProcess = pmlReader.ResolveProcess(processIndex);
+
+            var found = false;
+            foreach (var virtualProc in virtualProcs)
+            {
+                if (virtualProc.TryAdd(eventProcess, out var index))
+                {
+                    processesByIndex.Add(processIndex, (virtualProc, index));
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                var virtualProc = new VirtualProc(eventProcess);
+                virtualProcs.Add(virtualProc);
+                processesByIndex.Add(processIndex, (virtualProc, 0));
+            }
+        }
+
+        foreach (var virtualProc in virtualProcs)
+        {
+            for (var i = 0; i < virtualProc.Processes.Count; ++i)
+            {
+                var process = virtualProc.Processes[i];
+                var name = process.ProcessName; // process.ProcessName;
+
+                if (opts.OptMergeprocs)
+                {
+                    if (i != 0)
+                        continue;
+
+                    if (virtualProc.Processes.Count > 1)
+                        name += " (merged)";
+                }
+
+                var imagePath = process.GetImagePath();
+                if (imagePath != null)
+                    name += " [" + Path.GetDirectoryName(imagePath)!.Replace('\\', '/') + ']';
+
+                converted.WriteProcessMetadata(process.ProcessId, name);
                 if (opts.OptMergethreads == "all")
                     converted.WriteThreadMetadata(process.ProcessId, 1, "(merged)");
             }
+        }
 
-            // debug feature, ignore
-            if (!opts.OptShowall && rwEvent.Path.FileName.StartsWith("pmip_"))
-                continue;
+        Console.WriteLine("Writing file operations...");
 
+        var baseTime = pmlReader.GetEvent(0).CaptureTime / 10;
+        var allEventsPairId = 1;
+        var fileOps = new FileOp?[25];
+        var stackSb = new StringBuilder();
+
+        foreach (var rwEvent in rwEvents)
+        {
             var fileOp = new FileOp(rwEvent, baseTime);
+            var (virtualProc, virtualProcIndex) = processesByIndex[rwEvent.ProcessIndex];
+            var actualProcessId = virtualProc.Processes[virtualProcIndex].ProcessId;
+            var virtualProcessId = opts.OptMergeprocs ? virtualProc.Processes[0].ProcessId : actualProcessId;
 
             void WritePre(char phase, uint tid)
             {
@@ -225,7 +325,7 @@ Speedscope will not be able to read it.
                         .Write("name", name)
                         .Write("cat", "file_io")
                         .Write("ph", phase)
-                        .Write("pid", process.ProcessId)
+                        .Write("pid", virtualProcessId)
                         .Write("tid", tid);
 
                 if (color != null && phase != 'b') // async ('b') doesn't allow color
@@ -240,8 +340,12 @@ Speedscope will not be able to read it.
                     .Open("args")
                         .Write("path", fileOp.Path)
                         .Write("eidx", rwEvent.EventIndex)
-                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat))
-                        .Write("tid", rwEvent.ThreadId);
+                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+
+                if (opts.OptMergethreads != null && opts.OptMergethreads != "none")
+                    converted.Write("tid", rwEvent.ThreadId);
+                if (opts.OptMergeprocs)
+                    converted.Write("pid", actualProcessId);
 
                 var symRecord = symbolicatedEventsDb?.GetRecord(rwEvent.EventIndex);
                 if (symRecord != null)
@@ -312,16 +416,16 @@ Speedscope will not be able to read it.
                 // b/e is independent async event
                 WritePre('b', 1);
                     converted.Write("ts", fileOp.Start);
-                    converted.Write("id", pairId);
+                    converted.Write("id", allEventsPairId);
                     WriteArgs();
                 converted.Close(); // close pre
                 WritePre('e', 1);
                 converted
                     .Write("ts", fileOp.End)
-                    .Write("id", pairId)
+                    .Write("id", allEventsPairId)
                     .Close(); // close pre
 
-                ++pairId;
+                ++allEventsPairId;
             }
             else
             {
@@ -340,7 +444,7 @@ Speedscope will not be able to read it.
                 converted
                     .Open()
                         .Write("ph", "E")
-                        .Write("pid", process.ProcessId)
+                        .Write("pid", virtualProcessId)
                         .Write("tid", tid)
                         .Write("ts", fileOp.End)
                     .Close();
