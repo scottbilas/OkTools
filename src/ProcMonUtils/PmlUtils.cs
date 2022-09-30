@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using BetterWin32Errors;
-using Zodiacon.DebugHelp;
+using Vanara.PInvoke;
 
 namespace OkTools.ProcMonUtils;
 
@@ -9,7 +8,7 @@ class SymCache : IDisposable
 {
     readonly SimpleSymbolHandler _simpleSymbolHandler;
     readonly HashSet<string> _symbolsForModuleCache = new();
-    readonly Dictionary<ulong, (SymbolInfo symbol, ulong offset)> _symbolFromAddressCache = new();
+    readonly Dictionary<ulong, (SYMBOL_INFO2 symbol, ulong offset)> _symbolFromAddressCache = new();
     MonoSymbolReader? _monoSymbolReader;
 
     public SymCache(SymbolicateOptions options) =>
@@ -26,7 +25,7 @@ class SymCache : IDisposable
         if (win32Error != Win32Error.ERROR_SUCCESS &&
             win32Error != Win32Error.ERROR_PATH_NOT_FOUND &&
             win32Error != Win32Error.ERROR_NO_MORE_FILES) // this can happen if a dll has been deleted since the PML was recorded
-            throw new Win32Exception(win32Error);
+            throw win32Error.GetException();
     }
 
     public void LoadMonoSymbols(string monoPmipPath)
@@ -37,22 +36,22 @@ class SymCache : IDisposable
         _monoSymbolReader = new MonoSymbolReader(monoPmipPath);
     }
 
-    public bool TryGetNativeSymbol(ulong address, out (SymbolInfo symbol, ulong offset) symOffset)
+    public bool TryGetNativeSymbol(ulong address, out (SYMBOL_INFO2 symbol, ulong offset) symOffset)
     {
         if (_symbolFromAddressCache.TryGetValue(address, out symOffset))
             return true;
 
         var win32Error = _simpleSymbolHandler.GetSymbolFromAddress(address, ref symOffset.symbol, out symOffset.offset);
-        switch (win32Error)
+        switch ((uint)win32Error)
         {
             case Win32Error.ERROR_SUCCESS:
                 _symbolFromAddressCache.Add(address, symOffset);
                 return true;
             case Win32Error.ERROR_INVALID_ADDRESS: // jetbrains fsnotifier.exe can cause this, wild guess that it happens with in-memory generated code
-            case Win32Error.ERROR_MOD_NOT_FOUND: // this can happen if a dll has been deleted since the PML was recorded
+            case Win32Error.ERROR_MOD_NOT_FOUND: // this can happen if a dll has been deleted since the PML was recorded or if it is privileged (like crowdstrike)
                 return false;
             default:
-                throw new Win32Exception(win32Error);
+                throw win32Error.GetException();
         }
     }
 
@@ -99,7 +98,7 @@ public static class PmlUtils
 
         var symCacheDb = new Dictionary<uint /*pid*/, SymCache>();
         var strings = new List<string> { "" };
-        var stringDb = new Dictionary<string, int>() { { "", 0 } };
+        var stringDb = new Dictionary<string, int> { { "", 0 } };
         var badChars = new[] { '\n', '\r', '\t' };
 
         int ToStringIndex(string str)

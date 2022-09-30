@@ -7,8 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(OkExternalRoot)\Zodiacon.DebugHelp\Zodiacon.DebugHelp.csproj" />
-    <PackageReference Include="BetterWin32Errors" />
+    <PackageReference Include="Vanara.Pinvoke.DbgHelp" />
   </ItemGroup>
 
 </Project>

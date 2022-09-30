@@ -1,17 +1,17 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Security;
-using BetterWin32Errors;
-using Zodiacon.DebugHelp;
+using Vanara.PInvoke;
+using static Vanara.PInvoke.DbgHelp;
 
 namespace OkTools.ProcMonUtils;
 
 // this is a cut down DebugHelp.SymbolHandler that doesn't do anything with slow exceptions
 public sealed class SimpleSymbolHandler : IDisposable
 {
-    static int s_Serial;
-    IntPtr m_Handle;
+    static int s_serial;
+    readonly HPROCESS _handle;
 
     static SimpleSymbolHandler()
     {
@@ -27,57 +27,79 @@ public sealed class SimpleSymbolHandler : IDisposable
 
     public SimpleSymbolHandler(string? ntSymbolPath = null)
     {
-        m_Handle = new IntPtr(++s_Serial);
+        _handle = new IntPtr(++s_serial);
 
-        var options = SymbolOptions.UndecorateNames | SymbolOptions.LoadLines;
+        var options = SYMOPT.SYMOPT_UNDNAME | SYMOPT.SYMOPT_LOAD_LINES;
         if (Debugger.IsAttached)
-            options |= SymbolOptions.Debug;
+            options |= SYMOPT.SYMOPT_DEBUG;
 
-        Win32.SymSetOptions(options);
+        SymSetOptions(options);
 
-        if (!Win32.SymInitialize(m_Handle, ntSymbolPath, false))
+        if (!SymInitialize(_handle, ntSymbolPath, false))
             throw new Win32Exception();
     }
 
     public void Dispose()
     {
-        Win32.SymCleanup(m_Handle);
+        SymCleanup(_handle);
     }
 
     // FUTURE: check the DLL at `imageName` against a fingerprint. We don't get a checksum in the PML, but can do the
     // next best thing at least, which is check size, version, timestamp.
     public Win32Error LoadModule(string imageName, ulong dllBase = 0, bool skipSymbols = false)
     {
-        var flags = skipSymbols ? 0x4u /*SLMFLAG_NO_SYMBOLS*/ : 0;
+        var flags = skipSymbols ? SLMFLAG.SLMFLAG_NO_SYMBOLS : 0;
 
-        return Win32.SymLoadModuleEx(m_Handle, IntPtr.Zero, imageName, null, dllBase, 0U, IntPtr.Zero, flags) != 0
+        var rc = SymLoadModuleEx(_handle, HFILE.NULL, imageName, null, dllBase, 0, default, flags) != 0
             ? Win32Error.ERROR_SUCCESS
-            : Win32Exception.GetLastWin32Error(); // note that a zero return but ERROR_SUCCESS after that is how SymLoadModuleEx signifies "already loaded"
+            : Win32Error.GetLastError(); // note that a zero return but ERROR_SUCCESS after that is how SymLoadModuleEx signifies "already loaded"
+
+        // recommendation from msdn docs is to always call this after loading the module to force a deferred load to
+        // happen. not caring for now whether it succeeds (it won't for crowdstrike files for example).
+        var moduleInfo = new IMAGEHLP_MODULE64();
+        moduleInfo.SizeOfStruct = (uint)Marshal.SizeOf(moduleInfo);
+        SymGetModuleInfo64(_handle, dllBase, ref moduleInfo);
+
+        return rc;
     }
 
-    public Win32Error GetSymbolFromAddress(ulong address, ref SymbolInfo symbol, out ulong offset)
+    public Win32Error GetSymbolFromAddress(ulong address, ref SYMBOL_INFO2 symbol, out ulong offset)
     {
-        symbol.Init();
-        return Win32.SymFromAddr(m_Handle, address, out offset, ref symbol)
+        symbol.MaxNameLen = 500;
+        symbol.SizeOfStruct = (uint)Marshal.SizeOf(symbol) - symbol.MaxNameLen*2;
+        var rc = SymFromAddr(_handle, address, out offset, ref symbol)
             ? Win32Error.ERROR_SUCCESS
-            : Win32Exception.GetLastWin32Error();
+            : Win32Error.GetLastError();
+        return rc;
     }
 
-    // too bad DebugHelp.Win32 is internal..
-    [SuppressUnmanagedCodeSecurity]
-    static class Win32
-    {
-        [DllImport("dbghelp", SetLastError = true)]
-        public static extern SymbolOptions SymSetOptions(SymbolOptions options);
-        [DllImport("dbghelp", EntryPoint = "SymInitializeW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern bool SymInitialize(IntPtr hProcess, string? searchPath, bool invadeProcess);
-        [DllImport("dbghelp", SetLastError = true)]
-        public static extern bool SymCleanup(IntPtr hProcess);
-        [DllImport("dbghelp", EntryPoint = "SymLoadModuleExW", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern ulong SymLoadModuleEx(IntPtr hProcess, IntPtr hFile, string imageName, string? moduleName, ulong baseOfDll, uint dllSize, IntPtr data, uint flags);
-        [DllImport("dbghelp", SetLastError = true)]
-        public static extern bool SymFromAddr(IntPtr hProcess, ulong address, out ulong displacement, ref SymbolInfo symbol);
-        [DllImport("dbghelp", SetLastError = true)]
-        public static extern bool SymGetModuleInfo(IntPtr hProcess, ulong address, ref ModuleInfo module);
-    }
+    // TODO: remove after https://github.com/dahall/Vanara/discussions/324#discussioncomment-3764178 makes it to nuget
+    [DllImport("dbghelp.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    static extern bool SymFromAddr(HPROCESS hProcess, ulong Address, out ulong Displacement, ref SYMBOL_INFO2 Symbol);
+
+}
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+#pragma warning disable CA1707
+public struct SYMBOL_INFO2
+#pragma warning restore CA1707
+{
+    public uint SizeOfStruct;
+    public uint TypeIndex;
+    public ulong Reserved0;
+    ulong Reserved1;
+    public uint Index;
+    public uint Size;
+    public ulong ModBase;
+    public SYMFLAG Flags;
+    public ulong Value;
+    public ulong Address;
+    public uint Register;
+    public uint Scope;
+    public uint Tag;
+    public uint NameLen;
+    public uint MaxNameLen;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 500)]
+    public string Name;
 }
