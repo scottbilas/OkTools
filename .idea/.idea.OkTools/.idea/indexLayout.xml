@@ -9,6 +9,8 @@
       <Path>.idea</Path>
       <Path>artifacts</Path>
       <Path>build</Path>
+      <Path>tests/ProcMonUtils.Tests/testdata</Path>
+      <Path>tests/Unity.Tests/TestFiles</Path>
     </explicitExcludes>
   </component>
 </project>
