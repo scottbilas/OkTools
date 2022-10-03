@@ -36,8 +36,8 @@ public class PmlProcess
             if (!Path.GetFileName(module.ImagePath).EqualsIgnoreCase(ProcessName))
                 continue;
 
-            if (found != null)
-                throw new InvalidOperationException($"Unexpected process name found at multiple image paths: '{found.ImagePath}' and {module.ImagePath}");
+            if (found?.ImagePath.EqualsIgnoreCase(module.ImagePath) == false)
+                throw new InvalidOperationException($"Unexpected process name found at multiple image paths: '{found.ImagePath}' and '{module.ImagePath}'");
 
             found = module;
         }
