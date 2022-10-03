@@ -48,15 +48,18 @@ Options:
   --ide                   Open code IDE after the project opens in Unity
   --enable-debugging      Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
-  --wait-unity            Wait for the Unity process to terminate and then return its exit code
+  --wait-unity            Wait for the Unity process to terminate, then return its exit code (*)
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
+  --pid-exitcode          Return the Unity process ID as the exit code (cannot be used with --wait-unity) (*)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
   --verbose-upm-logs      Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
 
   All of these options will only apply to the new Unity session being launched.
+
+  (*) The high bit will also be set to differentiate from normal CLI exit codes.
 
 Log Files:
   Unity is always directed to include timestamps in its log files, which will have this format:
@@ -80,6 +83,12 @@ Debugging:
 
     public static CliExitCode RunUnity(CommandContext context)
     {
+        if (context.GetConfigBool("wait-unity") && context.GetConfigBool("pid-exitcode"))
+        {
+            Console.Error.WriteLine("Cannot use --wait-unity and --pid-exitcode together");
+            return CliExitCode.ErrorUsage;
+        }
+
         var doit = !context.CommandLine["--dry-run"].IsTrue;
 
         // TODO: move this into OkTools.Unity once we get a decent (typesafe) config-overlay system. that way, the CLI
@@ -147,7 +156,7 @@ Debugging:
 
             // TODO: warn if the unity running on it is a different version from detected (whether it's not part of GetTestableVersions(), or mismatches a direct --toolchain config)
 
-            var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"));
+            var existingUnityRc = TryActivateExistingUnity(unityProject, doit && !context.GetConfigBool("no-activate-existing"), context.GetConfigBool("pid-exitcode"));
             if (existingUnityRc != null)
             {
                 // TODO: warn if the existing unity process received different command line flags or env than we were going to use here
@@ -451,12 +460,11 @@ Debugging:
                 unityProcess.WaitForExit();
                 Console.WriteLine($"exited with code {unityProcess.ExitCode} after {(DateTime.Now - now).ToNiceAge()}");
 
-                // TODO: sure don't like this cast..maybe have command func receive an out int? exitCode or something...
-                // also...aren't we supposed to put the subprocess return code into an upper byte? that way the caller
-                // can distinguish a cli error (bad arg or whatever) vs unity error. check bash docs. and wrap this up
-                // in a little helper struct that does the bit shifting.
-                return (CliExitCode)unityProcess.ExitCode;
+                return AsCliExitCode(unityProcess.ExitCode);
             }
+
+            if (context.GetConfigBool("pid-exitcode"))
+                return AsCliExitCode(unityProcess.Id);
         }
         else
         {
@@ -471,10 +479,12 @@ Debugging:
         return CliExitCode.Success;
     }
 
+    static CliExitCode AsCliExitCode(int exitCode) => (CliExitCode)(exitCode | 1<<31);
+
     [DllImport("user32.dll")]
     static extern bool SetForegroundWindow(nint hWnd);
 
-    static CliExitCode? TryActivateExistingUnity(UnityProject project, bool activateMainWindow)
+    static CliExitCode? TryActivateExistingUnity(UnityProject project, bool activateMainWindow, bool pidAsExitCode)
     {
         var unityProcesses = Unity.FindUnityProcessesForProject(project.Path);
         if (!unityProcesses.Any())
@@ -505,7 +515,10 @@ Debugging:
             if (activateMainWindow)
                 SetForegroundWindow(mainUnity.MainWindowHandle);
 
-            return CliExitCode.Success;
+            if (pidAsExitCode)
+                return (CliExitCode)(mainUnity.Id | 1<<31);
+
+            return pidAsExitCode ? AsCliExitCode(mainUnity.Id) : CliExitCode.Success;
         }
         finally
         {
