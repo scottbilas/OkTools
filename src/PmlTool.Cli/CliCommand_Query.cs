@@ -75,18 +75,44 @@ static partial class Program
         {
             parsed = true;
 
-            if (uint.TryParse(query, out var eventIdArg))
-                return eventIdArg;
-            if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out eventIdArg))
-                return eventIdArg;
+            if (uint.TryParse(query, out var queryEventId))
+                return queryEventId;
+            if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out queryEventId))
+                return queryEventId;
 
-            if (DateTime.TryParse(query, out var captureTime))
+            var timeMatch = Regex.Match(query, @"(\d\d)[.:](\d\d)[.:](\d\d)[,.](\d{7})");
+            if (timeMatch.Success)
             {
+                var (h, m, s, ms) = (
+                    int.Parse(timeMatch.Groups[1].Value),
+                    int.Parse(timeMatch.Groups[2].Value),
+                    int.Parse(timeMatch.Groups[3].Value),
+                    int.Parse(timeMatch.Groups[4].Value));
+                var queryFileTime = ((h*60+m)*60+s) * 10_000_000L + ms; // 7 digits has ms == 100ns units
+
                 // just have to seek for it, no easy way to find
-                foreach (var pmlEvent in pmlReader!.SelectEvents())
+                foreach (var pmlEvent in pmlReader.SelectEvents())
                 {
-                    if (pmlEvent.CaptureDateTime == captureTime)
+                    var eventTime = pmlEvent.CaptureDateTime;
+                    var eventFileTime = eventTime.ToFileTime() - new DateTime(eventTime.Year, eventTime.Month, eventTime.Day).ToFileTime();
+
+                    if (queryFileTime == eventFileTime)
                         return pmlEvent.EventIndex;
+                    if (queryFileTime < eventFileTime)
+                        return null;
+                }
+            }
+            else if (DateTime.TryParse(query, out var queryTime))
+            {
+                var queryFileTime = queryTime.ToFileTime();
+
+                // just have to seek for it, no easy way to find
+                foreach (var pmlEvent in pmlReader.SelectEvents())
+                {
+                    if (queryFileTime == (long)pmlEvent.CaptureTime)
+                        return pmlEvent.EventIndex;
+                    if (queryFileTime < (long)pmlEvent.CaptureTime)
+                        break;
                 }
             }
             else
