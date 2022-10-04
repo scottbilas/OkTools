@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using DocoptNet;
 using DotNetConfig;
+using NiceIO;
 
 class CommandContext
 {
@@ -38,6 +39,22 @@ class CommandContext
         }
 
         return Config.TryGetString(CommandName, null, variable, out result);
+    }
+
+    public NPath? GetConfigPath(string variable) =>
+        TryGetConfigPath(variable, out var result) ? result : null;
+
+    public bool TryGetConfigPath(string variable, [NotNullWhen(true)] out NPath? result)
+    {
+
+        if (!TryGetConfigString(variable, out var resultString))
+        {
+            result = null;
+            return false;
+        }
+
+        result = resultString;
+        return true;
     }
 }
 
