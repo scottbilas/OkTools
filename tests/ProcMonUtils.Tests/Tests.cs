@@ -38,7 +38,7 @@ class Tests
     [Test]
     public void PmipBasics()
     {
-        var mono = new MonoSymbolReader(_pmipPath);
+        var mono = new MonoJitSymbolDb(_pmipPath);
         foreach (var symbol in mono.Symbols)
         {
             mono.TryFindSymbol(symbol.Address.Base + symbol.Address.Size / 2, out var sym0).ShouldBeTrue();

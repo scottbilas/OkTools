@@ -9,7 +9,7 @@ class SymCache : IDisposable
     readonly SimpleSymbolHandler _simpleSymbolHandler;
     readonly HashSet<string> _symbolsForModuleCache = new();
     readonly Dictionary<ulong, (SYMBOL_INFO2 symbol, ulong offset)> _symbolFromAddressCache = new();
-    MonoSymbolReader? _monoSymbolReader;
+    readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = new();
 
     public SymCache(SymbolicateOptions options) =>
         _simpleSymbolHandler = new SimpleSymbolHandler(options.NtSymbolPath);
@@ -30,10 +30,8 @@ class SymCache : IDisposable
 
     public void LoadMonoSymbols(string monoPmipPath)
     {
-        if (_monoSymbolReader != null)
-            throw new InvalidOperationException("Multiple mono symbol sets not supported yet");
-
-        _monoSymbolReader = new MonoSymbolReader(monoPmipPath);
+        _monoJitSymbolDbs.Add(new MonoJitSymbolDb(monoPmipPath));
+        _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTime < b.DomainCreationTime ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
     public bool TryGetNativeSymbol(ulong address, out (SYMBOL_INFO2 symbol, ulong offset) symOffset)
@@ -56,10 +54,18 @@ class SymCache : IDisposable
     }
 
     // sometimes can get addresses that seem like they're in the mono jit memory space, but don't actually match any symbols. why??
-    public bool TryGetMonoSymbol(ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
+    public bool TryGetMonoSymbol(DateTime eventTime, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     {
-        if (_monoSymbolReader != null)
-            return _monoSymbolReader.TryFindSymbol(address, out monoJitSymbol);
+        foreach (var reader in _monoJitSymbolDbs)
+        {
+            if (eventTime < reader.DomainCreationTime)
+                continue;
+
+            if (!reader.TryFindSymbol(address, out monoJitSymbol))
+                break;
+
+            return true;
+        }
 
         monoJitSymbol = default!;
         return false;
@@ -117,17 +123,15 @@ public static class PmlUtils
             return index;
         }
 
-        var monoPmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip*.txt").Select(p => p.ToString()).ToArray();
+        var monoPmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString()).ToArray();
 
         foreach (var monoPmipPath in monoPmipPaths)
         {
-            var (pid, _) = MonoSymbolReader.ParsePmipFilename(monoPmipPath);
-            if (symCacheDb.ContainsKey((uint)pid))
-                throw new SymbolicateException("Multiple mono domains not supported yet");
+            var (pid, _) = MonoJitSymbolDb.ParsePmipFilename(monoPmipPath);
+            if (!symCacheDb.TryGetValue((uint)pid, out var symCache))
+                symCacheDb.Add((uint)pid, symCache = new SymCache(options));
 
-            var symCache = new SymCache(options);
             symCache.LoadMonoSymbols(monoPmipPath);
-            symCacheDb.Add((uint)pid, symCache);
         }
 
         var bakedPath = options.BakedPath ?? pmlReader.PmlPath.ChangeExtension(".pmlbaked");
@@ -197,7 +201,7 @@ public static class PmlUtils
                         else
                             sb.AppendFormat("{0},{1:x},{2:x},{3:x}", type, ToStringIndex(module.ModuleName), ToStringIndex(name), nativeSymbol.offset);
                     }
-                    else if (symCache.TryGetMonoSymbol(address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
+                    else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTime, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
                         if (options.DebugFormat)
                             sb.AppendFormat("M [{0}] {1} + 0x{2:x}", monoSymbol.AssemblyName, monoSymbol.Symbol, address - monoSymbol.Address.Base);

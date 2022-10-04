@@ -18,18 +18,20 @@ public class MonoJitSymbol : IAddressRange
     ref readonly AddressRange IAddressRange.AddressRef => ref Address;
 }
 
-public class MonoSymbolReader
+[DebuggerDisplay("{System.IO.Path.GetFileName(PmipPath),nq}; {DomainCreationTime.ToString(\"HH:mm:ss.fffffff\"),nq} ({_symbols.Length} symbols)")]
+public class MonoJitSymbolDb
 {
-    DateTime m_DomainCreationTime; // use for picking the correct set of jit symbols given the event time
-    MonoJitSymbol[] m_Symbols; // keep sorted for bsearch
+    readonly MonoJitSymbol[] _symbols; // keep sorted for bsearch
 
-    public IReadOnlyList<MonoJitSymbol> Symbols => m_Symbols;
+    public IReadOnlyList<MonoJitSymbol> Symbols => _symbols;
+    public string PmipPath { get; }
 
-    public MonoSymbolReader(string monoPmipPath, DateTime? domainCreationTime = null)
+    public MonoJitSymbolDb(string monoPmipPath, DateTime? domainCreationTime = null)
     {
         // default to creation time of the pmip as a way to detect domain creation
 
-        m_DomainCreationTime = domainCreationTime ?? File.GetCreationTime(monoPmipPath);
+        PmipPath = monoPmipPath;
+        DomainCreationTime = domainCreationTime ?? File.GetCreationTime(monoPmipPath);
 
         // parse pmip
 
@@ -38,9 +40,10 @@ public class MonoSymbolReader
             throw new FileLoadException("Mono pmip file has unexpected header or version", monoPmipPath);
 
         var rx = new Regex(
-            @"(?<start>[0-9A-F]{16});"+
-            @"(?<end>[0-9A-F]{16});"+
-            @"(\[(?<module>([^\]]+))\] (?<symbol>.*))?");
+            @"(?<start>[0-9A-F]{16});"+         // start of range always present
+            @"(?<end>[0-9A-F]{16});"+           // end of range (and ;) always present
+            @"(\[(?<module>([^\]]+))\]\s+)?"+   // module may not be there if it's a builtin like rgctx_fetch_trampoline_rgctx_2
+            @"(?<symbol>.+)?");                 // very rarely, module and symbol both missing
 
         var entries = new List<MonoJitSymbol>();
 
@@ -66,11 +69,13 @@ public class MonoSymbolReader
             entries.Add(monoJitSymbol);
         }
 
-        m_Symbols = entries.OrderBy(e => e.Address.Base).ToArray();
+        _symbols = entries.OrderBy(e => e.Address.Base).ToArray();
     }
 
+    public DateTime DomainCreationTime { get; }
+
     public bool TryFindSymbol(ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol) =>
-        m_Symbols.TryFindAddressIn(address, out monoJitSymbol);
+        _symbols.TryFindAddressIn(address, out monoJitSymbol);
 
     public static (int unityPid, int domainSerial) ParsePmipFilename(string monoPmipPath)
     {
