@@ -4,12 +4,16 @@
 
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)]$TestDir,  # root for project and other artifacts
-    [Parameter(Mandatory=$true)]$UnityDir, # path to unity build # TODO: use okunity instead to detect if opening existing project, or also support specifying a version or "latest" etc.
-    [string]$Template,                     # template to create project from, opens existing project if missing
-    [switch]$NukeCache,                    # set to nuke the global unity cache
-    [switch]$NoSymbolDownload              # when running `pmltool bake`, tell it not to download pdb's via _NT_SYMBOL_PATH
+    [Parameter(Mandatory=$true)]$ProjectDir, # root for project
+    [string]$Toolchain,                      # toolchain to use (defaults to newest non-debug toolchain found)
+    [string]$Template,                       # template to create project from, opens existing project if missing
+    [switch]$NukeCache,                      # set to nuke the global unity cache
+    [switch]$NoSymbolDownload                # when running `pmltool bake`, tell it not to download pdb's via _NT_SYMBOL_PATH
 )
+
+if (!$ProjectDir) {
+    throw "Missing -ProjectDir"
+}
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -39,7 +43,7 @@ function KillDir($where) {
         #}
         #else {
             # TODO: this runs into problems with paths like C:\Users\scott\AppData\Local\Unity\cache/packages/artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates/com.unity.netcode.gameobjects@1.0.0-pre.9/Tests/Runtime/NetworkAnimator/Resources
-            # remove-item doesn't work, rm -rf doesn't work..explorer will do it.
+            # remove-item doesn't work, rm -rf doesn't work..explorer will do it. maybe cmd /c?
             # not sure if it's the length that is the problem or something else wrong. figure it out!
             remove-item -r $where
         #}
@@ -56,6 +60,7 @@ function FindTemplate($name) {
     }
 
     $downloadCache = join-path $env:APPDATA unityhub\templates
+    throw "TODO: re-implement this..." # TODO: use $Toolchain (latest non-debug build) and okunity to get the build dir
     $buildCache = join-path $UnityDir Data\Resources\PackageManager\ProjectTemplates
 
     foreach ($root in $downloadCache, $buildCache) {
@@ -82,18 +87,18 @@ Write-Host "*** Killing processes"
 KillProcs
 
 if ($Template) {
-    if (Test-Path $TestDir) {
-        Write-Host "*** Deleting old test folder '$TestDir'"
-        KillDir $TestDir
-        mkdir $TestDir >$null
-    }
-    elseif (Test-Path $TestDir/project/ProjectSettings/ProjectVersion.txt) {
-        Write-Host "*** Deleting old test artifacts in '$TestDir'"
-        remove-item $TestDir/*.*
+    if (Test-Path $ProjectDir) {
+        Write-Host "*** Deleting old test folder '$ProjectDir'"
+        KillDir $ProjectDir
+        mkdir $ProjectDir >$null
     }
     else {
-        Write-Error "No project at $TestDir"
+        Write-Error "No project at $ProjectDir"
     }
+}
+else {
+    Write-Host "*** Deleting old test artifacts in '$ProjectDir'"
+    KillDir $ProjectDir/Temp/procmon
 }
 
 if ($NukeCache) {
@@ -101,47 +106,47 @@ if ($NukeCache) {
     KillDir $Env:LOCALAPPDATA\Unity\cache
 }
 
-$eventsPmlPath = join-path $TestDir events.pml
+$procmonPath = "$ProjectDir/Temp/procmon"
+if (!(test-path $procmonPath)) {
+    [void](mkdir $procmonPath)
+}
+$eventsPmlPath = "$procmonPath/events.pml"
 
 Write-Host "*** Starting up Procmon; log=$eventsPmlPath, config=$PSScriptRoot\config.pmc"
-start-process procmon -WindowStyle Minimized "/accepteula /backingfile $eventsPmlPath /loadconfig $PSScriptRoot\config.pmc /minimized /quiet"
-Write-Host -nonew ">>> Press any key to start Unity: "
-[console]::ReadKey() >$null
-Write-Host
+sudo start-process procmon -WindowStyle Minimized "/accepteula /backingfile $eventsPmlPath /loadconfig $PSScriptRoot\config.pmc /minimized /quiet"
+
+Write-Host "*** Waiting a bit for Procmon to stabilize"
+Start-Sleep 5
 
 Write-Host "*** Starting up Unity"
-$Env:UNITY_MIXED_CALLSTACK = 1
-$Env:UNITY_EXT_LOGGING = 1
-# TODO: use okunity
 if ($Template) {
-    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -createProject $TestDir\project -cloneFromTemplate $Template
-}
-elseif (test-path $TestDir\project) {
-    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -projectPath $TestDir\project
+    # TODO: add support for -cloneFromTemplate to okunity
+    $Env:UNITY_MIXED_CALLSTACK = 1
+    $Env:UNITY_EXT_LOGGING = 1
+    & "$UnityDir\Unity.exe" -logFile $ProjectDir\Temp\editor.log -createProject $ProjectDir -cloneFromTemplate $Template
 }
 else {
-    & "$UnityDir\Unity.exe" -logFile $TestDir\editor.log -projectPath $TestDir
+    if ((split-path -leaf (split-path $PSScriptRoot)) -eq 'Debug') {
+        $oku = "$PSScriptRoot\..\..\..\Unity.Cli\Debug\okunity.exe"
+    }
+    else {
+        $oku = "$PSScriptRoot\..\..\Unity.Cli\okunity.exe"
+    }
+
+    & $oku unity $ProjectDir --copy-pmips $procmonPath
+
+    # jeez, how about making this easier in okunity..
+    $UnityVersion = (& $oku info C:\UnitySrc\plastic\CreativeJuice\CreativeJuice -j | convertfrom-json).version
+    $UnityDir = (& $oku toolchains -j | convertfrom-json | ?{ $_.version -eq $UnityVersion }).path
 }
 
-# TODO: have unity run script that waits until loaded then copies its pmip and shuts down, kills procmon too
+# TODO: have unity run script that waits until done loading project then waits a few sec more then shuts down
 #
 # ways to know it's done loading:
 #
 #   * pass command line arg to unity to run a static script method that can signal when it thinks it's done loading. will require copying a script into the project after unity starts creating it (but before compiling starts..)
 #   * use some kind of existing remote control interface to unity (for test runner?) that i don't know about
 #   * tail the editor log and wait for x seconds of inactivity or a certain pattern (like "Loaded scene") + x seconds
-
-Write-Host -nonew ">>> Press any key when Unity done: "
-[console]::ReadKey() >$null
-Write-Host
-
-Write-Host "*** Saving pmip log"
-if (get-childitem $env:LOCALAPPDATA\Temp\pmip*.txt) {
-    copy-item $env:LOCALAPPDATA\Temp\pmip*.txt $TestDir\
-}
-else {
-    write-error "Unity was killed before I could save the pmip log!!"
-}
 
 Write-Host "*** Terminating procmon cleanly"
 sudo procmon /terminate
@@ -151,4 +156,18 @@ Write-Host "*** Killing processes"
 KillProcs
 
 Write-Host "*** Baking"
-& $PSScriptRoot\..\pmltool.exe bake $eventsPmlPath
+$oldSymbolPath = $env:_NT_SYMBOL_PATH
+if ($oldSymbolPath) {
+    Write-Host "Adding $UnityDir to _NT_SYMBOL_PATH"
+    $env:_NT_SYMBOL_PATH += ";$UnityDir" # pdb's from a downloader-cli build will be in the unity build root
+}
+else {
+    Write-Warning '_NT_SYMBOL_PATH not set'
+}
+
+try {
+    & $PSScriptRoot\..\pmltool.exe bake $eventsPmlPath
+}
+finally {
+    $env:_NT_SYMBOL_PATH = $oldSymbolPath
+}
