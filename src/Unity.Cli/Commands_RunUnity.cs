@@ -25,7 +25,6 @@ static partial class Commands
         * Support an individual project's extensions to tab completion for any command line flags the project supports
         * PSReadLine support for tabbing through matching discovered unity versions
     * Support the exe run
-        * [probably posh-only] Start separate job watching unity.exe and monitoring pmip files from it, holding handle open and copy on process exit
         * Hub killing
         * Log rotation
         * Automatic bringing to front of an existing Unity (avoid Unity's stupid handling of this)
@@ -49,9 +48,10 @@ Options:
   --enable-debugging      Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
   --wait-unity            Wait for the Unity process to terminate, then return its exit code (*)
+  --copy-pmips PMIPS      Watch for pmip_*.txt files created by Mono and copy them, preserving create-time, to the PMIPS folder on Unity exit (implies --wait-unity)
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
-  --pid-exitcode          Return the Unity process ID as the exit code (cannot be used with --wait-unity) (*)
+  --pid-exitcode          Return the Unity process ID as the exit code (*)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
@@ -83,9 +83,10 @@ Debugging:
 
     public static CliExitCode RunUnity(CommandContext context)
     {
-        if (context.GetConfigBool("wait-unity") && context.GetConfigBool("pid-exitcode"))
+        var pmipDstDir = context.GetConfigPath("copy-pmips");
+        if (pmipDstDir?.DirectoryExists() == false)
         {
-            Console.Error.WriteLine("Cannot use --wait-unity and --pid-exitcode together");
+            Console.Error.WriteLine($"The --copy-pmips path '{pmipDstDir}' does not exist");
             return CliExitCode.ErrorUsage;
         }
 
@@ -453,14 +454,63 @@ Debugging:
 
             // TODO: consider making this automatic if running with -batchMode
             // (maybe just add a --batch-mode instead, that does both)
-            if (context.GetConfigBool("wait-unity"))
+            if (context.GetConfigBool("wait-unity") || pmipDstDir != null)
             {
                 var now = DateTime.Now;
-                Console.Write("Waiting for Unity process to terminate...");
-                unityProcess.WaitForExit();
+
+                if (pmipDstDir != null)
+                {
+                    Console.WriteLine("Monitoring for pmip_*.txt files...");
+
+                    var srcDir = NPath.SystemTempDirectory;
+                    var prefix = $"pmip_{unityProcess.Id}_*.txt";
+
+                    var monitoring = new Dictionary<NPath, FileStream>();
+
+                    while (!unityProcess.HasExited)
+                    {
+                        foreach (var srcPath in srcDir.Files(prefix))
+                        {
+                            if (monitoring.ContainsKey(srcPath))
+                                continue;
+
+                            // Unity relies on the OS for tempfile handle-closing to delete the file. if we also open a
+                            // handle, it will hang around after Unity closes the handles or exits entirely.
+                            var stream = new FileStream(srcPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                            monitoring.Add(srcPath, stream);
+                            Console.WriteLine($"...discovered {srcPath}");
+                        }
+
+                        Thread.Sleep(5);
+                    }
+
+                    // copy pmips from temp dir to user-specified dst dir
+                    foreach (var (srcPath, srcStream) in monitoring)
+                    {
+                        // reuse the srcStream for the copy (File.Copy will fail due to share permissions)
+                        var dstPath = pmipDstDir.Combine(srcPath.FileName);
+                        using (var dstStream = File.Create(dstPath))
+                            srcStream.CopyTo(dstStream);
+
+                        // preserve createtime. pmltool can use this to match stack frames to valid pmip times.
+                        File.SetCreationTime(dstPath, File.GetCreationTime(srcPath));
+                    }
+
+                    // the OS can delete the source files now
+                    foreach (var file in monitoring.Values)
+                        file.Close();
+                }
+                else
+                {
+                    Console.Write("Waiting for Unity process to terminate...");
+                    unityProcess.WaitForExit();
+                }
+
                 Console.WriteLine($"exited with code {unityProcess.ExitCode} after {(DateTime.Now - now).ToNiceAge()}");
 
-                return AsCliExitCode(unityProcess.ExitCode);
+                return AsCliExitCode(context.GetConfigBool("pid-exitcode")
+                    ? unityProcess.Id
+                    : unityProcess.ExitCode);
             }
 
             if (context.GetConfigBool("pid-exitcode"))
