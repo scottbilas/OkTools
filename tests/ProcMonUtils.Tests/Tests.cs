@@ -29,6 +29,7 @@ class Tests
         using var pmlReader = new PmlReader(_pmlPath);
         PmlUtils.Symbolicate(pmlReader, new SymbolicateOptions
         {
+            IgnorePmipCreateTimes = true, // don't use filesystem timestamps to determine if an event is in a pmip or not
             MonoPmipPaths = new[] { _pmipPath.ToString() },
             BakedPath = _pmlBakedPath,
             NtSymbolPath = "",

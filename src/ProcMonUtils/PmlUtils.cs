@@ -28,9 +28,9 @@ class SymCache : IDisposable
             throw win32Error.GetException();
     }
 
-    public void LoadMonoSymbols(string monoPmipPath)
+    public void LoadMonoSymbols(string monoPmipPath, DateTime? domainCreationTime = null)
     {
-        _monoJitSymbolDbs.Add(new MonoJitSymbolDb(monoPmipPath));
+        _monoJitSymbolDbs.Add(new MonoJitSymbolDb(monoPmipPath, domainCreationTime));
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTime < b.DomainCreationTime ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
@@ -74,10 +74,11 @@ class SymCache : IDisposable
 
 public struct SymbolicateOptions
 {
-    public bool DebugFormat;        // defaults to string dictionary to compact the file and improve parsing speed a bit
-    public string[]? MonoPmipPaths; // defaults to looking for matching pmip's in pml folder
-    public string? BakedPath;       // defaults to <pmlname>.pmlbaked
-    public string? NtSymbolPath;    // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
+    public bool DebugFormat;           // defaults to string dictionary to compact the file and improve parsing speed a bit
+    public bool IgnorePmipCreateTimes; // don't use the filesystem's createtime for a pmip file to include it in a valid event range or not
+    public string[]? MonoPmipPaths;    // defaults to looking for matching pmip's in pml folder
+    public string? BakedPath;          // defaults to <pmlname>.pmlbaked
+    public string? NtSymbolPath;       // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
     public Action<uint, uint>? Progress;
     public Action<string?>? ModuleLoadProgress;
 }
@@ -131,7 +132,7 @@ public static class PmlUtils
             if (!symCacheDb.TryGetValue((uint)pid, out var symCache))
                 symCacheDb.Add((uint)pid, symCache = new SymCache(options));
 
-            symCache.LoadMonoSymbols(monoPmipPath);
+            symCache.LoadMonoSymbols(monoPmipPath, options.IgnorePmipCreateTimes ? default(DateTime) : null);
         }
 
         var bakedPath = options.BakedPath ?? pmlReader.PmlPath.ChangeExtension(".pmlbaked");
