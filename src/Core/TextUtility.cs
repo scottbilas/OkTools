@@ -44,4 +44,12 @@ public static class TextUtility
         // it's either a tie, or we didn't find any. in that case, go with whatever the os wants.
         return Environment.NewLine;
     }
+
+    public static int ToFourCC(string text)
+    {
+        if (text.Length != 4)
+            throw new ArgumentException("Must be exactly 4 characters long", nameof(text));
+
+        return text[0] | (text[1] << 8) | (text[2] << 16) | (text[3] << 24);
+    }
 }

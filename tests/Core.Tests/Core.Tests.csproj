@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <OkFeatures>NiceIO</OkFeatures>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

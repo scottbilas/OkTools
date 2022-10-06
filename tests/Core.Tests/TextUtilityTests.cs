@@ -41,4 +41,33 @@ class TextUtilityTests
         TextUtility.DetectEolType("\r\n \r\n \n").ShouldBe("\r\n");
         TextUtility.DetectEolType("\n \r\n \n").ShouldBe("\n");
     }
+
+    [Test]
+    public unsafe void ToFourCC()
+    {
+        var fourcc = TextUtility.ToFourCC("WXYZ");
+
+        ((fourcc >>  0) & 0xff).ShouldBe('W');
+        ((fourcc >>  8) & 0xff).ShouldBe('X');
+        ((fourcc >> 16) & 0xff).ShouldBe('Y');
+        ((fourcc >> 24) & 0xff).ShouldBe('Z');
+
+        var ptr = (byte*)&fourcc;
+
+        ((char)ptr[0]).ShouldBe('W');
+        ((char)ptr[1]).ShouldBe('X');
+        ((char)ptr[2]).ShouldBe('Y');
+        ((char)ptr[3]).ShouldBe('Z');
+    }
+
+    [Test]
+    public void ToFourCC_WithoutExactlyFourChars_Throws()
+    {
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC(""));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("a"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("ab"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abc"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abcde"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abcdef"));
+    }
 }
