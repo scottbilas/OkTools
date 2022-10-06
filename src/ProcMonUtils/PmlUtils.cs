@@ -248,8 +248,32 @@ public class PmlBakedData
 
     public static readonly byte[] PmlBakedMagic = $"PMLBAKED:{PmlBakedVersion}->".GetBytes(false, CharSet.Ansi);
 
+    // ReSharper disable FieldCanBeMadeReadOnly.Global MemberCanBeProtected.Global
     [Key(0)] public List<PmlBakedFrame> Frames = new();
     [Key(1)] public List<string> Strings = new();
+    // ReSharper restore FieldCanBeMadeReadOnly.Global MemberCanBeProtected.Global
+
+    public IEnumerable<(uint eventIndex, int begin, int end)> SelectFrameRanges()
+    {
+        if (Frames.Count == 0)
+            yield break;
+
+        var beginIndex = 0;
+        var lastEventIndex = Frames[0].EventIndex;
+
+        for (var (i, count) = (0, Frames.Count); i != count; ++i)
+        {
+            var eventIndex = Frames[i].EventIndex;
+            if (lastEventIndex == eventIndex)
+                continue;
+
+            yield return (lastEventIndex, beginIndex, i);
+            beginIndex = i;
+            lastEventIndex = eventIndex;
+        }
+
+        yield return (lastEventIndex, beginIndex, Frames.Count);
+    }
 }
 
 [MessagePackObject]

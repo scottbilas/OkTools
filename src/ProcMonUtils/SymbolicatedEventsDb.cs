@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using MessagePack;
 
 namespace OkTools.ProcMonUtils;
 
@@ -98,125 +99,45 @@ public class SymbolicatedEventsDb
 
     void Load(string pmlBakedPath)
     {
-        var lines = File
-            .ReadLines(pmlBakedPath)
-            .Select((text, index) => (text: text.Trim(), index + 1))
-            .Where(l => l.text.Length != 0 && l.text[0] != '#');
+        PmlBakedData data;
 
-        var (state, currentLine) = (State.Seeking, 0);
-
-        try
+        using (var file = File.OpenRead(pmlBakedPath))
         {
-            foreach (var (line, index) in lines)
+            var bytes = new byte[PmlBakedData.PmlBakedMagic.Length];
+            if (file.Read(bytes) < bytes.Length || !bytes.SequenceEqual(PmlBakedData.PmlBakedMagic))
+                throw new PmlBakedParseException("Not a .pmlbaked file, or is corrupt");
+
+            data = MessagePackSerializer.Deserialize<PmlBakedData>(file,
+                MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray));
+        }
+
+        _strings.SetRange(data.Strings);
+
+        var eventCount = data.Frames[^1].EventIndex + 1;
+        _events = new SymbolicatedEvent[eventCount];
+        _validEvents = new bool[eventCount];
+
+        foreach (var (eventIndex, begin, end) in data.SelectFrameRanges())
+        {
+            _validEvents[eventIndex] = true;
+
+            ref var eventRecord = ref _events[eventIndex];
+
+            var count = end - begin;
+            eventRecord.Frames = new FrameRecord[count];
+
+            for (var i = 0; i != count; ++i)
             {
-                currentLine = index;
-
-                if (line[0] == '[')
+                var bakedFrame = data.Frames[i];
+                eventRecord.Frames[i] = new FrameRecord
                 {
-                    state = line switch
-                    {
-                        "[Config]" => State.Config,
-                        "[Events]" => State.Events,
-                        "[Strings]" => State.Strings,
-                        _ => throw new PmlBakedParseException($"Not a supported section {line}")
-                    };
-                    continue;
-                }
-
-                switch (state)
-                {
-                    case State.Seeking:
-                        throw new PmlBakedParseException("Unexpected lines without category");
-
-                    case State.Config:
-                        var m = Regex.Match(line, @"(\w+)\s*=\s*(\w+)");
-                        if (!m.Success)
-                            throw new PmlBakedParseException($"Unexpected config format: {line}");
-                        switch (m.Groups[1].Value)
-                        {
-                            case "EventCount":
-                                var eventCount = int.Parse(m.Groups[2].Value);
-                                _events = new SymbolicatedEvent[eventCount];
-                                _validEvents = new bool[eventCount];
-                                break;
-                            case "DebugFormat":
-                                if (bool.Parse(m.Groups[2].Value))
-                                    throw new PmlBakedParseException("DebugFormat=true not supported for querying");
-                                break;
-                            default:
-                                throw new PmlBakedParseException($"Unexpected config option: {m.Groups[1].Value}");
-                        }
-                        break;
-
-                    case State.Events:
-                        ParseEventLine(line);
-                        break;
-
-                    case State.Strings:
-                        var parser = new SimpleParser(line);
-                        var stringIndex = (int)parser.ReadULongHex();
-                        if (stringIndex != _strings.Count)
-                            throw new InvalidOperationException("Mismatch string index");
-                        parser.Expect(':');
-                        _strings.Add(parser.AsSpan().ToString());
-                        break;
-                }
+                    Type = bakedFrame.FrameType,
+                    ModuleStringIndex = bakedFrame.ModuleIndex,
+                    SymbolStringIndex = bakedFrame.SymbolIndex,
+                    Offset = bakedFrame.Offset,
+                };
             }
         }
-        catch (Exception x)
-        {
-            throw new FileLoadException($"{pmlBakedPath}({currentLine}): {x.Message}", x);
-        }
-    }
-
-    void ParseEventLine(string line)
-    {
-        var parser = new SimpleParser(line);
-
-        var eventIndex = (uint)parser.ReadULongHex();
-        _validEvents[eventIndex] = true;
-
-        ref var eventRecord = ref _events[eventIndex];
-        eventRecord.Frames = new FrameRecord[parser.Count(';')];
-
-        for (var iframe = 0; iframe < eventRecord.Frames.Length; ++iframe)
-        {
-            parser.Expect(';');
-
-            var ch = parser.ReadChar();
-            if (!FrameTypeUtils.TryParse(ch, out var type))
-                throw new ArgumentOutOfRangeException($"Unknown type '{ch}' for frame {iframe}");
-
-            parser.Expect(',');
-            var first = parser.ReadULongHex();
-
-            switch (parser.PeekCharSafe())
-            {
-                // non-symbol frame
-                case ';':
-                case '\0':
-                    eventRecord.Frames[iframe] = new FrameRecord
-                        { Type = type, Offset = first, };
-                    break;
-
-                // symbol frame
-                case ',':
-                    ref var frameRecord = ref eventRecord.Frames[iframe];
-                    frameRecord.Type = type;
-                    frameRecord.ModuleStringIndex = (int)first;
-                    parser.Advance(1); // already read
-                    frameRecord.SymbolStringIndex = (int)parser.ReadULongHex();
-                    parser.Expect(',');
-                    frameRecord.Offset = parser.ReadULongHex();
-                    break;
-
-                default:
-                    throw new PmlBakedParseException("Parse error");
-            }
-        }
-
-        if (!parser.AtEnd)
-            throw new PmlBakedParseException("Unexpected extra frames");
     }
 
     public SymbolicatedEvent? GetRecord(uint eventIndex) =>
