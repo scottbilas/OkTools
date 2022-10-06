@@ -62,6 +62,7 @@ class TraceWriter : IDisposable
     public TraceWriter Write(string name, char value) => Write(name, value, true);
     public TraceWriter Write(string name, int value) => Write(name, value, false);
     public TraceWriter Write(string name, uint value) => Write(name, value, false);
+    public TraceWriter Write(string name, long value) => Write(name, value, false);
     public TraceWriter Write(string name, ulong value) => Write(name, value, false);
 
     public TraceWriter Write(string name, StringBuilder value)
