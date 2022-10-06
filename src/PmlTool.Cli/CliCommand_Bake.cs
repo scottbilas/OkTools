@@ -4,8 +4,6 @@ using OkTools.ProcMonUtils;
 
 static partial class Program
 {
-    const string k_ntSymbolPathName = "_NT_SYMBOL_PATH";
-
     const string k_bakeExtraHelp = $@"
 # pmltool bake
 
@@ -18,7 +16,7 @@ Mono 'pmip' file to be present in order to have symbolic call stacks later. Baki
 
 Symbolication happens two ways:
 
-  1. Native frames: `dbghelp.dll` and {k_ntSymbolPathName} are used to resolve native frames, same as Procmon does. (*)
+  1. Native frames: `dbghelp.dll` and {NtSymbolPath.EnvVarName} are used to resolve native frames, same as Procmon does. (*)
 
   2. Unity Mono jit frames: when Unity is run with with env var `UNITY_MIXED_CALLSTACK=1` (**) a `pmip_xxxxx_y.txt` file
      will be created at `%LOCALAPPDATA%\Temp` where `xxxxx` is the Unity process ID and `y` is the domain iteration for
@@ -79,32 +77,31 @@ use `--no-symbol-download` to eliminate symbol server queries.
         });
         monitor.Start();
 
-        string? ntSymbolPath = null;
+        var ntSymbolPath = new NtSymbolPath();
         if (opts.OptNoNtsymbolpath)
-        {
-            ntSymbolPath = "";
-        }
+            ntSymbolPath.Value = "";
         else if (opts.OptNoSymbolDownload)
         {
-            var oldvar = Environment.GetEnvironmentVariable(k_ntSymbolPathName);
-            if (oldvar != null)
-            {
-                var newvar = Regex.Replace(oldvar, @"\bSRV\*([^*]+)\*http[^;]+", "$1", RegexOptions.IgnoreCase);
-                if (newvar != oldvar)
-                {
-                    Console.WriteLine($"Replacing {k_ntSymbolPathName}: {oldvar} -> {newvar}");
-                    ntSymbolPath = newvar;
-                }
-            }
+            ntSymbolPath = NtSymbolPath.FromEnvironment;
+
+            var oldvar = ntSymbolPath.Value;
+            ntSymbolPath.StripDownloadPaths();
+
+            if (ntSymbolPath.Value != oldvar)
+                Console.WriteLine($"Replacing {NtSymbolPath.EnvVarName}: {oldvar} -> {ntSymbolPath.Value}");
         }
-        else if ((Environment.GetEnvironmentVariable(k_ntSymbolPathName)?.IndexOf("http") ?? -1) != -1)
-            Console.WriteLine($"{k_ntSymbolPathName} appears to be set to use a symbol server, which may slow down processing greatly..");
+        else if (NtSymbolPath.FromEnvironment.HasDownloadPaths)
+            Console.WriteLine($"{NtSymbolPath.EnvVarName} appears to be set to use a symbol server, which may slow down processing greatly..");
+
+        foreach (var path in opts.OptAddSymbolPath)
+            ntSymbolPath.AddPath(path);
 
         using var pmlReader = new PmlReader(opts.ArgPml!.ToNPath());
         var bakedFile = pmlReader.PmlPath.ChangeExtension(".pmlbaked");
 
         var iter = 0;
-        PmlUtils.Symbolicate(pmlReader, new SymbolicateOptions {
+        var symOpts = new SymbolicateOptions
+        {
             DebugFormat = opts.OptDebug,
             NtSymbolPath = ntSymbolPath,
             ModuleLoadProgress = name => currentModule = name,
@@ -113,7 +110,10 @@ use `--no-symbol-download` to eliminate symbol server queries.
                 if (iter++ == 0)
                     Console.Write($"Writing {total} events to {bakedFile.MakeAbsolute()}...");
                 else if (iter % 10000 == 0) Console.Write(".");
-            }});
+            }
+        };
+
+        PmlUtils.Symbolicate(pmlReader, symOpts);
 
         cancel = true;
         Console.WriteLine("done!");

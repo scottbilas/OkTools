@@ -21,8 +21,8 @@ can be very large.
 
     static CliExitCode Resolve(PmlToolCliArguments opts)
     {
-        if ((Environment.GetEnvironmentVariable(k_ntSymbolPathName)?.IndexOf("http") ?? -1) == -1)
-            Console.WriteLine($"{k_ntSymbolPathName} appears to be not set to use a symbol server!");
+        if (!NtSymbolPath.FromEnvironment.HasDownloadPaths)
+            Console.WriteLine($"{NtSymbolPath.EnvVarName} appears to be not set to use a symbol server!");
 
         Console.Write("Scanning call stacks for modules...");
 
@@ -44,7 +44,7 @@ can be very large.
         }
         Console.WriteLine("done!");
 
-        var dbghelp = new SimpleSymbolHandler();
+        var dbghelp = new DbgHelpInstance();
         foreach (var (modulePath, index) in modulePaths.OrderBy(_ => _).Select((p, i) => (p, b: i)))
         {
             var start = DateTime.Now;
