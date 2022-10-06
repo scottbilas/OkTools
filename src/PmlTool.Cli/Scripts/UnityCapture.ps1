@@ -156,18 +156,4 @@ Write-Host "*** Killing processes"
 KillProcs
 
 Write-Host "*** Baking"
-$oldSymbolPath = $env:_NT_SYMBOL_PATH
-if ($oldSymbolPath) {
-    Write-Host "Adding $UnityDir to _NT_SYMBOL_PATH"
-    $env:_NT_SYMBOL_PATH += ";$UnityDir" # pdb's from a downloader-cli build will be in the unity build root
-}
-else {
-    Write-Warning '_NT_SYMBOL_PATH not set'
-}
-
-try {
-    & $PSScriptRoot\..\pmltool.exe bake $eventsPmlPath
-}
-finally {
-    $env:_NT_SYMBOL_PATH = $oldSymbolPath
-}
+& $PSScriptRoot\..\pmltool.exe bake $eventsPmlPath

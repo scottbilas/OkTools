@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Text;
+using System.Runtime.InteropServices;
+using MessagePack;
 using Vanara.Extensions;
 using Vanara.PInvoke;
 
@@ -29,11 +30,8 @@ class SymCache : IDisposable
             throw win32Error.GetException();
     }
 
-    public void LoadMonoSymbols(string monoPmipPath, DateTime? domainCreationTime = null)
     public void LoadMonoSymbols(string pmipPath, DateTime? domainCreationTimeUtc = null)
     {
-        _monoJitSymbolDbs.Add(new MonoJitSymbolDb(monoPmipPath, domainCreationTime));
-        _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTime < b.DomainCreationTime ? 1 : -1); // newer domains first so we can use `>` while iterating forward
         _monoJitSymbolDbs.Add(new MonoJitSymbolDb(pmipPath, domainCreationTimeUtc));
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTimeUtc < b.DomainCreationTimeUtc ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
@@ -109,68 +107,60 @@ public static class PmlUtils
         options.Progress?.Invoke(0, pmlReader.EventCount);
 
         var symCacheDb = new Dictionary<uint /*pid*/, SymCache>();
-        var strings = new List<string> { "" };
-        var stringDb = new Dictionary<string, int> { { "", 0 } };
-        var badChars = new[] { '\n', '\r', '\t' };
+        var builder = new PmlBakedDataBuilder();
 
-        int ToStringIndex(string str)
+        var pmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString());
+        var pmipFileDb = new Dictionary<int, List<NPath>>();
+
+        foreach (var pmipPath in pmipPaths)
         {
-            if (!stringDb.TryGetValue(str, out var index))
-            {
-                if (str.Length == 0)
-                    throw new ArgumentException("Shouldn't have an empty string here");
-                if (str.IndexOfAny(badChars) != -1)
-                    throw new ArgumentException("String has bad chars in it");
-
-                stringDb.Add(str, index = strings.Count);
-                strings.Add(str);
-            }
-
-            return index;
-        }
-
-        var monoPmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString()).ToArray();
-
-        foreach (var monoPmipPath in monoPmipPaths)
-        {
-            var (pid, _) = MonoJitSymbolDb.ParsePmipFilename(monoPmipPath);
-            if (!symCacheDb.TryGetValue((uint)pid, out var symCache))
-                symCacheDb.Add((uint)pid, symCache = new SymCache(options));
-
-            symCache.LoadMonoSymbols(monoPmipPath, options.IgnorePmipCreateTimes ? default(DateTime) : null);
+            var (pid, _) = MonoJitSymbolDb.ParsePmipFilename(pmipPath);
+            if (!pmipFileDb.TryGetValue(pid, out var pmipFiles))
+                pmipFileDb.Add(pid, pmipFiles = new List<NPath>());
+            pmipFiles.Add(pmipPath);
         }
 
         var bakedPath = options.BakedPath ?? pmlReader.PmlPath.ChangeExtension(".pmlbaked");
         var tmpBakedPath = bakedPath + ".tmp";
-        using (var bakedFile = File.CreateText(tmpBakedPath))
-        {
-            if (options.DebugFormat)
-            {
-                bakedFile.Write("# Events: Sequence:Frame[0];Frame[1];Frame[..n]\n");
-                bakedFile.Write("# Frames: $type [$module] $symbol + $offset (type: K=kernel, U=user, M=mono)\n");
-                bakedFile.Write("\n");
-            }
-            bakedFile.Write("[Config]\n");
-            bakedFile.Write($"EventCount={pmlReader.EventCount}\n");
-            if (options.DebugFormat)
-                bakedFile.Write($"DebugFormat={options.DebugFormat}\n");
-            bakedFile.Write("\n");
-            bakedFile.Write("[Events]\n");
+        var bakedText = options.DebugFormat ? File.CreateText(tmpBakedPath) : null;
 
-            var sb = new StringBuilder();
-            var pmlEvents = pmlReader.SelectEvents(PmlReader.Filter.AllEventClasses | PmlReader.Filter.Stacks);
+        using (bakedText)
+        {
+            bakedText?.Write("# Frame Types: " +  Enum.GetValues<FrameType>().Select(t => $"{(char)t}={t}").StringJoin(", ") + "\n\n");
+
+            var pmlEvents = pmlReader
+                .SelectEvents(PmlReader.Filter.AllEventClasses | PmlReader.Filter.Stacks, options.EventRange)
+                .Where(e => e.Frames!.Length != 0);
 
             foreach (var pmlEvent in pmlEvents)
             {
                 var process = pmlReader.ResolveProcess(pmlEvent.ProcessIndex);
 
                 if (!symCacheDb.TryGetValue(process.ProcessId, out var symCache))
-                    symCacheDb.Add(process.ProcessId, symCache = new SymCache(options));
+                {
+                    pmipFileDb.TryGetValue((int)process.ProcessId, out var pmipFiles);
 
-                if (pmlEvent.Frames!.Length == 0)
-                    continue;
+                    // need to add the folder of the process in order to have dbghelp notice the mono pdb file there.
+                    // probably don't want to do this in general because sym paths end up getting checked recursively..
+                    var localOptions = options;
+                    if (pmipFiles != null)
+                        localOptions.NtSymbolPath.AddPath(Path.GetDirectoryName(process.GetImagePath())!);
 
-                sb.Append(pmlEvent.EventIndex.ToString(options.DebugFormat ? null : "x"));
+                    symCacheDb.Add(process.ProcessId, symCache = new SymCache(localOptions));
+
+                    if (pmipFiles != null)
+                    {
+                        DateTime? createTime = localOptions.IgnorePmipCreateTimes ? default(DateTime) : null;
+                        foreach (var pmipFile in pmipFiles)
+                        {
+                            localOptions.ModuleLoadProgress?.Invoke(pmipFile);
+                            symCache.LoadMonoSymbols(pmipFile, createTime);
+                            localOptions.ModuleLoadProgress?.Invoke(null);
+                        }
+                    }
+                }
+
+                bakedText?.Write($"Event #{pmlEvent.EventIndex} at {pmlEvent.CaptureDateTime.ToString(CaptureTimeFormat)}\n");
 
                 for (var iframe = 0; iframe < pmlEvent.Frames!.Length; ++iframe)
                 {
@@ -190,8 +180,7 @@ public static class PmlUtils
                         }
                     }
 
-                    var type = (address & (1UL << 63)) != 0 ? 'K' : 'U';
-                    sb.Append(';');
+                    var frameType = (address & (1UL << 63)) != 0 ? FrameType.Kernel : FrameType.User;
 
                     if (module != null && symCache.TryGetNativeSymbol(address, out var nativeSymbol))
                     {
@@ -202,25 +191,31 @@ public static class PmlUtils
                         if (found != -1)
                             name = name[..found];
 
-                        if (options.DebugFormat)
-                            sb.AppendFormat("{0} [{1}] {2} + 0x{3:x}", type, module.ModuleName, name, nativeSymbol.offset);
-                        else
-                            sb.AppendFormat("{0},{1:x},{2:x},{3:x}", type, ToStringIndex(module.ModuleName), ToStringIndex(name), nativeSymbol.offset);
+                        bakedText?.Write($"    {frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x}\n");
+                        builder.AddFrame(pmlEvent.EventIndex, frameType, module.ModuleName, name, nativeSymbol.offset);
                     }
-                    else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTime, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
+                    else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
-                        if (options.DebugFormat)
-                            sb.AppendFormat("M [{0}] {1} + 0x{2:x}", monoSymbol.AssemblyName, monoSymbol.Symbol, address - monoSymbol.Address.Base);
-                        else
-                            sb.AppendFormat("M,{0:x},{1:x},{2:x}", ToStringIndex(monoSymbol.AssemblyName), ToStringIndex(monoSymbol.Symbol), address - monoSymbol.Address.Base);
+                        var monoOffset = address - monoSymbol.Address.Base;
+
+                        if (bakedText != null)
+                        {
+                            bakedText.Write("    M ");
+                            if (monoSymbol.AssemblyName.Length > 0)
+                                bakedText.Write($"[{monoSymbol.AssemblyName}] ");
+                            bakedText.Write($"{monoSymbol.Symbol} + 0x{monoOffset:x}\n");
+                        }
+
+                        builder.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);
                     }
                     else
-                        sb.AppendFormat(options.DebugFormat ? "{0} 0x{1:x}" : "{0},{1:x}", type, address);
+                    {
+                        bakedText?.Write($"    {frameType.ToChar()} 0x{address:x}\n");
+                        builder.AddFrame(pmlEvent.EventIndex, frameType, address);
+                    }
                 }
 
-                sb.Append('\n');
-                bakedFile.Write(sb.ToString());
-                sb.Clear();
+                bakedText?.Write('\n');
 
                 options.Progress?.Invoke(pmlEvent.EventIndex, pmlReader.EventCount);
             }
@@ -228,20 +223,86 @@ public static class PmlUtils
             foreach (var cache in symCacheDb.Values)
                 cache.Dispose();
 
-            if (strings.Count != 0)
+            if (!options.DebugFormat)
             {
-                bakedFile.Write("\n");
-                bakedFile.Write("[Strings]\n");
+                using var file = File.Create(tmpBakedPath);
 
-                foreach (var (s, i) in strings.Select((s, i) => (s, i)))
-                {
-                    bakedFile.Write($"{i:x}:{s}");
-                    bakedFile.Write('\n');
-                }
+                // header is a magic string w/ version
+                file.Write(PmlBakedData.PmlBakedMagic);
+
+                // now the serialized data
+                MessagePackSerializer.Serialize(file, builder,
+                    MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray));
             }
         }
 
         File.Delete(bakedPath);
         File.Move(tmpBakedPath, bakedPath);
+    }
+}
+
+[MessagePackObject]
+public class PmlBakedData
+{
+    public const int PmlBakedVersion = 2;
+
+    public static readonly byte[] PmlBakedMagic = $"PMLBAKED:{PmlBakedVersion}->".GetBytes(false, CharSet.Ansi);
+
+    [Key(0)] public List<PmlBakedFrame> Frames = new();
+    [Key(1)] public List<string> Strings = new();
+}
+
+[MessagePackObject]
+public readonly struct PmlBakedFrame
+{
+    public PmlBakedFrame(uint eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, ulong offset)
+    {
+        EventIndex = eventIndex;
+        FrameType = frameType;
+        ModuleIndex = moduleIndex;
+        SymbolIndex = symbolIndex;
+        Offset = offset;
+    }
+
+    [Key(0)] public readonly uint      EventIndex;
+    [Key(1)] public readonly FrameType FrameType;
+    [Key(2)] public readonly int       ModuleIndex;
+    [Key(3)] public readonly int       SymbolIndex;
+    [Key(4)] public readonly ulong     Offset;
+}
+
+public class PmlBakedDataBuilder : PmlBakedData
+{
+    readonly Dictionary<string, int> _stringDb;
+
+    public PmlBakedDataBuilder()
+    {
+        Strings.Add("");
+        _stringDb = new() { { "", 0 } };
+    }
+
+    public void AddFrame(uint eventIndex, FrameType frameType, string moduleName, string symbolName, ulong offset) =>
+        Frames.Add(new PmlBakedFrame(eventIndex, frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), offset));
+
+    public void AddFrame(uint eventIndex, FrameType frameType, ulong offset) =>
+        Frames.Add(new PmlBakedFrame(eventIndex, frameType, 0, 0, offset));
+
+    static readonly char[] k_badChars = { '\n', '\r', '\t' };
+
+    int ToStringIndex(string str)
+    {
+        if (_stringDb.TryGetValue(str, out var index))
+            return index;
+
+        if (str.Length == 0)
+            throw new ArgumentException("Shouldn't have an empty string here");
+        if (str.IndexOfAny(k_badChars) != -1)
+            throw new ArgumentException("String has bad chars in it");
+
+        index = Strings.Count;
+        _stringDb.Add(str, index);
+        Strings.Add(str);
+
+        return index;
     }
 }

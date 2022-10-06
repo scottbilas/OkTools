@@ -11,9 +11,34 @@ public struct SymbolicatedEvent
 
 public enum FrameType
 {
-    Kernel,
-    User,
-    Mono,
+    Kernel = 'K',
+    User   = 'U',
+    Mono   = 'M',
+}
+
+static class FrameTypeUtils
+{
+    public static FrameType Parse(char ch)
+    {
+        if (!TryParse(ch, out var type))
+            throw new ArgumentOutOfRangeException($"Unknown type '{ch}'");
+        return type;
+    }
+
+    public static bool TryParse(char ch, out FrameType type)
+    {
+        switch (ch)
+        {
+            case 'K': type = FrameType.Kernel; return true;
+            case 'U': type = FrameType.User; return true;
+            case 'M': type = FrameType.Mono; return true;
+        }
+
+        type = default;
+        return false;
+    }
+
+    public static char ToChar(this FrameType type) => (char)type;
 }
 
 [DebuggerDisplay("{Type} {ModuleStringIndex}!{SymbolStringIndex}+{Offset}")]
@@ -158,13 +183,9 @@ public class SymbolicatedEventsDb
         {
             parser.Expect(';');
 
-            var type = parser.ReadChar() switch
-            {
-                'K' => FrameType.Kernel,
-                'U' => FrameType.User,
-                'M' => FrameType.Mono,
-                var c => throw new ArgumentOutOfRangeException($"Unknown type '{c}' for frame {iframe}")
-            };
+            var ch = parser.ReadChar();
+            if (!FrameTypeUtils.TryParse(ch, out var type))
+                throw new ArgumentOutOfRangeException($"Unknown type '{ch}' for frame {iframe}");
 
             parser.Expect(',');
             var first = parser.ReadULongHex();
