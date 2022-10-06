@@ -1,18 +1,19 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Vanara.Extensions;
 using Vanara.PInvoke;
 
 namespace OkTools.ProcMonUtils;
 
 class SymCache : IDisposable
 {
-    readonly SimpleSymbolHandler _simpleSymbolHandler;
+    readonly DbgHelpInstance _simpleSymbolHandler;
     readonly HashSet<string> _symbolsForModuleCache = new();
-    readonly Dictionary<ulong, (SYMBOL_INFO2 symbol, ulong offset)> _symbolFromAddressCache = new();
+    readonly Dictionary<ulong, (DbgHelp.SYMBOL_INFO symbol, ulong offset)> _symbolFromAddressCache = new();
     readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = new();
 
     public SymCache(SymbolicateOptions options) =>
-        _simpleSymbolHandler = new SimpleSymbolHandler(options.NtSymbolPath);
+        _simpleSymbolHandler = new DbgHelpInstance(options.NtSymbolPath);
 
     public void Dispose() => _simpleSymbolHandler.Dispose();
 
@@ -37,12 +38,12 @@ class SymCache : IDisposable
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTimeUtc < b.DomainCreationTimeUtc ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
-    public bool TryGetNativeSymbol(ulong address, out (SYMBOL_INFO2 symbol, ulong offset) symOffset)
+    public bool TryGetNativeSymbol(ulong address, out (DbgHelp.SYMBOL_INFO symbol, ulong offset) symOffset)
     {
         if (_symbolFromAddressCache.TryGetValue(address, out symOffset))
             return true;
 
-        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress(address, ref symOffset.symbol, out symOffset.offset);
+        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress(address, out symOffset.symbol, out symOffset.offset);
         switch ((uint)win32Error)
         {
             case Win32Error.ERROR_SUCCESS:
@@ -57,12 +58,10 @@ class SymCache : IDisposable
     }
 
     // sometimes can get addresses that seem like they're in the mono jit memory space, but don't actually match any symbols. why??
-    public bool TryGetMonoSymbol(DateTime eventTime, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     public bool TryGetMonoSymbol(DateTime eventTimeUtc, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     {
         foreach (var reader in _monoJitSymbolDbs)
         {
-            if (eventTime < reader.DomainCreationTime)
             if (eventTimeUtc < reader.DomainCreationTimeUtc)
                 continue;
 

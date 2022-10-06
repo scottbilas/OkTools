@@ -19,7 +19,7 @@
     <PackageVersion Include="Spectre.Console" Version="0.44.0" />
     <PackageVersion Include="System.Interactive" Version="6.0.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="7.0.0-preview.4.22229.4" />
-    <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.8" />
+    <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.9" />
     <PackageVersion Include="Vezel.Cathode" Version="0.8.23" />
     <PackageVersion Include="YamlDotNet" Version="12.0.1" />
 
