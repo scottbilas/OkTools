@@ -97,6 +97,7 @@ public class PmlEvent
     public readonly uint     Result;       // HRESULT (probably)
     public readonly ulong[]? Frames;
 
+    public DateTime CaptureDateTimeUtc => DateTime.FromFileTimeUtc((long)CaptureTime);
     public DateTime CaptureDateTime => DateTime.FromFileTime((long)CaptureTime);
     public TimeSpan DurationSpan => new((long)_duration);
 

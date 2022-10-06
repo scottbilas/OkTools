@@ -36,9 +36,10 @@ public static class AddressRangeExtensions
             var i = l + (h - l) / 2;
             var test = items[i];
 
-            if (test.AddressRef.End <= address)
+            var testAddr = test.AddressRef;
+            if (testAddr.End <= address)
                 l = i + 1;
-            else if (test.AddressRef.Base > address)
+            else if (testAddr.Base > address)
                 h = i - 1;
             else
             {

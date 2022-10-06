@@ -29,9 +29,12 @@ class SymCache : IDisposable
     }
 
     public void LoadMonoSymbols(string monoPmipPath, DateTime? domainCreationTime = null)
+    public void LoadMonoSymbols(string pmipPath, DateTime? domainCreationTimeUtc = null)
     {
         _monoJitSymbolDbs.Add(new MonoJitSymbolDb(monoPmipPath, domainCreationTime));
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTime < b.DomainCreationTime ? 1 : -1); // newer domains first so we can use `>` while iterating forward
+        _monoJitSymbolDbs.Add(new MonoJitSymbolDb(pmipPath, domainCreationTimeUtc));
+        _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTimeUtc < b.DomainCreationTimeUtc ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
     public bool TryGetNativeSymbol(ulong address, out (SYMBOL_INFO2 symbol, ulong offset) symOffset)
@@ -55,10 +58,12 @@ class SymCache : IDisposable
 
     // sometimes can get addresses that seem like they're in the mono jit memory space, but don't actually match any symbols. why??
     public bool TryGetMonoSymbol(DateTime eventTime, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
+    public bool TryGetMonoSymbol(DateTime eventTimeUtc, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     {
         foreach (var reader in _monoJitSymbolDbs)
         {
             if (eventTime < reader.DomainCreationTime)
+            if (eventTimeUtc < reader.DomainCreationTimeUtc)
                 continue;
 
             if (!reader.TryFindSymbol(address, out monoJitSymbol))

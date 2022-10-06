@@ -26,12 +26,12 @@ public class MonoJitSymbolDb
     public IReadOnlyList<MonoJitSymbol> Symbols => _symbols;
     public string PmipPath { get; }
 
-    public MonoJitSymbolDb(string monoPmipPath, DateTime? domainCreationTime = null)
+    public MonoJitSymbolDb(string monoPmipPath, DateTime? domainCreationTimeUtc = null)
     {
         // default to creation time of the pmip as a way to detect domain creation
 
         PmipPath = monoPmipPath;
-        DomainCreationTime = domainCreationTime ?? File.GetCreationTime(monoPmipPath);
+        DomainCreationTimeUtc = domainCreationTimeUtc ?? File.GetCreationTimeUtc(monoPmipPath);
 
         // parse pmip
 
@@ -72,7 +72,7 @@ public class MonoJitSymbolDb
         _symbols = entries.OrderBy(e => e.Address.Base).ToArray();
     }
 
-    public DateTime DomainCreationTime { get; }
+    public DateTime DomainCreationTimeUtc { get; }
 
     public bool TryFindSymbol(ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol) =>
         _symbols.TryFindAddressIn(address, out monoJitSymbol);
