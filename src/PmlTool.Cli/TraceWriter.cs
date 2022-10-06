@@ -97,7 +97,7 @@ class TraceWriter : IDisposable
         return this;
     }
 
-    public void WriteProcessMetadata(uint processId, string processName)
+    public void WriteProcessMetadata(int processId, string processName)
     {
         Debug.Assert(_depth == 0);
         Open();
@@ -111,7 +111,7 @@ class TraceWriter : IDisposable
         Debug.Assert(_depth == 0);
     }
 
-    public void WriteThreadMetadata(uint processId, uint threadId, string threadName)
+    public void WriteThreadMetadata(int processId, int threadId, string threadName)
     {
         Debug.Assert(_depth == 0);
         Open();

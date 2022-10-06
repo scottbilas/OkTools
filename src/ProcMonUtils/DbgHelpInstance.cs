@@ -62,12 +62,13 @@ public sealed class DbgHelpInstance : IDisposable
         return rc;
     }
 
-    public Win32Error GetSymbolFromAddress(ulong address, out SYMBOL_INFO symbol, out ulong offset)
+    public Win32Error GetSymbolFromAddress(ulong address, out SYMBOL_INFO symbol, out long offset)
     {
         symbol = SYMBOL_INFO.Default;
-        var rc = SymFromAddr(_handle, address, out offset, ref symbol)
+        var rc = SymFromAddr(_handle, address, out var uffset, ref symbol)
             ? Win32Error.ERROR_SUCCESS
             : Win32Error.GetLastError();
+        offset = (long)uffset;
         return rc;
     }
 }

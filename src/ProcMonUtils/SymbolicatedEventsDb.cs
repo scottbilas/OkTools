@@ -48,7 +48,7 @@ public struct FrameRecord
     public FrameType Type;
     public int       ModuleStringIndex;
     public int       SymbolStringIndex;
-    public ulong     Offset; // will be the full address if no symbol
+    public long      Offset; // will be the full address if no symbol
 }
 
 public class PmlBakedParseException : Exception
@@ -59,13 +59,11 @@ public class PmlBakedParseException : Exception
 public class SymbolicatedEventsDb
 {
     readonly List<string> _strings = new();
-    readonly Dictionary<string, List<uint>> _symbolsToEvents = new();
-    readonly Dictionary<string, List<uint>> _modulesToEvents = new();
+    readonly Dictionary<string, List<int>> _symbolsToEvents = new();
+    readonly Dictionary<string, List<int>> _modulesToEvents = new();
 
     SymbolicatedEvent[] _events;
     bool[] _validEvents;
-
-    enum State { Seeking, Config, Events, Strings }
 
     public SymbolicatedEventsDb(string pmlBakedPath)
     {
@@ -74,7 +72,7 @@ public class SymbolicatedEventsDb
         if (_events == null || _validEvents == null)
             throw new FileLoadException($"No events found in {pmlBakedPath}");
 
-        for (var i = 0u; i < _events.Length; ++i)
+        for (var i = 0; i < _events.Length; ++i)
         {
             if (!_validEvents[i])
                 continue;
@@ -89,7 +87,7 @@ public class SymbolicatedEventsDb
 
     public string GetString(int stringIndex) => _strings[stringIndex];
 
-    void Add(Dictionary<string, List<uint>> dict, uint eventIndex, int stringIndex)
+    void Add(Dictionary<string, List<int>> dict, int eventIndex, int stringIndex)
     {
         var value = GetString(stringIndex);
         if (!dict.TryGetValue(value, out var list))
@@ -140,12 +138,12 @@ public class SymbolicatedEventsDb
         }
     }
 
-    public SymbolicatedEvent? GetRecord(uint eventIndex) =>
+    public SymbolicatedEvent? GetRecord(int eventIndex) =>
         _validEvents[eventIndex] ? _events[eventIndex] : null;
 
-    static IEnumerable<uint> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<uint>>> items, Regex regex) =>
+    static IEnumerable<int> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<int>>> items, Regex regex) =>
         items.Where(kv => regex.IsMatch(kv.Key)).SelectMany(kv => kv.Value).Distinct();
 
-    public IEnumerable<uint> MatchRecordsBySymbol(Regex regex) => MatchRecordsByText(_symbolsToEvents, regex);
-    public IEnumerable<uint> MatchRecordsByModule(Regex regex) => MatchRecordsByText(_modulesToEvents, regex);
+    public IEnumerable<int> MatchRecordsBySymbol(Regex regex) => MatchRecordsByText(_symbolsToEvents, regex);
+    public IEnumerable<int> MatchRecordsByModule(Regex regex) => MatchRecordsByText(_modulesToEvents, regex);
 }

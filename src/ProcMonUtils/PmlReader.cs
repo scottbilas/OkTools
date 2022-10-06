@@ -9,15 +9,15 @@ namespace OkTools.ProcMonUtils;
 public sealed class PmlReader : IDisposable
 {
     readonly BinaryReader _reader;
-    readonly uint _eventCount;
-    readonly ulong _eventOffsetsOffset;
-    readonly Dictionary<uint, PmlProcess> _processesByPmlIndex = new();
+    readonly int _eventCount;
+    readonly long _eventOffsetsOffset;
+    readonly Dictionary<int, PmlProcess> _processesByPmlIndex = new();
     readonly string[] _strings;
 
     public void Dispose() => _reader.Dispose();
 
     public NPath PmlPath { get; }
-    public uint EventCount => _eventCount;
+    public int EventCount => _eventCount;
 
     public PmlReader(NPath pmlPath)
     {
@@ -33,11 +33,11 @@ public sealed class PmlReader : IDisposable
         }
 
         const int expectedVersion = 9;
-        var version = _reader.ReadUInt32();
+        var version = _reader.ReadInt32();
         if (version != expectedVersion) // The version of the PML file. I assume its 9
             throw new FileLoadException($"PML has version {version}, expected {expectedVersion}", PmlPath);
 
-        var is64Bit = _reader.ReadUInt32(); // 1 if the system is 64 bit, 0 otherwise
+        var is64Bit = _reader.ReadInt32(); // 1 if the system is 64 bit, 0 otherwise
         if (is64Bit != 1)
             throw new FileLoadException("PML must be 64-bit", PmlPath);
 
@@ -45,22 +45,22 @@ public sealed class PmlReader : IDisposable
             0x20 +  // The computer name
             0x208); // The system root path (like "C:\Windows")
 
-        _eventCount = _reader.ReadUInt32();
+        _eventCount = _reader.ReadInt32();
 
         SeekCurrent(8); // Unknown
-        var eventsDataOffset = _reader.ReadUInt64();
-        _eventOffsetsOffset = _reader.ReadUInt64();
+        var eventsDataOffset = _reader.ReadInt64();
+        _eventOffsetsOffset = _reader.ReadInt64();
 
         // don't pskill your procmon or it won't update the header; use /terminate instead
         if (_eventOffsetsOffset == 0)
             throw new FileLoadException("File was not closed cleanly during capture and is corrupt", PmlPath);
 
-        var processesOffset = _reader.ReadUInt64();
-        var stringsOffset = _reader.ReadUInt64();
+        var processesOffset = _reader.ReadInt64();
+        var stringsOffset = _reader.ReadInt64();
 
         // minor sanity check
         SeekBegin(_eventOffsetsOffset);
-        var eventOffset0 = _reader.ReadUInt32();
+        var eventOffset0 = _reader.ReadInt32();
         if (eventOffset0 != eventsDataOffset)
             throw new FileLoadException($"PML has mismatched first event offset ({eventOffset0} and {eventsDataOffset})", PmlPath);
 
@@ -68,38 +68,38 @@ public sealed class PmlReader : IDisposable
         ReadProcessData(processesOffset);
     }
 
-    string[] ReadStringData(ulong stringsOffset)
+    string[] ReadStringData(long stringsOffset)
     {
         SeekBegin(stringsOffset);
 
-        var stringDataOffsets = new uint[_reader.ReadUInt32()];
+        var stringDataOffsets = new int[_reader.ReadInt32()];
         for (var istring = 0; istring < stringDataOffsets.Length; ++istring)
-            stringDataOffsets[istring] = _reader.ReadUInt32();
+            stringDataOffsets[istring] = _reader.ReadInt32();
         var strings = new string[stringDataOffsets.Length];
         for (var istring = 0; istring < stringDataOffsets.Length; ++istring)
         {
             SeekBegin(stringsOffset + stringDataOffsets[istring]);
-            var strlen = (int)_reader.ReadUInt32() / 2;
+            var strlen = _reader.ReadInt32() / 2;
             strings[istring] = new string(_reader.ReadChars(strlen), 0, Math.Max(0, strlen - 1)); // drop null-term, except empty string that doesn't include one (don't know why)
         }
 
         return strings;
     }
 
-    void ReadProcessData(ulong processesOffset)
+    void ReadProcessData(long processesOffset)
     {
         SeekBegin(processesOffset);
 
-        var processCount = (int)_reader.ReadUInt32();
+        var processCount = _reader.ReadInt32();
         SeekCurrent(processCount * 4); // jump over the process indexes array
-        var processDataOffsets = new uint[processCount];
+        var processDataOffsets = new int[processCount];
         for (var iprocess = 0; iprocess < processDataOffsets.Length; ++iprocess)
-            processDataOffsets[iprocess] = _reader.ReadUInt32();
+            processDataOffsets[iprocess] = _reader.ReadInt32();
         PmlProcess? systemProcess = null;
         for (var iprocess = 0; iprocess < processDataOffsets.Length; ++iprocess)
         {
-            var processIndex = _reader.ReadUInt32(); // The process index (for events to use as a reference to the process)
-            var processId = _reader.ReadUInt32(); // Process id
+            var processIndex = _reader.ReadInt32(); // The process index (for events to use as a reference to the process)
+            var processId = _reader.ReadInt32(); // Process id
 
             SeekCurrent(
                 4 + // Parent process id
@@ -114,7 +114,7 @@ public sealed class PmlReader : IDisposable
                 4 + // Integrity - as a string index
                 4); // the user - as a string index
 
-            var processName = _strings[_reader.ReadUInt32()]; // the process name - as a string index
+            var processName = _strings[_reader.ReadInt32()]; // the process name - as a string index
 
             SeekCurrent(
                 4 + // the image path - as a string index
@@ -126,19 +126,19 @@ public sealed class PmlReader : IDisposable
                 4 + // Icon index big (0x20 pixels)
                 8); // Unknown
 
-            var moduleCount = _reader.ReadUInt32(); // number of modules in the process
+            var moduleCount = _reader.ReadInt32(); // number of modules in the process
             var totalModuleCount = moduleCount;
             if (systemProcess != null)
-                totalModuleCount += (uint)systemProcess.Modules.Count;
+                totalModuleCount += systemProcess.Modules.Count;
 
             var modules = new PmlModule[totalModuleCount];
             for (var imodule = 0; imodule < moduleCount; ++imodule)
             {
                 SeekCurrent(8); // Unknown
 
-                var baseAddress = _reader.ReadUInt64(); // Base address of the module.
-                var size = _reader.ReadUInt32(); // Size of the module.
-                var imagePath = _strings[_reader.ReadUInt32()]; // image path - as a string index
+                var baseAddress = _reader.ReadInt64(); // Base address of the module.
+                var size = _reader.ReadInt32(); // Size of the module.
+                var imagePath = _strings[_reader.ReadInt32()]; // image path - as a string index
                 modules[imodule] = new PmlModule(imagePath, new AddressRange(baseAddress, size));
 
                 SeekCurrent(
@@ -186,17 +186,17 @@ public sealed class PmlReader : IDisposable
     public IEnumerable<PmlEvent> SelectEvents(Filter filter = Filter.Everything, Range? range = null)
     {
         var startAtIndex = 0;
-        var count = (int)_eventCount;
+        var count = _eventCount;
 
         if (range != null)
             (startAtIndex, count) = range.Value.GetOffsetAndLength(count);
 
-        var offsets = new UInt64[count];
+        var offsets = new long[count];
         SeekBegin(_eventOffsetsOffset);
         SeekCurrent(startAtIndex * 5);
         for (var ievent = 0; ievent < offsets.Length; ++ievent)
         {
-            offsets[ievent] = _reader.ReadUInt32();
+            offsets[ievent] = _reader.ReadInt32();
             SeekCurrent(1); // Unknown flags
         }
 
@@ -218,13 +218,13 @@ public sealed class PmlReader : IDisposable
                 _ => true,
             }) continue;
 
-            ulong[]? frames = null;
+            long[]? frames = null;
             if ((filter & Filter.Stacks) != 0)
-                frames = ReadArray<ulong>(rawEvent.StackTraceDepth);
+                frames = ReadArray<long>(rawEvent.StackTraceDepth);
             else
                 SeekCurrent(rawEvent.StackTraceDepth * 8);
 
-            var pmlInit = new PmlEventInit((uint)eventIndex, rawEvent, frames);
+            var pmlInit = new PmlEventInit(eventIndex, rawEvent, frames);
             PmlEvent? pmlEvent = null;
 
             if ((filter & Filter.Details) != 0 && rawEvent.DetailsSize != 0)
@@ -255,7 +255,7 @@ public sealed class PmlReader : IDisposable
         return pmlEvent;
     }
 
-    public PmlProcess ResolveProcess(uint processIndex) => _processesByPmlIndex[processIndex];
+    public PmlProcess ResolveProcess(int processIndex) => _processesByPmlIndex[processIndex];
 
     unsafe PmlRawEvent ReadRawEvent()
     {
@@ -295,10 +295,10 @@ public sealed class PmlReader : IDisposable
         return Encoding.ASCII.GetString(_reader.ReadBytes(stringInfo.Length));
     }
 
-    public PmlProcess? FindProcessByProcessId(uint processId) =>
+    public PmlProcess? FindProcessByProcessId(int processId) =>
         _processesByPmlIndex.Values.FirstOrDefault(p => p.ProcessId == processId);
 
-    PmlFileSystemDetailedEvent ReadFileSystemDetailedEvent(ulong eventStartOffset, PmlEventInit init)
+    PmlFileSystemDetailedEvent ReadFileSystemDetailedEvent(long eventStartOffset, PmlEventInit init)
     {
         var subOperation = _reader.ReadByte();
         SeekCurrent(3); // padding
@@ -322,21 +322,21 @@ public sealed class PmlReader : IDisposable
             case FileSystemOperation.ReadFile:
             case FileSystemOperation.WriteFile:
                 SeekCurrent(4);
-                var ioFlagsAndPriority = _reader.ReadUInt32();
+                var ioFlagsAndPriority = _reader.ReadInt32();
                 var ioFlags = (FileOperationIoFlags)(ioFlagsAndPriority & 0xe000ff);
                 var priority = (FileOperationPriority)((ioFlagsAndPriority >> 0x11) & 7);
                 SeekCurrent(4);
-                var length = _reader.ReadUInt64();
+                var length = _reader.ReadInt64();
                 SeekCurrent(8);
                 var offset = _reader.ReadInt64();
 
                 if (init.RawEvent.ExtraDetailsOffset != 0)
                 {
                     SeekBegin(eventStartOffset + init.RawEvent.ExtraDetailsOffset);
-                    var extraSize = _reader.ReadUInt16();
+                    var extraSize = _reader.ReadInt16();
                     var extraPos = _reader.BaseStream.Position;
 
-                    length = _reader.ReadUInt32();
+                    length = _reader.ReadInt32();
 
                     if (_reader.BaseStream.Position > extraPos + extraSize)
                         throw new InvalidOperationException("Unexpected offset");
@@ -379,7 +379,6 @@ public sealed class PmlReader : IDisposable
         return new PmlFileSystemDetailedEvent(init, subOperation, SeekAndReadDetailsPath());
     }
 
-    void SeekBegin(ulong offset) => SeekBegin((long)offset);
     void SeekBegin(long offset) => _reader.BaseStream.Seek(offset, SeekOrigin.Begin);
     void SeekCurrent(int offset) => _reader.BaseStream.Seek(offset, SeekOrigin.Current);
 }

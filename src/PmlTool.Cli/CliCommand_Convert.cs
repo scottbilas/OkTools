@@ -79,16 +79,16 @@ Speedscope will not be able to read it.
     struct FileOp
     {
         readonly PmlFileSystemReadWriteEvent _rwEvent;
-        List<ulong>? _children;
+        List<long>? _children;
 
         public readonly string Path;
-        public readonly ulong Start, End;
+        public readonly long Start, End;
 
-        public FileOp(PmlFileSystemReadWriteEvent rwEvent, ulong baseTime)
+        public FileOp(PmlFileSystemReadWriteEvent rwEvent, long baseTime)
         {
             _rwEvent = rwEvent;
             Start = _rwEvent.CaptureTime/10 - baseTime;
-            End = Start + (ulong)_rwEvent.DurationSpan.Ticks/10;
+            End = Start + _rwEvent.DurationSpan.Ticks/10;
             Path = _rwEvent.Path.ToString(SlashMode.Forward);
         }
 
@@ -112,7 +112,7 @@ Speedscope will not be able to read it.
             return true;
         }
 
-        public bool TryExpire(ulong start)
+        public bool TryExpire(long start)
         {
             if (End <= start)
                 return true;
@@ -214,7 +214,7 @@ Speedscope will not be able to read it.
             .ToArray();
 
         var virtualProcs = new List<VirtualProc>();
-        var processesByIndex = new Dictionary<uint, (VirtualProc vproc, int index)>();
+        var processesByIndex = new Dictionary<int, (VirtualProc vproc, int index)>();
 
         Console.WriteLine("Writing process metadata...");
 
@@ -283,7 +283,7 @@ Speedscope will not be able to read it.
             var actualProcessId = virtualProc.Processes[virtualProcIndex].ProcessId;
             var virtualProcessId = opts.OptMergeprocs ? virtualProc.Processes[0].ProcessId : actualProcessId;
 
-            void WritePre(char phase, uint tid)
+            void WritePre(char phase, int tid)
             {
                 var name = rwEvent.Operation.ToString()!;
                 string? color = null;
@@ -434,7 +434,7 @@ Speedscope will not be able to read it.
                 var tid = opts.OptMergethreads switch
                 {
                     "none" or null => rwEvent.ThreadId,
-                    "min" => (uint)slot + 1,
+                    "min" => slot.Value + 1,
                     _ => throw new InvalidOperationException() // should never get here unless there's a bug
                 };
 

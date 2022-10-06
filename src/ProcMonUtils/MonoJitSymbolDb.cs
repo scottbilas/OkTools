@@ -53,8 +53,8 @@ public class MonoJitSymbolDb
             if (!lmatch.Success)
                 throw new FileLoadException($"Mono pmip file has unexpected format line {iline}", monoPmipPath);
 
-            var addressBase = ulong.Parse(lmatch.Groups["start"].Value, NumberStyles.HexNumber);
-            var addressSize = (uint)(ulong.Parse(lmatch.Groups["end"].Value, NumberStyles.HexNumber) - addressBase);
+            var addressBase = long.Parse(lmatch.Groups["start"].Value, NumberStyles.HexNumber);
+            var addressSize = (int)(long.Parse(lmatch.Groups["end"].Value, NumberStyles.HexNumber) - addressBase);
 
             var monoJitSymbol = new MonoJitSymbol
             {
@@ -74,7 +74,7 @@ public class MonoJitSymbolDb
 
     public DateTime DomainCreationTimeUtc { get; }
 
-    public bool TryFindSymbol(ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol) =>
+    public bool TryFindSymbol(long address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol) =>
         _symbols.TryFindAddressIn(address, out monoJitSymbol);
 
     public static (int unityPid, int domainSerial) ParsePmipFilename(string monoPmipPath)

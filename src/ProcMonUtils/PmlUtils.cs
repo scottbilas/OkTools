@@ -10,7 +10,7 @@ class SymCache : IDisposable
 {
     readonly DbgHelpInstance _simpleSymbolHandler;
     readonly HashSet<string> _symbolsForModuleCache = new();
-    readonly Dictionary<ulong, (DbgHelp.SYMBOL_INFO symbol, ulong offset)> _symbolFromAddressCache = new();
+    readonly Dictionary<long, (DbgHelp.SYMBOL_INFO symbol, long offset)> _symbolFromAddressCache = new();
     readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = new();
 
     public SymCache(SymbolicateOptions options) =>
@@ -23,7 +23,7 @@ class SymCache : IDisposable
         if (!_symbolsForModuleCache.Add(module.ImagePath))
             return;
 
-        var win32Error = _simpleSymbolHandler.LoadModule(module.ImagePath, module.Address.Base);
+        var win32Error = _simpleSymbolHandler.LoadModule(module.ImagePath, (ulong)module.Address.Base);
         if (win32Error != Win32Error.ERROR_SUCCESS &&
             win32Error != Win32Error.ERROR_PATH_NOT_FOUND &&
             win32Error != Win32Error.ERROR_NO_MORE_FILES) // this can happen if a dll has been deleted since the PML was recorded
@@ -36,12 +36,12 @@ class SymCache : IDisposable
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTimeUtc < b.DomainCreationTimeUtc ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
-    public bool TryGetNativeSymbol(ulong address, out (DbgHelp.SYMBOL_INFO symbol, ulong offset) symOffset)
+    public bool TryGetNativeSymbol(long address, out (DbgHelp.SYMBOL_INFO symbol, long offset) symOffset)
     {
         if (_symbolFromAddressCache.TryGetValue(address, out symOffset))
             return true;
 
-        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress(address, out symOffset.symbol, out symOffset.offset);
+        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress((ulong)address, out symOffset.symbol, out symOffset.offset);
         switch ((uint)win32Error)
         {
             case Win32Error.ERROR_SUCCESS:
@@ -56,7 +56,7 @@ class SymCache : IDisposable
     }
 
     // sometimes can get addresses that seem like they're in the mono jit memory space, but don't actually match any symbols. why??
-    public bool TryGetMonoSymbol(DateTime eventTimeUtc, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
+    public bool TryGetMonoSymbol(DateTime eventTimeUtc, long address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     {
         foreach (var reader in _monoJitSymbolDbs)
         {
@@ -82,7 +82,7 @@ public struct SymbolicateOptions
     public string? BakedPath;          // defaults to <pmlname>.pmlbaked
     public NtSymbolPath NtSymbolPath;  // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
     public Range? EventRange;          // range of indices to symbolicate (defaults to all)
-    public Action<uint, uint>? Progress;
+    public Action<int, int>? Progress;
     public Action<string?>? ModuleLoadProgress;
 }
 
@@ -106,7 +106,7 @@ public static class PmlUtils
 
         options.Progress?.Invoke(0, pmlReader.EventCount);
 
-        var symCacheDb = new Dictionary<uint /*pid*/, SymCache>();
+        var symCacheDb = new Dictionary<int /*pid*/, SymCache>();
         var builder = new PmlBakedDataBuilder();
 
         var pmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString());
@@ -138,7 +138,7 @@ public static class PmlUtils
 
                 if (!symCacheDb.TryGetValue(process.ProcessId, out var symCache))
                 {
-                    pmipFileDb.TryGetValue((int)process.ProcessId, out var pmipFiles);
+                    pmipFileDb.TryGetValue(process.ProcessId, out var pmipFiles);
 
                     // need to add the folder of the process in order to have dbghelp notice the mono pdb file there.
                     // probably don't want to do this in general because sym paths end up getting checked recursively..
@@ -180,7 +180,7 @@ public static class PmlUtils
                         }
                     }
 
-                    var frameType = (address & (1UL << 63)) != 0 ? FrameType.Kernel : FrameType.User;
+                    var frameType = (address & (1L << 63)) != 0 ? FrameType.Kernel : FrameType.User;
 
                     if (module != null && symCache.TryGetNativeSymbol(address, out var nativeSymbol))
                     {
@@ -253,7 +253,7 @@ public class PmlBakedData
     [Key(1)] public List<string> Strings = new();
     // ReSharper restore FieldCanBeMadeReadOnly.Global MemberCanBeProtected.Global
 
-    public IEnumerable<(uint eventIndex, int begin, int end)> SelectFrameRanges()
+    public IEnumerable<(int eventIndex, int begin, int end)> SelectFrameRanges()
     {
         if (Frames.Count == 0)
             yield break;
@@ -279,7 +279,7 @@ public class PmlBakedData
 [MessagePackObject]
 public readonly struct PmlBakedFrame
 {
-    public PmlBakedFrame(uint eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, ulong offset)
+    public PmlBakedFrame(int eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, long offset)
     {
         EventIndex = eventIndex;
         FrameType = frameType;
@@ -288,11 +288,11 @@ public readonly struct PmlBakedFrame
         Offset = offset;
     }
 
-    [Key(0)] public readonly uint      EventIndex;
+    [Key(0)] public readonly int       EventIndex;
     [Key(1)] public readonly FrameType FrameType;
     [Key(2)] public readonly int       ModuleIndex;
     [Key(3)] public readonly int       SymbolIndex;
-    [Key(4)] public readonly ulong     Offset;
+    [Key(4)] public readonly long      Offset;
 }
 
 public class PmlBakedDataBuilder : PmlBakedData
@@ -305,10 +305,10 @@ public class PmlBakedDataBuilder : PmlBakedData
         _stringDb = new() { { "", 0 } };
     }
 
-    public void AddFrame(uint eventIndex, FrameType frameType, string moduleName, string symbolName, ulong offset) =>
+    public void AddFrame(int eventIndex, FrameType frameType, string moduleName, string symbolName, long offset) =>
         Frames.Add(new PmlBakedFrame(eventIndex, frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), offset));
 
-    public void AddFrame(uint eventIndex, FrameType frameType, ulong offset) =>
+    public void AddFrame(int eventIndex, FrameType frameType, long offset) =>
         Frames.Add(new PmlBakedFrame(eventIndex, frameType, 0, 0, offset));
 
     static readonly char[] k_badChars = { '\n', '\r', '\t' };

@@ -8,13 +8,13 @@ namespace OkTools.ProcMonUtils;
 [PublicAPI, DebuggerDisplay("{ProcessName}")]
 public class PmlProcess
 {
-    public readonly uint ProcessId;
+    public readonly int ProcessId;
     public readonly string ProcessName;
     public IReadOnlyList<PmlModule> Modules => _modules;
 
     readonly PmlModule[] _modules;
 
-    public PmlProcess(uint processId, string processName, PmlModule[] takeModules)
+    public PmlProcess(int processId, string processName, PmlModule[] takeModules)
     {
         ProcessId = processId;
         ProcessName = processName;
@@ -24,7 +24,7 @@ public class PmlProcess
         Array.Sort(_modules, (a, b) => a.Address.Base.CompareTo(b.Address.Base));
     }
 
-    public bool TryFindModule(ulong address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
+    public bool TryFindModule(long address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
         _modules.TryFindAddressIn(address, out module);
 
     // may return null for process names like "System" and "Idle"
@@ -83,32 +83,32 @@ record struct PmlRawEvent(         // {from PML Format.md}
                                 // 0x34+n | Byte[]    | A **detail** structure based on the operation type.
 // ReSharper restore NotAccessedPositionalProperty.Global
 
-record struct PmlEventInit(uint EventIndex, PmlRawEvent RawEvent, ulong[]? Frames);
+record struct PmlEventInit(int EventIndex, PmlRawEvent RawEvent, long[]? Frames);
 
 [PublicAPI, DebuggerDisplay("#{EventIndex}")]
 public class PmlEvent
 {
-    readonly ulong _duration;
+    readonly long _duration;
 
-    public readonly uint     EventIndex;
-    public readonly uint     ProcessIndex;
-    public readonly uint     ThreadId;
-    public readonly ulong    CaptureTime;  // FILETIME (100ns intervals since 1601-01-01 UTC)
-    public readonly uint     Result;       // HRESULT (probably)
-    public readonly ulong[]? Frames;
+    public readonly int     EventIndex;
+    public readonly int     ProcessIndex;
+    public readonly int     ThreadId;
+    public readonly long    CaptureTime;  // FILETIME (100ns intervals since 1601-01-01 UTC)
+    public readonly int     Result;       // HRESULT (probably)
+    public readonly long[]? Frames;
 
-    public DateTime CaptureDateTimeUtc => DateTime.FromFileTimeUtc((long)CaptureTime);
-    public DateTime CaptureDateTime => DateTime.FromFileTime((long)CaptureTime);
-    public TimeSpan DurationSpan => new((long)_duration);
+    public DateTime CaptureDateTimeUtc => DateTime.FromFileTimeUtc(CaptureTime);
+    public DateTime CaptureDateTime => DateTime.FromFileTime(CaptureTime);
+    public TimeSpan DurationSpan => new(_duration);
 
     internal PmlEvent(PmlEventInit init)
     {
         EventIndex   = init.EventIndex;
-        ProcessIndex = init.RawEvent.ProcessIndex;
-        ThreadId     = init.RawEvent.ThreadId;
-        CaptureTime  = init.RawEvent.CaptureTime;
-        _duration    = init.RawEvent.Duration;
-        Result       = init.RawEvent.Result;
+        ProcessIndex = (int)init.RawEvent.ProcessIndex;
+        ThreadId     = (int)init.RawEvent.ThreadId;
+        CaptureTime  = (long)init.RawEvent.CaptureTime;
+        _duration    = (long)init.RawEvent.Duration;
+        Result       = (int)init.RawEvent.Result;
         Frames       = init.Frames;
     }
 }
@@ -191,13 +191,13 @@ public class PmlFileSystemReadWriteEvent : PmlFileSystemDetailedEvent
 {
     public readonly FileOperationIoFlags  FileOperationIoFlags;
     public readonly FileOperationPriority FileOperationPriority;
-    public readonly ulong                 Length;
+    public readonly long                  Length;
     public readonly long                  Offset;
 
     internal PmlFileSystemReadWriteEvent(
         PmlEventInit init, byte subOperation, string path,
         FileOperationIoFlags fileOperationIoFlags, FileOperationPriority fileOperationPriority,
-        ulong length, long offset)
+        long length, long offset)
         : base(init, subOperation, path)
     {
         FileOperationIoFlags  = fileOperationIoFlags;

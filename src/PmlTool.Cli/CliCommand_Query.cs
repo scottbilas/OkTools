@@ -28,9 +28,9 @@ static partial class Program
             Console.Write("\r                                 \r");
         }
 
-        void Dump(uint pmlEventIndex)
+        void Dump(int pmlEventIndex)
         {
-            var pmlEvent = pmlReader.GetEvent((int)pmlEventIndex);
+            var pmlEvent = pmlReader.GetEvent(pmlEventIndex);
 
             Console.WriteLine();
             Console.WriteLine($"[{pmlEvent.EventIndex}]");
@@ -71,13 +71,13 @@ static partial class Program
                 Console.WriteLine("  Frames: <none>");
         }
 
-        uint? RunQuery(string query, out bool parsed)
+        int? RunQuery(string query, out bool parsed)
         {
             parsed = true;
 
-            if (uint.TryParse(query, out var queryEventId))
+            if (int.TryParse(query, out var queryEventId))
                 return queryEventId;
-            if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && uint.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out queryEventId))
+            if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) && int.TryParse(query.AsSpan(2), NumberStyles.HexNumber, null, out queryEventId))
                 return queryEventId;
 
             var timeMatch = Regex.Match(query, @"(\d\d)[.:](\d\d)[.:](\d\d)[,.](\d{7})");
@@ -109,9 +109,9 @@ static partial class Program
                 // just have to seek for it, no easy way to find
                 foreach (var pmlEvent in pmlReader.SelectEvents())
                 {
-                    if (queryFileTime == (long)pmlEvent.CaptureTime)
+                    if (queryFileTime == pmlEvent.CaptureTime)
                         return pmlEvent.EventIndex;
-                    if (queryFileTime < (long)pmlEvent.CaptureTime)
+                    if (queryFileTime < pmlEvent.CaptureTime)
                         break;
                 }
             }

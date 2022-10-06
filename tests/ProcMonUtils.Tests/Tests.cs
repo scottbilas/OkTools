@@ -71,7 +71,7 @@ class Tests
         // TODO: also test other frame types, at least User
 
         // TODO: this is unstable; as the OS gets updated, offsets change..pack in the PDB probably..?
-        frame.Offset.ShouldBe(0x752ul);
+        frame.Offset.ShouldBe(0x752);
     }
 
     [Test]
@@ -87,7 +87,7 @@ class Tests
             .OrderBy(seq => seq)
             .ToList();
 
-        matches.First().ShouldBe(3u);
-        matches.Last().ShouldBe(311u);
+        matches.First().ShouldBe(3);
+        matches.Last().ShouldBe(311);
     }
 }
