@@ -1,5 +1,4 @@
 using PInvoke;
-using System.Diagnostics;
 
 #if ENABLE_SCREEN_RECORDER
 
