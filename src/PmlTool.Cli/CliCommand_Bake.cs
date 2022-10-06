@@ -113,6 +113,23 @@ use `--no-symbol-download` to eliminate symbol server queries.
             }
         };
 
+        if (opts.OptEventRange != null)
+        {
+            try
+            {
+                var nums = opts.OptEventRange.Split(':', 2).Select(int.Parse).ToArray();
+
+                symOpts.EventRange = nums.Length == 2
+                    ? new Range(nums[0], nums[0] + nums[1])
+                    : Range.StartAt(nums[0]);
+            }
+            catch (Exception x)
+            {
+                Console.Error.WriteLine($"Illegal event range: {opts.OptEventRange} (error={x.Message})");
+                return CliExitCode.ErrorUsage;
+            }
+        }
+
         PmlUtils.Symbolicate(pmlReader, symOpts);
 
         cancel = true;

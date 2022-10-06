@@ -82,7 +82,8 @@ public struct SymbolicateOptions
     public bool IgnorePmipCreateTimes; // don't use the filesystem's createtime for a pmip file to include it in a valid event range or not
     public string[]? MonoPmipPaths;    // defaults to looking for matching pmip's in pml folder
     public string? BakedPath;          // defaults to <pmlname>.pmlbaked
-    public string? NtSymbolPath;       // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
+    public NtSymbolPath NtSymbolPath;  // defaults to null, which will have dbghelp use _NT_SYMBOL_PATH if exists
+    public Range? EventRange;          // range of indices to symbolicate (defaults to all)
     public Action<uint, uint>? Progress;
     public Action<string?>? ModuleLoadProgress;
 }

@@ -183,9 +183,15 @@ public sealed class PmlReader : IDisposable
         Everything = AllEventClasses | Stacks | Details,
     }
 
-    public IEnumerable<PmlEvent> SelectEvents(Filter filter = Filter.Everything, int startAtIndex = 0)
+    public IEnumerable<PmlEvent> SelectEvents(Filter filter = Filter.Everything, Range? range = null)
     {
-        var offsets = new UInt64[_eventCount - startAtIndex];
+        var startAtIndex = 0;
+        var count = (int)_eventCount;
+
+        if (range != null)
+            (startAtIndex, count) = range.Value.GetOffsetAndLength(count);
+
+        var offsets = new UInt64[count];
         SeekBegin(_eventOffsetsOffset);
         SeekCurrent(startAtIndex * 5);
         for (var ievent = 0; ievent < offsets.Length; ++ievent)
@@ -239,11 +245,11 @@ public sealed class PmlReader : IDisposable
         }
     }
 
-    public IEnumerable<PmlEvent> SelectEvents(int startAtIndex) => SelectEvents(Filter.Everything, startAtIndex);
+    public IEnumerable<PmlEvent> SelectEvents(Range eventRange) => SelectEvents(Filter.Everything, eventRange);
 
     public PmlEvent GetEvent(int index)
     {
-        var pmlEvent = SelectEvents(index).First();
+        var pmlEvent = SelectEvents(Range.StartAt(index)).First();
         if (pmlEvent.EventIndex != index)
             throw new InvalidOperationException("Unexpected mismatch of found event and requested index");
         return pmlEvent;
