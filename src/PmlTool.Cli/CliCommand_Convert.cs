@@ -339,8 +339,10 @@ Speedscope will not be able to read it.
                 converted
                     .Open("args")
                         .Write("path", fileOp.Path)
-                        .Write("eidx", rwEvent.EventIndex)
-                        .Write("cdt", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat));
+                        .Write("event_index", rwEvent.EventIndex)
+                        .Write("captured", rwEvent.CaptureDateTime.ToString(PmlUtils.CaptureTimeFormat))
+                        .Write("offset", rwEvent.Offset)
+                        .Write("length", rwEvent.Length);
 
                 if (opts.OptMergethreads != null && opts.OptMergethreads != "none")
                     converted.Write("tid", rwEvent.ThreadId);
