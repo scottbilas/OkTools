@@ -2,6 +2,8 @@
 
 namespace OkTools.ProcMonUtils;
 
+// TODO: promote this to Core
+
 class SimpleParserException : Exception
 {
     public SimpleParserException(string message)

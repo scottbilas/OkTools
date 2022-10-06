@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace OkTools.ProcMonUtils;
 
+// TODO: promote this to core..?
+
 public struct NtSymbolPath
 {
     public const string EnvVarName = "_NT_SYMBOL_PATH"; // docs at https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/symbol-path
