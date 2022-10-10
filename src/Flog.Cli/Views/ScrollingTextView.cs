@@ -14,19 +14,19 @@ class ScrollingTextView : ViewBase
     LineDataSource _source;        // raw lines
 
     // visible region
-    DisplayLine[] _displayLines;            // the screen.height set of actual lines we're showing
-    bool[] _displayLinesValid;              // track when we need to recalculate line contents
+    OkDeList<DisplayLine> _displayLines;    // the screen.height set of actual lines we're showing
+    OkDeList<bool> _displayLinesValid;      // track when we need to recalculate line contents
 
     readonly StringBuilder _sb = new();
-    int _scrollX, _scrollY; // TODO: _scrollSubY;
+    int _scrollX, _scrollY, _scrollSubY;    // sub-y is a 0+ offset from _scrollY for word wrapped lines
 
     WrapType _wrapType;
 
     public ScrollingTextView(Screen screen, ILineDataSource source) : base(screen)
     {
         _source = new(source);
-        _displayLines = new DisplayLine[screen.Size.Height];
-        _displayLinesValid = new bool[screen.Size.Height];
+        _displayLines = new OkDeList<DisplayLine>(screen.Size.Height);
+        _displayLinesValid = new OkDeList<bool>(screen.Size.Height);
         _wrapType = screen.Options.WrapByDefault;
     }
 
@@ -35,20 +35,17 @@ class ScrollingTextView : ViewBase
 
     void Invalidate()
     {
-        Array.Clear(_displayLinesValid);
-
+        _displayLinesValid.AsSpans.Clear();
         #if DEBUG
-        Array.Fill(_displayLines, default);
+        _displayLines.AsSpans.Clear();
         #endif
     }
 
     void Invalidate(int begin, int end)
     {
-        for (var i = begin; i != end; ++i)
-            _displayLinesValid[i] = false;
-
+        _displayLinesValid.AsSpans[begin..end].Clear();
         #if DEBUG
-        Array.Fill(_displayLines, default, begin, end - begin);
+        _displayLines.AsSpans[begin..end].Clear();
         #endif
     }
 
@@ -82,11 +79,11 @@ class ScrollingTextView : ViewBase
         {
             // new lines available from source, so invalidate any display lines that previously resolved to "past EOF"
 
-            for (var i = 0; i < _displayLines.Length; ++i)
+            for (var i = 0; i < _displayLines.Count; ++i)
             {
                 if (!_displayLines[i].IsValid)
                 {
-                    Invalidate(i, _displayLines.Length);
+                    Invalidate(i, _displayLines.Count);
                     break;
                 }
             }
@@ -149,6 +146,7 @@ class ScrollingTextView : ViewBase
                 }
                 else if (lastValid)
                 {
+                    // TODO: scroll up
                 }
                 break;
             }
@@ -306,14 +304,14 @@ class ScrollingTextView : ViewBase
 
     enum IsUserAction { No, Yes }
 
-    bool ScrollToY(int y, IsUserAction isUserAction)
+    bool ScrollToY(int y, int ysub, IsUserAction isUserAction)
     {
         // user-initiated vertical scroll auto-kills follow
         if (isUserAction == IsUserAction.Yes)
             IsFollowing = false;
 
         y = ClampY(y);
-        if (_scrollY == y)
+        if (_scrollY == y && _scrollSubY == 0)
             return false;
 
         var offset = _scrollY - y;
