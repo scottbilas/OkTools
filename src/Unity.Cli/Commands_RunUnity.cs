@@ -15,6 +15,7 @@ static partial class Commands
     // TODO: use '!' to mean "last". for example `oku unity !` will run unity with the last project chosen. (requires obvs saving out this data..also need to be careful with context about where we might allow a ! for any given flag..what about --toolchain !, right? last for that project, last for any project..? use !! for 'global' and ! for "last local if applicable"?)
     // TODO: add a --buildTarget that will also optionally do a Library folder swaperoo (maybe..)
     // TODO: add a --buildtype that will do nice things like check in advance for NINTENDO_SDK_ROOT set and exists if running with Switch type..
+    // TODO: add a --template to be used with --create-project; see UnityCapture.ps1 for how to find the local templates
 
 /*
     * Choose an EXE
