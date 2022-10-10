@@ -104,6 +104,7 @@ use `--no-symbol-download` to eliminate symbol server queries.
             DebugFormat = opts.OptDebug,
             NtSymbolPath = ntSymbolPath,
             ModuleLoadProgress = name => currentModule = name,
+            IgnorePmipCreateTimes = opts.OptIgnorePmipCreateTime,
             Progress = (_, total) =>
             {
                 if (iter++ == 0)

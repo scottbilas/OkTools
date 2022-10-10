@@ -191,7 +191,7 @@ public static class PmlUtils
                         if (found != -1)
                             name = name[..found];
 
-                        bakedText?.Write($"    {frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x}\n");
+                        bakedText?.Write($"    {frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x} (0x{address:x})\n");
                         builder.AddFrame(pmlEvent.EventIndex, frameType, module.ModuleName, name, nativeSymbol.offset);
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
@@ -200,10 +200,10 @@ public static class PmlUtils
 
                         if (bakedText != null)
                         {
-                            bakedText.Write("    M ");
+                            bakedText.Write("    M");
                             if (monoSymbol.AssemblyName.Length > 0)
-                                bakedText.Write($"[{monoSymbol.AssemblyName}] ");
-                            bakedText.Write($"{monoSymbol.Symbol} + 0x{monoOffset:x}\n");
+                                bakedText.Write($" [{monoSymbol.AssemblyName}]");
+                            bakedText.Write($" {monoSymbol.Symbol} + 0x{monoOffset:x} (0x{address:x})\n");
                         }
 
                         builder.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);

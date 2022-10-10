@@ -3,7 +3,7 @@
 Tools for baking and querying symbols from a Process Monitor Log (PML) file.
 
 Usage:
-  {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] [--add-symbol-path SYMPATH]... [--event-range RANGE] PML
+  {0} bake [--debug] [--no-ntsymbolpath] [--no-symbol-download] [--ignore-pmip-create-time] [--add-symbol-path SYMPATH]... [--event-range RANGE] PML
   {0} resolve PML
   {0} query PML QUERY...
   {0} convert [--mergethreads=STRATEGY] [--mergeprocs] [--showall] [--include-stacks] PML [CONVERTED]
@@ -37,6 +37,8 @@ Options:
   --debug                    Write PMLBAKED in a more readable text debug format. (3-4x bigger)
   --no-ntsymbolpath          Don't use _NT_SYMBOL_PATH from the environment
   --no-symbol-download       Strip any http* from _NT_SYMBOL_PATH to avoid slow downloads
+  --ignore-pmip-create-time  Don't use the pmip file creation time to select the correct jit log (for testing; this
+                             means that the first pmip it finds will be used to match everything)
   --add-symbol-path SYMPATH  Add a symbol path to _NT_SYMBOL_PATH
   --event-range RANGE        Limit the baked events to RANGE indices, where RANGE is in the format START[:COUNT]
 
