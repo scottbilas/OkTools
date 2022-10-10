@@ -60,8 +60,7 @@ public class MonoJitSymbolDb
             {
                 Address = new AddressRange(addressBase, addressSize),
                 AssemblyName = lmatch.Groups["module"].Value,
-                Symbol = lmatch.Groups["symbol"].Value
-                    .Replace(" (", "(").Replace('/', '.').Replace(':', '.').Replace(",", ", "), // remove mono-isms
+                Symbol = NormalizeMonoSymbolName(lmatch.Groups["symbol"].Value) // remove mono-isms
             };
 
             // MISSING: handling of a blank assembly+symbol, which *probably* means it's a trampoline
@@ -76,6 +75,44 @@ public class MonoJitSymbolDb
 
     public bool TryFindSymbol(ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol) =>
         _symbols.TryFindAddressIn(address, out monoJitSymbol);
+
+    public static string NormalizeMonoSymbolName(string monoSymbol)
+    {
+        Span<char> chars = stackalloc char[monoSymbol.Length * 2];
+        var csb = new CharSpanBuilder(chars);
+
+        for (var i = 0; i < monoSymbol.Length; )
+        {
+            var c = monoSymbol[i++];
+            switch (c)
+            {
+                case '/':
+                    csb.Append('.');
+                    break;
+
+                case ':':
+                    csb.Append('.');
+                    if (monoSymbol[i] == '.')
+                        ++i;
+                    break;
+
+                case ',' when monoSymbol[i] != ' ':
+                    csb.Append(", ");
+                    break;
+
+                case ' ' when monoSymbol[i] == '(':
+                    csb.Append("(");
+                    ++i;
+                    break;
+
+                default:
+                    csb.Append(c);
+                    break;
+            }
+        }
+
+        return csb.ToString();
+    }
 
     public static (int unityPid, int domainSerial) ParsePmipFilename(string monoPmipPath)
     {
