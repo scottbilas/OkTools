@@ -3,7 +3,7 @@ using OkTools.ProcMonUtils;
 
 // ReSharper disable StringLiteralTypo
 
-class Tests
+class SymbolicateTests
 {
     NPath _pmlPath = null!, _pmipPath = null!, _pmlBakedPath = null!;
 
@@ -21,7 +21,7 @@ class Tests
 
         _pmlPath = testDataPath.Combine("basic.pml").FileMustExist();
         _pmipPath = testDataPath.Files("pmip*.txt").Single();
-        _pmlBakedPath = _pmlPath.ChangeExtension(".pmlbaked").FileMustExist();
+        _pmlBakedPath = _pmlPath.ChangeExtension(".pmlbaked");
     }
 
     void Symbolicate()
@@ -42,7 +42,7 @@ class Tests
         var mono = new MonoJitSymbolDb(_pmipPath);
         foreach (var symbol in mono.Symbols)
         {
-            mono.TryFindSymbol(symbol.Address.Base + symbol.Address.Size / 2, out var sym0).ShouldBeTrue();
+            mono.TryFindSymbol(symbol.Address.Base + (ulong)symbol.Address.Size / 2, out var sym0).ShouldBeTrue();
             sym0.ShouldBe(symbol);
 
             mono.TryFindSymbol(symbol.Address.Base, out var sym1).ShouldBeTrue();
@@ -71,7 +71,7 @@ class Tests
         // TODO: also test other frame types, at least User
 
         // TODO: this is unstable; as the OS gets updated, offsets change..pack in the PDB probably..?
-        frame.Offset.ShouldBe(0x752);
+        frame.AddressOrOffset.ShouldBe(0x752u);
     }
 
     [Test]
