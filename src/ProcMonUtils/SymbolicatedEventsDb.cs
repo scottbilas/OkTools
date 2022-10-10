@@ -42,13 +42,20 @@ static class FrameTypeUtils
     public static char ToChar(this FrameType type) => (char)type;
 }
 
-[DebuggerDisplay("{Type} {ModuleStringIndex}!{SymbolStringIndex}+{Offset}")]
 public struct FrameRecord
 {
     public FrameType Type;
     public int       ModuleStringIndex;
     public int       SymbolStringIndex;
-    public long      Offset; // will be the full address if no symbol
+    public ulong     AddressOrOffset; // will be the full address if no symbol
+
+    public override string ToString() => SymbolStringIndex != 0
+        ? $"{Type} {ModuleStringIndex}!{SymbolStringIndex}+0x{AddressOrOffset:x}"
+        : $"{Type} {ModuleStringIndex}!0x{AddressOrOffset:x}";
+
+    public string ToString(SymbolicatedEventsDb db) => SymbolStringIndex != 0
+        ? $"{Type} {db.GetString(ModuleStringIndex)}!{db.GetString(SymbolStringIndex)}+0x{AddressOrOffset:x}"
+        : $"{Type} {db.GetString(ModuleStringIndex)}!0x{AddressOrOffset:x}";
 }
 
 public class PmlBakedParseException : Exception
@@ -132,7 +139,7 @@ public class SymbolicatedEventsDb
                     Type = bakedFrame.FrameType,
                     ModuleStringIndex = bakedFrame.ModuleIndex,
                     SymbolStringIndex = bakedFrame.SymbolIndex,
-                    Offset = bakedFrame.Offset,
+                    AddressOrOffset = bakedFrame.AddressOrOffset,
                 };
             }
         }

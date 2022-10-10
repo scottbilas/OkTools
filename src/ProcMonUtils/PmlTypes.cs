@@ -24,7 +24,7 @@ public class PmlProcess
         Array.Sort(_modules, (a, b) => a.Address.Base.CompareTo(b.Address.Base));
     }
 
-    public bool TryFindModule(long address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
+    public bool TryFindModule(ulong address, [NotNullWhen(returnValue: true)] out PmlModule? module) =>
         _modules.TryFindAddressIn(address, out module);
 
     // may return null for process names like "System" and "Idle"
@@ -83,19 +83,19 @@ record struct PmlRawEvent(         // {from PML Format.md}
                                 // 0x34+n | Byte[]    | A **detail** structure based on the operation type.
 // ReSharper restore NotAccessedPositionalProperty.Global
 
-record struct PmlEventInit(int EventIndex, PmlRawEvent RawEvent, long[]? Frames);
+record struct PmlEventInit(int EventIndex, PmlRawEvent RawEvent, ulong[]? Frames);
 
 [PublicAPI, DebuggerDisplay("#{EventIndex}")]
 public class PmlEvent
 {
     readonly long _duration;
 
-    public readonly int     EventIndex;
-    public readonly int     ProcessIndex;
-    public readonly int     ThreadId;
-    public readonly long    CaptureTime;  // FILETIME (100ns intervals since 1601-01-01 UTC)
-    public readonly int     Result;       // HRESULT (probably)
-    public readonly long[]? Frames;
+    public readonly int      EventIndex;
+    public readonly int      ProcessIndex;
+    public readonly int      ThreadId;
+    public readonly long     CaptureTime;  // FILETIME (100ns intervals since 1601-01-01 UTC)
+    public readonly int      Result;       // HRESULT (probably)
+    public readonly ulong[]? Frames;
 
     public DateTime CaptureDateTimeUtc => DateTime.FromFileTimeUtc(CaptureTime);
     public DateTime CaptureDateTime => DateTime.FromFileTime(CaptureTime);

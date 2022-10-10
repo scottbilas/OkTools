@@ -9,11 +9,11 @@ public interface IAddressRange
 
 public readonly struct AddressRange
 {
-    public readonly long Base;
+    public readonly ulong Base;
     public readonly int Size;
-    public long End => Base + Size;
+    public ulong End => Base + (ulong)Size;
 
-    public AddressRange(long @base, int size)
+    public AddressRange(ulong @base, int size)
     {
         Base = @base;
         Size = size;
@@ -22,7 +22,7 @@ public readonly struct AddressRange
 
 public static class AddressRangeExtensions
 {
-    public static bool TryFindAddressIn<T>(this T[] items, long address, [NotNullWhen(returnValue: true)] out T? result)
+    public static bool TryFindAddressIn<T>(this T[] items, ulong address, [NotNullWhen(returnValue: true)] out T? result)
         where T : IAddressRange
     {
         if (items.Length == 0 || address < items[0].AddressRef.Base || address >= items[^1].AddressRef.End)

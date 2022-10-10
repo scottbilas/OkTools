@@ -369,7 +369,7 @@ Speedscope will not be able to read it.
                             stackSb.Append(" +");
                         }
 
-                        stackSb.Append($" 0x{frame.Offset:x}");
+                        stackSb.Append($" 0x{frame.AddressOrOffset:x}");
                     }
 
                     converted.Write("stack", stackSb);

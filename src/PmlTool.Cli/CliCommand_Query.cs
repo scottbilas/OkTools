@@ -57,8 +57,8 @@ static partial class Program
                             sb.Append($" [{symbolicatedEventsDb.GetString(frame.ModuleStringIndex)}]");
 
                         sb.Append(frame.SymbolStringIndex != 0
-                            ? $" {symbolicatedEventsDb.GetString(frame.SymbolStringIndex)} + 0x{frame.Offset:x}"
-                            : $" 0x{frame.Offset:x}");
+                            ? $" {symbolicatedEventsDb.GetString(frame.SymbolStringIndex)} + 0x{frame.AddressOrOffset:x}"
+                            : $" 0x{frame.AddressOrOffset:x}");
 
                         Console.WriteLine(sb);
                         sb.Clear();

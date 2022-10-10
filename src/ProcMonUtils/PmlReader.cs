@@ -136,7 +136,7 @@ public sealed class PmlReader : IDisposable
             {
                 SeekCurrent(8); // Unknown
 
-                var baseAddress = _reader.ReadInt64(); // Base address of the module.
+                var baseAddress = _reader.ReadUInt64(); // Base address of the module.
                 var size = _reader.ReadInt32(); // Size of the module.
                 var imagePath = _strings[_reader.ReadInt32()]; // image path - as a string index
                 modules[imodule] = new PmlModule(imagePath, new AddressRange(baseAddress, size));
@@ -218,9 +218,9 @@ public sealed class PmlReader : IDisposable
                 _ => true,
             }) continue;
 
-            long[]? frames = null;
+            ulong[]? frames = null;
             if ((filter & Filter.Stacks) != 0)
-                frames = ReadArray<long>(rawEvent.StackTraceDepth);
+                frames = ReadArray<ulong>(rawEvent.StackTraceDepth);
             else
                 SeekCurrent(rawEvent.StackTraceDepth * 8);
 

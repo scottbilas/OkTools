@@ -10,7 +10,7 @@ class SymCache : IDisposable
 {
     readonly DbgHelpInstance _simpleSymbolHandler;
     readonly HashSet<string> _symbolsForModuleCache = new();
-    readonly Dictionary<long, (DbgHelp.SYMBOL_INFO symbol, long offset)> _symbolFromAddressCache = new();
+    readonly Dictionary<ulong, (DbgHelp.SYMBOL_INFO symbol, int offset)> _symbolFromAddressCache = new();
     readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = new();
 
     public SymCache(SymbolicateOptions options) =>
@@ -23,7 +23,7 @@ class SymCache : IDisposable
         if (!_symbolsForModuleCache.Add(module.ImagePath))
             return;
 
-        var win32Error = _simpleSymbolHandler.LoadModule(module.ImagePath, (ulong)module.Address.Base);
+        var win32Error = _simpleSymbolHandler.LoadModule(module.ImagePath, module.Address.Base);
         if (win32Error != Win32Error.ERROR_SUCCESS &&
             win32Error != Win32Error.ERROR_PATH_NOT_FOUND &&
             win32Error != Win32Error.ERROR_NO_MORE_FILES) // this can happen if a dll has been deleted since the PML was recorded
@@ -36,12 +36,12 @@ class SymCache : IDisposable
         _monoJitSymbolDbs.Sort((a, b) => a.DomainCreationTimeUtc < b.DomainCreationTimeUtc ? 1 : -1); // newer domains first so we can use `>` while iterating forward
     }
 
-    public bool TryGetNativeSymbol(long address, out (DbgHelp.SYMBOL_INFO symbol, long offset) symOffset)
+    public bool TryGetNativeSymbol(ulong address, out (DbgHelp.SYMBOL_INFO symbol, int offset) symOffset)
     {
         if (_symbolFromAddressCache.TryGetValue(address, out symOffset))
             return true;
 
-        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress((ulong)address, out symOffset.symbol, out symOffset.offset);
+        var win32Error = _simpleSymbolHandler.GetSymbolFromAddress(address, out symOffset.symbol, out symOffset.offset);
         switch ((uint)win32Error)
         {
             case Win32Error.ERROR_SUCCESS:
@@ -56,7 +56,7 @@ class SymCache : IDisposable
     }
 
     // sometimes can get addresses that seem like they're in the mono jit memory space, but don't actually match any symbols. why??
-    public bool TryGetMonoSymbol(DateTime eventTimeUtc, long address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
+    public bool TryGetMonoSymbol(DateTime eventTimeUtc, ulong address, [NotNullWhen(returnValue: true)] out MonoJitSymbol? monoJitSymbol)
     {
         foreach (var reader in _monoJitSymbolDbs)
         {
@@ -176,11 +176,11 @@ public static class PmlUtils
                         }
                         catch (Exception e)
                         {
-                            throw new SymbolicateException($"Symbol lookup fail for {module.ImagePath} at 0x{address:X}", e);
+                            throw new SymbolicateException($"Symbol lookup fail for {module.ImagePath} at 0x{address:x}", e);
                         }
                     }
 
-                    var frameType = (address & (1L << 63)) != 0 ? FrameType.Kernel : FrameType.User;
+                    var frameType = (address & (1UL << 63)) != 0 ? FrameType.Kernel : FrameType.User;
 
                     if (module != null && symCache.TryGetNativeSymbol(address, out var nativeSymbol))
                     {
@@ -196,7 +196,7 @@ public static class PmlUtils
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
-                        var monoOffset = address - monoSymbol.Address.Base;
+                        var monoOffset = (int)(address - monoSymbol.Address.Base);
 
                         if (bakedText != null)
                         {
@@ -244,7 +244,7 @@ public static class PmlUtils
 [MessagePackObject]
 public class PmlBakedData
 {
-    public const int PmlBakedVersion = 2;
+    public const int PmlBakedVersion = 3;
 
     public static readonly byte[] PmlBakedMagic = $"PMLBAKED:{PmlBakedVersion}->".GetBytes(false, CharSet.Ansi);
 
@@ -279,20 +279,20 @@ public class PmlBakedData
 [MessagePackObject]
 public readonly struct PmlBakedFrame
 {
-    public PmlBakedFrame(int eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, long offset)
+    public PmlBakedFrame(int eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, ulong addressOrOffset)
     {
-        EventIndex = eventIndex;
-        FrameType = frameType;
-        ModuleIndex = moduleIndex;
-        SymbolIndex = symbolIndex;
-        Offset = offset;
+        EventIndex      = eventIndex;
+        FrameType       = frameType;
+        ModuleIndex     = moduleIndex;
+        SymbolIndex     = symbolIndex;
+        AddressOrOffset = addressOrOffset;
     }
 
     [Key(0)] public readonly int       EventIndex;
     [Key(1)] public readonly FrameType FrameType;
     [Key(2)] public readonly int       ModuleIndex;
     [Key(3)] public readonly int       SymbolIndex;
-    [Key(4)] public readonly long      Offset;
+    [Key(4)] public readonly ulong     AddressOrOffset; // will be absolute address if SymbolIndex==0
 }
 
 public class PmlBakedDataBuilder : PmlBakedData
@@ -305,11 +305,11 @@ public class PmlBakedDataBuilder : PmlBakedData
         _stringDb = new() { { "", 0 } };
     }
 
-    public void AddFrame(int eventIndex, FrameType frameType, string moduleName, string symbolName, long offset) =>
-        Frames.Add(new PmlBakedFrame(eventIndex, frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), offset));
+    public void AddFrame(int eventIndex, FrameType frameType, string moduleName, string symbolName, int offset) =>
+        Frames.Add(new PmlBakedFrame(eventIndex, frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), (ulong)offset));
 
-    public void AddFrame(int eventIndex, FrameType frameType, long offset) =>
-        Frames.Add(new PmlBakedFrame(eventIndex, frameType, 0, 0, offset));
+    public void AddFrame(int eventIndex, FrameType frameType, ulong address) =>
+        Frames.Add(new PmlBakedFrame(eventIndex, frameType, 0, 0, address));
 
     static readonly char[] k_badChars = { '\n', '\r', '\t' };
 
