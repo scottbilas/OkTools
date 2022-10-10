@@ -6,8 +6,8 @@ if (!$isDotSourced) {
 }
 
 'Building..'
-dotnet build --nologo -v q
-dotnet build -c Release --nologo -v q
+dotnet build --nologo -v q $PSScriptRoot
+dotnet build -c Release --nologo -v q $PSScriptRoot
 
 set-alias okflogd $PSScriptRoot\build\Flog.Cli\Debug\okflog.exe
 set-alias okud $PSScriptRoot\build\Unity.Cli\Debug\okunity.exe
