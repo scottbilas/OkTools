@@ -59,7 +59,7 @@ public struct FrameRecord
 }
 
 // written by PmlUtils.Symbolicate when DebugFormat==true
-public readonly record struct DebugFrameRecord(FrameType Type, string? Module, string? Symbol, int Offset, ulong Address)
+public readonly record struct DebugFrameRecord(FrameType Type, string Module, string Symbol, int Offset, ulong Address)
 {
     static readonly Regex k_debugFrameRx = new(@"
             (?<type>[KMU])
@@ -81,15 +81,12 @@ public readonly record struct DebugFrameRecord(FrameType Type, string? Module, s
             return false;
         }
 
-        var (type, module, symbol, offset, addr) = (
-            m.Groups["type"], m.Groups["module"], m.Groups["symbol"], m.Groups["offset"], m.Groups["addr"]);
-
         record = new DebugFrameRecord(
-            FrameTypeUtils.Parse(type.Value[0]),
-            module.Success ? module.Value : null,
-            symbol.Success ? symbol.Value : null,
-            offset.Success ? Convert.ToInt32(offset.Value, 16) : 0,
-            Convert.ToUInt64(addr.Value, 16));
+            FrameTypeUtils.Parse(m.Groups["type"].Value[0]),
+            m.Groups["module"].Value,
+            m.Groups["symbol"].Value,
+            m.Groups["offset"].Success ? Convert.ToInt32(m.Groups["offset"].Value, 16) : 0,
+            Convert.ToUInt64(m.Groups["addr"].Value, 16));
 
         return true;
     }

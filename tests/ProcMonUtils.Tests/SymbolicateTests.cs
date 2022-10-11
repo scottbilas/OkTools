@@ -43,7 +43,7 @@ class SymbolicateTests : PmlTestFixtureBase
         FrameType.Mono, "mscorlib.dll", "System.Reflection.RuntimeMethodInfo.Invoke(object, System.Reflection.BindingFlags, System.Reflection.Binder, object[], System.Globalization.CultureInfo)", 0x11b, 0x1e8dc29937bu)]
     [TestCase(
         "14 U 0x7ff6b6a9deed",
-        FrameType.User, null, null, 0, 0x7ff6b6a9deedu)]
+        FrameType.User, "", "", 0, 0x7ff6b6a9deedu)]
     public void TryParseDebugFrameRecord(string line, FrameType type, string? module, string? symbol, int offset, ulong addr)
     {
         DebugFrameRecord.TryParse(line, out var record).ShouldBeTrue();
