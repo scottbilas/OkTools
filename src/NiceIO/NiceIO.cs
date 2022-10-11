@@ -480,7 +480,7 @@ namespace NiceIO
             if (obj == null)
                 return -1;
 
-            return ToString().CompareTo(((NPath)obj).ToString());
+            return string.Compare(ToString(), ((NPath)obj).ToString(), StringComparison.Ordinal);
         }
 
         public static bool operator !=(NPath? a, NPath? b)

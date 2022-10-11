@@ -62,7 +62,8 @@ namespace NiceIO.Tests
 		[Test]
 		public void WithNullArgument()
 		{
-			Assert.Throws<ArgumentNullException>(() => new NPath(null));
+            // ReSharper disable once ObjectCreationAsStatement
+            Assert.Throws<ArgumentNullException>(() => new NPath(null));
 		}
 
 		[Test]
@@ -96,7 +97,8 @@ namespace NiceIO.Tests
 		[Test]
 		public void WithDotDotInStartOfAbsolutePath()
 		{
-			Assert.Throws<ArgumentException>(() => new NPath("/../../myotherdir/myfile.txt"));
+            // ReSharper disable once ObjectCreationAsStatement
+            Assert.Throws<ArgumentException>(() => new NPath("/../../myotherdir/myfile.txt"));
 		}
 
 		[Test]

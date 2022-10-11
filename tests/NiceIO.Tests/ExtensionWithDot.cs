@@ -26,7 +26,7 @@
 		{
 			Assert.Throws<ArgumentException>(() =>
 			{
-				var result = new NPath("/").ExtensionWithDot;
+				var _ = new NPath("/").ExtensionWithDot;
 			});
 		}
 
@@ -35,7 +35,7 @@
 		{
 			Assert.Throws<ArgumentException>(() =>
 			{
-				var result = new NPath("C:\\").ExtensionWithDot;
+				var _ = new NPath("C:\\").ExtensionWithDot;
 			});
 		}
 	}

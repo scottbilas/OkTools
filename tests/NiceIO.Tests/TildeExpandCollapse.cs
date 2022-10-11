@@ -15,13 +15,13 @@
             bn.TildeCollapse().TildeExpand().ShouldBe(bn);
 		}
 
-        static IEnumerable<(string, string)> Source() => new (string, string)[]
+        static IEnumerable<(string, string)> Source() => new[]
         {
             // basics
 
-            ("~", NPath.HomeDirectory),
-			("~/some/other/file.txt", NPath.HomeDirectory.Combine("some", "other", "file.txt")),
-            ("~/some/other/file.txt", NPath.HomeDirectory.Combine("some", "other", "file.txt")),
+            ("~", NPath.HomeDirectory.ToString()),
+			("~/some/other/file.txt", NPath.HomeDirectory.Combine("some", "other", "file.txt").ToString()),
+            ("~/some/other/file.txt", NPath.HomeDirectory.Combine("some", "other", "file.txt").ToString()),
 
             // unsupported tilde style
 

@@ -7,7 +7,8 @@ namespace NiceIO.Tests
 {
 	public class TestWithTempDir
 	{
-		private protected NPath _tempPath;
+        // ReSharper disable once InconsistentNaming
+        private protected NPath _tempPath;
 
 		[SetUp]
 		public void Setup()

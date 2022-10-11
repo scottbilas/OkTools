@@ -30,12 +30,14 @@ class InputView : ViewBase
         }
     }
 
+    /*
     public override void SetBounds(int width, int top, int bottom)
     {
         base.SetBounds(width, top, bottom);
 
         // TODO: adjust _scrollX to keep cursor in view
     }
+    */
 
     public void Accept()
     {

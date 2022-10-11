@@ -117,7 +117,7 @@ class ScrollingTextView : ViewBase
             case WrapType.Exact:
             {
                 // TODO: handle full page - the shift has to do a mini wrap to seed the first/last line from previous page
-                // TODO: fill out last line first if scrollpos is at bottom
+                // TODO: fill out last line first if scroll pos is at bottom
 
                 var (firstValid, lastValid) = (_displayLinesValid[0], _displayLinesValid[^1]);
 
@@ -268,10 +268,12 @@ class ScrollingTextView : ViewBase
     {
         // TODO: if no wrap, we don't need full redraw, just fill/delete chars
 
+        /*
         var oldWidth = Width;
         var oldTop = Top;
         var oldBottom = Bottom;
         var oldScrollY = _scrollY;
+        */
 
         base.SetBounds(width, top, bottom);
 

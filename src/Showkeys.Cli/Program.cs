@@ -18,6 +18,8 @@ try
             Read(array);
             queue.Add(array[0]);
         }
+
+        // ReSharper disable once FunctionNeverReturns
     });
 
     for (var next = 0; next != 3; )

@@ -14,7 +14,7 @@ class SymbolicateTests : PmlTestFixtureBase
     public new void OneTimeSetUp()
     {
         _pmlBakedPath = PmlPath.ChangeExtension(".pmlbaked");
-        _pmlDebugBakedPath = _pmlBakedPath.ChangeExtension(".dbg.pmlbaked");;
+        _pmlDebugBakedPath = _pmlBakedPath.ChangeExtension(".dbg.pmlbaked");
 
         var options = new SymbolicateOptions
         {
@@ -63,7 +63,7 @@ class SymbolicateTests : PmlTestFixtureBase
             var dbgTexts = dbgStacks[istack].Split('\n').Select(l => l.Trim()).Where(l => l.Any()).ToArray();
             var dbgFrames = dbgTexts.Skip(1).Select(line =>
             {
-                DebugFrameRecord.TryParse(line, out var record).ShouldBeTrue($"`{line}` did not match regex");;
+                DebugFrameRecord.TryParse(line, out var record).ShouldBeTrue($"`{line}` did not match regex");
                 return record;
             }).ToArray();
 

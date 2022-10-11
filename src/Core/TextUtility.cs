@@ -45,7 +45,7 @@ public static class TextUtility
         return Environment.NewLine;
     }
 
-    public static int ToFourCC(string text)
+    public static int ToFourCc(string text)
     {
         if (text.Length != 4)
             throw new ArgumentException("Must be exactly 4 characters long", nameof(text));

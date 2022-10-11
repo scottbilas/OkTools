@@ -10,7 +10,7 @@ class NativeWindowsTests
         // we're using npaths to normalize trailing slashes
 
         var expected = Directory.GetCurrentDirectory().ToNPath();
-        var actual0 = NativeWindows.GetProcessCurrentDirectory(Environment.ProcessId)!.ToNPath();
+        var actual0 = NativeWindows.GetProcessCurrentDirectory(Environment.ProcessId).ToNPath();
         var actual1 = NativeWindows.SafeGetProcessCurrentDirectory(Environment.ProcessId)!.ToNPath();
 
         actual0.ShouldBe(expected);

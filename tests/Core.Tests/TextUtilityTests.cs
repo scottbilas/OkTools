@@ -43,9 +43,9 @@ class TextUtilityTests
     }
 
     [Test]
-    public unsafe void ToFourCC()
+    public unsafe void ToFourCc()
     {
-        var fourcc = TextUtility.ToFourCC("WXYZ");
+        var fourcc = TextUtility.ToFourCc("WXYZ");
 
         ((fourcc >>  0) & 0xff).ShouldBe('W');
         ((fourcc >>  8) & 0xff).ShouldBe('X');
@@ -63,11 +63,11 @@ class TextUtilityTests
     [Test]
     public void ToFourCC_WithoutExactlyFourChars_Throws()
     {
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC(""));
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("a"));
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("ab"));
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abc"));
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abcde"));
-        Should.Throw<ArgumentException>(() => TextUtility.ToFourCC("abcdef"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc(""));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("a"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("ab"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abc"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abcde"));
+        Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abcdef"));
     }
 }
