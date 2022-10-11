@@ -97,7 +97,7 @@ class SymbolicateTests : PmlTestFixtureBase
         frame.AddressOrOffset.ShouldBe(0x752u);
     }
 
-    [Test]
+    [Test, Ignore("WIP!!!")]
     public void Match()
     {
         // find all events where someone is calling a dotnet generic
