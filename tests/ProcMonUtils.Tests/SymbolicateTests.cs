@@ -50,7 +50,7 @@ class SymbolicateTests : PmlTestFixtureBase
         DebugFrameRecord Parse(string line)
         {
             var m = rx.Match(line);
-            m.Success.ShouldBeTrue();
+            m.Success.ShouldBeTrue($"`{line}` did not match regex");
 
             return new DebugFrameRecord(
                 FrameTypeUtils.Parse(m.Groups["type"].Value[0]),
