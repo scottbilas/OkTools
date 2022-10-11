@@ -1,127 +1,95 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using OkTools.ProcMonUtils;
 
 // ReSharper disable StringLiteralTypo
 
-class SymbolicateTests
+class SymbolicateTests : PmlTestFixtureBase
 {
-    NPath _pmlPath = null!, _pmipPath = null!, _pmlBakedPath = null!;
+    NPath _pmlBakedPath = null!, _pmlDebugBakedPath = null!;
+    SymbolicatedEventsDb _eventsDb = null!;
 
     // crap tests just to get some basic sanity..
 
     [OneTimeSetUp]
-    public void OneTimeSetUp()
+    public new void OneTimeSetUp()
     {
-        var testDataPath = TestContext.CurrentContext
-            .TestDirectory.ToNPath()
-            .ParentContaining("tests", true)
-            .DirectoryMustExist()
-            .Combine("ProcMonUtils.Tests/testdata")
-            .DirectoryMustExist();
+        _pmlBakedPath = PmlPath.ChangeExtension(".pmlbaked");
+        _pmlDebugBakedPath = _pmlBakedPath.ChangeExtension(".dbg.pmlbaked");;
 
-        _pmlPath = testDataPath.Combine("events.pml").FileMustExist();
-        _pmipPath = testDataPath.Files("pmip*.txt").Single();
-        _pmlBakedPath = _pmlPath.ChangeExtension(".pmlbaked");
-    }
-
-    void Symbolicate()
-    {
         var options = new SymbolicateOptions
         {
             IgnorePmipCreateTimes = true, // don't use filesystem timestamps to determine if an event is in a pmip or not
-            MonoPmipPaths = new[] { _pmipPath.ToString() },
+            MonoPmipPaths = new[] { PmipPath.ToString() },
             BakedPath = _pmlBakedPath,
             NtSymbolPath = "",
         };
 
-        using var pmlReader = new PmlReader(_pmlPath);
+        using var pmlReader = new PmlReader(PmlPath);
 
         PmlUtils.Symbolicate(pmlReader, options);
 
         options.DebugFormat = true;
-        options.BakedPath = _pmlBakedPath.ChangeExtension(".dbg.pmlbaked");
+        options.BakedPath = _pmlDebugBakedPath;
         PmlUtils.Symbolicate(pmlReader, options);
+
+        _eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
     }
+
+    readonly record struct DebugFrameRecord(FrameType Type, string Module, string Symbol, int Offset, ulong Address);
 
     [Test]
-    public void PmipIndexing()
+    public void BinarySerialization_Matches()
     {
-        var mono = new MonoJitSymbolDb(_pmipPath);
-        foreach (var symbol in mono.Symbols)
+        var rx = new Regex(
+            @"(?<type>[KMU]) "+
+            @"\[(?<module>[^]]+)\] (?<symbol>.*) "+
+            @"\+ 0x(?<offset>[0-9a-fA-F]+) "+
+            @"\(0x(?<addr>[0-9a-fA-F]+)\)");
+
+        DebugFrameRecord Parse(string line)
         {
-            mono.TryFindSymbol(symbol.Address.Base + (ulong)symbol.Address.Size / 2, out var sym0).ShouldBeTrue();
-            sym0.ShouldBe(symbol);
+            var m = rx.Match(line);
+            m.Success.ShouldBeTrue();
 
-            mono.TryFindSymbol(symbol.Address.Base, out var sym1).ShouldBeTrue();
-            sym1.ShouldBe(symbol);
-
-            mono.TryFindSymbol(symbol.Address.End - 1, out var sym2).ShouldBeTrue();
-            sym2.ShouldBe(symbol);
+            return new DebugFrameRecord(
+                FrameTypeUtils.Parse(m.Groups["type"].Value[0]),
+                m.Groups["module"].Value,
+                m.Groups["symbol"].Value,
+                Convert.ToInt32(m.Groups["offset"].Value, 16),
+                Convert.ToUInt64(m.Groups["addr"].Value, 16));
         }
 
-        mono.TryFindSymbol(mono.Symbols[0].Address.Base - 1, out _).ShouldBeFalse();
-        mono.TryFindSymbol(mono.Symbols[^1].Address.End, out _).ShouldBeFalse();
-    }
-
-    [TestCase("", "")]
-    [TestCase( // basic substitution
-        "Mono.SafeGPtrArrayHandle:get_Item (int)",
-        "Mono.SafeGPtrArrayHandle.get_Item(int)")]
-    [TestCase( // more substitution
-        "System.RuntimeType/ListBuilder`1<T_REF>:Add (T_REF)",
-        "System.RuntimeType.ListBuilder`1<T_REF>.Add(T_REF)")]
-    [TestCase( // target longer than source
-        "System.Text.StringBuilder:.ctor (int,int,int,int,int,int,int,int,int)",
-        "System.Text.StringBuilder.ctor(int, int, int, int, int, int, int, int, int)")]
-    [TestCase( // really long one with many substitutions
-        "System.Collections.Generic.Dictionary`2<string, UnityEditor.Scripting.ScriptCompilation.CachedVersionRangesFactory`1/CacheEntry<UnityEditor.Scripting.ScriptCompilation.UnityVersion>>:.ctor (int,System.Collections.Generic.IEqualityComparer`1<string>)",
-        "System.Collections.Generic.Dictionary`2<string, UnityEditor.Scripting.ScriptCompilation.CachedVersionRangesFactory`1.CacheEntry<UnityEditor.Scripting.ScriptCompilation.UnityVersion>>.ctor(int, System.Collections.Generic.IEqualityComparer`1<string>)")]
-    [TestCase( // extra text at the front
-        "(wrapper runtime-invoke) <Module>:runtime_invoke_void__this___object (object,intptr,intptr,intptr)",
-        "(wrapper runtime-invoke) <Module>.runtime_invoke_void__this___object(object, intptr, intptr, intptr)")]
-    public void NormalizeMonoSymbolName(string test, string expected)
-    {
-        MonoJitSymbolDb.NormalizeMonoSymbolName(test).ShouldBe(expected);
-    }
-
-    [TestCase("mscorlib.dll", "Mono.SafeGPtrArrayHandle:get_Item (int)", // line 83
-        new[] { 0x000001E8BB737830u, 0x000001E8BB73784Fu, 0x000001E8BB737858u },
-        new[] { 0x000001E8BB73782Fu, 0x000001E8BB737859u })]
-    [TestCase("UnityEngine.UIElementsNativeModule.dll", "(wrapper managed-to-native) UnityEngine.Yoga.Native:YGConfigFreeInternal (intptr)", // line 17534
-        new[] { 0x000001E6AD2E55A0u, 0x000001E6AD2E55FFu, 0x000001E6AD2E5600u, 0x000001E6AD2E56CCu },
-        new[] { 0x000001E6AD2E559Fu, 0x000001E6AD2E56CDu, 0x000001E6AD2E56CEu })]
-    public void PmipParsing(string dllName, string symbol, ulong[] valid, ulong[] invalid)
-    {
-        var mono = new MonoJitSymbolDb(_pmipPath);
-
-        foreach (var ivalid in valid)
+        var dbgStacks = File.ReadAllText(_pmlDebugBakedPath).Split("Event #")[1..];
+        for (var istack = 0; istack != dbgStacks.Length; ++istack)
         {
-            mono.TryFindSymbol(ivalid, out var sym).ShouldBeTrue();
+            var dbgTexts = dbgStacks[istack].Split('\n').Select(l => l.Trim()).Where(l => l.Any()).ToArray();
+            var dbgFrames = dbgTexts.Skip(1).Select(Parse).ToArray();
+
+            var eventIndex = int.Parse(dbgTexts[0][..dbgTexts[0].IndexOf(' ')]);
+            var record = _eventsDb.GetRecord(eventIndex)!.Value;
+
+            record.Frames.Length.ShouldBe(dbgFrames.Length);
+            for (var iframe = 0; iframe < dbgFrames.Length; ++iframe)
             {
-                sym.ShouldNotBeNull();
-                sym.AssemblyName.ShouldBe(dllName);
-                sym.Symbol.ShouldBe(MonoJitSymbolDb.NormalizeMonoSymbolName(symbol));
-            }
-        }
+                var bin = record.Frames[iframe];
+                var dbg = dbgFrames[iframe];
 
-        foreach (var iinvalid in invalid)
-        {
-            mono.TryFindSymbol(iinvalid, out var sym).ShouldBeFalse();
-            sym.ShouldBeNull();
+                bin.Type.ShouldBe(dbg.Type);
+                (bin.AddressOrOffset == dbg.Address || bin.AddressOrOffset == (ulong)dbg.Offset).ShouldBeTrue();
+                _eventsDb.GetString(bin.ModuleStringIndex).ShouldBe(dbg.Module);
+                _eventsDb.GetString(bin.SymbolStringIndex).ShouldBe(dbg.Symbol);
+            }
         }
     }
 
     [Test, Category("TODO"), Ignore("Have to disable this until figure out a way to make it stable")]
     public void WriteAndParse()
     {
-        Symbolicate();
-
-        var eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
-
-        var frame = eventsDb.GetRecord(36)!.Value.Frames[2];
-        eventsDb.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
+        var frame = _eventsDb.GetRecord(36)!.Value.Frames[2];
+        _eventsDb.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
         frame.Type.ShouldBe(FrameType.Kernel);
-        eventsDb.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
+        _eventsDb.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");
 
         // TODO: also test other frame types, at least User
 
@@ -132,12 +100,8 @@ class SymbolicateTests
     [Test]
     public void Match()
     {
-        Symbolicate();
-
-        var eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
-
         // find all events where someone is calling a dotnet generic
-        var matches = eventsDb
+        var matches = _eventsDb
             .MatchRecordsBySymbol(new Regex("`"))
             .OrderBy(seq => seq)
             .ToList();
