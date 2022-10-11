@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.RegularExpressions;
 using OkTools.ProcMonUtils;
 
@@ -36,35 +35,37 @@ class SymbolicateTests : PmlTestFixtureBase
         _eventsDb = new SymbolicatedEventsDb(_pmlBakedPath);
     }
 
-    readonly record struct DebugFrameRecord(FrameType Type, string Module, string Symbol, int Offset, ulong Address);
+    [TestCase(
+        "06 K [ntoskrnl.exe] ObOpenObjectByNameEx + 0xdc7 (0xfffff807644decb7)",
+        FrameType.Kernel, "ntoskrnl.exe", "ObOpenObjectByNameEx", 0xdc7, 0xfffff807644decb7u)]
+    [TestCase(
+        "28 M [mscorlib.dll] System.Reflection.RuntimeMethodInfo.Invoke(object, System.Reflection.BindingFlags, System.Reflection.Binder, object[], System.Globalization.CultureInfo) + 0x11b (0x1e8dc29937b)",
+        FrameType.Mono, "mscorlib.dll", "System.Reflection.RuntimeMethodInfo.Invoke(object, System.Reflection.BindingFlags, System.Reflection.Binder, object[], System.Globalization.CultureInfo)", 0x11b, 0x1e8dc29937bu)]
+    [TestCase(
+        "14 U 0x7ff6b6a9deed",
+        FrameType.User, null, null, 0, 0x7ff6b6a9deedu)]
+    public void TryParseDebugFrameRecord(string line, FrameType type, string? module, string? symbol, int offset, ulong addr)
+    {
+        DebugFrameRecord.TryParse(line, out var record).ShouldBeTrue();
+        record.Type.ShouldBe(type);
+        record.Module.ShouldBe(module);
+        record.Symbol.ShouldBe(symbol);
+        record.Offset.ShouldBe(offset);
+        record.Address.ShouldBe(addr);
+    }
 
     [Test]
     public void BinarySerialization_Matches()
     {
-        var rx = new Regex(
-            @"(?<type>[KMU]) "+
-            @"\[(?<module>[^]]+)\] (?<symbol>.*) "+
-            @"\+ 0x(?<offset>[0-9a-fA-F]+) "+
-            @"\(0x(?<addr>[0-9a-fA-F]+)\)");
-
-        DebugFrameRecord Parse(string line)
-        {
-            var m = rx.Match(line);
-            m.Success.ShouldBeTrue($"`{line}` did not match regex");
-
-            return new DebugFrameRecord(
-                FrameTypeUtils.Parse(m.Groups["type"].Value[0]),
-                m.Groups["module"].Value,
-                m.Groups["symbol"].Value,
-                Convert.ToInt32(m.Groups["offset"].Value, 16),
-                Convert.ToUInt64(m.Groups["addr"].Value, 16));
-        }
-
         var dbgStacks = File.ReadAllText(_pmlDebugBakedPath).Split("Event #")[1..];
         for (var istack = 0; istack != dbgStacks.Length; ++istack)
         {
             var dbgTexts = dbgStacks[istack].Split('\n').Select(l => l.Trim()).Where(l => l.Any()).ToArray();
-            var dbgFrames = dbgTexts.Skip(1).Select(Parse).ToArray();
+            var dbgFrames = dbgTexts.Skip(1).Select(line =>
+            {
+                DebugFrameRecord.TryParse(line, out var record).ShouldBeTrue($"`{line}` did not match regex");;
+                return record;
+            }).ToArray();
 
             var eventIndex = int.Parse(dbgTexts[0][..dbgTexts[0].IndexOf(' ')]);
             var record = _eventsDb.GetRecord(eventIndex)!.Value;

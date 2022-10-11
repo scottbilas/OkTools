@@ -58,6 +58,43 @@ public struct FrameRecord
         : $"{Type.ToChar()} [{db.GetString(ModuleStringIndex)}] 0x{AddressOrOffset:x}";
 }
 
+// written by PmlUtils.Symbolicate when DebugFormat==true
+public readonly record struct DebugFrameRecord(FrameType Type, string? Module, string? Symbol, int Offset, ulong Address)
+{
+    static readonly Regex k_debugFrameRx = new(@"
+            (?<type>[KMU])
+            (
+              \ \[(?<module>[^]]+)\]
+              \ (?<symbol>.*)
+              \ \+\ 0x(?<offset>[0-9a-fA-F]+)
+              \ \(0x(?<addr>[0-9a-fA-F]+)\)
+            |
+              \ 0x(?<addr>[0-9a-fA-F]+)
+            )$", RegexOptions.IgnorePatternWhitespace);
+
+    public static bool TryParse(string line, out DebugFrameRecord record)
+    {
+        var m = k_debugFrameRx.Match(line);
+        if (!m.Success)
+        {
+            record = default;
+            return false;
+        }
+
+        var (type, module, symbol, offset, addr) = (
+            m.Groups["type"], m.Groups["module"], m.Groups["symbol"], m.Groups["offset"], m.Groups["addr"]);
+
+        record = new DebugFrameRecord(
+            FrameTypeUtils.Parse(type.Value[0]),
+            module.Success ? module.Value : null,
+            symbol.Success ? symbol.Value : null,
+            offset.Success ? Convert.ToInt32(offset.Value, 16) : 0,
+            Convert.ToUInt64(addr.Value, 16));
+
+        return true;
+    }
+}
+
 public class PmlBakedParseException : Exception
 {
     public PmlBakedParseException(string message) : base(message) { }
