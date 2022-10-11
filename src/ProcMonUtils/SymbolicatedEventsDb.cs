@@ -133,7 +133,7 @@ public class SymbolicatedEventsDb
 
             for (var i = 0; i != count; ++i)
             {
-                var bakedFrame = data.Frames[i];
+                var bakedFrame = data.Frames[begin + i];
                 eventRecord.Frames[i] = new FrameRecord
                 {
                     Type = bakedFrame.FrameType,
