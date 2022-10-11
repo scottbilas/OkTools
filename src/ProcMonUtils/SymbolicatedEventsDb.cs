@@ -50,12 +50,12 @@ public struct FrameRecord
     public ulong     AddressOrOffset; // will be the full address if no symbol
 
     public override string ToString() => SymbolStringIndex != 0
-        ? $"{Type} {ModuleStringIndex}!{SymbolStringIndex}+0x{AddressOrOffset:x}"
-        : $"{Type} {ModuleStringIndex}!0x{AddressOrOffset:x}";
+        ? $"{Type.ToChar()} [{ModuleStringIndex}] {SymbolStringIndex} + 0x{AddressOrOffset:x}"
+        : $"{Type.ToChar()} [{ModuleStringIndex}] 0x{AddressOrOffset:x}";
 
     public string ToString(SymbolicatedEventsDb db) => SymbolStringIndex != 0
-        ? $"{Type} {db.GetString(ModuleStringIndex)}!{db.GetString(SymbolStringIndex)}+0x{AddressOrOffset:x}"
-        : $"{Type} {db.GetString(ModuleStringIndex)}!0x{AddressOrOffset:x}";
+        ? $"{Type.ToChar()} [{db.GetString(ModuleStringIndex)}] {db.GetString(SymbolStringIndex)} + 0x{AddressOrOffset:x}"
+        : $"{Type.ToChar()} [{db.GetString(ModuleStringIndex)}] 0x{AddressOrOffset:x}";
 }
 
 public class PmlBakedParseException : Exception

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using MessagePack;
 using Vanara.Extensions;
@@ -164,6 +165,8 @@ public static class PmlUtils
 
                 for (var iframe = 0; iframe < pmlEvent.Frames!.Length; ++iframe)
                 {
+                    bakedText?.Write($"    {iframe:00} ");
+
                     var address = pmlEvent.Frames[iframe];
 
                     if (process.TryFindModule(address, out var module))
@@ -191,7 +194,7 @@ public static class PmlUtils
                         if (found != -1)
                             name = name[..found];
 
-                        bakedText?.Write($"    {frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x} (0x{address:x})\n");
+                        bakedText?.Write($"{frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x} (0x{address:x})\n");
                         builder.AddFrame(pmlEvent.EventIndex, frameType, module.ModuleName, name, nativeSymbol.offset);
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
@@ -200,7 +203,7 @@ public static class PmlUtils
 
                         if (bakedText != null)
                         {
-                            bakedText.Write("    M");
+                            bakedText.Write("M");
                             if (monoSymbol.AssemblyName.Length > 0)
                                 bakedText.Write($" [{monoSymbol.AssemblyName}]");
                             bakedText.Write($" {monoSymbol.Symbol} + 0x{monoOffset:x} (0x{address:x})\n");
@@ -210,7 +213,7 @@ public static class PmlUtils
                     }
                     else
                     {
-                        bakedText?.Write($"    {frameType.ToChar()} 0x{address:x}\n");
+                        bakedText?.Write($"{frameType.ToChar()} 0x{address:x}\n");
                         builder.AddFrame(pmlEvent.EventIndex, frameType, address);
                     }
                 }
@@ -277,6 +280,7 @@ public class PmlBakedData
 }
 
 [MessagePackObject]
+[DebuggerDisplay("e:{EventIndex} t:{FrameType} ao:{AddressOrOffset}")]
 public readonly struct PmlBakedFrame
 {
     public PmlBakedFrame(int eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, ulong addressOrOffset)
