@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static System.Diagnostics.Debug;
 
@@ -6,6 +7,7 @@ namespace OkTools.Core;
 
 // like a List<T>, but simpler. also gives access to underlying T[] as a Memory<T>.
 [PublicAPI]
+[DebuggerDisplay("count:{Count}, capacity:{Capacity}")]
 public class OkList<T> : IReadOnlyList<T>
 {
     T[] _items;

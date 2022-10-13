@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using static System.Diagnostics.Debug;
 
@@ -6,6 +7,7 @@ namespace OkTools.Core;
 
 // like a OkList<T>, but double-ended. it does this using a ring buffer, so up to two spans are needed to efficiently access the underlying storage.
 [PublicAPI]
+[DebuggerDisplay("count:{Count}, capacity:{Capacity}")]
 public class OkDeList<T> : IReadOnlyList<T>
 {
     T[] _items;
