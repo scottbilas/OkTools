@@ -1,14 +1,6 @@
-using System.Diagnostics;
 using System.Text.RegularExpressions;
-using MessagePack;
 
 namespace OkTools.ProcMonUtils;
-
-[DebuggerDisplay("Frames={Frames.Length}")]
-public struct SymbolicatedEvent
-{
-    public FrameRecord[] Frames;
-}
 
 public enum FrameType
 {
@@ -17,7 +9,7 @@ public enum FrameType
     Mono   = 'M',
 }
 
-static class FrameTypeUtils
+public static class FrameTypeUtils
 {
     public static FrameType Parse(char ch)
     {
@@ -40,22 +32,6 @@ static class FrameTypeUtils
     }
 
     public static char ToChar(this FrameType type) => (char)type;
-}
-
-public struct FrameRecord
-{
-    public FrameType Type;
-    public int       ModuleStringIndex;
-    public int       SymbolStringIndex;
-    public ulong     AddressOrOffset; // will be the full address if no symbol
-
-    public override string ToString() => SymbolStringIndex != 0
-        ? $"{Type.ToChar()} [{ModuleStringIndex}] {SymbolStringIndex} + 0x{AddressOrOffset:x}"
-        : $"{Type.ToChar()} [{ModuleStringIndex}] 0x{AddressOrOffset:x}";
-
-    public string ToString(SymbolicatedEventsDb db) => SymbolStringIndex != 0
-        ? $"{Type.ToChar()} [{db.GetString(ModuleStringIndex)}] {db.GetString(SymbolStringIndex)} + 0x{AddressOrOffset:x}"
-        : $"{Type.ToChar()} [{db.GetString(ModuleStringIndex)}] 0x{AddressOrOffset:x}";
 }
 
 // written by PmlUtils.Symbolicate when DebugFormat==true
@@ -99,88 +75,38 @@ public class PmlBakedParseException : Exception
 
 public class SymbolicatedEventsDb
 {
-    readonly List<string> _strings = new();
     readonly Dictionary<string, List<int>> _symbolsToEvents = new();
     readonly Dictionary<string, List<int>> _modulesToEvents = new();
-
-    SymbolicatedEvent[] _events;
-    bool[] _validEvents;
+    readonly PmlBakedReader _pmlBakedReader;
 
     public SymbolicatedEventsDb(string pmlBakedPath)
     {
-        Load(pmlBakedPath);
-
-        if (_events == null || _validEvents == null)
-            throw new FileLoadException($"No events found in {pmlBakedPath}");
-
-        for (var i = 0; i < _events.Length; ++i)
-        {
-            if (!_validEvents[i])
-                continue;
-
-            foreach (var frame in _events[i].Frames)
-            {
-                Add(_modulesToEvents, i, frame.ModuleStringIndex);
-                Add(_symbolsToEvents, i, frame.SymbolStringIndex);
-            }
-        }
-    }
-
-    public string GetString(int stringIndex) => _strings[stringIndex];
-
-    void Add(Dictionary<string, List<int>> dict, int eventIndex, int stringIndex)
-    {
-        var value = GetString(stringIndex);
-        if (!dict.TryGetValue(value, out var list))
-            dict.Add(value, list = new());
-        list.Add(eventIndex);
-    }
-
-    void Load(string pmlBakedPath)
-    {
-        PmlBakedData data;
-
         using (var file = File.OpenRead(pmlBakedPath))
-        {
-            var bytes = new byte[PmlBakedData.PmlBakedMagic.Length];
-            if (file.Read(bytes) < bytes.Length || !bytes.SequenceEqual(PmlBakedData.PmlBakedMagic))
-                throw new PmlBakedParseException("Not a .pmlbaked file, or is corrupt");
+            _pmlBakedReader = new PmlBakedReader(file);
 
-            data = MessagePackSerializer.Deserialize<PmlBakedData>(file,
-                MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray));
+        void Add(Dictionary<string, List<int>> dict, int eventIndex, int stringIndex)
+        {
+            var value = GetString(stringIndex);
+            if (!dict.TryGetValue(value, out var list))
+                dict.Add(value, list = new());
+            list.Add(eventIndex);
         }
 
-        _strings.SetRange(data.Strings);
-
-        var eventCount = data.Frames[^1].EventIndex + 1;
-        _events = new SymbolicatedEvent[eventCount];
-        _validEvents = new bool[eventCount];
-
-        foreach (var (eventIndex, begin, end) in data.SelectFrameRanges())
+        for (var (eventIndex, eventCount) = (0, _pmlBakedReader.EventCount); eventIndex != eventCount; ++eventIndex)
         {
-            _validEvents[eventIndex] = true;
-
-            ref var eventRecord = ref _events[eventIndex];
-
-            var count = end - begin;
-            eventRecord.Frames = new FrameRecord[count];
-
-            for (var i = 0; i != count; ++i)
+            foreach (var frame in _pmlBakedReader.GetFrames(eventIndex))
             {
-                var bakedFrame = data.Frames[begin + i];
-                eventRecord.Frames[i] = new FrameRecord
-                {
-                    Type = bakedFrame.FrameType,
-                    ModuleStringIndex = bakedFrame.ModuleIndex,
-                    SymbolStringIndex = bakedFrame.SymbolIndex,
-                    AddressOrOffset = bakedFrame.AddressOrOffset,
-                };
+                Add(_modulesToEvents, eventIndex, frame.ModuleStringIndex);
+                Add(_symbolsToEvents, eventIndex, frame.SymbolStringIndex);
             }
         }
     }
 
-    public SymbolicatedEvent? GetRecord(int eventIndex) =>
-        _validEvents[eventIndex] ? _events[eventIndex] : null;
+    public PmlBakedReader PmlBakedReader => _pmlBakedReader;
+
+    public ReadOnlySpan<char> GetCharSpan(int stringIndex) => _pmlBakedReader.GetCharSpan(stringIndex);
+    public string GetString(int stringIndex) => new(GetCharSpan(stringIndex));
+    public ReadOnlySpan<PmlBakedFrame> GetFrames(int eventIndex) => _pmlBakedReader.GetFrames(eventIndex);
 
     static IEnumerable<int> MatchRecordsByText(IEnumerable<KeyValuePair<string, List<int>>> items, Regex regex) =>
         items.Where(kv => regex.IsMatch(kv.Key)).SelectMany(kv => kv.Value).Distinct();

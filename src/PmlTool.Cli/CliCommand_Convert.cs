@@ -349,27 +349,30 @@ Speedscope will not be able to read it.
                 if (opts.OptMergeprocs)
                     converted.Write("pid", actualProcessId);
 
-                var symRecord = symbolicatedEventsDb?.GetRecord(rwEvent.EventIndex);
-                if (symRecord != null)
+                if (symbolicatedEventsDb != null)
                 {
-                    for (var i = 0; i < symRecord.Value.Frames.Length; ++i)
+                    var frames = symbolicatedEventsDb.GetFrames(rwEvent.EventIndex);
+                    if (frames.Length != 0)
                     {
-                        if (i != 0)
-                            stackSb.Append("\\n");
-
-                        ref var frame = ref symRecord.Value.Frames[i];
-                        stackSb.Append($"{symRecord.Value.Frames.Length-i-1:00} {frame.Type.ToString()[0]}");
-                        if (frame.ModuleStringIndex != 0)
-                            stackSb.Append($" [{symbolicatedEventsDb!.GetString(frame.ModuleStringIndex)}]");
-
-                        if (frame.SymbolStringIndex != 0)
+                        for (var i = 0; i < frames.Length; ++i)
                         {
-                            stackSb.Append(' ');
-                            stackSb.Append(symbolicatedEventsDb!.GetString(frame.SymbolStringIndex));
-                            stackSb.Append(" +");
-                        }
+                            if (i != 0)
+                                stackSb.Append("\\n");
 
-                        stackSb.Append($" 0x{frame.AddressOrOffset:x}");
+                            ref readonly var frame = ref frames[i];
+                            stackSb.Append($"{frames.Length-i-1:00} {frame.Type.ToChar()}");
+                            if (frame.ModuleStringIndex != 0)
+                                stackSb.Append($" [{symbolicatedEventsDb.GetString(frame.ModuleStringIndex)}]");
+
+                            if (frame.SymbolStringIndex != 0)
+                            {
+                                stackSb.Append(' ');
+                                stackSb.Append(symbolicatedEventsDb.GetString(frame.SymbolStringIndex));
+                                stackSb.Append(" +");
+                            }
+
+                            stackSb.Append($" 0x{frame.AddressOrOffset:x}");
+                        }
                     }
 
                     converted.Write("stack", stackSb);

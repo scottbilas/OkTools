@@ -68,12 +68,12 @@ class SymbolicateTests : PmlTestFixtureBase
             }).ToArray();
 
             var eventIndex = int.Parse(dbgTexts[0][..dbgTexts[0].IndexOf(' ')]);
-            var record = _eventsDb.GetRecord(eventIndex)!.Value;
+            var frames = _eventsDb.GetFrames(eventIndex);
 
-            record.Frames.Length.ShouldBe(dbgFrames.Length);
+            frames.Length.ShouldBe(dbgFrames.Length);
             for (var iframe = 0; iframe < dbgFrames.Length; ++iframe)
             {
-                var bin = record.Frames[iframe];
+                var bin = frames[iframe];
                 var dbg = dbgFrames[iframe];
 
                 bin.Type.ShouldBe(dbg.Type);
@@ -87,7 +87,7 @@ class SymbolicateTests : PmlTestFixtureBase
     [Test, Category("TODO"), Ignore("Have to disable this until figure out a way to make it stable")]
     public void WriteAndParse()
     {
-        var frame = _eventsDb.GetRecord(36)!.Value.Frames[2];
+        var frame = _eventsDb.GetFrames(36)[2];
         _eventsDb.GetString(frame.ModuleStringIndex).ShouldBe("FLTMGR.SYS");
         frame.Type.ShouldBe(FrameType.Kernel);
         _eventsDb.GetString(frame.SymbolStringIndex).ShouldBe("FltGetFileNameInformation");

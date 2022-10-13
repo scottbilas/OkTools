@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
-using MessagePack;
 using Vanara.Extensions;
 using Vanara.PInvoke;
 
@@ -108,7 +108,7 @@ public static class PmlUtils
         options.Progress?.Invoke(0, pmlReader.EventCount);
 
         var symCacheDb = new Dictionary<int /*pid*/, SymCache>();
-        var builder = new PmlBakedDataBuilder();
+        var bakedBin = new PmlBakedWriter(pmlReader.EventCount);
 
         var pmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString());
         var pmipFileDb = new Dictionary<int, List<NPath>>();
@@ -163,9 +163,9 @@ public static class PmlUtils
 
                 bakedText?.Write($"Event #{pmlEvent.EventIndex} at {pmlEvent.CaptureDateTime.ToString(CaptureTimeFormat)}\n");
 
-                for (var iframe = 0; iframe < pmlEvent.Frames!.Length; ++iframe)
+                for (var (iframe, count) = (0, pmlEvent.Frames!.Length); iframe < count; ++iframe)
                 {
-                    bakedText?.Write($"    {iframe:00} ");
+                    bakedText?.Write($"    {count-iframe-1:00} ");
 
                     var address = pmlEvent.Frames[iframe];
 
@@ -195,7 +195,7 @@ public static class PmlUtils
                             name = name[..found];
 
                         bakedText?.Write($"{frameType.ToChar()} [{module.ModuleName}] {name} + 0x{nativeSymbol.offset:x} (0x{address:x})\n");
-                        builder.AddFrame(pmlEvent.EventIndex, frameType, module.ModuleName, name, nativeSymbol.offset);
+                        bakedBin.AddFrame(pmlEvent.EventIndex, frameType, module.ModuleName, name, nativeSymbol.offset);
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
@@ -209,12 +209,12 @@ public static class PmlUtils
                             bakedText.Write($" {monoSymbol.Symbol} + 0x{monoOffset:x} (0x{address:x})\n");
                         }
 
-                        builder.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);
+                        bakedBin.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);
                     }
                     else
                     {
                         bakedText?.Write($"{frameType.ToChar()} 0x{address:x}\n");
-                        builder.AddFrame(pmlEvent.EventIndex, frameType, address);
+                        bakedBin.AddFrame(pmlEvent.EventIndex, frameType, address);
                     }
                 }
 
@@ -229,13 +229,7 @@ public static class PmlUtils
             if (!options.DebugFormat)
             {
                 using var file = File.Create(tmpBakedPath);
-
-                // header is a magic string w/ version
-                file.Write(PmlBakedData.PmlBakedMagic);
-
-                // now the serialized data
-                MessagePackSerializer.Serialize(file, builder,
-                    MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4BlockArray));
+                bakedBin.Write(file);
             }
         }
 
@@ -244,76 +238,79 @@ public static class PmlUtils
     }
 }
 
-[MessagePackObject]
-public class PmlBakedData
+// AddressOrOffset: address if no symbol, offset if yes symbol
+[StructLayout(LayoutKind.Sequential, Pack=1)]
+public readonly record struct PmlBakedFrame(FrameType Type, int ModuleStringIndex, int SymbolStringIndex, ulong AddressOrOffset)
 {
-    public const int PmlBakedVersion = 3;
+    public override string ToString() => SymbolStringIndex != 0
+        ? $"{Type.ToChar()} [{ModuleStringIndex}] {SymbolStringIndex} + 0x{AddressOrOffset:x}"
+        : $"{Type.ToChar()} [{ModuleStringIndex}] 0x{AddressOrOffset:x}";
 
-    public static readonly byte[] PmlBakedMagic = $"PMLBAKED:{PmlBakedVersion}->".GetBytes(false, CharSet.Ansi);
-
-    // ReSharper disable FieldCanBeMadeReadOnly.Global MemberCanBeProtected.Global
-    [Key(0)] public List<PmlBakedFrame> Frames = new();
-    [Key(1)] public List<string> Strings = new();
-    // ReSharper restore FieldCanBeMadeReadOnly.Global MemberCanBeProtected.Global
-
-    public IEnumerable<(int eventIndex, int begin, int end)> SelectFrameRanges()
-    {
-        if (Frames.Count == 0)
-            yield break;
-
-        var beginIndex = 0;
-        var lastEventIndex = Frames[0].EventIndex;
-
-        for (var (i, count) = (0, Frames.Count); i != count; ++i)
-        {
-            var eventIndex = Frames[i].EventIndex;
-            if (lastEventIndex == eventIndex)
-                continue;
-
-            yield return (lastEventIndex, beginIndex, i);
-            beginIndex = i;
-            lastEventIndex = eventIndex;
-        }
-
-        yield return (lastEventIndex, beginIndex, Frames.Count);
-    }
+    public string ToString(PmlBakedReader reader) => SymbolStringIndex != 0
+        ? $"{Type.ToChar()} [{reader.GetCharSpan(ModuleStringIndex)}] {reader.GetCharSpan(SymbolStringIndex)} + 0x{AddressOrOffset:x}"
+        : $"{Type.ToChar()} [{reader.GetCharSpan(ModuleStringIndex)}] 0x{AddressOrOffset:x}";
 }
 
-[MessagePackObject]
-[DebuggerDisplay("e:{EventIndex} t:{FrameType} ao:{AddressOrOffset}")]
-public readonly struct PmlBakedFrame
+public class PmlBakedWriter
 {
-    public PmlBakedFrame(int eventIndex, FrameType frameType, int moduleIndex, int symbolIndex, ulong addressOrOffset)
+    const int k_version = 3;
+    internal static readonly byte[] MagicHeader = $"PMLBAKED:{k_version}->".GetBytes(false, CharSet.Ansi);
+
+    readonly OkList<int> _frameCounts; // by event index
+    readonly OkList<PmlBakedFrame> _frames;
+    readonly OkList<int> _stringOffsets;
+    readonly OkList<char> _strings;
+    readonly Dictionary<string, int> _stringDb = new();
+
+    public PmlBakedWriter(int eventReserve)
     {
-        EventIndex      = eventIndex;
-        FrameType       = frameType;
-        ModuleIndex     = moduleIndex;
-        SymbolIndex     = symbolIndex;
-        AddressOrOffset = addressOrOffset;
+        _frameCounts = new(eventReserve);
+        _frames = new(eventReserve * 20);
+        _stringOffsets = new(10000);
+        _strings = new(10000);
+
+        _stringOffsets.Add(0);
+        _stringDb.Add("", 0);
     }
 
-    [Key(0)] public readonly int       EventIndex;
-    [Key(1)] public readonly FrameType FrameType;
-    [Key(2)] public readonly int       ModuleIndex;
-    [Key(3)] public readonly int       SymbolIndex;
-    [Key(4)] public readonly ulong     AddressOrOffset; // will be absolute address if SymbolIndex==0
-}
-
-public class PmlBakedDataBuilder : PmlBakedData
-{
-    readonly Dictionary<string, int> _stringDb;
-
-    public PmlBakedDataBuilder()
+    public void Write(Stream stream)
     {
-        Strings.Add("");
-        _stringDb = new() { { "", 0 } };
+        stream.Write(MagicHeader);
+
+        using var compressor = new DeflateStream(stream, CompressionMode.Compress, true);
+
+        var writer = new BinaryWriter(compressor);
+
+        Write(writer, _frameCounts);
+        Write(writer, _frames);
+        Write(writer, _stringOffsets);
+        Write(writer, _strings);
     }
 
-    public void AddFrame(int eventIndex, FrameType frameType, string moduleName, string symbolName, int offset) =>
-        Frames.Add(new PmlBakedFrame(eventIndex, frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), (ulong)offset));
+    static void Write<T>(BinaryWriter writer, OkList<T> list) where T : unmanaged
+    {
+        writer.Write(list.Count);
+        writer.Write(MemoryMarshal.AsBytes(list.AsSpan));
+    }
 
-    public void AddFrame(int eventIndex, FrameType frameType, ulong address) =>
-        Frames.Add(new PmlBakedFrame(eventIndex, frameType, 0, 0, address));
+    public void AddFrame(int eventIndex, FrameType frameType, string moduleName, string symbolName, int offset)
+    {
+        IncrementFrame(eventIndex);
+        _frames.Add(new PmlBakedFrame(frameType, ToStringIndex(moduleName), ToStringIndex(symbolName), (ulong)offset));
+    }
+
+    public void AddFrame(int eventIndex, FrameType frameType, ulong address)
+    {
+        IncrementFrame(eventIndex);
+        _frames.Add(new PmlBakedFrame(frameType, 0, 0, address));
+    }
+
+    void IncrementFrame(int eventIndex)
+    {
+        if (_frameCounts.Count <= eventIndex)
+            _frameCounts.Count = eventIndex + 1;
+        ++_frameCounts[eventIndex];
+    }
 
     static readonly char[] k_badChars = { '\n', '\r', '\t' };
 
@@ -327,10 +324,85 @@ public class PmlBakedDataBuilder : PmlBakedData
         if (str.IndexOfAny(k_badChars) != -1)
             throw new ArgumentException("String has bad chars in it");
 
-        index = Strings.Count;
+        index = _stringOffsets.Count;
         _stringDb.Add(str, index);
-        Strings.Add(str);
+        _stringOffsets.Add(_strings.Count);
+        _strings.AddRange(str);
 
         return index;
+    }
+}
+
+public class PmlBakedReader
+{
+    readonly OkList<int> _frameOffsets = new(0); // by event index
+    readonly OkList<PmlBakedFrame> _frames = new(0);
+    readonly OkList<int> _stringOffsets = new(0);
+    readonly OkList<char> _strings = new(0);
+
+    public PmlBakedReader(Stream stream)
+    {
+        var header = new byte[PmlBakedWriter.MagicHeader.Length];
+        if (stream.Read(header) != header.Length || !header.SequenceEqual(PmlBakedWriter.MagicHeader))
+            throw new PmlBakedParseException("Not a .pmlbaked file, or is corrupt");
+
+        var decompressor = new DeflateStream(stream, CompressionMode.Decompress, true);
+        var reader = new BinaryReader(decompressor);
+
+        Read(reader, _frameOffsets, 1);
+
+        // convert counts to offsets
+        var offset = 0;
+        for (var i = 0; i < _frameOffsets.Count; ++i)
+        {
+            var next = _frameOffsets[i];
+            _frameOffsets[i] = offset;
+            offset += next;
+        }
+        _frameOffsets.Add(offset); // add terminator for simpler lookups
+
+        Read(reader, _frames);
+        Read(reader, _stringOffsets, 1);
+        Read(reader, _strings);
+        _stringOffsets.Add(_strings.Count); // add terminator for simpler lookups
+    }
+
+    public int EventCount => _frameOffsets.Count - 1;
+
+    public ReadOnlySpan<PmlBakedFrame> GetFrames(int eventIndex)
+    {
+        var start = _frameOffsets[eventIndex];
+        var end = _frameOffsets[eventIndex + 1];
+
+        return _frames.AsSpan[start..end];
+    }
+
+    public ReadOnlySpan<char> GetCharSpan(int stringIndex)
+    {
+        var start = _stringOffsets[stringIndex];
+        var end = _stringOffsets[stringIndex + 1];
+
+        return _strings.AsSpan[start..end];
+    }
+
+    static void Read<T>(BinaryReader reader, OkList<T> list, int extraCapacity = 0) where T : unmanaged
+    {
+        var count = reader.ReadInt32();
+        list.Capacity = count + extraCapacity; // this avoids a realloc when we optionally add a terminator or whatever
+        list.Count = count;
+
+        var span = MemoryMarshal.AsBytes(list.AsSpan);
+        var totalRead = 0;
+
+        while (totalRead < span.Length)
+        {
+            var read = reader.Read(span[totalRead..]);
+            if (read == 0)
+                throw new PmlBakedParseException("Unexpected end of file");
+
+            totalRead += read;
+        }
+
+        Debug.Assert(totalRead == span.Length);
     }
 }

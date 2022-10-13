@@ -42,25 +42,17 @@ static partial class Program
             if (pmlEvent.Frames?.Length > 0)
             {
                 EnsureHaveEventsDb();
-                var eventRecord = symbolicatedEventsDb!.GetRecord(pmlEventIndex);
-                if (eventRecord != null)
+                var frames = symbolicatedEventsDb!.GetFrames(pmlEventIndex);
+                if (frames.Length != 0)
                 {
                     Console.WriteLine("  Frames:");
 
                     var sb = new StringBuilder();
 
-                    for (var i = 0; i < eventRecord.Value.Frames.Length; ++i)
+                    for (var i = 0; i < frames.Length; ++i)
                     {
-                        ref var frame = ref eventRecord.Value.Frames[i];
-                        sb.Append($"    {eventRecord.Value.Frames.Length-i-1:00} {frame.Type.ToString()[0]}");
-                        if (frame.ModuleStringIndex != 0)
-                            sb.Append($" [{symbolicatedEventsDb.GetString(frame.ModuleStringIndex)}]");
-
-                        sb.Append(frame.SymbolStringIndex != 0
-                            ? $" {symbolicatedEventsDb.GetString(frame.SymbolStringIndex)} + 0x{frame.AddressOrOffset:x}"
-                            : $" 0x{frame.AddressOrOffset:x}");
-
-                        Console.WriteLine(sb);
+                        ref readonly var frame = ref frames[i];
+                        sb.AppendLine($"    {frames.Length-i-1:00} {frame.ToString(symbolicatedEventsDb.PmlBakedReader)}");
                         sb.Clear();
                     }
                 }
