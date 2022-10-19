@@ -1,7 +1,11 @@
+// DO NOT MODIFY, THIS FILE IS GENERATED
+
 using System.Runtime.CompilerServices;
 
+// ReSharper disable NegativeIndex
 // ReSharper disable IdentifierTypo
 // ReSharper disable CommentTypo
+// ReSharper disable ZeroIndexFromEnd
 
 static class OkListExtensions
 {
@@ -14,7 +18,6 @@ static class OkListExtensions
 
 partial class OkListTests
 {
-
     [Test]
     public void ValidateAssumptions()
     {
@@ -391,6 +394,10 @@ partial class OkListTests
         list[1].V.ShouldBe(2);
         list[2].V.ShouldBe(3);
         list[3].V.ShouldBe(4);
+        list[^1].V.ShouldBe(4);
+        list[^2].V.ShouldBe(3);
+        list[^3].V.ShouldBe(2);
+        list[^4].V.ShouldBe(1);
         list[3].V = 10;
         list[2].V = 20;
         list[1].V = 30;
@@ -399,6 +406,10 @@ partial class OkListTests
         list[1].V.ShouldBe(30);
         list[2].V.ShouldBe(20);
         list[3].V.ShouldBe(10);
+        list[^1].V.ShouldBe(10);
+        list[^2].V.ShouldBe(20);
+        list[^3].V.ShouldBe(30);
+        list[^4].V.ShouldBe(40);
     }
 
     [Test]
@@ -409,10 +420,57 @@ partial class OkListTests
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[-50]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[  4]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[100]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ ^0]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[^-1]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[^50]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ ^5]);
         Should.Throw<ArgumentOutOfRangeException>(() => list[ -1].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[-50].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[  4].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[100].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[ ^0].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[^-1].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[^50].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[ ^5].V = 42);
+    }
+
+    [Test]
+    public void Slice_WithEmptyRange_ReturnsEmptySpan()
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        for (var i = 0; i <= list.Count; ++i)
+            list[i..i].Length.ShouldBe(0);
+    }
+
+    [Test]
+    public void Slice_WithSingleItemRange_ReturnsSingleItemSpan()
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        for (var i = 0; i < list.Count; ++i)
+        {
+            var spans = list[i..(i+1)];
+            spans.ToArray().ShouldBe(new[] { list[i] });
+                    }
+    }
+
+    [TestCase(2, 4, "cd")]
+    [TestCase(0, 5, "abcde")]
+    [TestCase(3, 6, "def")]
+    public void Slice_WithValidIndices_ReturnsValidSpan(int begin, int end, string expected)
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        list[begin..end].ToArray().SequenceEqual(expected).ShouldBeTrue();
+    }
+
+    [TestCase(-1, 1)]
+    [TestCase(1, 0)]
+    [TestCase(6, 8)]
+    [TestCase(7, 8)]
+    [TestCase(8, 8)]
+    public void Slice_WithInvalidArgs_Throws(int begin, int end)
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        Should.Throw<ArgumentOutOfRangeException>(() => { var _ = list[begin..end]; });
     }
 
     [Test]
@@ -605,7 +663,6 @@ partial class OkListTests
 
 partial class OkDeListTests
 {
-
     [Test]
     public void ValidateAssumptions()
     {
@@ -983,6 +1040,10 @@ partial class OkDeListTests
         list[1].V.ShouldBe(2);
         list[2].V.ShouldBe(3);
         list[3].V.ShouldBe(4);
+        list[^1].V.ShouldBe(4);
+        list[^2].V.ShouldBe(3);
+        list[^3].V.ShouldBe(2);
+        list[^4].V.ShouldBe(1);
         list[3].V = 10;
         list[2].V = 20;
         list[1].V = 30;
@@ -991,6 +1052,10 @@ partial class OkDeListTests
         list[1].V.ShouldBe(30);
         list[2].V.ShouldBe(20);
         list[3].V.ShouldBe(10);
+        list[^1].V.ShouldBe(10);
+        list[^2].V.ShouldBe(20);
+        list[^3].V.ShouldBe(30);
+        list[^4].V.ShouldBe(40);
     }
 
     [Test]
@@ -1001,10 +1066,60 @@ partial class OkDeListTests
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[-50]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[  4]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[100]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ ^0]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[^-1]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[^50]);
+        Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ ^5]);
         Should.Throw<ArgumentOutOfRangeException>(() => list[ -1].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[-50].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[  4].V = 42);
         Should.Throw<ArgumentOutOfRangeException>(() => list[100].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[ ^0].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[^-1].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[^50].V = 42);
+        Should.Throw<ArgumentOutOfRangeException>(() => list[ ^5].V = 42);
+    }
+
+    [Test]
+    public void Slice_WithEmptyRange_ReturnsEmptySpan()
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        for (var i = 0; i <= list.Count; ++i)
+            list[i..i].Length.ShouldBe(0);
+    }
+
+    [Test]
+    public void Slice_WithSingleItemRange_ReturnsSingleItemSpan()
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        for (var i = 0; i < list.Count; ++i)
+        {
+            var spans = list[i..(i+1)];
+            spans.ToArray().ShouldBe(new[] { list[i] });
+                        spans.Span0.Length.ShouldBe(1);
+            spans.Span0[0].ShouldBe(list[i]);
+            spans.Span1.Length.ShouldBe(0);
+                    }
+    }
+
+    [TestCase(2, 4, "cd")]
+    [TestCase(0, 5, "abcde")]
+    [TestCase(3, 6, "def")]
+    public void Slice_WithValidIndices_ReturnsValidSpan(int begin, int end, string expected)
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        list[begin..end].ToArray().SequenceEqual(expected).ShouldBeTrue();
+    }
+
+    [TestCase(-1, 1)]
+    [TestCase(1, 0)]
+    [TestCase(6, 8)]
+    [TestCase(7, 8)]
+    [TestCase(8, 8)]
+    public void Slice_WithInvalidArgs_Throws(int begin, int end)
+    {
+        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        Should.Throw<ArgumentOutOfRangeException>(() => { var _ = list[begin..end]; });
     }
 
     [Test]

@@ -233,6 +233,10 @@ public class OkDeList<T> : IReadOnlyList<T>
         return ref _items[AdjustUnchecked(index)];
     }
 
+    // TODO: this does ~double the calculations needed
+    public SpanPair<T> Slice(int start, int length) =>
+        AsSpans.Slice(start, length);
+
     public SpanPair<T> AsSpans
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
