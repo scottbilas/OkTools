@@ -151,6 +151,8 @@ public class OkList<T> : IReadOnlyList<T>
         }
     }
 
+    public Span<T> Slice(int start, int length) => AsSpan.Slice(start, length);
+
     public Span<T> AsSpan => _items.AsSpan(0, _used);
     public Memory<T> AsMemory => new(_items, 0, _used);
     public ArraySegment<T> AsArraySegment => new(_items, 0, _used);

@@ -374,7 +374,7 @@ public class PmlBakedReader
         var start = _frameOffsets[eventIndex];
         var end = _frameOffsets[eventIndex + 1];
 
-        return _frames.AsSpan[start..end];
+        return _frames[start..end];
     }
 
     public ReadOnlySpan<char> GetCharSpan(int stringIndex)
@@ -382,7 +382,7 @@ public class PmlBakedReader
         var start = _stringOffsets[stringIndex];
         var end = _stringOffsets[stringIndex + 1];
 
-        return _strings.AsSpan[start..end];
+        return _strings[start..end];
     }
 
     static void Read<T>(BinaryReader reader, OkList<T> list, int extraCapacity = 0) where T : unmanaged
