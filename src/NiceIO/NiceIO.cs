@@ -42,7 +42,7 @@ namespace NiceIO
     // TODO: proper full set of equatable and comparable interfaces
     // TODO: case-insensitive NPath comparer
     // TODO: think about case sensitivity across platforms, defaults we might use, how to override
-    // TODO: get rid of string[] _elements and keep it as a simple string. make NPath immutable.
+    // TODO: get rid of string[] _elements and keep it as a simple string. make NPath immutable. (ok but how to Combine() without an alloc every time? linked list to "next"? nah)
     // TODO: defer string-path cleanup until actually needed (like on a ToString or GetHashCode). we can handle mixed / \ for many operations like .Filename and .Parent
     // TODO: make it a struct with (RO)Span support, look into `unsafe` "fixed char _path[260]" type thing..probably not tho..NPath doesn't live long before needing to become a proper string
     // TODO: look into nuget alternatives and get rid of NiceIO entirely
