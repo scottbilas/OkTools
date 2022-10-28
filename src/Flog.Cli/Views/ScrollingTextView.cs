@@ -11,10 +11,8 @@ enum WrapType
 
 class ScrollingTextView : ViewBase
 {
-    // source lines
-    readonly ILineDataSource _source;       // raw lines
-    int _sourceLineCount;                   // detect if the source has new lines available
-    uint _sourceVersion;                    // detect if raw source totally changes (e.g. file truncated)
+    LineDataSource _source;        // raw lines
+
     // visible region
     DisplayLine[] _displayLines;            // the screen.height set of actual lines we're showing
     bool[] _displayLinesValid;              // track when we need to recalculate line contents
@@ -26,14 +24,13 @@ class ScrollingTextView : ViewBase
 
     public ScrollingTextView(Screen screen, ILineDataSource source) : base(screen)
     {
-        _source = source;
-        _sourceVersion = source.Version - 1;
+        _source = new(source);
         _displayLines = new DisplayLine[screen.Size.Height];
         _displayLinesValid = new bool[screen.Size.Height];
         _wrapType = screen.Options.WrapByDefault;
     }
 
-    public ILineDataSource Processor => _source;
+    public ILineDataSource Processor => _source.Data;
     public bool IsFollowing { get; set; }
 
     void Invalidate()
@@ -75,16 +72,13 @@ class ScrollingTextView : ViewBase
 
         // react to changes in source
 
-        if (_sourceVersion != _source.Version)
+        // version change means something drastic happened at the source, so invalidate everything
+        var changed = _source.CheckChanged();
+        if (changed == LineDataSource.ChangeStatus.NewSource)
         {
-            // version change means something drastic happened at the source, so invalidate everything
-
-            _sourceVersion = _source.Version;
-            _sourceLineCount = 0;
-
             Invalidate();
         }
-        else if (_sourceLineCount != _source.Count)
+        else if (changed == LineDataSource.ChangeStatus.NewLines)
         {
             // new lines available from source, so invalidate any display lines that previously resolved to "past EOF"
 
@@ -100,13 +94,8 @@ class ScrollingTextView : ViewBase
 
         // finish reacting to changes in source
 
-        if (_sourceLineCount != _source.Count)
-        {
-            _sourceLineCount = _source.Count;
-
-            if (IsFollowing)
-                ScrollToBottom(false);
-        }
+        if (changed != LineDataSource.ChangeStatus.NoChange && IsFollowing)
+            ScrollToBottom(false);
 
         // validate
 
@@ -255,9 +244,9 @@ class ScrollingTextView : ViewBase
 
     public void ScrollToBottom(bool toggleHalfway)
     {
-        var target = ClampY(_sourceLineCount - Height);
-        if (target == _scrollY && toggleHalfway && _sourceLineCount >= Height)
-            target = ClampY(_sourceLineCount - Height / 2);
+        var target = ClampY(_source.LastLineCount - Height);
+        if (target == _scrollY && toggleHalfway && _source.LastLineCount >= Height)
+            target = ClampY(_source.LastLineCount - Height / 2);
         else
             IsFollowing = true;
 
@@ -308,10 +297,9 @@ class ScrollingTextView : ViewBase
 
     int ClampY(int testY)
     {
-        var clamp = Screen.Options.VirtualSpaceEnabled
-            ? _sourceLineCount - 1
-            : Math.Max(0, _sourceLineCount - Height);
-        return Math.Clamp(testY, 0, clamp);
+        var minHeight = Screen.Options.VirtualSpaceEnabled ? 1 : Height;
+        var upper = Math.Max(0, _source.LastLineCount - minHeight);
+        return Math.Clamp(testY, 0, upper);
     }
 
     public bool ScrollToY(int y) => ScrollToY(y, IsUserAction.Yes);
@@ -462,10 +450,10 @@ class ScrollingTextView : ViewBase
 
     string? GetProcessedLine(int lineIndex)
     {
-        if (lineIndex >= _sourceLineCount)
+        if (lineIndex >= _source.LastLineCount)
             return null;
 
-        var line = _source.Lines[lineIndex];
+        var line = _source.Data.Lines[lineIndex];
 
         var hasEscapeSeqs = false;
         var hasControlChars = false;

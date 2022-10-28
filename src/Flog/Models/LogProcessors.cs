@@ -8,6 +8,46 @@ public interface ILineDataSource
     int DefaultCapacity { get; }
 }
 
+public struct LineDataSource
+{
+    uint _lastVersion; // detect if raw source totally changes (e.g. file truncated)
+
+    public ILineDataSource Data { get; } // raw lines
+    public int LastLineCount { get; private set; } // detect if the source has new lines available
+
+    public LineDataSource(ILineDataSource data)
+    {
+        Data = data;
+        _lastVersion = data.Version - 1;
+        LastLineCount = 0;
+    }
+
+    public enum ChangeStatus
+    {
+        NoChange,
+        NewLines,
+        NewSource,
+    }
+
+    public ChangeStatus CheckChanged()
+    {
+        if (_lastVersion != Data.Version)
+        {
+            _lastVersion = Data.Version;
+            LastLineCount = 0;
+            return ChangeStatus.NewSource;
+        }
+
+        if (LastLineCount != Data.Count)
+        {
+            LastLineCount = Data.Count;
+            return ChangeStatus.NewLines;
+        }
+
+        return ChangeStatus.NoChange;
+    }
+}
+
 public abstract class LogProcessorBase : ILineDataSource
 {
     const int k_defaultCapacity = 10000;
