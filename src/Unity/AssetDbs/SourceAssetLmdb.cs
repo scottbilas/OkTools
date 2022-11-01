@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Spreads.Buffers;
 using Spreads.LMDB;
 using UnityEngine;
 using UnityEngine.AssetLmdb;
@@ -7,7 +8,7 @@ namespace OkTools.Unity;
 
 public class SourceAssetLmdb : AssetLmdb
 {
-    const uint k_expectedDbVersion = 6;
+    const uint k_expectedDbVersion = 9;
 
     public SourceAssetLmdb(NPath projectRoot)
         : base(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersion) {}
@@ -39,10 +40,34 @@ EXPORT_COREMODULE const SInt32PairPropertyDefinition kImportLogEntriesCountPropD
 EXPORT_COREMODULE const StringPropertyDefinition kScriptCompilationAssetPathPropDef("scriptCompilationAssetPath", false);
 */
 
-// TODO: GuidToChildren
-// GuidDB.cpp: GuidDB::m_pGuidToChildren
-//
-// unityguid -> struct { Hash128, UnityGUID[] } // for count, just divide it out from value size (minus hash128)
+// GuidDB.cpp: GuidDB::m_pGuidToChildren; UnityGuid -> GuidChildren
+[PublicAPI]
+public class GuidToChildrenTable : LmdbTable
+{
+    public GuidToChildrenTable(LmdbDatabase db) : base(db, "GuidToChildren") {}
+
+    public IEnumerable<(UnityGUID, GuidChildren)> SelectAll(ReadOnlyTransaction tx) =>
+        Table.AsEnumerable(tx).Select(kvp => (
+            MemoryMarshal.Read<UnityGUID>(kvp.Key.Span),
+            ReadChildren(kvp.Value)));
+
+    static GuidChildren ReadChildren(DirectBuffer value)
+    {
+        var hash = value.Read<Hash128>(0);
+
+        // count determined by using remaining space
+        var remain = value.Length - Hash128.SizeOf;
+        var count = remain / UnityGUID.SizeOf;
+        if (count * UnityGUID.SizeOf != remain)
+            throw new InvalidOperationException("Size mismatch");
+
+        var children = MemoryMarshal.Cast<byte, UnityGUID>(value.Span[Hash128.SizeOf..]);
+
+        // TODO: get rid of alloc (just point at lmdb memory), if this ever gets to the point where we need to care.
+        // for now just do what's faster to write.
+        return new GuidChildren { hash = hash, guids = children.ToArray() };
+    }
+}
 
 // GuidDB.cpp: GuidDB::m_pGuidToIsDir; string -> uint8 (bool, 0 or nonzero)
 [PublicAPI]
@@ -139,10 +164,29 @@ public class PathToGuidTable : LmdbTable
             MemoryMarshal.Read<GuidDBValue>(kvp.Value.Span)));
 }
 
-// TODO: PropertyIDToType
-// SourceAssetDB.cpp: SourceAssetDB::m_PropertyIDToType
-//
-// string -> string
+// SourceAssetDB.cpp: SourceAssetDB::m_PropertyIDToType; string property -> string type
+[PublicAPI]
+public class PropertyIdToTypeTable : LmdbTable
+{
+    /* PropertyDefinition.cpp
+    template<> const char* const SInt64PropertyDefinition::s_TypeName = "i64";
+    template<> const char* const SInt32PropertyDefinition::s_TypeName = "i32";
+    template<> const char* const Hash128PropertyDefinition::s_TypeName = "hash128";
+    template<> const char* const StringPropertyDefinition::s_TypeName = "str";
+    template<> const char* const StringRefPropertyDefinition::s_TypeName = "str";
+    template<> const char* const StringArrayPropertyDefinition::s_TypeName = "str[]";
+    template<> const char* const StringRefArrayPropertyDefinition::s_TypeName = "str[]";
+    template<> const char* const ImporterIDPropertyDefinition::s_TypeName = "imp";
+    template<> const char* const SInt32PairPropertyDefinition::s_TypeName = "pair<i32,i32>";
+    */
+
+    public PropertyIdToTypeTable(LmdbDatabase db) : base(db, "PropertyIDToType") {}
+
+    public IEnumerable<(string, string)> SelectAll(ReadOnlyTransaction tx) =>
+        Table.AsEnumerable(tx).Select(kvp => (
+            kvp.Key.ToAsciiString(),
+            kvp.Value.ToAsciiString()));
+}
 
 /* TODO: RootFolders
 SourceAssetDB.cpp: SourceAssetDB::m_RootFolders

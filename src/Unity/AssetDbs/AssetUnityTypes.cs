@@ -1,5 +1,6 @@
 // ReSharper disable BuiltInTypeReferenceStyle
 // ReSharper disable InconsistentNaming
+
 namespace UnityEngine.AssetLmdb;
 
 #pragma warning disable CA1720
@@ -11,7 +12,7 @@ public struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
     public Hash128 metaFileHash;    // these are both SpookyV2
     public Hash128 assetFileHash;
 
-    /* manual implementation
+    /* manual scanner
 
     using var metaFile = File.OpenRead(testAssetMetaPath);
     var deserialized = (dynamic)new SharpYaml.Serialization.Serializer().Deserialize(metaFile);
@@ -27,7 +28,14 @@ public struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
 public struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
 {
     public Hash128 hash;
-    public long time; // C++ DateTime not binary compatible
-//    public UInt64 fileSize; // later version only
+    public long time; // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
+    public UInt64 fileSize;
     public bool isUntrusted;
+}
+
+[PublicAPI]
+public struct GuidChildren
+{
+    public Hash128 hash;
+    public UnityGUID[] guids;
 }

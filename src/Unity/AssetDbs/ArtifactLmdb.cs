@@ -2,7 +2,7 @@ namespace OkTools.Unity;
 
 public class ArtifactLmdb : AssetLmdb
 {
-    const uint k_expectedDbVersion = 0x8EC31D8B;
+    const uint k_expectedDbVersion = 0x5CE21767;
 
     public ArtifactLmdb(NPath projectRoot)
         : base(projectRoot.Combine(UnityProjectConstants.ArtifactDbNPath), k_expectedDbVersion) {}

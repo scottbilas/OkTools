@@ -69,7 +69,7 @@ Arguments:
                     throw new DocoptInputErrorException($"OUTDIR does not exist: '{outDir}'");
             }
 
-            Dump(projectRoot, outDir);
+            SourceAssetDbToCsv(projectRoot, outDir);
             return CliExitCode.Success;
         }
 
@@ -77,57 +77,79 @@ Arguments:
         return CliExitCode.ErrorUsage;
     }
 
-    static void Dump(NPath projectRoot, NPath outDir)
+    static void SourceAssetDbToCsv(NPath projectRoot, NPath outDir)
     {
         using var sourceAssetDb = new SourceAssetLmdb(projectRoot);
 
-        using (var table = new PathToGuidTable(sourceAssetDb))
+        // TODO: GuidPropertyIDToProperty
+
+        using (var table = new GuidToChildrenTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.WriteLine("Path,Guid,MetaFileHash,AssetFileHash");
+            csv.Write("Parent,Hash,Child0,Child1,...\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (path, value) in table.SelectAll(tx))
+            foreach (var (parent, guidChildren) in table.SelectAll(tx))
             {
-                csv.WriteLine($"{path},{value.guid},{value.metaFileHash},{value.assetFileHash}");
-            }
-        }
-
-        using (var table = new GuidToPathTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.WriteLine("Guid,Path");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (guid, path) in table.SelectAll(tx))
-            {
-                csv.WriteLine($"{guid},{path}");
+                csv.Write($"{parent},{guidChildren.hash}");
+                foreach (var child in guidChildren.guids)
+                    csv.Write($",{child}");
+                csv.Write("\n");
             }
         }
 
         using (var table = new GuidToIsDirTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.WriteLine("Guid,IsDir");
+            csv.Write("Guid,IsDir\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (guid, isDir) in table.SelectAll(tx))
-            {
-                csv.WriteLine($"{guid},{isDir}");
-            }
+                csv.Write($"{guid},{isDir}\n");
+        }
+
+        using (var table = new GuidToPathTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("Guid,Path\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (guid, path) in table.SelectAll(tx))
+                csv.Write($"{guid},{path}\n");
         }
 
         using (var table = new PathToHashTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.WriteLine("Path,Hash,Time,FileSize,IsUntrusted");
+            csv.Write("Path,Hash,Time,FileSize,IsUntrusted\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (path, value) in table.SelectAll(tx))
-            {
-                // new version... csv.WriteLine($"{path},{value.hash},{new DateTime(value.time)},{value.fileSize:X},{value.isUntrusted}");
-                csv.WriteLine($"{path},{value.hash},{new DateTime(value.time)},{value.isUntrusted}");
-            }
+                csv.Write($"{path},{value.hash},{new DateTime(value.time)},{value.fileSize},{value.isUntrusted}\n");
         }
+
+        // TODO: Misc
+
+        using (var table = new PathToGuidTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("Path,Guid,MetaFileHash,AssetFileHash\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (path, value) in table.SelectAll(tx))
+                csv.Write($"{path},{value.guid},{value.metaFileHash},{value.assetFileHash}\n");
+        }
+
+        using (var table = new PropertyIdToTypeTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("PropertyId,Type\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (propertyId, type) in table.SelectAll(tx))
+                csv.Write($"{propertyId},{type}\n");
+        }
+
+        // TODO: RootFolders
     }
 }
