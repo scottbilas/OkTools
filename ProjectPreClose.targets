@@ -6,7 +6,7 @@
     <OutputPath>$(OkExeOutputPath)</OutputPath>
 
     <!-- single-file publish options -->
-    <PublishSingleFile>true</PublishSingleFile>
+    <PublishSingleFile>false</PublishSingleFile> <!-- for now keep dll's separate so i can see how massively they contribute to the overall size -->
     <SelfContained>false</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
 
