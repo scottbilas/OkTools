@@ -1,0 +1,33 @@
+// ReSharper disable BuiltInTypeReferenceStyle
+// ReSharper disable InconsistentNaming
+namespace UnityEngine.AssetLmdb;
+
+#pragma warning disable CA1720
+
+[PublicAPI]
+public struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
+{
+    public UnityGUID guid;
+    public Hash128 metaFileHash;    // these are both SpookyV2
+    public Hash128 assetFileHash;
+
+    /* manual implementation
+
+    using var metaFile = File.OpenRead(testAssetMetaPath);
+    var deserialized = (dynamic)new SharpYaml.Serialization.Serializer().Deserialize(metaFile);
+    var hasher = SpookyHashV2Factory.Instance.Create();
+
+    var guid = ((string)deserialized["guid"]).ToUpper();
+    var metaFileHash = hasher.ComputeHash(File.ReadAllBytes(testAssetMetaPath));
+    var assetFileHash = hasher.ComputeHash(File.ReadAllBytes(testAssetPath));
+    */
+}
+
+[PublicAPI]
+public struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
+{
+    public Hash128 hash;
+    public long time; // C++ DateTime not binary compatible
+//    public UInt64 fileSize; // later version only
+    public bool isUntrusted;
+}

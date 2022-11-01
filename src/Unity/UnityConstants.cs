@@ -38,6 +38,10 @@ public static class UnityProjectConstants
     internal static readonly NPath LibraryNPath = new(LibraryFolderName);
     public static readonly string LibraryPath = LibraryNPath;
 
+        public const string SourceAssetDbFileName = "SourceAssetDB";
+        internal static readonly NPath SourceAssetDbNPath = LibraryNPath.Combine(SourceAssetDbFileName);
+        public static readonly string SourceAssetDbPath = SourceAssetDbNPath;
+
         public const string ArtifactDbFileName = "ArtifactDB";
         internal static readonly NPath ArtifactDbNPath = LibraryNPath.Combine(ArtifactDbFileName);
         public static readonly string ArtifactDbPath = ArtifactDbNPath;

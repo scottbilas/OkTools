@@ -7,6 +7,19 @@
 
   <ItemGroup>
 
+    <!-- system -->
+
+    <!-- TODO: get rid of this. i need it because some package i'm using is directly referencing old stuff, causing a downgrade, and msbuild/nuget wants me to be explicit here. -->
+    <PackageVersion Include="System.Collections" Version="4.3.0" />
+    <PackageVersion Include="System.Diagnostics.Debug" Version="4.3.0" />
+    <PackageVersion Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
+    <PackageVersion Include="System.Resources.ResourceManager" Version="4.3.0" />
+    <PackageVersion Include="System.Runtime.Extensions" Version="4.3.0" />
+    <PackageVersion Include="System.Runtime.Handles" Version="4.3.0" />
+    <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageVersion Include="System.Text.Encoding.Extensions" Version="4.3.0" />
+    <PackageVersion Include="System.Threading" Version="4.3.0" />
+
     <!-- general -->
 
     <PackageVersion Include="docopt.net" Version="0.8.1" />
@@ -17,6 +30,7 @@
     <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
     <PackageVersion Include="PInvoke.NTDll" Version="0.7.124" />
     <PackageVersion Include="Spectre.Console" Version="0.44.0" />
+    <PackageVersion Include="Spreads.LMDB" Version="2020.0.114" />
     <PackageVersion Include="System.Interactive" Version="6.0.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="7.0.0-preview.4.22229.4" />
     <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.10" />

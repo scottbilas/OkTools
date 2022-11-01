@@ -49,6 +49,7 @@ Print help for COMMAND.
         new("install",    "Install a Unity toolchain",            Commands.DocUsageInstall, Commands.RunInstall),
         new("toolchains", "Get info on Unity toolchains",         Commands.DocUsageToolchains, Commands.RunToolchains),
         new("projects",   "Get info on Unity projects",           Commands.DocUsageProjects, Commands.RunProjects),
+        new("assetdbs",   "Do things with the asset databases",   Commands.DocUsageAssetDbs, Commands.RunAssetDbs),
         new("info",       "Extract Unity-related info from args", Commands.DocUsageInfo, Commands.RunInfo),
         //new("purge", // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
     };

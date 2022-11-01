@@ -3,12 +3,14 @@
   <PropertyGroup>
     <OkFeatures>Core;NiceIO</OkFeatures>
     <RootNamespace>OkTools.Unity</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="LibGit2Sharp" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
+    <PackageReference Include="Spreads.LMDB" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
