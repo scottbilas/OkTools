@@ -66,16 +66,26 @@ public class UnityToolchain : IStructuredOutput
         else
             Origin = origin.Value;
 
-        // we don't store buildconfig in VERSIONINFO, so use hard coded sizes for now
-        // TODO: look into UnityEditor.Unsupported.IsNativeCodeBuiltInReleaseMode()..is there any way to extract this statically?
-        EditorBuildConfig = (_editorExePath.FileInfo.Length / (1024.0 * 1024)) switch
+        // we don't store buildconfig in VERSIONINFO. you can call UnityEditor.Unsupported.IsNativeCodeBuiltInReleaseMode()
+        // but this is an icall into a native function that just returns UNITY_RELEASE.
+        //
+        // for a while i was tracking size ranges (as aras sort-of-recommended) but that isn't stable.
+        //
+        // now what i do is take advantage of the fact that the bug reporter is also built with debug/release just like
+        // unity, and unlike unity, it uses different dll names when built in debug. so if you have a debug unity with a
+        // release bug reporter, this will report the wrong thing. best i can do for now.. :/
         {
-            >  60 and < 250 => UnityEditorBuildConfig.Release,
-            > 300 and < 400 => UnityEditorBuildConfig.Debug,
+            var bugReporterDir = _editorExePath.Parent.Combine("BugReporter").DirectoryMustExist();
+            var hasDebug = bugReporterDir.Combine("Qt5Cored.dll").FileExists();
+            var hasRelease = bugReporterDir.Combine("Qt5Core.dll").FileExists();
 
-            var sizeMb => throw new InvalidDataException(
-                $"Unexpected size of {_editorExePath} ({sizeMb:0.0}MB) need to revise detection bounds for Editor build config")
-        };
+            if (hasDebug && !hasRelease)
+                EditorBuildConfig = UnityEditorBuildConfig.Debug;
+            else if (!hasDebug && hasRelease)
+                EditorBuildConfig = UnityEditorBuildConfig.Release;
+            else
+                throw new InvalidDataException("Could not determine editor build config using presence of BugReporter/Qt5Core*.dll");
+        }
 
         // same deal as editor buildconfig regarding hard coded size matching
         if (_monoDllPath != null)
