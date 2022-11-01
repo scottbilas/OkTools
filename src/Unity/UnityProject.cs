@@ -99,7 +99,7 @@ public class UnityProject : IStructuredOutput
     }
 
     // walks up ancestry to test for root
-    public static UnityProject? TryCreateFromProjectPath(string pathToTest) =>
+    public static UnityProject? TryCreateFromProjectTree(string pathToTest) =>
         TryCreateFromProjectTree(pathToTest.ToNPath());
     internal static UnityProject? TryCreateFromProjectTree(NPath pathToTest)
     {

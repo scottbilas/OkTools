@@ -133,7 +133,7 @@ Debugging:
                     return CliExitCode.ErrorNoInput;
                 }
 
-                var tryUnityProject = UnityProject.TryCreateFromProjectPath(projectPath);
+                var tryUnityProject = UnityProject.TryCreateFromProjectTree(projectPath);
                 if (tryUnityProject == null)
                 {
                     Console.Error.WriteLine($"Path is not in a Unity project '{projectPath}'");

@@ -46,6 +46,10 @@ public static class ByteArrayExtensions
 {
     public static string ToHexString(this byte[] @this) =>
         Convert.ToHexString(@this);
+    public static string ToHexString(this ReadOnlySpan<byte> @this) =>
+        Convert.ToHexString(@this);
+    public static string ToHexString(this Span<byte> @this) =>
+        Convert.ToHexString(@this);
 }
 
 [PublicAPI]
