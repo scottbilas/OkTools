@@ -4,6 +4,7 @@
 
   <PropertyGroup Condition=" '$(OutputType)' == 'Exe' ">
     <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <PublishDir>$(OkExePublishDir)</PublishDir>
 
     <!-- single-file publish options -->
     <PublishSingleFile>false</PublishSingleFile> <!-- for now keep dll's separate so i can see how massively they contribute to the overall size -->

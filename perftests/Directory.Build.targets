@@ -1,0 +1,10 @@
+﻿<Project>
+
+  <!-- note that we don't want to inherit from globals, it breaks benchmarking due to auto-building going on -->
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RootNamespace />
+  </PropertyGroup>
+
+</Project>

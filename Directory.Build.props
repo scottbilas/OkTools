@@ -20,6 +20,8 @@
     <OutputPath>$(MSBuildThisFileDirectory)artifacts\build\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
     <OkExeOutputPath>$(MSBuildThisFileDirectory)build\$(MSBuildProjectName)</OkExeOutputPath>
     <OkExeOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkExeOutputPath)\$(Configuration)</OkExeOutputPath>
+    <OkExePublishDir>$(MSBuildThisFileDirectory)publish\$(MSBuildProjectName)</OkExePublishDir>
+    <OkExePublishDir Condition="'$(Configuration)' == 'Debug'">$(OkExePublishDir)\$(Configuration)</OkExePublishDir>
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
 
