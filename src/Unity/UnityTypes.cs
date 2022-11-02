@@ -10,7 +10,7 @@ namespace UnityEngine;
 public struct Hash128
 {
     public const int SizeOf = sizeof(ulong)*2;
-    ulong u64_0, u64_1;
+    UInt64 u64_0, u64_1;
 
     public Hash128(uint u32_0, uint u32_1, uint u32_2, uint u32_3)
     {
@@ -44,7 +44,7 @@ public unsafe struct UnityGUID
     // Also, our text format neither conforms to the canonical format for GUIDs nor for UUIDs so
     // again the bits change place here (the group of type bits is found one character to the right).
     public const int SizeOf = sizeof(uint)*4;
-    fixed uint data[4];
+    fixed UInt32 data[4];
 
     public UnityGUID(uint a, uint b, uint c, uint d) { data[0] = a; data[1] = b; data[2] = c; data[3] = d; }
 
@@ -67,4 +67,11 @@ public unsafe struct UnityGUID
             }
         });
     }
-};
+}
+
+[PublicAPI]
+public struct ImporterID
+{
+    public Int32 nativeImporterType;
+    public Hash128 scriptedImporterType;
+}

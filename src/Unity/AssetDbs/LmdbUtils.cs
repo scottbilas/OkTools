@@ -7,6 +7,7 @@ namespace OkTools.Unity;
 
 public static class LmdbUtils
 {
+    // includes zero terminator
     public static DirectBuffer StringToBuffer(Dictionary<string, DirectBuffer> cache, string str)
     {
         if (cache.TryGetValue(str, out var buffer))

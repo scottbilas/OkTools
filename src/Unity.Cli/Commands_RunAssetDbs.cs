@@ -1,6 +1,9 @@
-﻿using DocoptNet;
+﻿using System.Text;
+using DocoptNet;
 using NiceIO;
 using OkTools.Unity;
+using Spreads.Buffers;
+using UnityEngine;
 using YamlDotNet.Serialization;
 
 static partial class Commands
@@ -81,7 +84,96 @@ Arguments:
     {
         using var sourceAssetDb = new SourceAssetLmdb(projectRoot);
 
-        // TODO: GuidPropertyIDToProperty
+        static string FromStringArray(DirectBuffer value)
+        {
+            return "ARRAY"; // $$$$ TODO
+        }
+
+        static string FromString(DirectBuffer value)
+        {
+            return Encoding.ASCII.GetString(value.Span[..^1]);
+        }
+
+        static string FromSInt32(DirectBuffer value)
+        {
+            var i = value.Read<Int32>(0);
+            return i.ToString();
+        }
+
+        static string FromSInt32Pair(DirectBuffer value)
+        {
+            var i0 = value.Read<Int32>(0);
+            var i1 = value.Read<Int32>(4);
+            return $"{i0},{i1}";
+        }
+
+        static string FromSInt64(DirectBuffer value)
+        {
+            var i = value.Read<Int64>(0);
+            return i.ToString();
+        }
+
+        static string FromImporterID(DirectBuffer value)
+        {
+            var id = value.Read<ImporterID>(0);
+            return $"{id.nativeImporterType},{id.scriptedImporterType}";
+        }
+
+        static string FromHash128(DirectBuffer value)
+        {
+            return value.Read<Hash128>(0).ToString();
+        }
+
+        var propertyDefs = new (string prefix, bool isInMetaFile, Func<DirectBuffer,string> converter)[]
+        {
+            /*StringArrayPropertyDefinition kLabelsPropDef*/                     ("labels",                          true,  FromStringArray),
+            /*SInt32PropertyDefinition kAssetBundleIndexPropDef*/                ("AssetBundleIndex",                false, FromSInt32),
+            /*StringPropertyDefinition kAssetBundleNamePropDef*/                 ("assetBundleName",                 true,  FromString),
+            /*StringPropertyDefinition kAssetBundleVariantPropDef*/              ("assetBundleVariant",              true,  FromString),
+            /*SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef*/ ("MainObjectLocalIdentifierInFile", false, FromSInt64),
+            /*ImporterIDPropertyDefinition kImporterOverridePropDef*/            ("importerOverride",                true,  FromImporterID),
+            /*Hash128PropertyDefinition kImportLogFilePropDef*/                  ("importLogFile",                   false, FromHash128),
+            /*SInt32PairPropertyDefinition kImportLogEntriesCountPropDef*/       ("ImportLogEntriesCount",           false, FromSInt32Pair),
+            /*StringPropertyDefinition kScriptCompilationAssetPathPropDef*/      ("scriptCompilationAssetPath",      false, FromString),
+            /*Hash128PropertyDefinition kImporterErrorFilePropDef*/              ("importerErrorFile",               false, FromHash128),
+            /*SInt32PropertyDefinition kAssetOriginProductIdPropDef*/            ("productId",                       true,  FromSInt32),
+            /*StringPropertyDefinition kAssetOriginPackageNamePropDef*/          ("packageName",                     true,  FromString),
+            /*StringPropertyDefinition kAssetOriginPackageVersionPropDef*/       ("packageVersion",                  true,  FromString),
+            /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            ("assetPath",                       true,  FromString),
+            /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             ("uploadId",                        true,  FromSInt32),
+        }
+        .Select(item =>
+        {
+            var prefixBuffer = new DirectBuffer(sourceAssetDb.StringToBuffer(item.prefix).Span[..^1]);
+            return (item.prefix, prefixBuffer, item.isInMetaFile, item.converter);
+        })
+        .ToArray();
+
+        using (var table = new GuidPropertyIdToPropertyTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("Property,IsInMetaFile,UnityGUID,Value0,Value1,...\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (key, value) in table.Table.AsEnumerable(tx))
+            {
+                var found = false;
+                foreach (var propertyDef in propertyDefs)
+                {
+                    if (!key.Span.StartsWith(propertyDef.prefixBuffer.Span))
+                        continue;
+
+                    found = true;
+                    var unityGuid = key.Read<UnityGUID>(propertyDef.prefixBuffer.Length);
+                    var stringValue = propertyDef.converter(value);
+
+                    csv.Write($"{propertyDef.prefix},{propertyDef.isInMetaFile},{unityGuid},{stringValue}\n");
+                }
+
+                if (!found)
+                    throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
+            }
+        }
 
         using (var table = new GuidToChildrenTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))

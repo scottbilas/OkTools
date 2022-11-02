@@ -14,8 +14,16 @@ public class SourceAssetLmdb : AssetLmdb
         : base(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersion) {}
 }
 
+// GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
+[PublicAPI]
+public class GuidPropertyIdToPropertyTable : LmdbTable
+{
+    public GuidPropertyIdToPropertyTable(LmdbDatabase db) : base(db, "GuidPropertyIDToProperty") {}
+
+
+}
+
 /* TODO: GuidPropertyIDToProperty
-GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
 
 unityguid -(many)> property
 
