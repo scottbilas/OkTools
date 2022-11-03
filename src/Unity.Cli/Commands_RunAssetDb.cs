@@ -8,10 +8,10 @@ using YamlDotNet.Serialization;
 
 static partial class Commands
 {
-    public const string DocUsageAssetDbs =
+    public const string DocUsageAssetDb =
 @"Usage:
-  okunity assetdbs tables [PROJECT]
-  okunity assetdbs dump [PROJECT] [OUTDIR]
+  okunity assetdb tables [PROJECT]
+  okunity assetdb dump [PROJECT] [OUTDIR]
 
 Commands:
   tables  List all tables in the asset databases
@@ -23,7 +23,7 @@ Arguments:
   PROJECT  Path to a Unity project. defaults to the current directory. If given a subdir of a project, the project root will automatically be used.
 ";
 
-    public static CliExitCode RunAssetDbs(CommandContext context)
+    public static CliExitCode RunAssetDb(CommandContext context)
     {
         NPath projectRoot;
 
@@ -86,6 +86,11 @@ Arguments:
 
         static string FromStringArray(DirectBuffer value)
         {
+            if (value.IsEmpty)
+                return "";
+
+            // LMDBHelpers.h line 86
+
             return "ARRAY"; // $$$$ TODO
         }
 
@@ -165,9 +170,14 @@ Arguments:
 
                     found = true;
                     var unityGuid = key.Read<UnityGUID>(propertyDef.prefixBuffer.Length);
-                    var stringValue = propertyDef.converter(value);
 
-                    csv.Write($"{propertyDef.prefix},{propertyDef.isInMetaFile},{unityGuid},{stringValue}\n");
+                    csv.Write($"{propertyDef.prefix},{propertyDef.isInMetaFile},{unityGuid}");
+
+                    var stringValue = propertyDef.converter(value);
+                    if (stringValue.Length != 0)
+                        csv.Write($",{stringValue}");
+
+                    csv.Write('\n');
                 }
 
                 if (!found)
@@ -186,7 +196,7 @@ Arguments:
                 csv.Write($"{parent},{guidChildren.hash}");
                 foreach (var child in guidChildren.guids)
                     csv.Write($",{child}");
-                csv.Write("\n");
+                csv.Write('\n');
             }
         }
 
