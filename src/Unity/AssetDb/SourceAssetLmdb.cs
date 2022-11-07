@@ -206,56 +206,102 @@ public class PathToHashTable : LmdbTable
             kvp.Value.ReadExpectEnd<HashDBValue>()));
 }
 
-// SourceAssetDB.cpp: SourceAssetDB::m_Misc, with keys from SourceAssetDB.cpp "s_Misc_*" area
-/*
-class MiscTable : LmdbTable
+public class MiscDefinition
 {
+    readonly MiscType _miscType;
 
-}
+    public readonly string Name;
+    public readonly DirectBuffer NameBuffer;
 
-string key -> key-dependent value
+    MiscDefinition(string name, MiscType type)
+    {
+        Name = name;
+        NameBuffer = LmdbUtils.StringToBuffer(name, false);
 
-    assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
+        _miscType = type;
+    }
 
-        struct AssetBundleFullNameIndex
+    public static readonly MiscDefinition[] All =
+    {
+        // look for s_Misc_* in SourceAssetDB.cpp
+        /*s_Misc_RefreshVersion*/          new("refreshVersion",          MiscType.SInt32),           // refreshVersion -> int version (default -1 if missing)
+        /*s_Misc_ShaderCacheClearVersion*/ new("shaderCacheClearVersion", MiscType.SInt32),           // shaderCacheClearVersion -> int version (default -1 if missing)
+        /*s_Misc_CrashedImportPaths*/      new("crashedImportPaths",      MiscType.MultilineString),  // crashedImportPaths -> string[] (default empty if missing)
+        /*s_AssetBundNames*/               new("assetBundleNames",        MiscType.AssetBundleNames), // assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
+    };
+
+    enum MiscType
+    {
+        SInt32,
+        MultilineString,
+        AssetBundleNames,
+    }
+
+    public unsafe AssetBundleFullNameIndex[]? TryGetAssetBundleNames(DirectBuffer value)
+    {
+        if (_miscType != MiscType.AssetBundleNames)
+            return null;
+
+        var names = value.Cast<BlobArray>();
+        var result = new AssetBundleFullNameIndex[names->Length];
+
+        for (var i = 0; i < names->Length; ++i)
         {
-            BlobString assetBundleName;
-            BlobString assetBundleVariant;
-            int index;
-        };
-
-        // Find existing asset bundles
-        blobRootsSize = blobRoots->size();
-        for (UInt32 i = 0; i < blobRootsSize; i++)
-        {
-            const AssetBundleFullNameIndex& abi = (*blobRoots)[i];
-            core::string fullName = BuildAssetBundleFullName(abi.assetBundleName.c_str(), abi.assetBundleVariant.c_str());
-            auto iter = assetBundleFullNames.find(fullName);
-            if (iter != assetBundleFullNames.end())
-                assetBundleIndices[iter->second] = core::pair<SInt32, bool>(abi.index, false);
+            var blob = names->RefElementFromBlob<AssetBundleFullNameIndexBlob>(i);
+            result[i] = new AssetBundleFullNameIndex
+            {
+                assetBundleName = blob->assetBundleName.GetStringFromBlob(),
+                assetBundleVariant = blob->assetBundleVariant.GetStringFromBlob(),
+                index = blob->index,
+            };
         }
 
-        struct BlobString
+        return result;
+    }
+
+    public string ToCsv(DirectBuffer value)
+    {
+        string str;
+
+        // ReSharper disable BuiltInTypeReferenceStyle
+        switch (_miscType)
         {
-            BlobOffsetPtr<char> m_Data;
-            //...
-        };
+            case MiscType.SInt32:
+                str = value.Read<Int32>().ToString();
+                break;
 
-        template<typename TYPE>
-        struct BlobOffsetPtr : BlobOffsetPtrBase
+            case MiscType.MultilineString:
+                str = value.ReadAscii(true).Replace('\n', ',');
+                break;
+
+            default:
+                throw new InvalidOperationException();
+        }
+        // ReSharper restore BuiltInTypeReferenceStyle
+
+        value.ExpectEnd();
+        return str;
+    }
+}
+
+// SourceAssetDB.cpp: SourceAssetDB::m_Misc, with keys from SourceAssetDB.cpp "s_Misc_*" area
+[PublicAPI]
+public class MiscTable : LmdbTable
+{
+    public MiscTable(LmdbDatabase db) : base(db, "Misc") {}
+
+    public IEnumerable<(MiscDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
+    {
+        foreach (var (key, value) in Table.AsEnumerable(tx))
         {
-            SInt32 m_Offset;
+            var found = MiscDefinition.All.FirstOrDefault(miscDef => key.Span[..^1].SequenceEqual(miscDef.NameBuffer.Span));
+            if (found == null)
+                continue; //throw new InvalidDataException($"Unknown misc entry: {Encoding.ASCII.GetString(key.Span)}");
 
-            const_ptr_type GetUnsafe() const
-            {
-                return reinterpret_cast<ptr_type>(reinterpret_cast<std::size_t>(this) + m_Offset);
-            }
-        };
-
-    refreshVersion -> int version (default -1)
-    shaderCacheClearVersion -> int version (default -1)
-    crashedImportPaths -> string[] (default empty)
-*/
+            yield return (found, value);
+        }
+    }
+}
 
 // GuidDB.cpp: GuidDB::m_pPathToGuid; string path -> GuidDBValue
 [PublicAPI]
@@ -359,3 +405,36 @@ public struct RootFolderProperties
     public string Folder;
     public string PhysicalPath;
 }
+
+[StructLayout(LayoutKind.Sequential)]
+struct BlobArray
+{
+    int _offset;
+    uint _size; // count of elements
+
+    public int Length => (int)_size;
+
+    public unsafe T* RefElementFromBlob<T>(int index) where T : unmanaged
+    {
+        fixed (BlobArray* self = &this)
+        {
+            var array = (T*)((byte*)self + _offset);
+            return array + index;
+        }
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+struct AssetBundleFullNameIndexBlob
+{
+    public BlobString assetBundleName;
+    public BlobString assetBundleVariant;
+    public int index;
+};
+
+public struct AssetBundleFullNameIndex
+{
+    public string assetBundleName;
+    public string assetBundleVariant;
+    public int index;
+};

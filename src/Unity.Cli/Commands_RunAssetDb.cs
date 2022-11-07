@@ -148,7 +148,33 @@ Arguments:
                 csv.Write($"{path},{value.hash},{new DateTime(value.time)},{value.fileSize},{value.isUntrusted}\n");
         }
 
-        // TODO: Misc
+        using (var table = new MiscTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("Misc,Value0,Value1,...\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (misc, value) in table.SelectAll(tx))
+            {
+                var assetBundleNames = misc.TryGetAssetBundleNames(value);
+                if (assetBundleNames != null)
+                {
+                    for (var i = 0; i < assetBundleNames.Length; ++i)
+                    {
+                        var abn = assetBundleNames[i];
+                        csv.Write($"{misc.Name}{i},{abn.assetBundleName},{abn.assetBundleVariant},{abn.index}\n");
+                    }
+                }
+                else
+                {
+                    csv.Write($"{misc.Name}");
+                    var stringValue = misc.ToCsv(value);
+                    if (stringValue.Length != 0)
+                        csv.Write($",{stringValue}");
+                    csv.Write('\n');
+                }
+            }
+        }
 
         using (var table = new PathToGuidTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
