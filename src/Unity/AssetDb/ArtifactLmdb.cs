@@ -1,3 +1,6 @@
+using Spreads.LMDB;
+using UnityEngine;
+
 namespace OkTools.Unity.AssetDb;
 
 public class ArtifactLmdb : AssetLmdb
@@ -13,4 +16,36 @@ public class ArtifactLmdb : AssetLmdb
 // TODO: ArtifactIDToArtifactMetaInfo
 // TODO: ArtifactIDToImportStats
 // TODO: ArtifactKeyToArtifactIDs
-// TODO: CurrentRevisions
+
+public class CurrentRevisionsTable : LmdbTable
+{
+    public CurrentRevisionsTable(ArtifactLmdb db) : base(db, "CurrentRevisions") {}
+
+    public IEnumerable<(Hash128, CurrentRevision)> SelectAll(ReadOnlyTransaction tx) =>
+        Table.AsEnumerable(tx).Select(kvp => (
+            kvp.Key.ReadExpectEnd<Hash128>(),
+            kvp.Value.ReadExpectEnd<CurrentRevision>()));
+}
+
+public struct CurrentRevision
+{
+    public BlobArtifactKey ArtifactKey;
+    public ArtifactId ArtifactId;
+}
+
+public struct BlobArtifactKey
+{
+    public UnityGuid Guid;
+    public BlobImporterId ImporterId;
+}
+
+public struct BlobImporterId
+{
+    public Int32 NativeImporterType;
+    public Hash128 ScriptedImporterType;
+}
+
+public struct ArtifactId
+{
+    public Hash128 Hash;
+}

@@ -72,6 +72,7 @@ Arguments:
             }
 
             SourceAssetDbToCsv(projectRoot, outDir);
+            ArtifactDbToCsv(projectRoot, outDir);
             return CliExitCode.Success;
         }
 
@@ -86,7 +87,7 @@ Arguments:
         using (var table = new GuidPropertyIdToPropertyTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.Write("Property,IsInMetaFile,UnityGUID,Value0,Value1,...\n");
+            csv.Write("Property,IsInMetaFile,UnityGuid,Value0,Value1,...\n");
 
             var sb = new StringBuilder();
 
@@ -121,7 +122,7 @@ Arguments:
         using (var table = new GuidToIsDirTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.Write("Guid,IsDir\n");
+            csv.Write("UnityGuid,IsDir\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (guid, isDir) in table.SelectAll(tx))
@@ -131,7 +132,7 @@ Arguments:
         using (var table = new GuidToPathTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.Write("Guid,Path\n");
+            csv.Write("UnityGuid,Path\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (guid, path) in table.SelectAll(tx))
@@ -179,7 +180,7 @@ Arguments:
         using (var table = new PathToGuidTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.Write("Path,Guid,MetaFileHash,AssetFileHash\n");
+            csv.Write("Path,UnityGuid,MetaFileHash,AssetFileHash\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (path, value) in table.SelectAll(tx))
@@ -199,11 +200,28 @@ Arguments:
         using (var table = new RootFoldersTable(sourceAssetDb))
         using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
         {
-            csv.Write("RootFolder,Guid,Immutable,MountPoint,Folder,PhysicalPath\n");
+            csv.Write("RootFolder,UnityGuid,Immutable,MountPoint,Folder,PhysicalPath\n");
 
             using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
             foreach (var (folder, properties) in table.SelectAll(tx))
                 csv.Write($"{folder},{properties.Guid},{properties.Immutable},{properties.MountPoint},{properties.Folder},{properties.PhysicalPath}\n");
+        }
+    }
+
+    static void ArtifactDbToCsv(NPath projectRoot, NPath outDir)
+    {
+        using var artifactDb = new ArtifactLmdb(projectRoot);
+
+        using (var table = new CurrentRevisionsTable(artifactDb))
+        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId\n");
+
+            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
+            foreach (var (key, rev) in table.SelectAll(tx))
+                csv.Write(
+                    $"{key},{rev.ArtifactKey.Guid},{rev.ArtifactKey.ImporterId.NativeImporterType},"+
+                    $"{rev.ArtifactKey.ImporterId.ScriptedImporterType},{rev.ArtifactId.Hash}\n");
         }
     }
 }
