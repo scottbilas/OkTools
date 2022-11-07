@@ -162,7 +162,7 @@ Arguments:
                     for (var i = 0; i < assetBundleNames.Length; ++i)
                     {
                         var abn = assetBundleNames[i];
-                        csv.Write($"{misc.Name}{i},{abn.assetBundleName},{abn.assetBundleVariant},{abn.index}\n");
+                        csv.Write($"{misc.Name}{i},{abn.AssetBundleName},{abn.AssetBundleVariant},{abn.Index}\n");
                     }
                 }
                 else

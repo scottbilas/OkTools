@@ -250,9 +250,9 @@ public class MiscDefinition
             var blob = names->RefElementFromBlob<AssetBundleFullNameIndexBlob>(i);
             result[i] = new AssetBundleFullNameIndex
             {
-                assetBundleName = blob->assetBundleName.GetStringFromBlob(),
-                assetBundleVariant = blob->assetBundleVariant.GetStringFromBlob(),
-                index = blob->index,
+                AssetBundleName = blob->assetBundleName.GetStringFromBlob(),
+                AssetBundleVariant = blob->assetBundleVariant.GetStringFromBlob(),
+                Index = blob->index,
             };
         }
 
@@ -261,23 +261,15 @@ public class MiscDefinition
 
     public string ToCsv(DirectBuffer value)
     {
-        string str;
-
-        // ReSharper disable BuiltInTypeReferenceStyle
-        switch (_miscType)
+        var str = _miscType switch
         {
-            case MiscType.SInt32:
-                str = value.Read<Int32>().ToString();
-                break;
+            MiscType.SInt32 =>
+                value.Read<Int32>().ToString(),
+            MiscType.MultilineString =>
+                value.ReadAscii(true).TrimEnd().Replace('\n', ','),
 
-            case MiscType.MultilineString:
-                str = value.ReadAscii(true).Replace('\n', ',');
-                break;
-
-            default:
-                throw new InvalidOperationException();
-        }
-        // ReSharper restore BuiltInTypeReferenceStyle
+            _ => throw new InvalidOperationException()
+        };
 
         value.ExpectEnd();
         return str;
@@ -434,7 +426,7 @@ struct AssetBundleFullNameIndexBlob
 
 public struct AssetBundleFullNameIndex
 {
-    public string assetBundleName;
-    public string assetBundleVariant;
-    public int index;
+    public string AssetBundleName;
+    public string AssetBundleVariant;
+    public int Index;
 };
