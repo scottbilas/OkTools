@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 #pragma warning disable CA1707
 #pragma warning disable CA1720
-// ReSharper disable InconsistentNaming
 
 namespace UnityEngine;
 
@@ -32,7 +32,7 @@ public struct Hash128
 }
 
 [PublicAPI]
-public unsafe struct UnityGUID
+public unsafe struct UnityGuid
 {
     // Be aware that because of endianness and because we store a GUID as four integers instead
     // of as the DWORD, WORD, and BYTE groupings as used by Microsoft, the individual bytes
@@ -44,11 +44,11 @@ public unsafe struct UnityGUID
     // Also, our text format neither conforms to the canonical format for GUIDs nor for UUIDs so
     // again the bits change place here (the group of type bits is found one character to the right).
     public const int SizeOf = sizeof(uint)*4;
-    fixed UInt32 data[4];
+    fixed UInt32 _data[4];
 
-    public UnityGUID(uint a, uint b, uint c, uint d) { data[0] = a; data[1] = b; data[2] = c; data[3] = d; }
+    public UnityGuid(uint a, uint b, uint c, uint d) { _data[0] = a; _data[1] = b; _data[2] = c; _data[3] = d; }
 
-    static readonly char[] kHexToLiteral = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+    static readonly char[] k_kHexToLiteral = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
     public override string ToString()
     {
@@ -59,19 +59,51 @@ public unsafe struct UnityGUID
             {
                 for (var j = 8; j-- > 0;)
                 {
-                    var cur = g.data[i];
+                    var cur = g._data[i];
                     cur >>= j * 4;
                     cur &= 0xF;
-                    chars[i * 8 + j] = kHexToLiteral[cur];
+                    chars[i * 8 + j] = k_kHexToLiteral[cur];
                 }
             }
         });
     }
 }
 
-[PublicAPI]
-public struct ImporterID
+struct BlobString
 {
-    public Int32 nativeImporterType;
-    public Hash128 scriptedImporterType;
+    readonly int _offset; // start of string characters as an offset from "this"
+
+    public unsafe ReadOnlySpan<byte> RefBytesFromBlob()
+    {
+        fixed (BlobString* self = &this)
+        {
+            var start = (byte*)self + _offset;
+
+            var end = start;
+            while (*end != 0)
+                ++end;
+
+            return new ReadOnlySpan<byte>(start, (int)(end - start));
+        }
+    }
+
+    public string GetStringFromBlob() =>
+        Encoding.ASCII.GetString(RefBytesFromBlob());
+}
+
+struct BlobArray
+{
+    readonly int _offset;
+    readonly uint _size; // count of elements
+
+    public int Length => (int)_size;
+
+    public unsafe T* RefElementFromBlob<T>(int index) where T : unmanaged
+    {
+        fixed (BlobArray* self = &this)
+        {
+            var array = (T*)((byte*)self + _offset);
+            return array + index;
+        }
+    }
 }

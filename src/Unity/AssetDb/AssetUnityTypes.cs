@@ -5,10 +5,9 @@ namespace UnityEngine.AssetLmdb;
 
 #pragma warning disable CA1720
 
-[PublicAPI]
 public struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
 {
-    public UnityGUID guid;
+    public UnityGuid guid;
     public Hash128 metaFileHash;    // these are both SpookyV2
     public Hash128 assetFileHash;
 
@@ -24,7 +23,6 @@ public struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
     */
 }
 
-[PublicAPI]
 public struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
 {
     public Hash128 hash;
@@ -33,9 +31,8 @@ public struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
     public bool isUntrusted;
 }
 
-[PublicAPI]
 public struct GuidChildren
 {
     public Hash128 hash;
-    public UnityGUID[] guids;
+    public UnityGuid[] guids;
 }

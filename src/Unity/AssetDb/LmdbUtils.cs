@@ -35,7 +35,6 @@ public static class LmdbUtils
         @this.OpenDatabase(name, new DatabaseConfig(DbFlags.None));
 }
 
-[PublicAPI]
 public class LmdbDatabase : IDisposable
 {
     readonly LMDBEnvironment? _env;
@@ -91,7 +90,6 @@ public class LmdbDatabase : IDisposable
     }
 }
 
-[PublicAPI]
 public class LmdbTable : IDisposable
 {
     readonly LmdbDatabase _db;

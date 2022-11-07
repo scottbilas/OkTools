@@ -4,7 +4,6 @@ using Spreads.Buffers;
 
 namespace OkTools.Unity.AssetDb;
 
-[PublicAPI]
 public static class DirectBufferExtensions
 {
     public static unsafe T* Cast<T>(this in DirectBuffer @this) where T : unmanaged

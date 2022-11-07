@@ -5,6 +5,8 @@ using Spreads.LMDB;
 using UnityEngine;
 using UnityEngine.AssetLmdb;
 
+// ReSharper disable BuiltInTypeReferenceStyle
+
 namespace OkTools.Unity.AssetDb;
 
 public class SourceAssetLmdb : AssetLmdb
@@ -103,8 +105,8 @@ public class PropertyDefinition
                 break;
 
             case PropertyType.ImporterId:
-                var id = value.Read<ImporterID>();
-                str = $"{id.nativeImporterType},{id.scriptedImporterType}";
+                var id = value.Read<ImporterId>();
+                str = $"{id.NativeImporterType},{id.ScriptedImporterType}";
                 break;
 
             case PropertyType.Hash128:
@@ -122,12 +124,11 @@ public class PropertyDefinition
 }
 
 // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
-[PublicAPI]
 public class GuidPropertyIdToPropertyTable : LmdbTable
 {
-    public GuidPropertyIdToPropertyTable(LmdbDatabase db) : base(db, "GuidPropertyIDToProperty") {}
+    public GuidPropertyIdToPropertyTable(SourceAssetLmdb db) : base(db, "GuidPropertyIDToProperty") {}
 
-    public IEnumerable<(UnityGUID, PropertyDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
+    public IEnumerable<(UnityGuid, PropertyDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
     {
         foreach (var (key, value) in Table.AsEnumerable(tx))
         {
@@ -135,21 +136,20 @@ public class GuidPropertyIdToPropertyTable : LmdbTable
             if (found == null)
                 throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
 
-            var unityGuid = key.Slice(found.PrefixBuffer.Length).ReadExpectEnd<UnityGUID>();
+            var unityGuid = key.Slice(found.PrefixBuffer.Length).ReadExpectEnd<UnityGuid>();
             yield return (unityGuid, found, value);
         }
     }
 }
 
 // GuidDB.cpp: GuidDB::m_pGuidToChildren; UnityGuid -> GuidChildren
-[PublicAPI]
 public class GuidToChildrenTable : LmdbTable
 {
-    public GuidToChildrenTable(LmdbDatabase db) : base(db, "GuidToChildren") {}
+    public GuidToChildrenTable(SourceAssetLmdb db) : base(db, "GuidToChildren") {}
 
-    public IEnumerable<(UnityGUID, GuidChildren)> SelectAll(ReadOnlyTransaction tx) =>
+    public IEnumerable<(UnityGuid, GuidChildren)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGUID>(),
+            kvp.Key.ReadExpectEnd<UnityGuid>(),
             ReadChildren(kvp.Value)));
 
     static GuidChildren ReadChildren(DirectBuffer value)
@@ -158,11 +158,11 @@ public class GuidToChildrenTable : LmdbTable
 
         // count determined by using remaining space
         var remain = value.Length;
-        var count = remain / UnityGUID.SizeOf;
-        if (count * UnityGUID.SizeOf != remain)
+        var count = remain / UnityGuid.SizeOf;
+        if (count * UnityGuid.SizeOf != remain)
             throw new InvalidOperationException("Size mismatch");
 
-        var children = MemoryMarshal.Cast<byte, UnityGUID>(value.Span);
+        var children = MemoryMarshal.Cast<byte, UnityGuid>(value.Span);
 
         // TODO: get rid of alloc (just point at lmdb memory), if this ever gets to the point where we need to care.
         // for now just do what's faster to write.
@@ -171,34 +171,31 @@ public class GuidToChildrenTable : LmdbTable
 }
 
 // GuidDB.cpp: GuidDB::m_pGuidToIsDir; string -> uint8 (bool, 0 or nonzero)
-[PublicAPI]
 public class GuidToIsDirTable : LmdbTable
 {
-    public GuidToIsDirTable(LmdbDatabase db) : base(db, "GuidToIsDir") {}
+    public GuidToIsDirTable(SourceAssetLmdb db) : base(db, "GuidToIsDir") {}
 
-    public IEnumerable<(UnityGUID, bool)> SelectAll(ReadOnlyTransaction tx) =>
+    public IEnumerable<(UnityGuid, bool)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGUID>(),
+            kvp.Key.ReadExpectEnd<UnityGuid>(),
             kvp.Value.ReadExpectEnd<byte>() != 0));
 }
 
 // GuidDB.cpp: GuidDB::m_pGuidToPath; UnityGuid -> string path
-[PublicAPI]
 public class GuidToPathTable : LmdbTable
 {
-    public GuidToPathTable(LmdbDatabase db) : base(db, "GuidToPath") {}
+    public GuidToPathTable(SourceAssetLmdb db) : base(db, "GuidToPath") {}
 
-    public IEnumerable<(UnityGUID, string)> SelectAll(ReadOnlyTransaction tx) =>
+    public IEnumerable<(UnityGuid, string)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGUID>(),
+            kvp.Key.ReadExpectEnd<UnityGuid>(),
             kvp.Value.ToAsciiString()));
 }
 
 // HashDB.cpp: HashDB::m_pPathToHash; string path -> HashDBValue
-[PublicAPI]
 public class PathToHashTable : LmdbTable
 {
-    public PathToHashTable(LmdbDatabase db) : base(db, "hash") {}
+    public PathToHashTable(SourceAssetLmdb db) : base(db, "hash") {}
 
     public IEnumerable<(string, HashDBValue)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
@@ -250,9 +247,9 @@ public class MiscDefinition
             var blob = names->RefElementFromBlob<AssetBundleFullNameIndexBlob>(i);
             result[i] = new AssetBundleFullNameIndex
             {
-                AssetBundleName = blob->assetBundleName.GetStringFromBlob(),
-                AssetBundleVariant = blob->assetBundleVariant.GetStringFromBlob(),
-                Index = blob->index,
+                AssetBundleName = blob->AssetBundleName.GetStringFromBlob(),
+                AssetBundleVariant = blob->AssetBundleVariant.GetStringFromBlob(),
+                Index = blob->Index,
             };
         }
 
@@ -277,10 +274,9 @@ public class MiscDefinition
 }
 
 // SourceAssetDB.cpp: SourceAssetDB::m_Misc, with keys from SourceAssetDB.cpp "s_Misc_*" area
-[PublicAPI]
 public class MiscTable : LmdbTable
 {
-    public MiscTable(LmdbDatabase db) : base(db, "Misc") {}
+    public MiscTable(SourceAssetLmdb db) : base(db, "Misc") {}
 
     public IEnumerable<(MiscDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
     {
@@ -296,10 +292,9 @@ public class MiscTable : LmdbTable
 }
 
 // GuidDB.cpp: GuidDB::m_pPathToGuid; string path -> GuidDBValue
-[PublicAPI]
 public class PathToGuidTable : LmdbTable
 {
-    public PathToGuidTable(LmdbDatabase db) : base(db, "PathToGuid") {}
+    public PathToGuidTable(SourceAssetLmdb db) : base(db, "PathToGuid") {}
 
     public IEnumerable<(string, GuidDBValue)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
@@ -308,7 +303,6 @@ public class PathToGuidTable : LmdbTable
 }
 
 // SourceAssetDB.cpp: SourceAssetDB::m_PropertyIDToType; string property -> string type
-[PublicAPI]
 public class PropertyIdToTypeTable : LmdbTable
 {
     /* PropertyDefinition.cpp
@@ -323,7 +317,7 @@ public class PropertyIdToTypeTable : LmdbTable
     template<> const char* const SInt32PairPropertyDefinition::s_TypeName = "pair<i32,i32>";
     */
 
-    public PropertyIdToTypeTable(LmdbDatabase db) : base(db, "PropertyIDToType") {}
+    public PropertyIdToTypeTable(SourceAssetLmdb db) : base(db, "PropertyIDToType") {}
 
     public IEnumerable<(string, string)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
@@ -332,10 +326,9 @@ public class PropertyIdToTypeTable : LmdbTable
 }
 
 // SourceAssetDB.cpp: SourceAssetDB::m_RootFolders
-[PublicAPI]
 public class RootFoldersTable : LmdbTable
 {
-    public RootFoldersTable(LmdbDatabase db) : base(db, "RootFolders") {}
+    public RootFoldersTable(SourceAssetLmdb db) : base(db, "RootFolders") {}
 
     public IEnumerable<(string, RootFolderProperties)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
@@ -357,76 +350,42 @@ public class RootFoldersTable : LmdbTable
     }
 }
 
+struct ImporterId
+{
+    public Int32 NativeImporterType;
+    public Hash128 ScriptedImporterType;
+}
+
 // SourceAssetDB.h: RootFolderPropertiesBlob
-[StructLayout(LayoutKind.Sequential)]
 struct RootFolderPropertiesBlob
 {
-    public UnityGUID Guid;
+    public UnityGuid Guid;
     public bool Immutable;
     public BlobString MountPoint;
     public BlobString Folder;
     public BlobString PhysicalPath;
 }
 
-[StructLayout(LayoutKind.Sequential)]
-struct BlobString
-{
-    int _offset; // start of string characters as an offset from "this"
-
-    public unsafe string GetStringFromBlob()
-    {
-        fixed (BlobString* self = &this)
-        {
-            var start = (byte*)self + _offset;
-
-            var end = start;
-            while (*end != 0)
-                ++end;
-
-            return Encoding.ASCII.GetString(start, (int)(end - start));
-        }
-    }
-}
-
 // TODO: get rid of this alloc-by-default thing
 public struct RootFolderProperties
 {
-    public UnityGUID Guid;
+    public UnityGuid Guid;
     public bool Immutable;
     public string MountPoint;
     public string Folder;
     public string PhysicalPath;
 }
 
-[StructLayout(LayoutKind.Sequential)]
-struct BlobArray
-{
-    int _offset;
-    uint _size; // count of elements
-
-    public int Length => (int)_size;
-
-    public unsafe T* RefElementFromBlob<T>(int index) where T : unmanaged
-    {
-        fixed (BlobArray* self = &this)
-        {
-            var array = (T*)((byte*)self + _offset);
-            return array + index;
-        }
-    }
-}
-
-[StructLayout(LayoutKind.Sequential)]
 struct AssetBundleFullNameIndexBlob
 {
-    public BlobString assetBundleName;
-    public BlobString assetBundleVariant;
-    public int index;
-};
+    public BlobString AssetBundleName;
+    public BlobString AssetBundleVariant;
+    public int Index;
+}
 
 public struct AssetBundleFullNameIndex
 {
     public string AssetBundleName;
     public string AssetBundleVariant;
     public int Index;
-};
+}

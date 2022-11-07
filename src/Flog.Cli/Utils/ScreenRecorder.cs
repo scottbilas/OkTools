@@ -6,7 +6,7 @@ class UnexpectedEscapeException : Exception {}
 
 class ScreenRecorder
 {
-    public enum ShowType { None, Count, Chars };
+    public enum ShowType { None, Count, Chars }
 
     (int count, int chars)[] _cells = Array.Empty<(int, int)>();
     ShowType _show;
