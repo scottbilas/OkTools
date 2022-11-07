@@ -1,5 +1,7 @@
 #define BENCHMARK
 
+using System;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 
 #pragma warning disable CA1822 // benchmarkdotnet does not want statics
