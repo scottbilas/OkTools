@@ -11,7 +11,7 @@ public static class DirectBufferExtensions
         return (T*)@this.Data;
     }
 
-    public static T Read<T>(this ref DirectBuffer @this)
+    public static T Read<T>(this ref DirectBuffer @this) where T : unmanaged
     {
         var rc = @this.Read<T>(0);
         @this = @this.Slice(Unsafe.SizeOf<T>());
@@ -20,7 +20,7 @@ public static class DirectBufferExtensions
 
     // the "expect" functions are about trying to catch when the schema changes and structs are bigger than we expect
 
-    public static T ReadExpectEnd<T>(this in DirectBuffer @this)
+    public static T ReadExpectEnd<T>(this in DirectBuffer @this) where T : unmanaged
     {
         if (@this.Length != Unsafe.SizeOf<T>())
             throw new InvalidOperationException("Did not consume entire value");

@@ -239,12 +239,12 @@ public class MiscDefinition
         if (_miscType != MiscType.AssetBundleNames)
             return null;
 
-        var names = value.Cast<BlobArray>();
+        var names = value.Cast<BlobArray<AssetBundleFullNameIndexBlob>>();
         var result = new AssetBundleFullNameIndex[names->Length];
 
         for (var i = 0; i < names->Length; ++i)
         {
-            var blob = names->RefElementFromBlob<AssetBundleFullNameIndexBlob>(i);
+            var blob = names->RefElementFromBlob(i);
             result[i] = new AssetBundleFullNameIndex
             {
                 AssetBundleName = blob->AssetBundleName.GetStringFromBlob(),

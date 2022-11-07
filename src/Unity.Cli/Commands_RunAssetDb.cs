@@ -212,6 +212,33 @@ Arguments:
     {
         using var artifactDb = new ArtifactLmdb(projectRoot);
 
+        using (var table = new ArtifactIdToImportStatsTable(artifactDb))
+        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write($"ArtifactID,{ArtifactImportStats.CsvHeader}\n");
+
+            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
+            foreach (var (id, stats) in table.SelectAll(tx))
+            {
+                csv.Write($"{id.Hash},{stats.ToCsv()}\n");
+            }
+        }
+
+        using (var table = new ArtifactKeyToArtifactIdsTable(artifactDb))
+        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write($"ArtifactKeyHash,{BlobArtifactKey.CsvHeader},ArtifactId0,ArtifactId1,...\n");
+
+            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
+            foreach (var (key, ids) in table.SelectAll(tx))
+            {
+                csv.Write($"{key},{ids.ArtifactKey.ToCsv()}");
+                foreach (var id in ids.Ids)
+                    csv.Write($",{id.Hash}");
+                csv.Write('\n');
+            }
+        }
+
         using (var table = new CurrentRevisionsTable(artifactDb))
         using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
         {

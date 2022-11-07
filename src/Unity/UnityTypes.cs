@@ -91,19 +91,33 @@ struct BlobString
         Encoding.ASCII.GetString(RefBytesFromBlob());
 }
 
-struct BlobArray
+struct BlobArray<T> where T : unmanaged
 {
     readonly int _offset;
     readonly uint _size; // count of elements
 
     public int Length => (int)_size;
 
-    public unsafe T* RefElementFromBlob<T>(int index) where T : unmanaged
+    public unsafe T* RefElementFromBlob(int index)
     {
-        fixed (BlobArray* self = &this)
+        fixed (BlobArray<T>* self = &this)
         {
-            var array = (T*)((byte*)self + _offset);
-            return array + index;
+            var origin = (T*)((byte*)self + _offset);
+            return origin + index;
+        }
+    }
+
+    public unsafe T[] ToArrayFromBlob()
+    {
+        fixed (BlobArray<T>* self = &this)
+        {
+            var origin = (T*)((byte*)self + _offset);
+
+            var array = new T[_size];
+            for (var i = 0; i < _size; ++i)
+                array[i] = origin[i];
+
+            return array;
         }
     }
 }
