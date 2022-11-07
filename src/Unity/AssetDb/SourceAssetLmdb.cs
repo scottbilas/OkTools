@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 using Spreads.Buffers;
 using Spreads.LMDB;
 using UnityEngine;
@@ -14,39 +15,127 @@ public class SourceAssetLmdb : AssetLmdb
         : base(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersion) {}
 }
 
+public class PropertyDefinition
+{
+    public readonly string Prefix;
+    public readonly DirectBuffer PrefixBuffer;
+    public readonly bool IsInMetaFile;
+    public readonly Func<DirectBuffer, StringBuilder, string> ToCsv;
+
+    PropertyDefinition(string prefix, bool isInMetaFile, Func<DirectBuffer, StringBuilder, string> toCsv)
+    {
+        Prefix = prefix;
+        PrefixBuffer = LmdbUtils.StringToBuffer(prefix, false);
+        IsInMetaFile = isInMetaFile;
+        ToCsv = toCsv;
+    }
+
+    PropertyDefinition(string prefix, bool isInMetaFile, Func<DirectBuffer, string> toCsv)
+        : this(prefix, isInMetaFile, (buffer, _) => toCsv(buffer)) {}
+
+    public static readonly PropertyDefinition[] All =
+    {
+        // from top of PropertyDefinition.cpp
+        /*StringArrayPropertyDefinition kLabelsPropDef*/                     new("labels",                          true,  FromStringArray),
+        /*SInt32PropertyDefinition kAssetBundleIndexPropDef*/                new("AssetBundleIndex",                false, FromSInt32),
+        /*StringPropertyDefinition kAssetBundleNamePropDef*/                 new("assetBundleName",                 true,  FromString),
+        /*StringPropertyDefinition kAssetBundleVariantPropDef*/              new("assetBundleVariant",              true,  FromString),
+        /*SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef*/ new("MainObjectLocalIdentifierInFile", false, FromSInt64),
+        /*ImporterIDPropertyDefinition kImporterOverridePropDef*/            new("importerOverride",                true,  FromImporterId),
+        /*Hash128PropertyDefinition kImportLogFilePropDef*/                  new("importLogFile",                   false, FromHash128),
+        /*SInt32PairPropertyDefinition kImportLogEntriesCountPropDef*/       new("ImportLogEntriesCount",           false, FromSInt32Pair),
+        /*StringPropertyDefinition kScriptCompilationAssetPathPropDef*/      new("scriptCompilationAssetPath",      false, FromString),
+        /*Hash128PropertyDefinition kImporterErrorFilePropDef*/              new("importerErrorFile",               false, FromHash128),
+        /*SInt32PropertyDefinition kAssetOriginProductIdPropDef*/            new("productId",                       true,  FromSInt32),
+        /*StringPropertyDefinition kAssetOriginPackageNamePropDef*/          new("packageName",                     true,  FromString),
+        /*StringPropertyDefinition kAssetOriginPackageVersionPropDef*/       new("packageVersion",                  true,  FromString),
+        /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            new("assetPath",                       true,  FromString),
+        /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             new("uploadId",                        true,  FromSInt32),
+    };
+
+    static string FromStringArray(DirectBuffer value, StringBuilder sb)
+    {
+        if (value.IsEmpty)
+            return "";
+
+        var offset = 0;
+
+        var count = value.ReadUInt32(offset);
+        if (count == 0)
+            return "";
+        offset += sizeof(UInt32);
+
+        for (var i = 0; i < count; ++i)
+        {
+            var len = value.ReadUInt16(offset);
+            offset += sizeof(UInt16);
+
+            if (sb.Length != 0)
+                sb.Append(',');
+            sb.Append(Encoding.ASCII.GetString(value.Span[offset..(offset+len-1)]));
+            offset += len;
+        }
+
+        var str = sb.ToString();
+        sb.Clear();
+        return str;
+    }
+
+    static string FromString(DirectBuffer value)
+    {
+        return Encoding.ASCII.GetString(value.Span[..^1]);
+    }
+
+    static string FromSInt32(DirectBuffer value)
+    {
+        var i = value.Read<Int32>(0);
+        return i.ToString();
+    }
+
+    static string FromSInt32Pair(DirectBuffer value)
+    {
+        var i0 = value.Read<Int32>(0);
+        var i1 = value.Read<Int32>(4);
+        return $"{i0},{i1}";
+    }
+
+    static string FromSInt64(DirectBuffer value)
+    {
+        var i = value.Read<Int64>(0);
+        return i.ToString();
+    }
+
+    static string FromImporterId(DirectBuffer value)
+    {
+        var id = value.Read<ImporterID>(0);
+        return $"{id.nativeImporterType},{id.scriptedImporterType}";
+    }
+
+    static string FromHash128(DirectBuffer value)
+    {
+        return value.Read<Hash128>(0).ToString();
+    }
+}
+
 // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
 [PublicAPI]
 public class GuidPropertyIdToPropertyTable : LmdbTable
 {
     public GuidPropertyIdToPropertyTable(LmdbDatabase db) : base(db, "GuidPropertyIDToProperty") {}
 
+    public IEnumerable<(UnityGUID, PropertyDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
+    {
+        foreach (var (key, value) in Table.AsEnumerable(tx))
+        {
+            var found = PropertyDefinition.All.FirstOrDefault(propertyDef => key.Span.StartsWith(propertyDef.PrefixBuffer.Span));
+            if (found == null)
+                throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
 
+            var unityGuid = key.Read<UnityGUID>(found.PrefixBuffer.Length);
+            yield return (unityGuid, found, value);
+        }
+    }
 }
-
-/* TODO: GuidPropertyIDToProperty
-
-unityguid -(many)> property
-
-typedef PropertyDefinition<SInt64> SInt64PropertyDefinition;
-typedef PropertyDefinition<SInt32> SInt32PropertyDefinition;
-typedef PropertyDefinition<Hash128> Hash128PropertyDefinition;
-typedef PropertyDefinition<core::string> StringPropertyDefinition;
-typedef PropertyDefinition<core::string_ref> StringRefPropertyDefinition;
-typedef PropertyDefinition<core::pair<SInt32, SInt32> > SInt32PairPropertyDefinition;
-typedef PropertyDefinition<dynamic_array<core::string> > StringArrayPropertyDefinition;
-typedef PropertyDefinition<dynamic_array<core::string_ref> > StringRefArrayPropertyDefinition;
-typedef PropertyDefinition<AssetDatabase::ImporterID> ImporterIDPropertyDefinition;
-
-EXPORT_COREMODULE const StringArrayPropertyDefinition kLabelsPropDef("labels", true);
-EXPORT_COREMODULE const SInt32PropertyDefinition kAssetBundleIndexPropDef("AssetBundleIndex", false);
-EXPORT_COREMODULE const StringPropertyDefinition kAssetBundleNamePropDef("assetBundleName", true);
-EXPORT_COREMODULE const StringPropertyDefinition kAssetBundleVariantPropDef("assetBundleVariant", true);
-EXPORT_COREMODULE const SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef("MainObjectLocalIdentifierInFile", false);
-EXPORT_COREMODULE const ImporterIDPropertyDefinition kImporterOverridePropDef("importerOverride", true);
-EXPORT_COREMODULE const Hash128PropertyDefinition kImportLogFilePropDef("importLogFile", false);
-EXPORT_COREMODULE const SInt32PairPropertyDefinition kImportLogEntriesCountPropDef("ImportLogEntriesCount", false);
-EXPORT_COREMODULE const StringPropertyDefinition kScriptCompilationAssetPathPropDef("scriptCompilationAssetPath", false);
-*/
 
 // GuidDB.cpp: GuidDB::m_pGuidToChildren; UnityGuid -> GuidChildren
 [PublicAPI]

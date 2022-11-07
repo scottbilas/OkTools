@@ -13,11 +13,16 @@ public static class LmdbUtils
         if (cache.TryGetValue(str, out var buffer))
             return buffer;
 
-        var bytes = new byte[str.Length + 1]; // need null terminator
+        cache.Add(str, buffer = StringToBuffer(str, true));
+        return buffer;
+    }
+
+    public static DirectBuffer StringToBuffer(string str, bool includeNullTerminator)
+    {
+        var bytes = new byte[str.Length + (includeNullTerminator ? 1 : 0)];
         Encoding.ASCII.GetBytes(str.AsSpan(), bytes.AsSpan());
 
-        cache.Add(str, buffer = new(bytes));
-        return buffer;
+        return new(bytes);
     }
 
     public static string ToAsciiString(this DirectBuffer @this)
