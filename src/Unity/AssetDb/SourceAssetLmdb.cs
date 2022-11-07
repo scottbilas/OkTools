@@ -5,7 +5,7 @@ using Spreads.LMDB;
 using UnityEngine;
 using UnityEngine.AssetLmdb;
 
-namespace OkTools.Unity;
+namespace OkTools.Unity.AssetDb;
 
 public class SourceAssetLmdb : AssetLmdb
 {
@@ -17,103 +17,107 @@ public class SourceAssetLmdb : AssetLmdb
 
 public class PropertyDefinition
 {
+    readonly PropertyType _propertyType;
+
     public readonly string Prefix;
     public readonly DirectBuffer PrefixBuffer;
     public readonly bool IsInMetaFile;
-    public readonly Func<DirectBuffer, StringBuilder, string> ToCsv;
 
-    PropertyDefinition(string prefix, bool isInMetaFile, Func<DirectBuffer, StringBuilder, string> toCsv)
+    PropertyDefinition(string prefix, bool isInMetaFile, PropertyType type)
     {
         Prefix = prefix;
         PrefixBuffer = LmdbUtils.StringToBuffer(prefix, false);
         IsInMetaFile = isInMetaFile;
-        ToCsv = toCsv;
-    }
 
-    PropertyDefinition(string prefix, bool isInMetaFile, Func<DirectBuffer, string> toCsv)
-        : this(prefix, isInMetaFile, (buffer, _) => toCsv(buffer)) {}
+        _propertyType = type;
+    }
 
     public static readonly PropertyDefinition[] All =
     {
         // from top of PropertyDefinition.cpp
-        /*StringArrayPropertyDefinition kLabelsPropDef*/                     new("labels",                          true,  FromStringArray),
-        /*SInt32PropertyDefinition kAssetBundleIndexPropDef*/                new("AssetBundleIndex",                false, FromSInt32),
-        /*StringPropertyDefinition kAssetBundleNamePropDef*/                 new("assetBundleName",                 true,  FromString),
-        /*StringPropertyDefinition kAssetBundleVariantPropDef*/              new("assetBundleVariant",              true,  FromString),
-        /*SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef*/ new("MainObjectLocalIdentifierInFile", false, FromSInt64),
-        /*ImporterIDPropertyDefinition kImporterOverridePropDef*/            new("importerOverride",                true,  FromImporterId),
-        /*Hash128PropertyDefinition kImportLogFilePropDef*/                  new("importLogFile",                   false, FromHash128),
-        /*SInt32PairPropertyDefinition kImportLogEntriesCountPropDef*/       new("ImportLogEntriesCount",           false, FromSInt32Pair),
-        /*StringPropertyDefinition kScriptCompilationAssetPathPropDef*/      new("scriptCompilationAssetPath",      false, FromString),
-        /*Hash128PropertyDefinition kImporterErrorFilePropDef*/              new("importerErrorFile",               false, FromHash128),
-        /*SInt32PropertyDefinition kAssetOriginProductIdPropDef*/            new("productId",                       true,  FromSInt32),
-        /*StringPropertyDefinition kAssetOriginPackageNamePropDef*/          new("packageName",                     true,  FromString),
-        /*StringPropertyDefinition kAssetOriginPackageVersionPropDef*/       new("packageVersion",                  true,  FromString),
-        /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            new("assetPath",                       true,  FromString),
-        /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             new("uploadId",                        true,  FromSInt32),
+        /*StringArrayPropertyDefinition kLabelsPropDef*/                     new("labels",                          true,  PropertyType.StringArray),
+        /*SInt32PropertyDefinition kAssetBundleIndexPropDef*/                new("AssetBundleIndex",                false, PropertyType.SInt32),
+        /*StringPropertyDefinition kAssetBundleNamePropDef*/                 new("assetBundleName",                 true,  PropertyType.String),
+        /*StringPropertyDefinition kAssetBundleVariantPropDef*/              new("assetBundleVariant",              true,  PropertyType.String),
+        /*SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef*/ new("MainObjectLocalIdentifierInFile", false, PropertyType.SInt64),
+        /*ImporterIDPropertyDefinition kImporterOverridePropDef*/            new("importerOverride",                true,  PropertyType.ImporterId),
+        /*Hash128PropertyDefinition kImportLogFilePropDef*/                  new("importLogFile",                   false, PropertyType.Hash128),
+        /*SInt32PairPropertyDefinition kImportLogEntriesCountPropDef*/       new("ImportLogEntriesCount",           false, PropertyType.SInt32Pair),
+        /*StringPropertyDefinition kScriptCompilationAssetPathPropDef*/      new("scriptCompilationAssetPath",      false, PropertyType.String),
+        /*Hash128PropertyDefinition kImporterErrorFilePropDef*/              new("importerErrorFile",               false, PropertyType.Hash128),
+        /*SInt32PropertyDefinition kAssetOriginProductIdPropDef*/            new("productId",                       true,  PropertyType.SInt32),
+        /*StringPropertyDefinition kAssetOriginPackageNamePropDef*/          new("packageName",                     true,  PropertyType.String),
+        /*StringPropertyDefinition kAssetOriginPackageVersionPropDef*/       new("packageVersion",                  true,  PropertyType.String),
+        /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            new("assetPath",                       true,  PropertyType.String),
+        /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             new("uploadId",                        true,  PropertyType.SInt32),
     };
 
-    static string FromStringArray(DirectBuffer value, StringBuilder sb)
+    enum PropertyType
     {
-        if (value.IsEmpty)
-            return "";
+        SInt32,
+        SInt32Pair,
+        SInt64,
+        String,
+        StringArray,
+        ImporterId,
+        Hash128,
+    }
 
-        var offset = 0;
+    public string ToCsv(DirectBuffer value, StringBuilder sb)
+    {
+        string str;
 
-        var count = value.ReadUInt32(offset);
-        if (count == 0)
-            return "";
-        offset += sizeof(UInt32);
-
-        for (var i = 0; i < count; ++i)
+        // ReSharper disable BuiltInTypeReferenceStyle
+        switch (_propertyType)
         {
-            var len = value.ReadUInt16(offset);
-            offset += sizeof(UInt16);
+            case PropertyType.SInt32:
+                str = value.Read<Int32>().ToString();
+                break;
 
-            if (sb.Length != 0)
-                sb.Append(',');
-            sb.Append(Encoding.ASCII.GetString(value.Span[offset..(offset+len-1)]));
-            offset += len;
+            case PropertyType.SInt32Pair:
+                var i0 = value.Read<Int32>();
+                var i1 = value.Read<Int32>();
+                str = $"{i0},{i1}";
+                break;
+
+            case PropertyType.SInt64:
+                str = value.Read<Int64>().ToString();
+                break;
+
+            case PropertyType.String:
+                str = value.ReadAscii(true);
+                break;
+
+            case PropertyType.StringArray:
+                var count = value.Read<UInt32>();
+                for (var i = 0; i < count; ++i)
+                {
+                    if (sb.Length != 0)
+                        sb.Append(',');
+
+                    var len = value.Read<UInt16>();
+                    value.ReadAscii(sb, len, true);
+                }
+                str = sb.ToString();
+                sb.Clear();
+                break;
+
+            case PropertyType.ImporterId:
+                var id = value.Read<ImporterID>();
+                str = $"{id.nativeImporterType},{id.scriptedImporterType}";
+                break;
+
+            case PropertyType.Hash128:
+                str = value.Read<Hash128>().ToString();
+                break;
+
+            default:
+                throw new InvalidOperationException();
         }
+        // ReSharper restore BuiltInTypeReferenceStyle
 
-        var str = sb.ToString();
-        sb.Clear();
+        value.ExpectEnd();
         return str;
-    }
-
-    static string FromString(DirectBuffer value)
-    {
-        return Encoding.ASCII.GetString(value.Span[..^1]);
-    }
-
-    static string FromSInt32(DirectBuffer value)
-    {
-        var i = value.Read<Int32>(0);
-        return i.ToString();
-    }
-
-    static string FromSInt32Pair(DirectBuffer value)
-    {
-        var i0 = value.Read<Int32>(0);
-        var i1 = value.Read<Int32>(4);
-        return $"{i0},{i1}";
-    }
-
-    static string FromSInt64(DirectBuffer value)
-    {
-        var i = value.Read<Int64>(0);
-        return i.ToString();
-    }
-
-    static string FromImporterId(DirectBuffer value)
-    {
-        var id = value.Read<ImporterID>(0);
-        return $"{id.nativeImporterType},{id.scriptedImporterType}";
-    }
-
-    static string FromHash128(DirectBuffer value)
-    {
-        return value.Read<Hash128>(0).ToString();
     }
 }
 
@@ -131,7 +135,7 @@ public class GuidPropertyIdToPropertyTable : LmdbTable
             if (found == null)
                 throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
 
-            var unityGuid = key.Read<UnityGUID>(found.PrefixBuffer.Length);
+            var unityGuid = key.Slice(found.PrefixBuffer.Length).ReadExpectEnd<UnityGUID>();
             yield return (unityGuid, found, value);
         }
     }
@@ -145,20 +149,20 @@ public class GuidToChildrenTable : LmdbTable
 
     public IEnumerable<(UnityGUID, GuidChildren)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            MemoryMarshal.Read<UnityGUID>(kvp.Key.Span),
+            kvp.Key.ReadExpectEnd<UnityGUID>(),
             ReadChildren(kvp.Value)));
 
     static GuidChildren ReadChildren(DirectBuffer value)
     {
-        var hash = value.Read<Hash128>(0);
+        var hash = value.Read<Hash128>();
 
         // count determined by using remaining space
-        var remain = value.Length - Hash128.SizeOf;
+        var remain = value.Length;
         var count = remain / UnityGUID.SizeOf;
         if (count * UnityGUID.SizeOf != remain)
             throw new InvalidOperationException("Size mismatch");
 
-        var children = MemoryMarshal.Cast<byte, UnityGUID>(value.Span[Hash128.SizeOf..]);
+        var children = MemoryMarshal.Cast<byte, UnityGUID>(value.Span);
 
         // TODO: get rid of alloc (just point at lmdb memory), if this ever gets to the point where we need to care.
         // for now just do what's faster to write.
@@ -174,8 +178,8 @@ public class GuidToIsDirTable : LmdbTable
 
     public IEnumerable<(UnityGUID, bool)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            MemoryMarshal.Read<UnityGUID>(kvp.Key.Span),
-            kvp.Value.ReadByte(0) != 0));
+            kvp.Key.ReadExpectEnd<UnityGUID>(),
+            kvp.Value.ReadExpectEnd<byte>() != 0));
 }
 
 // GuidDB.cpp: GuidDB::m_pGuidToPath; UnityGuid -> string path
@@ -186,7 +190,7 @@ public class GuidToPathTable : LmdbTable
 
     public IEnumerable<(UnityGUID, string)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
-            MemoryMarshal.Read<UnityGUID>(kvp.Key.Span),
+            kvp.Key.ReadExpectEnd<UnityGUID>(),
             kvp.Value.ToAsciiString()));
 }
 
@@ -199,11 +203,15 @@ public class PathToHashTable : LmdbTable
     public IEnumerable<(string, HashDBValue)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
             kvp.Key.ToAsciiString(),
-            MemoryMarshal.Read<HashDBValue>(kvp.Value.Span)));
+            kvp.Value.ReadExpectEnd<HashDBValue>()));
 }
 
-/* TODO: Misc
-SourceAssetDB.cpp: SourceAssetDB::m_Misc, with keys from SourceAssetDB.cpp "s_Misc_*" area
+// SourceAssetDB.cpp: SourceAssetDB::m_Misc, with keys from SourceAssetDB.cpp "s_Misc_*" area
+/*
+class MiscTable : LmdbTable
+{
+
+}
 
 string key -> key-dependent value
 
@@ -258,7 +266,7 @@ public class PathToGuidTable : LmdbTable
     public IEnumerable<(string, GuidDBValue)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
             kvp.Key.ToAsciiString(),
-            MemoryMarshal.Read<GuidDBValue>(kvp.Value.Span)));
+            kvp.Value.ReadExpectEnd<GuidDBValue>()));
 }
 
 // SourceAssetDB.cpp: SourceAssetDB::m_PropertyIDToType; string property -> string type
@@ -285,18 +293,69 @@ public class PropertyIdToTypeTable : LmdbTable
             kvp.Value.ToAsciiString()));
 }
 
-/* TODO: RootFolders
-SourceAssetDB.cpp: SourceAssetDB::m_RootFolders
+// SourceAssetDB.cpp: SourceAssetDB::m_RootFolders
+[PublicAPI]
+public class RootFoldersTable : LmdbTable
+{
+    public RootFoldersTable(LmdbDatabase db) : base(db, "RootFolders") {}
 
-string -> RootFolderPropertiesBlog
+    public IEnumerable<(string, RootFolderProperties)> SelectAll(ReadOnlyTransaction tx) =>
+        Table.AsEnumerable(tx).Select(kvp => (
+            kvp.Key.ToAsciiString(),
+            ReadRootFolderProperties(kvp.Value)));
 
-    // SourceAssetDB.h
-    struct RootFolderPropertiesBlob
+    unsafe RootFolderProperties ReadRootFolderProperties(DirectBuffer value)
     {
-        UnityGUID Guid;
-        bool Immutable;
-        BlobString MountPoint;
-        BlobString Folder;
-        BlobString PhysicalPath;
-    };
-*/
+        var blob = value.Cast<RootFolderPropertiesBlob>();
+        return new RootFolderProperties
+        {
+            Guid = blob->Guid,
+            Immutable = blob->Immutable,
+            MountPoint = blob->MountPoint.GetStringFromBlob(),
+            Folder = blob->Folder.GetStringFromBlob(),
+            PhysicalPath = blob->PhysicalPath.GetStringFromBlob(),
+        };
+        // TODO: add safety check that the end of PhysicalPath is the end of the value too
+    }
+}
+
+// SourceAssetDB.h: RootFolderPropertiesBlob
+[StructLayout(LayoutKind.Sequential)]
+struct RootFolderPropertiesBlob
+{
+    public UnityGUID Guid;
+    public bool Immutable;
+    public BlobString MountPoint;
+    public BlobString Folder;
+    public BlobString PhysicalPath;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+struct BlobString
+{
+    int _offset; // start of string characters as an offset from "this"
+
+    public unsafe string GetStringFromBlob()
+    {
+        fixed (BlobString* self = &this)
+        {
+            var start = (byte*)self + _offset;
+
+            var end = start;
+            while (*end != 0)
+                ++end;
+
+            return Encoding.ASCII.GetString(start, (int)(end - start));
+        }
+    }
+}
+
+// TODO: get rid of this alloc-by-default thing
+public struct RootFolderProperties
+{
+    public UnityGUID Guid;
+    public bool Immutable;
+    public string MountPoint;
+    public string Folder;
+    public string PhysicalPath;
+}

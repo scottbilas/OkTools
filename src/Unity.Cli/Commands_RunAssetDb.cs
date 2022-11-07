@@ -2,7 +2,7 @@
 using DocoptNet;
 using NiceIO;
 using OkTools.Unity;
-using UnityEngine;
+using OkTools.Unity.AssetDb;
 using YamlDotNet.Serialization;
 
 static partial class Commands
@@ -170,6 +170,14 @@ Arguments:
                 csv.Write($"{propertyId},{type}\n");
         }
 
-        // TODO: RootFolders
+        using (var table = new RootFoldersTable(sourceAssetDb))
+        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("RootFolder,Guid,Immutable,MountPoint,Folder,PhysicalPath\n");
+
+            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
+            foreach (var (folder, properties) in table.SelectAll(tx))
+                csv.Write($"{folder},{properties.Guid},{properties.Immutable},{properties.MountPoint},{properties.Folder},{properties.PhysicalPath}\n");
+        }
     }
 }

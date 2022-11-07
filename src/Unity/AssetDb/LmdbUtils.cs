@@ -3,7 +3,7 @@ using System.Text;
 using Spreads.Buffers;
 using Spreads.LMDB;
 
-namespace OkTools.Unity;
+namespace OkTools.Unity.AssetDb;
 
 public static class LmdbUtils
 {
@@ -35,6 +35,7 @@ public static class LmdbUtils
         @this.OpenDatabase(name, new DatabaseConfig(DbFlags.None));
 }
 
+[PublicAPI]
 public class LmdbDatabase : IDisposable
 {
     readonly LMDBEnvironment? _env;
@@ -74,6 +75,7 @@ public class LmdbDatabase : IDisposable
     public NPath DbPath { get; }
     public string Name => DbPath.FileNameWithoutExtension;
     public NPath TempPath { get; }
+    // ReSharper disable once ConvertToAutoPropertyWhenPossible
     public LMDBEnvironment Env => _env!;
 
     public DirectBuffer StringToBuffer(string str) =>
@@ -89,6 +91,7 @@ public class LmdbDatabase : IDisposable
     }
 }
 
+[PublicAPI]
 public class LmdbTable : IDisposable
 {
     readonly LmdbDatabase _db;

@@ -1,4 +1,4 @@
-namespace OkTools.Unity;
+namespace OkTools.Unity.AssetDb;
 
 public class ArtifactLmdb : AssetLmdb
 {

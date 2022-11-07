@@ -1,4 +1,4 @@
-namespace OkTools.Unity;
+namespace OkTools.Unity.AssetDb;
 
 // TODO: general note for any lmdb-using code: all of the stuff i'm doing is just to get something working quick. but
 // spreads.lmdb gives us direct access to the memory returned by lmdb. there's no need to copy into arrays and strings,
