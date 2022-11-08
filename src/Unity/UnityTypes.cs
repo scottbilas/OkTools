@@ -1,8 +1,13 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
+// ReSharper disable BuiltInTypeReferenceStyle
+// ReSharper disable InconsistentNaming
+#pragma warning disable CS0649
 #pragma warning disable CA1707
 #pragma warning disable CA1720
+#pragma warning disable IDE0044
+#pragma warning disable IDE0052
 
 namespace UnityEngine;
 

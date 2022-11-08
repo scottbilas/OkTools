@@ -30,9 +30,3 @@ public struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
     public UInt64 fileSize;
     public bool isUntrusted;
 }
-
-public struct GuidChildren
-{
-    public Hash128 hash;
-    public UnityGuid[] guids;
-}

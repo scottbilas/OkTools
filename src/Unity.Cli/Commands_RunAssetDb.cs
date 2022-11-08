@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 using DocoptNet;
 using NiceIO;
 using OkTools.Unity;
@@ -10,11 +11,11 @@ static partial class Commands
     public const string DocUsageAssetDb =
 @"Usage:
   okunity assetdb tables [PROJECT]
-  okunity assetdb dump [PROJECT] [OUTDIR]
+  okunity assetdb dump [--json] [PROJECT] [OUTDIR]
 
 Commands:
   tables  List all tables in the asset databases
-  dump    Dump all tables in the asset databases as CSV files in OUTDIR.
+  dump    Dump all tables in the asset databases in OUTDIR. Defaults to CSV format unless `--json` is used.
 
 Arguments:
   OUTDIR   Location of dumped files. Defaults to project root. Any existing files will be overwritten.
@@ -71,8 +72,10 @@ Arguments:
                     throw new DocoptInputErrorException($"OUTDIR does not exist: '{outDir}'");
             }
 
-            SourceAssetDbToCsv(projectRoot, outDir);
-            ArtifactDbToCsv(projectRoot, outDir);
+            var useCsv = context.CommandLine["--json"].IsFalse;
+            SourceAssetDbToCsv(projectRoot, outDir, useCsv);
+            ArtifactDbToCsv(projectRoot, outDir, useCsv);
+
             return CliExitCode.Success;
         }
 
@@ -80,73 +83,14 @@ Arguments:
         return CliExitCode.ErrorUsage;
     }
 
-    static void SourceAssetDbToCsv(NPath projectRoot, NPath outDir)
+    static void SourceAssetDbToCsv(NPath projectRoot, NPath outDir, bool useCsv)
     {
         using var sourceAssetDb = new SourceAssetLmdb(projectRoot);
 
-        using (var table = new GuidPropertyIdToPropertyTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
+        foreach (var spec in SourceAssetTables.All)
         {
-            csv.Write("Property,IsInMetaFile,UnityGuid,Value0,Value1,...\n");
-
-            var sb = new StringBuilder();
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (guid, prop, value) in table.SelectAll(tx))
-            {
-                csv.Write($"{prop.Prefix},{prop.IsInMetaFile},{guid}");
-
-                var stringValue = prop.ToCsv(value, sb);
-                if (stringValue.Length != 0)
-                    csv.Write($",{stringValue}");
-
-                csv.Write('\n');
-            }
-        }
-
-        using (var table = new GuidToChildrenTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("Parent,Hash,Child0,Child1,...\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (parent, guidChildren) in table.SelectAll(tx))
-            {
-                csv.Write($"{parent},{guidChildren.hash}");
-                foreach (var child in guidChildren.guids)
-                    csv.Write($",{child}");
-                csv.Write('\n');
-            }
-        }
-
-        using (var table = new GuidToIsDirTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("UnityGuid,IsDir\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (guid, isDir) in table.SelectAll(tx))
-                csv.Write($"{guid},{isDir}\n");
-        }
-
-        using (var table = new GuidToPathTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("UnityGuid,Path\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (guid, path) in table.SelectAll(tx))
-                csv.Write($"{guid},{path}\n");
-        }
-
-        using (var table = new PathToHashTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("Path,Hash,Time,FileSize,IsUntrusted\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (path, value) in table.SelectAll(tx))
-                csv.Write($"{path},{value.hash},{new DateTime(value.time)},{value.fileSize},{value.isUntrusted}\n");
+            var path = outDir.Combine($"{sourceAssetDb.Name}-{spec.TableName}");
+            sourceAssetDb.DumpTable(spec, path, useCsv);
         }
 
         using (var table = new MiscTable(sourceAssetDb))
@@ -208,9 +152,31 @@ Arguments:
         }
     }
 
-    static void ArtifactDbToCsv(NPath projectRoot, NPath outDir)
+    static void ArtifactDbToCsv(NPath projectRoot, NPath outDir, bool useCsv)
     {
         using var artifactDb = new ArtifactLmdb(projectRoot);
+
+        /* NOT READY
+        using (var table = new ArtifactIdPropertyIdToPropertyTable(artifactDb))
+        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
+        {
+            csv.Write("ArtifactID,Property,IsInMetaFile,Value0,Value1,...\n");
+
+            var sb = new StringBuilder();
+
+            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
+            foreach (var (id, prop, value) in table.SelectAll(tx))
+            {
+                csv.Write($"{id.Hash},{prop.Name},{prop.IsInMetaFile}");
+
+                var stringValue = prop.ToCsv(value, sb);
+                if (stringValue.Length != 0)
+                    csv.Write($",{stringValue}");
+
+                csv.Write('\n');
+            }
+        }
+        */
 
         using (var table = new ArtifactIdToImportStatsTable(artifactDb))
         using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))

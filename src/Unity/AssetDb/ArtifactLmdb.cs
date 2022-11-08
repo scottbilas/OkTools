@@ -1,6 +1,9 @@
+using System.Text;
 using Spreads.Buffers;
 using Spreads.LMDB;
 using UnityEngine;
+
+// ReSharper disable SuggestBaseTypeForParameterInConstructor
 
 namespace OkTools.Unity.AssetDb;
 
@@ -12,15 +15,36 @@ public class ArtifactLmdb : AssetLmdb
         : base(projectRoot.Combine(UnityProjectConstants.ArtifactDbNPath), k_expectedDbVersion) {}
 }
 
-// TODO: ArtifactIDPropertyIDToProperty
+public class ArtifactIdPropertyIdToPropertyTable : LmdbTable
+{
+    public ArtifactIdPropertyIdToPropertyTable(ArtifactLmdb db) : base(db, "ArtifactIDPropertyIDToProperty") {}
+
+    public IEnumerable<(ArtifactId, PropertyDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
+    {
+        foreach (var kvp in Table.AsEnumerable(tx))
+        {
+            var key = kvp.Key;
+
+            var found = PropertyDefinition.Find(ref key);
+            if (found == null)
+                throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
+
+            var id = key.ReadExpectEnd<ArtifactId>();
+            yield return (id, found, kvp.Value);
+        }
+    }
+}
+
 // TODO: ArtifactIDToArtifactDependencies
-// TODO: ArtifactIDToArtifactMetaInfo
+
+// TODO: ArtifactIDToArtifactMetaInfo (OMG)
+// ArtifactID -> ArtifactMetaInfoBlob
 
 public class ArtifactIdToImportStatsTable : LmdbTable
 {
     public ArtifactIdToImportStatsTable(ArtifactLmdb db) : base(db, "ArtifactIDToImportStats") {}
 
-    public unsafe IEnumerable<(ArtifactId, ArtifactImportStats)> SelectAll(ReadOnlyTransaction tx) =>
+    public IEnumerable<(ArtifactId, ArtifactImportStats)> SelectAll(ReadOnlyTransaction tx) =>
         Table.AsEnumerable(tx).Select(kvp => (
             kvp.Key.ReadExpectEnd<ArtifactId>(),
             ReadArtifactImportStats(kvp.Value)));
@@ -62,88 +86,3 @@ public class CurrentRevisionsTable : LmdbTable
             kvp.Value.ReadExpectEnd<CurrentRevision>()));
 }
 
-public struct CurrentRevision
-{
-    public BlobArtifactKey ArtifactKey;
-    public ArtifactId ArtifactId;
-}
-
-public struct BlobArtifactKey
-{
-    public UnityGuid Guid;
-    public BlobImporterId ImporterId;
-
-    public const string CsvHeader = "UnityGuid," + BlobImporterId.CsvHeader;
-    public string ToCsv() => $"{Guid},{ImporterId.ToCsv()}";
-}
-
-public struct BlobImporterId
-{
-    public Int32 NativeImporterType;
-    public Hash128 ScriptedImporterType;
-
-    public const string CsvHeader = "NativeImporterType,ScriptedImporterType";
-    public string ToCsv() => $"{NativeImporterType},{ScriptedImporterType}";
-}
-
-public struct ArtifactId
-{
-    public Hash128 Hash;
-}
-
-struct ArtifactIdsBlob
-{
-    public BlobArtifactKey ArtifactKey;
-    public BlobArray<ArtifactId> Ids;
-};
-
-public struct ArtifactIds
-{
-    public BlobArtifactKey ArtifactKey;
-    public ArtifactId[] Ids;
-}
-
-struct ArtifactImportStatsBlob
-{
-    // Editor
-    public UInt64           ImportTimeMicroseconds;
-    public BlobString       ArtifactPath;
-    public Int64            ImportedTimestamp;
-    public BlobString       EditorRevision;
-    public BlobString       UserName;
-
-    // Cache Server
-    public UInt16           ReliabilityIndex;
-    public Int64            UploadedTimestamp;
-    public BlobString       UploadIpAddress;
-};
-
-public struct ArtifactImportStats
-{
-    // Editor
-    public UInt64           ImportTimeMicroseconds;
-    public string           ArtifactPath;
-    public Int64            ImportedTimestamp;
-    public string           EditorRevision;
-    public string           UserName;
-
-    // Cache Server
-    public UInt16           ReliabilityIndex;
-    public Int64            UploadedTimestamp;
-    public string           UploadIpAddress;
-
-    public const string CsvHeader = "ImportTimeMicroseconds,ArtifactPath,ImportedTimestamp,EditorRevision,UserName,ReliabilityIndex,UploadedTimestamp,UploadIpAddress";
-    public string ToCsv() => $"{ImportTimeMicroseconds},{ArtifactPath},{ImportedTimestamp},{EditorRevision},{UserName},{ReliabilityIndex},{UploadedTimestamp},{UploadIpAddress}";
-
-    internal static unsafe ArtifactImportStats Create(ArtifactImportStatsBlob* blob) => new()
-    {
-        ImportTimeMicroseconds = blob->ImportTimeMicroseconds,
-        ArtifactPath = blob->ArtifactPath.GetStringFromBlob(),
-        ImportedTimestamp = blob->ImportedTimestamp,
-        EditorRevision = blob->EditorRevision.GetStringFromBlob(),
-        UserName = blob->UserName.GetStringFromBlob(),
-        ReliabilityIndex = blob->ReliabilityIndex,
-        UploadedTimestamp = blob->UploadedTimestamp,
-        UploadIpAddress = blob->UploadIpAddress.GetStringFromBlob(),
-    };
-};

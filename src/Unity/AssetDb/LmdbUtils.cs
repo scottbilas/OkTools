@@ -8,21 +8,20 @@ namespace OkTools.Unity.AssetDb;
 public static class LmdbUtils
 {
     // includes zero terminator
-    public static DirectBuffer StringToBuffer(Dictionary<string, DirectBuffer> cache, string str)
+    public static byte[] StringToBytes(Dictionary<string, byte[]> cache, string str)
     {
-        if (cache.TryGetValue(str, out var buffer))
-            return buffer;
+        if (cache.TryGetValue(str, out var bytes))
+            return bytes;
 
-        cache.Add(str, buffer = StringToBuffer(str, true));
-        return buffer;
+        cache.Add(str, bytes = StringToBytes(str, true));
+        return bytes;
     }
 
-    public static DirectBuffer StringToBuffer(string str, bool includeNullTerminator)
+    public static byte[] StringToBytes(string str, bool includeNullTerminator)
     {
         var bytes = new byte[str.Length + (includeNullTerminator ? 1 : 0)];
         Encoding.ASCII.GetBytes(str.AsSpan(), bytes.AsSpan());
-
-        return new(bytes);
+        return bytes;
     }
 
     public static string ToAsciiString(this DirectBuffer @this)
@@ -38,7 +37,7 @@ public static class LmdbUtils
 public class LmdbDatabase : IDisposable
 {
     readonly LMDBEnvironment? _env;
-    readonly Dictionary<string, DirectBuffer> _stringBufferCache = new();
+    readonly Dictionary<string, byte[]> _stringBytesCache = new();
 
     public LmdbDatabase(NPath dbPath)
     {
@@ -77,8 +76,8 @@ public class LmdbDatabase : IDisposable
     // ReSharper disable once ConvertToAutoPropertyWhenPossible
     public LMDBEnvironment Env => _env!;
 
-    public DirectBuffer StringToBuffer(string str) =>
-        LmdbUtils.StringToBuffer(_stringBufferCache, str);
+    public byte[] StringToBytes(string str) =>
+        LmdbUtils.StringToBytes(_stringBytesCache, str);
 
     public IEnumerable<string> SelectTableNames()
     {
@@ -113,7 +112,7 @@ public class LmdbTable : IDisposable
 
     public ReadOnlySpan<byte> Get(ReadOnlyTransaction tx, string key)
     {
-        var matchKey = _db.StringToBuffer(key);
+        var matchKey = new DirectBuffer(_db.StringToBytes(key));
         if (!_table.TryGet(tx, ref matchKey, out var found))
             throw new InvalidOperationException($"Can't find {_db.Name}.{Name}.{key}");
 
@@ -122,7 +121,7 @@ public class LmdbTable : IDisposable
 
     public uint GetUint(ReadOnlyTransaction tx, string key)
     {
-        var matchKey = _db.StringToBuffer(key);
+        var matchKey = new DirectBuffer(_db.StringToBytes(key));
         if (!_table.TryGet(tx, ref matchKey, out uint found))
             throw new InvalidOperationException($"Can't find {_db.Name}.{Name}.{key}");
 

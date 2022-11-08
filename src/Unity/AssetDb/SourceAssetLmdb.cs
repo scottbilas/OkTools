@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using Spreads.Buffers;
@@ -5,7 +6,7 @@ using Spreads.LMDB;
 using UnityEngine;
 using UnityEngine.AssetLmdb;
 
-// ReSharper disable BuiltInTypeReferenceStyle
+// ReSharper disable InvertIf
 
 namespace OkTools.Unity.AssetDb;
 
@@ -17,143 +18,78 @@ public class SourceAssetLmdb : AssetLmdb
         : base(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersion) {}
 }
 
-public class PropertyDefinition
+[AttributeUsage(AttributeTargets.Method)]
+public class AssetLmdbTableAttribute : Attribute
 {
-    readonly PropertyType _propertyType;
-
-    public readonly string Prefix;
-    public readonly DirectBuffer PrefixBuffer;
-    public readonly bool IsInMetaFile;
-
-    PropertyDefinition(string prefix, bool isInMetaFile, PropertyType type)
+    public AssetLmdbTableAttribute(string tableName, string csvFields)
     {
-        Prefix = prefix;
-        PrefixBuffer = LmdbUtils.StringToBuffer(prefix, false);
-        IsInMetaFile = isInMetaFile;
-
-        _propertyType = type;
+        TableName = tableName;
+        CsvFields = csvFields;
     }
 
-    public static readonly PropertyDefinition[] All =
-    {
-        // from top of PropertyDefinition.cpp
-        /*StringArrayPropertyDefinition kLabelsPropDef*/                     new("labels",                          true,  PropertyType.StringArray),
-        /*SInt32PropertyDefinition kAssetBundleIndexPropDef*/                new("AssetBundleIndex",                false, PropertyType.SInt32),
-        /*StringPropertyDefinition kAssetBundleNamePropDef*/                 new("assetBundleName",                 true,  PropertyType.String),
-        /*StringPropertyDefinition kAssetBundleVariantPropDef*/              new("assetBundleVariant",              true,  PropertyType.String),
-        /*SInt64PropertyDefinition kMainObjectLocalIdentifierInFilePropDef*/ new("MainObjectLocalIdentifierInFile", false, PropertyType.SInt64),
-        /*ImporterIDPropertyDefinition kImporterOverridePropDef*/            new("importerOverride",                true,  PropertyType.ImporterId),
-        /*Hash128PropertyDefinition kImportLogFilePropDef*/                  new("importLogFile",                   false, PropertyType.Hash128),
-        /*SInt32PairPropertyDefinition kImportLogEntriesCountPropDef*/       new("ImportLogEntriesCount",           false, PropertyType.SInt32Pair),
-        /*StringPropertyDefinition kScriptCompilationAssetPathPropDef*/      new("scriptCompilationAssetPath",      false, PropertyType.String),
-        /*Hash128PropertyDefinition kImporterErrorFilePropDef*/              new("importerErrorFile",               false, PropertyType.Hash128),
-        /*SInt32PropertyDefinition kAssetOriginProductIdPropDef*/            new("productId",                       true,  PropertyType.SInt32),
-        /*StringPropertyDefinition kAssetOriginPackageNamePropDef*/          new("packageName",                     true,  PropertyType.String),
-        /*StringPropertyDefinition kAssetOriginPackageVersionPropDef*/       new("packageVersion",                  true,  PropertyType.String),
-        /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            new("assetPath",                       true,  PropertyType.String),
-        /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             new("uploadId",                        true,  PropertyType.SInt32),
-    };
+    public string TableName { get; }
+    public string CsvFields { get; }
 
-    enum PropertyType
-    {
-        SInt32,
-        SInt32Pair,
-        SInt64,
-        String,
-        StringArray,
-        ImporterId,
-        Hash128,
-    }
+    public static TableDumpSpec[] CreateTableDumpSpecs(Type type) => type
+        .GetMethods(BindingFlags.Static | BindingFlags.Public)
+        .Select(m =>
+            {
+                var attr = m.GetCustomAttribute<AssetLmdbTableAttribute>();
+                if (attr == null)
+                    return null;
 
-    public string ToCsv(DirectBuffer value, StringBuilder sb)
-    {
-        string str;
+                if (m.ReturnType != typeof(void))
+                    throw new InvalidOperationException($"Method {m.Name} must return void");
 
-        // ReSharper disable BuiltInTypeReferenceStyle
-        switch (_propertyType)
-        {
-            case PropertyType.SInt32:
-                str = value.Read<Int32>().ToString();
-                break;
+                //$$$ test the rest..
 
-            case PropertyType.SInt32Pair:
-                var i0 = value.Read<Int32>();
-                var i1 = value.Read<Int32>();
-                str = $"{i0},{i1}";
-                break;
-
-            case PropertyType.SInt64:
-                str = value.Read<Int64>().ToString();
-                break;
-
-            case PropertyType.String:
-                str = value.ReadAscii(true);
-                break;
-
-            case PropertyType.StringArray:
-                var count = value.Read<UInt32>();
-                for (var i = 0; i < count; ++i)
-                {
-                    if (sb.Length != 0)
-                        sb.Append(',');
-
-                    var len = value.Read<UInt16>();
-                    value.ReadAscii(sb, len, true);
-                }
-                str = sb.ToString();
-                sb.Clear();
-                break;
-
-            case PropertyType.ImporterId:
-                var id = value.Read<ImporterId>();
-                str = $"{id.NativeImporterType},{id.ScriptedImporterType}";
-                break;
-
-            case PropertyType.Hash128:
-                str = value.Read<Hash128>().ToString();
-                break;
-
-            default:
-                throw new InvalidOperationException();
-        }
-        // ReSharper restore BuiltInTypeReferenceStyle
-
-        value.ExpectEnd();
-        return str;
-    }
+                return new TableDumpSpec(attr.TableName, attr.CsvFields, (c, k, v) => m.Invoke(null, new object[] {c, k, v}));
+            })
+        .Where(s => s != null)
+        .Select(m => m!)
+        .ToArray();
 }
 
-// GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
-public class GuidPropertyIdToPropertyTable : LmdbTable
+public static class SourceAssetTables
 {
-    public GuidPropertyIdToPropertyTable(SourceAssetLmdb db) : base(db, "GuidPropertyIDToProperty") {}
+    public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(SourceAssetTables));
 
-    public IEnumerable<(UnityGuid, PropertyDefinition, DirectBuffer)> SelectAll(ReadOnlyTransaction tx)
+    [AssetLmdbTable("GuidPropertyIDToProperty", "UnityGuid,Property,IsInMetaFile,Value0,Value1,...")]
+    public static void DumpGuidPropertyIdToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        foreach (var (key, value) in Table.AsEnumerable(tx))
-        {
-            var found = PropertyDefinition.All.FirstOrDefault(propertyDef => key.Span.StartsWith(propertyDef.PrefixBuffer.Span));
-            if (found == null)
-                throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
+        // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
 
-            var unityGuid = key.Slice(found.PrefixBuffer.Length).ReadExpectEnd<UnityGuid>();
-            yield return (unityGuid, found, value);
+        var property = PropertyDefinition.Find(ref key);
+        if (property == null)
+            throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
+
+        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+
+        if (dump.Csv != null)
+        {
+            dump.Csv.Write($"{unityGuid},{property.Name},{property.IsInMetaFile}");
+
+            var stringValue = property.Write(value, dump.Buffer);
+            if (stringValue.Length != 0)
+                dump.Csv.Write($",{stringValue}");
+        }
+
+        if (dump.Json != null)
+        {
+            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json.WriteString("Property", property.Name);
+            dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
+            property.Write(value, dump.Json, "Value");
         }
     }
-}
 
-// GuidDB.cpp: GuidDB::m_pGuidToChildren; UnityGuid -> GuidChildren
-public class GuidToChildrenTable : LmdbTable
-{
-    public GuidToChildrenTable(SourceAssetLmdb db) : base(db, "GuidToChildren") {}
-
-    public IEnumerable<(UnityGuid, GuidChildren)> SelectAll(ReadOnlyTransaction tx) =>
-        Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGuid>(),
-            ReadChildren(kvp.Value)));
-
-    static GuidChildren ReadChildren(DirectBuffer value)
+    [AssetLmdbTable("GuidToChildren", "Parent,Hash,Child0,Child1,...")]
+    public static void DumpGuidToChildren(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
+        // GuidDB.cpp: GuidDB::m_pGuidToChildren
+
+        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+
         var hash = value.Read<Hash128>();
 
         // count determined by using remaining space
@@ -164,112 +100,77 @@ public class GuidToChildrenTable : LmdbTable
 
         var children = MemoryMarshal.Cast<byte, UnityGuid>(value.Span);
 
-        // TODO: get rid of alloc (just point at lmdb memory), if this ever gets to the point where we need to care.
-        // for now just do what's faster to write.
-        return new GuidChildren { hash = hash, guids = children.ToArray() };
-    }
-}
-
-// GuidDB.cpp: GuidDB::m_pGuidToIsDir; string -> uint8 (bool, 0 or nonzero)
-public class GuidToIsDirTable : LmdbTable
-{
-    public GuidToIsDirTable(SourceAssetLmdb db) : base(db, "GuidToIsDir") {}
-
-    public IEnumerable<(UnityGuid, bool)> SelectAll(ReadOnlyTransaction tx) =>
-        Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGuid>(),
-            kvp.Value.ReadExpectEnd<byte>() != 0));
-}
-
-// GuidDB.cpp: GuidDB::m_pGuidToPath; UnityGuid -> string path
-public class GuidToPathTable : LmdbTable
-{
-    public GuidToPathTable(SourceAssetLmdb db) : base(db, "GuidToPath") {}
-
-    public IEnumerable<(UnityGuid, string)> SelectAll(ReadOnlyTransaction tx) =>
-        Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ReadExpectEnd<UnityGuid>(),
-            kvp.Value.ToAsciiString()));
-}
-
-// HashDB.cpp: HashDB::m_pPathToHash; string path -> HashDBValue
-public class PathToHashTable : LmdbTable
-{
-    public PathToHashTable(SourceAssetLmdb db) : base(db, "hash") {}
-
-    public IEnumerable<(string, HashDBValue)> SelectAll(ReadOnlyTransaction tx) =>
-        Table.AsEnumerable(tx).Select(kvp => (
-            kvp.Key.ToAsciiString(),
-            kvp.Value.ReadExpectEnd<HashDBValue>()));
-}
-
-public class MiscDefinition
-{
-    readonly MiscType _miscType;
-
-    public readonly string Name;
-    public readonly DirectBuffer NameBuffer;
-
-    MiscDefinition(string name, MiscType type)
-    {
-        Name = name;
-        NameBuffer = LmdbUtils.StringToBuffer(name, false);
-
-        _miscType = type;
-    }
-
-    public static readonly MiscDefinition[] All =
-    {
-        // look for s_Misc_* in SourceAssetDB.cpp
-        /*s_Misc_RefreshVersion*/          new("refreshVersion",          MiscType.SInt32),           // refreshVersion -> int version (default -1 if missing)
-        /*s_Misc_ShaderCacheClearVersion*/ new("shaderCacheClearVersion", MiscType.SInt32),           // shaderCacheClearVersion -> int version (default -1 if missing)
-        /*s_Misc_CrashedImportPaths*/      new("crashedImportPaths",      MiscType.MultilineString),  // crashedImportPaths -> string[] (default empty if missing)
-        /*s_AssetBundNames*/               new("assetBundleNames",        MiscType.AssetBundleNames), // assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
-    };
-
-    enum MiscType
-    {
-        SInt32,
-        MultilineString,
-        AssetBundleNames,
-    }
-
-    public unsafe AssetBundleFullNameIndex[]? TryGetAssetBundleNames(DirectBuffer value)
-    {
-        if (_miscType != MiscType.AssetBundleNames)
-            return null;
-
-        var names = value.Cast<BlobArray<AssetBundleFullNameIndexBlob>>();
-        var result = new AssetBundleFullNameIndex[names->Length];
-
-        for (var i = 0; i < names->Length; ++i)
+        if (dump.Csv != null)
         {
-            var blob = names->RefElementFromBlob(i);
-            result[i] = new AssetBundleFullNameIndex
-            {
-                AssetBundleName = blob->AssetBundleName.GetStringFromBlob(),
-                AssetBundleVariant = blob->AssetBundleVariant.GetStringFromBlob(),
-                Index = blob->Index,
-            };
+            dump.Csv.Write($"{unityGuid},{hash}");
+            foreach (var child in children)
+                dump.Csv.Write($",{child}");
         }
 
-        return result;
+        if (dump.Json != null)
+        {
+            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json.WriteString("Hash", hash.ToString());
+
+            dump.Json.WriteStartArray("Children");
+            foreach (var child in children)
+                dump.Json.WriteStringValue(child.ToString());
+            dump.Json.WriteEndArray();
+        }
     }
 
-    public string ToCsv(DirectBuffer value)
+    [AssetLmdbTable("GuidToIsDir", "UnityGuid,IsDir")]
+    public static void DumpGuidToIsDir(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        var str = _miscType switch
+        // GuidDB.cpp: GuidDB::m_pGuidToIsDir
+
+        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var isDir = value.ReadExpectEnd<byte>() != 0;
+
+        dump.Csv?.Write($"{unityGuid},{isDir}");
+
+        if (dump.Json != null)
         {
-            MiscType.SInt32 =>
-                value.Read<Int32>().ToString(),
-            MiscType.MultilineString =>
-                value.ReadAscii(true).TrimEnd().Replace('\n', ','),
+            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json.WriteBoolean("IsDir", isDir);
+        }
+    }
 
-            _ => throw new InvalidOperationException()
-        };
+    [AssetLmdbTable("GuidToPath", "UnityGuid,Path")]
+    public static void DumpGuidToPath(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    {
+        // GuidDB.cpp: GuidDB::m_pGuidToPath
 
-        value.ExpectEnd();
-        return str;
+        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var path = value.ToAsciiString();
+
+        dump.Csv?.Write($"{unityGuid},{path}");
+
+        if (dump.Json != null)
+        {
+            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json.WriteString("Path", path);
+        }
+    }
+
+    [AssetLmdbTable("hash", "Path,Hash,Time,FileSize,IsUntrusted")]
+    public static void DumpPathToHash(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    {
+        // HashDB.cpp: HashDB::m_pPathToHash
+
+        var path = key.ToAsciiString();
+        var hash = value.ReadExpectEnd<HashDBValue>();
+
+        dump.Csv?.Write($"{path},{hash.hash},{new DateTime(hash.time)},{hash.fileSize},{hash.isUntrusted}\n");
+
+        if (dump.Json != null)
+        {
+            dump.Json.WriteString("Path", path);
+            dump.Json.WriteString("Hash", hash.hash.ToString());
+            dump.Json.WriteString("Time", new DateTime(hash.time));
+            dump.Json.WriteNumber("FileSize", hash.fileSize);
+            dump.Json.WriteBoolean("IsUntrusted", hash.isUntrusted);
+        }
     }
 }
 
@@ -282,7 +183,7 @@ public class MiscTable : LmdbTable
     {
         foreach (var (key, value) in Table.AsEnumerable(tx))
         {
-            var found = MiscDefinition.All.FirstOrDefault(miscDef => key.Span[..^1].SequenceEqual(miscDef.NameBuffer.Span));
+            var found = MiscDefinition.All.FirstOrDefault(miscDef => key.Span[..^1].SequenceEqual(miscDef.NameBuffer));
             if (found == null)
                 continue; //throw new InvalidDataException($"Unknown misc entry: {Encoding.ASCII.GetString(key.Span)}");
 
@@ -348,44 +249,4 @@ public class RootFoldersTable : LmdbTable
         };
         // TODO: add safety check that the end of PhysicalPath is the end of the value too
     }
-}
-
-struct ImporterId
-{
-    public Int32 NativeImporterType;
-    public Hash128 ScriptedImporterType;
-}
-
-// SourceAssetDB.h: RootFolderPropertiesBlob
-struct RootFolderPropertiesBlob
-{
-    public UnityGuid Guid;
-    public bool Immutable;
-    public BlobString MountPoint;
-    public BlobString Folder;
-    public BlobString PhysicalPath;
-}
-
-// TODO: get rid of this alloc-by-default thing
-public struct RootFolderProperties
-{
-    public UnityGuid Guid;
-    public bool Immutable;
-    public string MountPoint;
-    public string Folder;
-    public string PhysicalPath;
-}
-
-struct AssetBundleFullNameIndexBlob
-{
-    public BlobString AssetBundleName;
-    public BlobString AssetBundleVariant;
-    public int Index;
-}
-
-public struct AssetBundleFullNameIndex
-{
-    public string AssetBundleName;
-    public string AssetBundleVariant;
-    public int Index;
 }
