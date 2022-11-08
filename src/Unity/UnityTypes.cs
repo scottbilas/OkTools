@@ -31,6 +31,7 @@ public struct Hash128
 
     public override string ToString()
     {
+        // TODO: overload that writes direct to a span
         var bytes = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref this, 1));
         return bytes.ToHexString();
     }
@@ -57,6 +58,7 @@ public unsafe struct UnityGuid
 
     public override string ToString()
     {
+        // TODO: overload that writes direct to a span
         return string.Create(32, this, (chars, g) =>
         {
             // adapted from GUIDToString (Runtime/Utilities/UnityGUID.cpp)
