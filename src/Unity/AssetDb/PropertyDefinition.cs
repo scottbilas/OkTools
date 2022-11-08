@@ -1,5 +1,3 @@
-using System.Text;
-using System.Text.Json;
 using Spreads.Buffers;
 using UnityEngine;
 
@@ -70,116 +68,117 @@ public class PropertyDefinition
         Hash128,
     }
 
-    public string Write(DirectBuffer value, StringBuilder sb)
+    public void Write(DumpContext dump, ref DirectBuffer value)
     {
-        string str;
-
         // ReSharper disable BuiltInTypeReferenceStyle
         switch (_propertyType)
         {
             case PropertyType.SInt32:
-                str = value.Read<Int32>().ToString();
-                break;
+            {
+                var i = value.Read<Int32>();
+
+                if (dump.Csv != null)
+                    dump.Csv?.Write(i);
+                else
+                    dump.Json!.WriteNumber("Value", i);
+            }
+            break;
 
             case PropertyType.SInt32Pair:
+            {
                 var i0 = value.Read<Int32>();
                 var i1 = value.Read<Int32>();
-                str = $"{i0},{i1}";
-                break;
 
-            case PropertyType.SInt64:
-                str = value.Read<Int64>().ToString();
-                break;
-
-            case PropertyType.String:
-                str = value.ReadAscii(true);
-                break;
-
-            case PropertyType.StringArray:
-                var count = value.Read<UInt32>();
-                for (var i = 0; i < count; ++i)
+                if (dump.Csv != null)
+                    dump.Csv.Write($"{i0},{i1}");
+                else
                 {
-                    if (sb.Length != 0)
-                        sb.Append(',');
-
-                    var len = value.Read<UInt16>();
-                    value.ReadAscii(sb, len, true);
+                    dump.Json!.WriteStartArray("Value");
+                    dump.Json.WriteNumberValue(i0);
+                    dump.Json.WriteNumberValue(i1);
+                    dump.Json.WriteEndArray();
                 }
-                str = sb.ToString();
-                sb.Clear();
-                break;
-
-            case PropertyType.ImporterId:
-                var id = value.Read<ImporterId>();
-                str = $"{id.NativeImporterType},{id.ScriptedImporterType}";
-                break;
-
-            case PropertyType.Hash128:
-                str = value.Read<Hash128>().ToString();
-                break;
-
-            default:
-                throw new InvalidOperationException();
-        }
-        // ReSharper restore BuiltInTypeReferenceStyle
-
-        value.ExpectEnd();
-        return str;
-    }
-
-    public void Write(DirectBuffer value, Utf8JsonWriter writer, string valueName)
-    {
-        // ReSharper disable BuiltInTypeReferenceStyle
-        switch (_propertyType)
-        {
-            case PropertyType.SInt32:
-                writer.WriteNumber(valueName, value.Read<Int32>());
-                break;
-
-            case PropertyType.SInt32Pair:
-                writer.WriteStartArray(valueName);
-                writer.WriteNumberValue(value.Read<Int32>());
-                writer.WriteNumberValue(value.Read<Int32>());
-                writer.WriteEndArray();
-                break;
+            }
+            break;
 
             case PropertyType.SInt64:
-                writer.WriteNumber(valueName, value.Read<Int64>());
-                break;
+            {
+                var i = value.Read<Int64>();
+
+                if (dump.Csv != null)
+                    dump.Csv.Write(i);
+                else
+                    dump.Json!.WriteNumber("Value", i);
+            }
+            break;
 
             case PropertyType.String:
-                writer.WriteString(valueName, value.ReadAscii(true));
-                break;
+            {
+                var s = value.ReadAscii(true);
+
+                if (dump.Csv != null)
+                    dump.Csv.Write(s);
+                else
+                    dump.Json!.WriteString("Value", s);
+            }
+            break;
 
             case PropertyType.StringArray:
-                writer.WriteStartArray(valueName);
+            {
+                dump.Json?.WriteStartArray("Value");
+
                 var count = value.Read<UInt32>();
                 for (var i = 0; i < count; ++i)
                 {
                     var len = value.Read<UInt16>();
                     var str = value.ReadAscii(len, true);
-                    writer.WriteStringValue(str);
+
+                    if (dump.Csv != null)
+                    {
+                        if (i != 0)
+                            dump.Buffer.Append(',');
+                        dump.Csv.Write(str);
+                    }
+                    else
+                    {
+                        dump.Json!.WriteStringValue(str);
+                    }
                 }
-                writer.WriteEndArray();
-                break;
+
+                dump.Json?.WriteEndArray();
+            }
+            break;
 
             case PropertyType.ImporterId:
-                writer.WriteStartObject(valueName);
+            {
                 var id = value.Read<ImporterId>();
-                writer.WriteNumber("NativeImporterType", id.NativeImporterType);
-                writer.WriteString("ScriptedImporterType", id.ScriptedImporterType.ToString());
-                writer.WriteEndObject();
-                break;
+
+                if (dump.Csv != null)
+                    dump.Csv.Write($"{id.NativeImporterType},{id.ScriptedImporterType}");
+                else
+                {
+                    dump.Json!.WriteStartObject("Value");
+                    dump.Json.WriteNumber("NativeImporterType", id.NativeImporterType);
+                    dump.Json.WriteString("ScriptedImporterType", id.ScriptedImporterType.ToString());
+                    dump.Json.WriteEndObject();
+                }
+            }
+            break;
 
             case PropertyType.Hash128:
-                writer.WriteString(valueName, value.Read<Hash128>().ToString());
-                break;
+            {
+                var hash = value.Read<Hash128>().ToString();
+
+                if (dump.Csv != null)
+                    dump.Csv?.Write(hash);
+                else
+                    dump.Json!.WriteString("Value", hash);
+            }
+            break;
 
             default:
                 throw new InvalidOperationException();
         }
         // ReSharper restore BuiltInTypeReferenceStyle
-
-        value.ExpectEnd();
     }
 }

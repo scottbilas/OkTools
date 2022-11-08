@@ -66,21 +66,16 @@ public static class SourceAssetTables
         var unityGuid = key.ReadExpectEnd<UnityGuid>();
 
         if (dump.Csv != null)
+            dump.Csv?.Write($"{unityGuid},{property.Name},{property.IsInMetaFile},");
+        else
         {
-            dump.Csv.Write($"{unityGuid},{property.Name},{property.IsInMetaFile}");
-
-            var stringValue = property.Write(value, dump.Buffer);
-            if (stringValue.Length != 0)
-                dump.Csv.Write($",{stringValue}");
-        }
-
-        if (dump.Json != null)
-        {
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json!.WriteString("UnityGuid", unityGuid.ToString());
             dump.Json.WriteString("Property", property.Name);
             dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
-            property.Write(value, dump.Json, "Value");
         }
+
+        property.Write(dump, ref value);
+        value.ExpectEnd();
     }
 
     [AssetLmdbTable("GuidToChildren", "Parent,Hash,Child0,Child1,...")]
@@ -106,10 +101,9 @@ public static class SourceAssetTables
             foreach (var child in children)
                 dump.Csv.Write($",{child}");
         }
-
-        if (dump.Json != null)
+        else
         {
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json!.WriteString("UnityGuid", unityGuid.ToString());
             dump.Json.WriteString("Hash", hash.ToString());
 
             dump.Json.WriteStartArray("Children");
@@ -127,11 +121,11 @@ public static class SourceAssetTables
         var unityGuid = key.ReadExpectEnd<UnityGuid>();
         var isDir = value.ReadExpectEnd<byte>() != 0;
 
-        dump.Csv?.Write($"{unityGuid},{isDir}");
-
-        if (dump.Json != null)
+        if (dump.Csv != null)
+            dump.Csv?.Write($"{unityGuid},{isDir}");
+        else
         {
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json!.WriteString("UnityGuid", unityGuid.ToString());
             dump.Json.WriteBoolean("IsDir", isDir);
         }
     }
@@ -144,11 +138,11 @@ public static class SourceAssetTables
         var unityGuid = key.ReadExpectEnd<UnityGuid>();
         var path = value.ToAsciiString();
 
-        dump.Csv?.Write($"{unityGuid},{path}");
-
-        if (dump.Json != null)
+        if (dump.Csv != null)
+            dump.Csv.Write($"{unityGuid},{path}");
+        else
         {
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json!.WriteString("UnityGuid", unityGuid.ToString());
             dump.Json.WriteString("Path", path);
         }
     }
@@ -161,11 +155,11 @@ public static class SourceAssetTables
         var path = key.ToAsciiString();
         var hash = value.ReadExpectEnd<HashDBValue>();
 
-        dump.Csv?.Write($"{path},{hash.hash},{new DateTime(hash.time)},{hash.fileSize},{hash.isUntrusted}\n");
-
-        if (dump.Json != null)
+        if (dump.Csv != null)
+            dump.Csv.Write($"{path},{hash.hash},{new DateTime(hash.time)},{hash.fileSize},{hash.isUntrusted}\n");
+        else
         {
-            dump.Json.WriteString("Path", path);
+            dump.Json!.WriteString("Path", path);
             dump.Json.WriteString("Hash", hash.hash.ToString());
             dump.Json.WriteString("Time", new DateTime(hash.time));
             dump.Json.WriteNumber("FileSize", hash.fileSize);
