@@ -45,7 +45,7 @@ Arguments:
             var serializer = new Serializer();
 
             {
-                using var sourceAssetDb = new SourceAssetLmdb(projectRoot);
+                using var sourceAssetDb = SourceAssetLmdb.OpenLmdb(projectRoot);
                 Console.WriteLine(sourceAssetDb.DbPath);
                 Console.WriteLine(serializer.Serialize(sourceAssetDb.GetInfo()));
             }
@@ -72,9 +72,7 @@ Arguments:
                     throw new DocoptInputErrorException($"OUTDIR does not exist: '{outDir}'");
             }
 
-            var useCsv = context.CommandLine["--json"].IsFalse;
-            SourceAssetDbToCsv(projectRoot, outDir, useCsv);
-            ArtifactDbToCsv(projectRoot, outDir, useCsv);
+            DumpDbs(projectRoot, outDir, context.CommandLine["--json"].IsFalse);
 
             return CliExitCode.Success;
         }
@@ -83,77 +81,16 @@ Arguments:
         return CliExitCode.ErrorUsage;
     }
 
-    static void SourceAssetDbToCsv(NPath projectRoot, NPath outDir, bool useCsv)
+    static void DumpDbs(NPath projectRoot, NPath outDir, bool useCsv)
     {
-        using var sourceAssetDb = new SourceAssetLmdb(projectRoot);
+        using var sourceAssetDb = SourceAssetLmdb.OpenLmdb(projectRoot);
 
-        foreach (var spec in SourceAssetTables.All)
+        foreach (var spec in SourceAssetLmdb.All)
         {
             var path = outDir.Combine($"{sourceAssetDb.Name}-{spec.TableName}");
             sourceAssetDb.DumpTable(spec, path, useCsv);
         }
 
-        using (var table = new MiscTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("Misc,Value0,Value1,...\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (misc, value) in table.SelectAll(tx))
-            {
-                var assetBundleNames = misc.TryGetAssetBundleNames(value);
-                if (assetBundleNames != null)
-                {
-                    for (var i = 0; i < assetBundleNames.Length; ++i)
-                    {
-                        var abn = assetBundleNames[i];
-                        csv.Write($"{misc.Name}{i},{abn.AssetBundleName},{abn.AssetBundleVariant},{abn.Index}\n");
-                    }
-                }
-                else
-                {
-                    csv.Write($"{misc.Name}");
-                    var stringValue = misc.ToCsv(value);
-                    if (stringValue.Length != 0)
-                        csv.Write($",{stringValue}");
-                    csv.Write('\n');
-                }
-            }
-        }
-
-        using (var table = new PathToGuidTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("Path,UnityGuid,MetaFileHash,AssetFileHash\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (path, value) in table.SelectAll(tx))
-                csv.Write($"{path},{value.guid},{value.metaFileHash},{value.assetFileHash}\n");
-        }
-
-        using (var table = new PropertyIdToTypeTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("PropertyId,Type\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (propertyId, type) in table.SelectAll(tx))
-                csv.Write($"{propertyId},{type}\n");
-        }
-
-        using (var table = new RootFoldersTable(sourceAssetDb))
-        using (var csv = File.CreateText(outDir.Combine($"{sourceAssetDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("RootFolder,UnityGuid,Immutable,MountPoint,Folder,PhysicalPath\n");
-
-            using var tx = sourceAssetDb.Env.BeginReadOnlyTransaction();
-            foreach (var (folder, properties) in table.SelectAll(tx))
-                csv.Write($"{folder},{properties.Guid},{properties.Immutable},{properties.MountPoint},{properties.Folder},{properties.PhysicalPath}\n");
-        }
-    }
-
-    static void ArtifactDbToCsv(NPath projectRoot, NPath outDir, bool useCsv)
-    {
         using var artifactDb = new ArtifactLmdb(projectRoot);
 
         /* NOT READY

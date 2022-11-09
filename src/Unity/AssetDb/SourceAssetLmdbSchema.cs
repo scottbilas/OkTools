@@ -27,15 +27,6 @@ struct RootFolderPropertiesBlob
     public BlobString PhysicalPath;
 }
 
-public struct RootFolderProperties
-{
-    public UnityGuid Guid;
-    public bool Immutable;
-    public string MountPoint;
-    public string Folder;
-    public string PhysicalPath;
-}
-
 struct AssetBundleFullNameIndexBlob
 {
     public BlobString AssetBundleName;
@@ -43,81 +34,70 @@ struct AssetBundleFullNameIndexBlob
     public int Index;
 }
 
-public struct AssetBundleFullNameIndex
+struct GuidDbValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
 {
-    public string AssetBundleName;
-    public string AssetBundleVariant;
-    public int Index;
+    public UnityGuid Guid;
+    public Hash128 MetaFileHash;    // these are both SpookyV2
+    public Hash128 AssetFileHash;
+
+    /* manual scanner
+
+    using var metaFile = File.OpenRead(testAssetMetaPath);
+    var deserialized = (dynamic)new SharpYaml.Serialization.Serializer().Deserialize(metaFile);
+    var hasher = SpookyHashV2Factory.Instance.Create();
+
+    var guid = ((string)deserialized["guid"]).ToUpper();
+    var metaFileHash = hasher.ComputeHash(File.ReadAllBytes(testAssetMetaPath));
+    var assetFileHash = hasher.ComputeHash(File.ReadAllBytes(testAssetPath));
+    */
+}
+
+struct HashDbValue // Modules/AssetDatabase/Editor/V2/HashDB.h
+{
+    public Hash128 Hash;
+    public long Time;
+    public UInt64 FileSize;
+    public bool IsUntrusted;
+
+    public DateTime TimeAsDateTime => new(Time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
 }
 
 public class MiscDefinition
 {
-    readonly MiscType _miscType;
+    readonly byte[] _nameBuffer;
 
     public readonly string Name;
-    public readonly byte[] NameBuffer;
+    public readonly LmdbValue.Type ValueType;
 
-    MiscDefinition(string name, MiscType type)
+    MiscDefinition(string name, LmdbValue.Type type)
     {
+        _nameBuffer = LmdbUtils.StringToBytes(name, false);
+
         Name = name;
-        NameBuffer = LmdbUtils.StringToBytes(name, false);
-
-        _miscType = type;
+        ValueType = type;
     }
 
-    public static readonly MiscDefinition[] All =
+    public static MiscDefinition? Find(ref DirectBuffer name)
     {
-        // look for s_Misc_* in SourceAssetDB.cpp
-        /*s_Misc_RefreshVersion*/          new("refreshVersion",          MiscType.SInt32),           // refreshVersion -> int version (default -1 if missing)
-        /*s_Misc_ShaderCacheClearVersion*/ new("shaderCacheClearVersion", MiscType.SInt32),           // shaderCacheClearVersion -> int version (default -1 if missing)
-        /*s_Misc_CrashedImportPaths*/      new("crashedImportPaths",      MiscType.MultilineString),  // crashedImportPaths -> string[] (default empty if missing)
-        /*s_AssetBundNames*/               new("assetBundleNames",        MiscType.AssetBundleNames), // assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
-    };
-
-    enum MiscType
-    {
-        SInt32,
-        MultilineString,
-        AssetBundleNames,
-    }
-
-    public unsafe AssetBundleFullNameIndex[]? TryGetAssetBundleNames(DirectBuffer value)
-    {
-        if (_miscType != MiscType.AssetBundleNames)
-            return null;
-
-        var names = value.Cast<BlobArray<AssetBundleFullNameIndexBlob>>();
-        var result = new AssetBundleFullNameIndex[names->Length];
-
-        for (var i = 0; i < names->Length; ++i)
+        // TODO: binary search or hashtable or whatev (remember it's "starts with")
+        foreach (var misc in k_all)
         {
-            var blob = names->RefElementFromBlob(i);
-            result[i] = new AssetBundleFullNameIndex
+            if (name.Span.StartsWith(misc._nameBuffer))
             {
-                AssetBundleName = blob->AssetBundleName.GetStringFromBlob(),
-                AssetBundleVariant = blob->AssetBundleVariant.GetStringFromBlob(),
-                Index = blob->Index,
-            };
+                name = name.Slice(misc._nameBuffer.Length);
+                return misc;
+            }
         }
 
-        return result;
+        return null;
     }
 
-    public string ToCsv(DirectBuffer value)
+    static readonly MiscDefinition[] k_all =
     {
-        // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-        var str = _miscType switch
-        {
-            MiscType.SInt32 =>
-                value.Read<Int32>().ToString(),
-            MiscType.MultilineString =>
-                value.ReadAscii(true).TrimEnd().Replace('\n', ','),
-
-            _ => throw new InvalidOperationException()
-        };
-
-        value.ExpectEnd();
-        return str;
-    }
+        // look for s_Misc_* in SourceAssetDB.cpp
+        /*s_Misc_RefreshVersion*/          new("refreshVersion",          LmdbValue.Type.SInt32),           // refreshVersion -> int version (default -1 if missing)
+        /*s_Misc_ShaderCacheClearVersion*/ new("shaderCacheClearVersion", LmdbValue.Type.SInt32),           // shaderCacheClearVersion -> int version (default -1 if missing)
+        /*s_Misc_CrashedImportPaths*/      new("crashedImportPaths",      LmdbValue.Type.MultilineString),  // crashedImportPaths -> string[] (default empty if missing)
+        /*s_AssetBundNames*/               new("assetBundleNames",        LmdbValue.Type.AssetBundleNames), // assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
+    };
 }
-

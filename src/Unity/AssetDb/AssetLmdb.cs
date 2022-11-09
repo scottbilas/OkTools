@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Spreads.Buffers;
 using Spreads.LMDB;
@@ -11,9 +12,9 @@ namespace OkTools.Unity.AssetDb;
 // spreads.lmdb to return structs pointing at the raw memory and defer any processing (like conversion to string) until
 // the caller actually wants it.
 
-public abstract class AssetLmdb : LmdbDatabase
+public class AssetLmdb : LmdbDatabase
 {
-    protected AssetLmdb(NPath dbPath, uint supportedVersion) : base(dbPath)
+    public AssetLmdb(NPath dbPath, uint supportedVersion) : base(dbPath)
     {
         using var dbVersionTable = new LmdbTable(this, "DBVersion");
         using var tx = Env.BeginReadOnlyTransaction();
@@ -52,23 +53,31 @@ public abstract class AssetLmdb : LmdbDatabase
         {
             Debug.Assert(dump.Json != null);
 
-            dump.Json.WriteStartArray();
+            if (spec.UniqueKeys)
+                dump.Json.WriteStartObject();
+            else
+                dump.Json.WriteStartArray();
 
             foreach (var kvp in table.Table.AsEnumerable(dump.Tx))
             {
-                dump.Json.WriteStartObject();
+                if (!spec.UniqueKeys)
+                    dump.Json.WriteStartObject();
                 spec.Dump(dump, kvp.Key, kvp.Value);
-                dump.Json.WriteEndObject();
+                if (!spec.UniqueKeys)
+                    dump.Json.WriteEndObject();
                 dump.Newline();
             }
 
-            dump.Json.WriteEndArray();
+            if (spec.UniqueKeys)
+                dump.Json.WriteEndObject();
+            else
+                dump.Json.WriteEndArray();
         }
     }
 }
 
 public record AssetLmdbInfo(string Name, string Version, string[] TableNames);
-public record TableDumpSpec(string TableName, string CsvFields, Action<DumpContext, DirectBuffer, DirectBuffer> Dump);
+public record TableDumpSpec(string TableName, string CsvFields, bool UniqueKeys, Action<DumpContext, DirectBuffer, DirectBuffer> Dump);
 
 public sealed class DumpContext : IDisposable
 {
@@ -87,7 +96,7 @@ public sealed class DumpContext : IDisposable
         if (useCsv)
             Csv = new StreamWriter(_file);
         else
-            Json = new Utf8JsonWriter(_file);
+            Json = new Utf8JsonWriter(_file, new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }); // don't want '<' and '>' escaped
 
         Tx = db.Env.BeginReadOnlyTransaction();
     }
