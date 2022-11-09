@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+using System.Text;
 using Spreads.Buffers;
 using UnityEngine;
 
@@ -10,12 +12,6 @@ using UnityEngine;
 #pragma warning disable CS0649
 
 namespace OkTools.Unity.AssetDb;
-
-struct ImporterId
-{
-    public Int32 NativeImporterType;
-    public Hash128 ScriptedImporterType;
-}
 
 // SourceAssetDB.h: RootFolderPropertiesBlob
 struct RootFolderPropertiesBlob
@@ -62,7 +58,7 @@ struct HashDbValue // Modules/AssetDatabase/Editor/V2/HashDB.h
     public DateTime TimeAsDateTime => new(Time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
 }
 
-public class MiscDefinition
+class MiscDefinition
 {
     readonly byte[] _nameBuffer;
 
@@ -77,19 +73,18 @@ public class MiscDefinition
         ValueType = type;
     }
 
-    public static MiscDefinition? Find(ref DirectBuffer name)
+    public static MiscDefinition Get(DirectBuffer name)
     {
         // TODO: binary search or hashtable or whatev (remember it's "starts with")
         foreach (var misc in k_all)
         {
-            if (name.Span.StartsWith(misc._nameBuffer))
-            {
-                name = name.Slice(misc._nameBuffer.Length);
-                return misc;
-            }
+            if (!name.Span.StartsWith(misc._nameBuffer))
+                continue;
+
+            return misc;
         }
 
-        return null;
+        throw new InvalidDataException($"Unknown misc entry: {Encoding.ASCII.GetString(name)}");
     }
 
     static readonly MiscDefinition[] k_all =

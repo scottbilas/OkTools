@@ -1,7 +1,7 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Spreads.Buffers;
-using Spreads.LMDB;
 using UnityEngine;
 
 // ReSharper disable InvertIf
@@ -21,14 +21,10 @@ public static class SourceAssetLmdb
     {
         // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
 
-        var property = PropertyDefinition.Find(ref key);
-        if (property == null)
-            throw new InvalidDataException($"Unknown property: {Encoding.ASCII.GetString(key.Span)}");
-
-        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var (property, unityGuid) = PropertyDefinition.Get<UnityGuid>(key);
 
         if (dump.Csv != null)
-            dump.Csv?.Write($"{unityGuid},{property.Name},{property.IsInMetaFile},");
+            dump.Csv.Write($"{unityGuid},{property.Name},{property.IsInMetaFile},");
         else
         {
             dump.Json!.WriteString("Property", property.Name);
@@ -86,7 +82,7 @@ public static class SourceAssetLmdb
         var isDir = value.ReadExpectEnd<byte>() != 0;
 
         if (dump.Csv != null)
-            dump.Csv?.Write($"{unityGuid},{isDir}");
+            dump.Csv.Write($"{unityGuid},{isDir}");
         else
             dump.Json!.WriteBoolean(unityGuid.ToString(), isDir);
     }
@@ -133,9 +129,7 @@ public static class SourceAssetLmdb
     {
         // SourceAssetDB.cpp: SourceAssetDB::m_Misc
 
-        var misc = MiscDefinition.Find(ref key);
-        if (misc == null)
-            throw new InvalidDataException($"Unknown misc entry: {Encoding.ASCII.GetString(key.Span)}");
+        var misc = MiscDefinition.Get(key);
 
         LmdbValue.Dump(dump, misc.ValueType, ref value, misc.Name);
         value.ExpectEnd();
@@ -187,20 +181,20 @@ public static class SourceAssetLmdb
         var blob = value.Cast<RootFolderPropertiesBlob>();
         var unityGuid = blob->Guid;
         var immutable = blob->Immutable;
-        var mountPoint = blob->MountPoint.GetStringFromBlob();
-        var folder = blob->Folder.GetStringFromBlob();
-        var physicalPath = blob->PhysicalPath.GetStringFromBlob();
+        var mountPoint = blob->MountPoint;
+        var folder = blob->Folder;
+        var physicalPath = blob->PhysicalPath;
 
         if (dump.Csv != null)
             dump.Csv.Write($"{rootFolder},{unityGuid},{immutable},{mountPoint},{folder},{physicalPath}");
         else
         {
             dump.Json!.WriteStartObject(rootFolder);
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
-            dump.Json.WriteBoolean("Immutable", immutable);
-            dump.Json.WriteString("MountPoint", mountPoint);
-            dump.Json.WriteString("Folder", folder);
-            dump.Json.WriteString("PhysicalPath", physicalPath);
+                dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+                dump.Json.WriteBoolean("Immutable", immutable);
+                dump.Json.WriteString("MountPoint", mountPoint.ToString());
+                dump.Json.WriteString("Folder", folder.ToString());
+                dump.Json.WriteString("PhysicalPath", physicalPath.ToString());
             dump.Json.WriteEndObject();
         }
 

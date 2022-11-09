@@ -17,44 +17,38 @@ using LocalIdentifierInFileType = System.Int64;
 
 namespace OkTools.Unity.AssetDb;
 
-public struct CurrentRevision
+struct CurrentRevision
 {
-    public BlobArtifactKey ArtifactKey;
+    public ArtifactKey ArtifactKey;
     public ArtifactId ArtifactId;
 }
 
-public struct BlobArtifactKey
+struct ArtifactKey
 {
     public UnityGuid Guid;
-    public BlobImporterId ImporterId;
-
-    public const string CsvHeader = "UnityGuid," + BlobImporterId.CsvHeader;
-    public string ToCsv() => $"{Guid},{ImporterId.ToCsv()}";
+    public ImporterId ImporterId;
 }
 
-public struct BlobImporterId
+struct ImporterId
 {
     public Int32 NativeImporterType;
     public Hash128 ScriptedImporterType;
-
-    public const string CsvHeader = "NativeImporterType,ScriptedImporterType";
-    public string ToCsv() => $"{NativeImporterType},{ScriptedImporterType}";
 }
 
-public struct ArtifactId
+struct ArtifactId
 {
     public Hash128 Hash;
 }
 
 struct ArtifactIdsBlob
 {
-    public BlobArtifactKey ArtifactKey;
+    public ArtifactKey ArtifactKey;
     public BlobArray<ArtifactId> Ids;
 }
 
-public struct ArtifactIds
+struct ArtifactIds
 {
-    public BlobArtifactKey ArtifactKey;
+    public ArtifactKey ArtifactKey;
     public ArtifactId[] Ids;
 }
 
@@ -71,36 +65,9 @@ struct ArtifactImportStatsBlob
     public UInt16           ReliabilityIndex;
     public Int64            UploadedTimestamp;
     public BlobString       UploadIpAddress;
-}
 
-public struct ArtifactImportStats
-{
-    // Editor
-    public UInt64           ImportTimeMicroseconds;
-    public string           ArtifactPath;
-    public Int64            ImportedTimestamp;
-    public string           EditorRevision;
-    public string           UserName;
-
-    // Cache Server
-    public UInt16           ReliabilityIndex;
-    public Int64            UploadedTimestamp;
-    public string           UploadIpAddress;
-
-    public const string CsvHeader = "ImportTimeMicroseconds,ArtifactPath,ImportedTimestamp,EditorRevision,UserName,ReliabilityIndex,UploadedTimestamp,UploadIpAddress";
-    public string ToCsv() => $"{ImportTimeMicroseconds},{ArtifactPath},{ImportedTimestamp},{EditorRevision},{UserName},{ReliabilityIndex},{UploadedTimestamp},{UploadIpAddress}";
-
-    internal static unsafe ArtifactImportStats Create(ArtifactImportStatsBlob* blob) => new()
-    {
-        ImportTimeMicroseconds = blob->ImportTimeMicroseconds,
-        ArtifactPath = blob->ArtifactPath.GetStringFromBlob(),
-        ImportedTimestamp = blob->ImportedTimestamp,
-        EditorRevision = blob->EditorRevision.GetStringFromBlob(),
-        UserName = blob->UserName.GetStringFromBlob(),
-        ReliabilityIndex = blob->ReliabilityIndex,
-        UploadedTimestamp = blob->UploadedTimestamp,
-        UploadIpAddress = blob->UploadIpAddress.GetStringFromBlob(),
-    };
+    public DateTime ImportedTimestampAsDateTime => new(ImportedTimestamp);
+    public DateTime UploadedTimestampAsDateTime => new(UploadedTimestamp);
 }
 
 enum AssetType
@@ -125,7 +92,7 @@ enum AssetType
 struct ArtifactMetaInfoBlob
 {
     ArtifactMetaInfoHash                    artifactMetaInfoHash;
-    BlobArtifactKey                         artifactKey;
+    ArtifactKey                         artifactKey;
     AssetType                               type;
     bool                                    isImportedAssetCacheable;
     BlobArray<ArtifactFileMetaInfo>         producedFiles;

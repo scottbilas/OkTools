@@ -80,7 +80,7 @@ struct BlobString
 {
     readonly int _offset; // start of string characters as an offset from "this"
 
-    public unsafe ReadOnlySpan<byte> RefBytesFromBlob()
+    public unsafe ReadOnlySpan<byte> RefBytes()
     {
         fixed (BlobString* self = &this)
         {
@@ -94,8 +94,8 @@ struct BlobString
         }
     }
 
-    public string GetStringFromBlob() =>
-        Encoding.ASCII.GetString(RefBytesFromBlob());
+    public override string ToString() =>
+        Encoding.ASCII.GetString(RefBytes());
 }
 
 struct BlobArray<T> where T : unmanaged

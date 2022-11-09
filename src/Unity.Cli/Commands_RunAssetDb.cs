@@ -1,6 +1,4 @@
-﻿using System.Text;
-using System.Text.Json;
-using DocoptNet;
+﻿using DocoptNet;
 using NiceIO;
 using OkTools.Unity;
 using OkTools.Unity.AssetDb;
@@ -44,16 +42,16 @@ Arguments:
         {
             var serializer = new Serializer();
 
+            void ListTables(AssetLmdb db)
             {
-                using var sourceAssetDb = SourceAssetLmdb.OpenLmdb(projectRoot);
-                Console.WriteLine(sourceAssetDb.DbPath);
-                Console.WriteLine(serializer.Serialize(sourceAssetDb.GetInfo()));
+                Console.WriteLine(db.DbPath);
+                Console.WriteLine(serializer.Serialize(db.GetInfo()));
             }
-            {
-                using var artifactDb = new ArtifactLmdb(projectRoot);
-                Console.WriteLine(artifactDb.DbPath);
-                Console.WriteLine(serializer.Serialize(artifactDb.GetInfo()));
-            }
+
+            using (var db = SourceAssetLmdb.OpenLmdb(projectRoot))
+                ListTables(db);
+            using (var db = ArtifactLmdb.OpenLmdb(projectRoot))
+                ListTables(db);
 
             return CliExitCode.Success;
         }
@@ -72,86 +70,26 @@ Arguments:
                     throw new DocoptInputErrorException($"OUTDIR does not exist: '{outDir}'");
             }
 
-            DumpDbs(projectRoot, outDir, context.CommandLine["--json"].IsFalse);
+            var useCsv = context.CommandLine["--json"].IsFalse;
+
+            void DumpTables(AssetLmdb db, IEnumerable<TableDumpSpec> specs)
+            {
+                foreach (var spec in specs)
+                {
+                    var path = outDir.Combine($"{db.Name}-{spec.TableName}");
+                    db.DumpTable(spec, path, useCsv);
+                }
+            }
+
+            using (var db = SourceAssetLmdb.OpenLmdb(projectRoot))
+                DumpTables(db, SourceAssetLmdb.All);
+            using (var db = ArtifactLmdb.OpenLmdb(projectRoot))
+                DumpTables(db, ArtifactLmdb.All);
 
             return CliExitCode.Success;
         }
 
         // shouldn't get here
         return CliExitCode.ErrorUsage;
-    }
-
-    static void DumpDbs(NPath projectRoot, NPath outDir, bool useCsv)
-    {
-        using var sourceAssetDb = SourceAssetLmdb.OpenLmdb(projectRoot);
-
-        foreach (var spec in SourceAssetLmdb.All)
-        {
-            var path = outDir.Combine($"{sourceAssetDb.Name}-{spec.TableName}");
-            sourceAssetDb.DumpTable(spec, path, useCsv);
-        }
-
-        using var artifactDb = new ArtifactLmdb(projectRoot);
-
-        /* NOT READY
-        using (var table = new ArtifactIdPropertyIdToPropertyTable(artifactDb))
-        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("ArtifactID,Property,IsInMetaFile,Value0,Value1,...\n");
-
-            var sb = new StringBuilder();
-
-            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
-            foreach (var (id, prop, value) in table.SelectAll(tx))
-            {
-                csv.Write($"{id.Hash},{prop.Name},{prop.IsInMetaFile}");
-
-                var stringValue = prop.ToCsv(value, sb);
-                if (stringValue.Length != 0)
-                    csv.Write($",{stringValue}");
-
-                csv.Write('\n');
-            }
-        }
-        */
-
-        using (var table = new ArtifactIdToImportStatsTable(artifactDb))
-        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write($"ArtifactID,{ArtifactImportStats.CsvHeader}\n");
-
-            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
-            foreach (var (id, stats) in table.SelectAll(tx))
-            {
-                csv.Write($"{id.Hash},{stats.ToCsv()}\n");
-            }
-        }
-
-        using (var table = new ArtifactKeyToArtifactIdsTable(artifactDb))
-        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write($"ArtifactKeyHash,{BlobArtifactKey.CsvHeader},ArtifactId0,ArtifactId1,...\n");
-
-            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
-            foreach (var (key, ids) in table.SelectAll(tx))
-            {
-                csv.Write($"{key},{ids.ArtifactKey.ToCsv()}");
-                foreach (var id in ids.Ids)
-                    csv.Write($",{id.Hash}");
-                csv.Write('\n');
-            }
-        }
-
-        using (var table = new CurrentRevisionsTable(artifactDb))
-        using (var csv = File.CreateText(outDir.Combine($"{artifactDb.Name}-{table.Name}.csv")))
-        {
-            csv.Write("ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId\n");
-
-            using var tx = artifactDb.Env.BeginReadOnlyTransaction();
-            foreach (var (key, rev) in table.SelectAll(tx))
-                csv.Write(
-                    $"{key},{rev.ArtifactKey.Guid},{rev.ArtifactKey.ImporterId.NativeImporterType},"+
-                    $"{rev.ArtifactKey.ImporterId.ScriptedImporterType},{rev.ArtifactId.Hash}\n");
-        }
     }
 }

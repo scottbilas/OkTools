@@ -161,8 +161,8 @@ public static class LmdbValue
                     {
                         var blob = names->RefElementFromBlob(i);
                         dump.Json.WriteStartObject();
-                        dump.Json.WriteString("AssetBundleName", blob->AssetBundleName.GetStringFromBlob());
-                        dump.Json.WriteString("AssetBundleVariant", blob->AssetBundleVariant.GetStringFromBlob());
+                        dump.Json.WriteString("AssetBundleName", blob->AssetBundleName.ToString());
+                        dump.Json.WriteString("AssetBundleVariant", blob->AssetBundleVariant.ToString());
                         dump.Json.WriteNumber("Index", blob->Index);
                         dump.Json.WriteEndObject();
                     }
