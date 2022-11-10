@@ -17,57 +17,221 @@ using LocalIdentifierInFileType = System.Int64;
 
 namespace OkTools.Unity.AssetDb;
 
-struct CurrentRevision
+struct ArtifactDependencies
 {
-    public ArtifactKey ArtifactKey;
-    public ArtifactId ArtifactId;
+    public ArtifactDependenciesHash                   dependenciesHash;
+    public ArtifactStaticDependenciesHash             staticDependencyHash;
+    public BlobOffsetPtr<StaticArtifactDependencies>  staticDependencies;
+    public BlobOffsetPtr<DynamicArtifactDependencies> dynamicDependencies;
+    public ArtifactID                                 artifactID;
 }
 
-struct ArtifactKey
+struct ArtifactDependenciesHash
 {
-    public UnityGuid Guid;
-    public ImporterId ImporterId;
+    public Hash128 Value;
+}
+
+struct ArtifactFileMetaInfo
+{
+    public ArtifactFileStorage storage;
+    public BlobString          extension;
+    public Hash128             contentHash;
+    public BlobArray<Byte>     inlineStorage;
+}
+
+struct ArtifactID
+{
+    public Hash128 value;
+}
+
+struct ArtifactIDs
+{
+    public BlobArtifactKey       artifactKey;
+    public BlobArray<ArtifactID> ids;
+}
+
+struct ArtifactImportStats
+{
+    // Editor
+    public UInt64     importTimeMicroseconds;
+    public BlobString artifactPath;
+    public Int64      importedTimestamp;
+    public BlobString editorRevision;
+    public BlobString userName;
+
+    // Cache Server
+    public UInt16     reliabilityIndex;
+    public Int64      uploadedTimestamp;
+    public BlobString uploadIpAddress;
+
+    public DateTime   ImportedTimestampAsDateTime => new(importedTimestamp);
+    public DateTime   UploadedTimestampAsDateTime => new(uploadedTimestamp);
+}
+
+struct BlobArtifactKey // an ArtifactKey that goes in a Blob (does not have all the fields of an ArtifactKey)
+{
+    public UnityGUID  guid;
+    public ImporterId importerId;
+}
+
+struct ArtifactMetaInfo
+{
+    public ArtifactMetaInfoHash             artifactMetaInfoHash;
+    public BlobArtifactKey                  artifactKey;
+    public AssetType                        type;
+    public bool                             isImportedAssetCacheable;
+    public BlobArray<ArtifactFileMetaInfo>  producedFiles;
+    public BlobArray<BlobProperty>          properties;
+    public BlobArray<ImportedAssetMetaInfo> importedAssetMetaInfos;
+}
+
+struct ArtifactMetaInfoHash
+{
+    public Hash128 value;
+}
+
+struct ArtifactStaticDependenciesHash
+{
+    public Hash128 value;
+}
+
+struct BlobImage
+{
+    public GraphicsFormat  format;
+    public Int32           width;
+    public Int32           height;
+    public Int32           rowBytes;
+    public BlobArray<Byte> image;
+}
+
+struct BlobPPtr
+{
+    public UnityGUID                 guid;
+    public LocalIdentifierInFileType localIdentifier;
+    public Int32                     type;
+}
+
+struct BlobProperty
+{
+    public BlobString      id;
+    public BlobArray<Byte> data;
+}
+
+struct BuildTargetSelection
+{
+    public BuildTargetPlatform platform;
+    public int                 subTarget;
+    public int                 extendedPlatform;
+    public int                 isEditor;
+}
+
+struct CurrentRevision
+{
+    public BlobArtifactKey artifactKey;
+    public ArtifactID      artifactID;
+}
+
+struct CustomDependency
+{
+    public BlobString name;
+    public Hash128    valueHash;
+};
+
+struct DynamicArtifactDependencies
+{
+    public BlobArray<HashOfSourceAsset>           hashOfSourceAsset;
+    public BlobArray<GUIDOfPathLocationBlob>      guidOfPathLocation;
+    public BlobArray<HashOfGUIDsOfChildren>       hashOfGUIDsOfChildren;
+    public BlobArray<HashOfArtifact>              hashOfArtifact;
+    public BlobArray<PropertyOfArtifact>          propertyOfArtifact;
+
+    public BlobOptional<BuildTargetSelection>     buildTarget;
+    public BlobOptional<BuildTargetPlatformGroup> buildTargetPlatformGroup;
+    public BlobOptional<TextureImportCompression> textureImportCompression;
+    public BlobOptional<ColorSpace>               colorSpace;
+    public BlobOptional<UInt32>                   graphicsApiMask;
+    public BlobOptional<ScriptingRuntimeVersion>  scriptingRuntimeVersion;
+    public BlobArray<CustomDependency>            customDependencies;
+}
+
+struct GUIDOfPathLocationBlob
+{
+    public BlobString path;
+    public UnityGUID  guid;
+}
+
+struct HashOfArtifact
+{
+    public BlobArtifactKey artifactKey;
+    public ArtifactID artifactID;
+}
+
+struct HashOfGUIDsOfChildren
+{
+    public UnityGUID guid;
+    public Hash128   hash;
+}
+
+struct HashOfSourceAsset
+{
+    public UnityGUID guid;
+    public Hash128   assetHash;
+    public Hash128   metaFileHash;
+}
+
+struct ImportedAssetMetaInfo
+{
+    public bool                              postProcessedAsset;
+    public ImportedObjectMetaInfo            mainObjectInfo;
+    public BlobArray<ImportedObjectMetaInfo> objectInfo;
+}
+
+struct ImportedObjectMetaInfo
+{
+    public BlobString                name;
+    public BlobImage                 thumbnail;
+    public PersistentTypeID          typeID;
+    public UInt32                    flags;
+    public ScriptClassNameBlob       scriptClassName;
+    public LocalIdentifierInFileType localIdentifier;
 }
 
 struct ImporterId
 {
-    public Int32 NativeImporterType;
-    public Hash128 ScriptedImporterType;
+    public PersistentTypeID NativeImporterType;
+    public Hash128          ScriptedImporterType;
 }
 
-struct ArtifactId
+struct PropertyOfArtifact
 {
-    public Hash128 Hash;
+    public BlobArtifactKey artifactKey;
+    public BlobProperty    prop;
 }
 
-struct ArtifactIdsBlob
+struct ScriptClassNameBlob
 {
-    public ArtifactKey ArtifactKey;
-    public BlobArray<ArtifactId> Ids;
+    public BlobString name;
+    public BlobPPtr   monoScript;
 }
 
-struct ArtifactIds
+struct StaticArtifactDependencies
 {
-    public ArtifactKey ArtifactKey;
-    public ArtifactId[] Ids;
+    public UInt32                       artifactFormatVersion;
+    public UInt32                       allImporterVersion;
+    public ImporterId                   importerID;
+    public UInt32                       importerVersion;
+    public PostprocessorType            postprocessorType;
+    public Hash128                      postprocessorVersionHash;
+    public BlobString                   nameOfAsset;
+    public BlobArray<HashOfSourceAsset> hashOfSourceAsset;
 }
 
-struct ArtifactImportStatsBlob
+// ENUMS
+
+enum ArtifactFileStorage
 {
-    // Editor
-    public UInt64           ImportTimeMicroseconds;
-    public BlobString       ArtifactPath;
-    public Int64            ImportedTimestamp;
-    public BlobString       EditorRevision;
-    public BlobString       UserName;
-
-    // Cache Server
-    public UInt16           ReliabilityIndex;
-    public Int64            UploadedTimestamp;
-    public BlobString       UploadIpAddress;
-
-    public DateTime ImportedTimestampAsDateTime => new(ImportedTimestamp);
-    public DateTime UploadedTimestampAsDateTime => new(UploadedTimestamp);
+    Library,  // uses extension for filename in Library folder
+    Inline    // uses the inlineStorage
 }
 
 enum AssetType
@@ -89,67 +253,108 @@ enum AssetType
     kUnused2 = 1 << 31,
 }
 
-struct ArtifactMetaInfoBlob
+enum BuildTargetPlatform
 {
-    ArtifactMetaInfoHash                    artifactMetaInfoHash;
-    ArtifactKey                         artifactKey;
-    AssetType                               type;
-    bool                                    isImportedAssetCacheable;
-    BlobArray<ArtifactFileMetaInfo>         producedFiles;
-    BlobArray<BlobProperty>                 properties;
-    BlobArray<ImportedAssetMetaInfo>        importedAssetMetaInfos;
+    kBuildNoTargetPlatform = -2,
+    kBuildAnyPlayerData = -1,
+    kBuildValidPlayer = 1,
+
+    kFirstValidStandaloneTarget = 2,
+    // We don't support building for these any more, but we still need the constants for asset bundle
+    // backwards compatibility.
+    kBuildDeprecatedStandaloneOSXPPC = 3,
+
+    kBuildDeprecatedStandaloneOSXIntel = 4,
+
+    kBuildDeprecatedWebPlayerLZMA = 6,
+    kBuildDeprecatedWebPlayerLZMAStreamed = 7,
+    kBuildDeprecatedStandaloneOSXIntel64 = 27,
+    kBuildStandaloneOSX = 2,
+    kBuildStandaloneWinPlayer = 5,
+    kBuild_iPhone = 9,
+    kBuildDeprecatedPS3 = 10,
+    // was kBuildXBOX360 = 11,
+    // was kBuild_Broadcom = 12,
+    kBuild_Android = 13,
+    // was kBuildWinGLESEmu = 14,
+    // was kBuildWinGLES20Emu = 15,
+    // was kBuildNaCl = 16,
+    kBuildDeprecatedStandaloneLinux = 17,
+    // was kBuildFlash = 18,
+    kBuildStandaloneWin64Player = 19,
+    kBuildWebGL = 20,
+    kBuildMetroPlayer = 21,
+    kBuildStandaloneLinux64 = 24,
+    kBuildDeprecatedStandaloneLinuxUniversal = 25,
+    kBuildDeprecatedWP8Player = 26,
+    kBuildDeprecatedBB10 = 28,
+    kBuildDeprecatedTizen = 29,
+    kBuildDeprecatedPSP2 = 30,
+    kBuildPS4 = 31,
+    kBuildDeprecatedPSM = 32,
+    kBuildXboxOne = 33,
+    kBuildDeprecatedSamsungTV = 34,
+    kBuildDeprecatedN3DS = 35,
+    kBuildDeprecatedWiiU = 36,
+    kBuildtvOS = 37,
+    kBuildSwitch = 38,
+    kBuildDeprecatedLumin = 39,
+    kBuildStadia = 40,
+    kBuildCloudRendering = 41,
+    kBuildGameCoreScarlett = 42,
+    kBuildGameCoreXboxOne = 43,
+    kBuildPS5 = 44,
+    kBuildEmbeddedLinux = 45,
+    kBuildQNX = 46,
+    kBuildPlayerTypeCount
 }
 
-struct ArtifactMetaInfoHash
+enum BuildTargetPlatformGroup
 {
-    Hash128 value;
+    kPlatformUnknown = 0,
+    kPlatformStandalone = 1,
+    // was kPlatformWebPlayer = 2,
+    kPlatform_iPhone = 4,
+    // was kPlatformPS3 = 5,
+    // was kPlatformXBOX360 = 6,
+    kPlatformAndroid = 7,
+    // was kPlatformBroadcom = 8,
+    // was kPlatformGLESEmu = 9,
+    // was kPlatformNaCl = 11,
+    // was kPlatformFlash = 12,
+    kPlatformWebGL = 13,
+    kPlatformMetro = 14,
+    // was kPlatformWP8 = 15,
+    // was kPlatformBB10 = 16,
+    // was kPlatformTizen = 17,
+    // was kPlatformPSP2  = 18,
+    kPlatformPS4 = 19,
+    // was kPlatformPSM  = 20,
+    kPlatformXboxOne = 21,
+    // was kPlatformSTV = 22,
+    // was kPlatformN3DS = 23,
+    // was kPlatformWiiU = 24,
+    kPlatformtvOS = 25,
+    // was kPlatformFacebook = 26,
+    kPlatformSwitch = 27,
+    // was kPlatformLumin = 28,
+    kPlatformStadia = 29,
+    kPlatformCloudRendering = 30,
+    kPlatformGameCoreScarlett = 31,
+    kPlatformGameCoreXboxOne = 32,
+    kPlatformPS5 = 33,
+    kPlatformEmbeddedLinux = 34,
+    kPlatformQNX = 35,
+    kPlatformCount
 }
 
-struct ArtifactFileMetaInfo
+enum ColorSpace
 {
-    ArtifactFileStorage storage;
-    BlobString  extension;
-    Hash128     contentHash;
-    BlobArray<Byte> inlineStorage;
-}
-
-
-enum ArtifactFileStorage
-{
-    Library,  // uses extension for filename in Library folder
-    Inline    // uses the inlineStorage
-}
-
-struct BlobProperty
-{
-    BlobString       id;
-    BlobArray<Byte> data;
-}
-
-struct ImportedAssetMetaInfo
-{
-    bool                                    postProcessedAsset;
-    ImportedObjectMetaInfo                  mainObjectInfo;
-    BlobArray<ImportedObjectMetaInfo>       objectInfo;
-}
-
-struct ImportedObjectMetaInfo
-{
-    BlobString                  name;
-    BlobImage                   thumbnail;
-    PersistentTypeID            typeID;
-    UInt32                      flags;
-    ScriptClassNameBlob         scriptClassName;
-    LocalIdentifierInFileType   localIdentifier;
-}
-
-struct BlobImage
-{
-    GraphicsFormat format;
-    Int32  width;
-    Int32  height;
-    Int32  rowBytes;
-    BlobArray<Byte> image;
+    kUninitializedColorSpace = -1,
+    kGammaColorSpace = 0,
+    kLinearColorSpace,
+    kColorSpaceCount,
+    kCurrentColorSpace
 }
 
 enum GraphicsFormat
@@ -344,18 +549,27 @@ enum GraphicsFormat
     kFormatD16_UNorm_S8_UInt,
 
     kFormatLast = kFormatD16_UNorm_S8_UInt, // Remove?
-};
+}
 
-struct ScriptClassNameBlob
+enum PostprocessorType
 {
-    // If guid in monoScript is invalid, then use name
-    BlobString                  name;
-    BlobPPtr                    monoScript;
-};
+    kPostprocessorNone = 0,
+    kPostprocessorModel,
+    kPostprocessorTexture,
+    kPostprocessorAudio,
+    kPostprocessorSpeedTree,
+    kPostprocessorPrefab,
+    kPostprocessorTypeCount
+}
 
-struct BlobPPtr
+enum ScriptingRuntimeVersion
 {
-    UnityGuid                               guid;
-    LocalIdentifierInFileType               localIdentifier;
-    Int32                                   type;
-};
+    kScriptingRuntimeVersionLegacy = 0,
+    kScriptingRuntimeVersionLatest = 1
+}
+
+enum TextureImportCompression
+{
+    Uncompressed,
+    Compressed
+}

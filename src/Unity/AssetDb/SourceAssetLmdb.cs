@@ -1,6 +1,4 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using Spreads.Buffers;
 using UnityEngine;
 
@@ -21,7 +19,7 @@ public static class SourceAssetLmdb
     {
         // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
 
-        var (property, unityGuid) = PropertyDefinition.Get<UnityGuid>(key);
+        var (property, unityGuid) = PropertyDefinition.Get<UnityGUID>(key);
 
         if (dump.Csv != null)
             dump.Csv.Write($"{unityGuid},{property.Name},{property.IsInMetaFile},");
@@ -41,17 +39,17 @@ public static class SourceAssetLmdb
     {
         // GuidDB.cpp: GuidDB::m_pGuidToChildren
 
-        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var unityGuid = key.ReadExpectEnd<UnityGUID>();
 
         var hash = value.Read<Hash128>();
 
         // count determined by using remaining space
         var remain = value.Length;
-        var count = remain / UnityGuid.SizeOf;
-        if (count * UnityGuid.SizeOf != remain)
+        var count = remain / UnityGUID.SizeOf;
+        if (count * UnityGUID.SizeOf != remain)
             throw new InvalidOperationException("Size mismatch");
 
-        var children = MemoryMarshal.Cast<byte, UnityGuid>(value.Span);
+        var children = MemoryMarshal.Cast<byte, UnityGUID>(value.Span);
 
         if (dump.Csv != null)
         {
@@ -78,7 +76,7 @@ public static class SourceAssetLmdb
     {
         // GuidDB.cpp: GuidDB::m_pGuidToIsDir
 
-        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var unityGuid = key.ReadExpectEnd<UnityGUID>();
         var isDir = value.ReadExpectEnd<byte>() != 0;
 
         if (dump.Csv != null)
@@ -92,7 +90,7 @@ public static class SourceAssetLmdb
     {
         // GuidDB.cpp: GuidDB::m_pGuidToPath
 
-        var unityGuid = key.ReadExpectEnd<UnityGuid>();
+        var unityGuid = key.ReadExpectEnd<UnityGUID>();
         var path = value.ToAsciiString();
 
         if (dump.Csv != null)
@@ -107,18 +105,18 @@ public static class SourceAssetLmdb
         // HashDB.cpp: HashDB::m_pPathToHash
 
         var path = key.ToAsciiString();
-        var hash = value.ReadExpectEnd<HashDbValue>();
+        var hash = value.ReadExpectEnd<HashDBValue>();
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{path},{hash.Hash},{hash.TimeAsDateTime},{hash.FileSize},{hash.IsUntrusted}");
+            dump.Csv.Write($"{path},{hash.hash},{hash.TimeAsDateTime},{hash.fileSize},{hash.isUntrusted}");
         else
         {
             dump.Json!.WriteStartObject(path);
 
-            dump.Json.WriteString("Hash", hash.Hash.ToString());
+            dump.Json.WriteString("Hash", hash.hash.ToString());
             dump.Json.WriteString("Time", hash.TimeAsDateTime);
-            dump.Json.WriteNumber("FileSize", hash.FileSize);
-            dump.Json.WriteBoolean("IsUntrusted", hash.IsUntrusted);
+            dump.Json.WriteNumber("FileSize", hash.fileSize);
+            dump.Json.WriteBoolean("IsUntrusted", hash.isUntrusted);
 
             dump.Json.WriteEndObject();
         }
@@ -142,16 +140,16 @@ public static class SourceAssetLmdb
         // GuidDB.cpp: GuidDB::m_pPathToGuid
 
         var path = key.ToAsciiString();
-        var guidValue = value.ReadExpectEnd<GuidDbValue>();
+        var guidValue = value.ReadExpectEnd<GuidDBValue>();
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{path},{guidValue.Guid},{guidValue.MetaFileHash},{guidValue.AssetFileHash}");
+            dump.Csv.Write($"{path},{guidValue.guid},{guidValue.metaFileHash},{guidValue.assetFileHash}");
         else
         {
             dump.Json!.WriteStartObject(path);
-            dump.Json.WriteString("UnityGuid", guidValue.Guid.ToString());
-            dump.Json.WriteString("MetaFileHash", guidValue.MetaFileHash.ToString());
-            dump.Json.WriteString("AssetFileHash", guidValue.AssetFileHash.ToString());
+            dump.Json.WriteString("UnityGuid", guidValue.guid.ToString());
+            dump.Json.WriteString("MetaFileHash", guidValue.metaFileHash.ToString());
+            dump.Json.WriteString("AssetFileHash", guidValue.assetFileHash.ToString());
             dump.Json.WriteEndObject();
         }
     }
@@ -177,24 +175,22 @@ public static class SourceAssetLmdb
         // SourceAssetDB.cpp: SourceAssetDB::m_RootFolders
 
         var rootFolder = key.ToAsciiString();
-
-        var blob = value.Cast<RootFolderPropertiesBlob>();
-        var unityGuid = blob->Guid;
-        var immutable = blob->Immutable;
-        var mountPoint = blob->MountPoint;
-        var folder = blob->Folder;
-        var physicalPath = blob->PhysicalPath;
+        var properties = value.Cast<RootFolderPropertiesBlob>();
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{rootFolder},{unityGuid},{immutable},{mountPoint},{folder},{physicalPath}");
+        {
+            dump.Csv.Write(
+                $"{rootFolder},{properties->Guid},{properties->Immutable},"+
+                $"{properties->MountPoint.GetString()},{properties->Folder.GetString()},{properties->PhysicalPath.GetString()}");
+        }
         else
         {
             dump.Json!.WriteStartObject(rootFolder);
-                dump.Json.WriteString("UnityGuid", unityGuid.ToString());
-                dump.Json.WriteBoolean("Immutable", immutable);
-                dump.Json.WriteString("MountPoint", mountPoint.ToString());
-                dump.Json.WriteString("Folder", folder.ToString());
-                dump.Json.WriteString("PhysicalPath", physicalPath.ToString());
+                dump.Json.WriteString("UnityGuid", properties->Guid.ToString());
+                dump.Json.WriteBoolean("Immutable", properties->Immutable);
+                dump.Json.WriteString("MountPoint", properties->MountPoint.GetString());
+                dump.Json.WriteString("Folder", properties->Folder.GetString());
+                dump.Json.WriteString("PhysicalPath", properties->PhysicalPath.GetString());
             dump.Json.WriteEndObject();
         }
 

@@ -1,4 +1,3 @@
-using System.Text;
 using Spreads.Buffers;
 using UnityEngine;
 
@@ -13,38 +12,39 @@ public static class ArtifactLmdb
 
     public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(ArtifactLmdb));
 
-    [AssetLmdbTable("ArtifactIDPropertyIDToProperty", "ArtifactID,Property,IsInMetaFile,Value0,Value1,...", UniqueKeys = true)]
+    [AssetLmdbTable("ArtifactIDPropertyIDToProperty", "ArtifactID,Property,IsInMetaFile,Value0,Value1,...")]
     public static void DumpArtifactIdPropertyIdToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        var (property, id) = PropertyDefinition.Get<ArtifactId>(key);
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDPropertyIDToProperty
 
-        dump.Json?.WriteStartObject(id.Hash.ToString());
+        var (property, id) = PropertyDefinition.Get<ArtifactID>(key);
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{id.Hash},{property.Name},{property.IsInMetaFile},");
+            dump.Csv.Write($"{id.value},{property.Name},{property.IsInMetaFile},");
         else
         {
-            dump.Json!.WriteString("Property", property.Name);
+            dump.Json!.WriteString("ArtifactID", id.value.ToString());
+            dump.Json.WriteString("Property", property.Name);
             dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
         }
 
         LmdbValue.Dump(dump, property.ValueType, ref value);
         value.ExpectEnd();
-
-        dump.Json?.WriteEndObject();
     }
 
-// TODO: ArtifactIDToArtifactDependencies
 #if NO
-    [AssetLmdbTable("", "")]
-    public static void Dump(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    [AssetLmdbTable("ArtifactIDToArtifactDependencies", "")]
+    public static void DumpArtifactIdToArtifactDependencies(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactDependencies
+
+        var id = key.Read<ArtifactID>();
     }
 #endif
 
 // TODO: ArtifactIDToArtifactMetaInfo (OMG)
-// ArtifactID -> ArtifactMetaInfoBlob
 #if NO
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactMetaInfo
     [AssetLmdbTable("", "")]
     public static void Dump(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
@@ -55,41 +55,96 @@ public static class ArtifactLmdb
     [AssetLmdbTable("ArtifactIDToImportStats", "ArtifactID,ImportTimeMicroseconds,ArtifactPath,ImportedTimestamp,EditorRevision,UserName,ReliabilityIndex,UploadedTimestamp,UploadIpAddress", UniqueKeys = true)]
     public static unsafe void DumpArtifactIdToImportStats(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        var id = key.ReadExpectEnd<ArtifactId>();
-        var stats = value.Cast<ArtifactImportStatsBlob>();
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToImportStats
+
+        var id = key.ReadExpectEnd<ArtifactID>();
+        var stats = value.Cast<ArtifactImportStats>();
 
         if (dump.Csv != null)
         {
             dump.Csv.Write(
-                $"{id.Hash},"+
-                $"{stats->ImportTimeMicroseconds},{stats->ArtifactPath},{stats->ImportedTimestampAsDateTime},{stats->EditorRevision},"+
-                $"{stats->UserName},{stats->ReliabilityIndex},{(stats->UploadedTimestamp != 0 ? stats->UploadedTimestampAsDateTime.ToString() : "0")},{stats->UploadIpAddress}");
+                $"{id.value},"+
+                $"{stats->importTimeMicroseconds},{stats->artifactPath.GetString()},{stats->ImportedTimestampAsDateTime},{stats->editorRevision.GetString()},"+
+                $"{stats->userName.GetString()},{stats->reliabilityIndex},"+
+                $"{(stats->uploadedTimestamp != 0 ? stats->UploadedTimestampAsDateTime : "0")},{stats->uploadIpAddress.GetString()}");
         }
         else
         {
-            dump.Json!.WriteStartObject(id.Hash.ToString());
-                dump.Json.WriteString("ArtifactPath", stats->ArtifactPath.ToString());
+            dump.Json!.WriteStartObject(id.value.ToString());
+                dump.Json.WriteString("ArtifactPath", stats->artifactPath.GetString());
                 dump.Json.WriteString("ImportedTimestamp", stats->ImportedTimestampAsDateTime);
-                dump.Json.WriteString("EditorRevision", stats->EditorRevision.ToString());
-                dump.Json.WriteString("UserName", stats->UserName.ToString());
-                dump.Json.WriteNumber("ReliabilityIndex", stats->ReliabilityIndex);
-                if (stats->UploadedTimestamp != 0)
+                dump.Json.WriteString("EditorRevision", stats->editorRevision.GetString());
+                dump.Json.WriteString("UserName", stats->userName.GetString());
+                dump.Json.WriteNumber("ReliabilityIndex", stats->reliabilityIndex);
+                if (stats->uploadedTimestamp != 0)
                     dump.Json.WriteString("UploadedTimestamp", stats->UploadedTimestampAsDateTime);
                 else
                     dump.Json.WriteNumber("UploadedTimestamp", 0);
-                dump.Json.WriteString("UploadIpAddress", stats->UploadIpAddress.ToString());
+                dump.Json.WriteString("UploadIpAddress", stats->uploadIpAddress.GetString());
             dump.Json.WriteEndObject();
         }
     }
 
-    static void Write(DumpContext dump, in ArtifactKey key)
+    [AssetLmdbTable("ArtifactKeyToArtifactIDs", "ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId0,ArtifactId1,...", UniqueKeys = true)]
+    public static unsafe void Dump(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    {
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactKeyHashToArtifactIDs
+
+        var keyHash = key.ReadExpectEnd<Hash128>();
+        var valueBlob = value.Cast<ArtifactIDs>();
+
+        dump.Csv?.Write($"{keyHash},");
+        dump.Json?.WriteStartObject(keyHash.ToString());
+
+        Write(dump, valueBlob->artifactKey);
+
+        if (dump.Csv != null)
+        {
+            for (var i = 0; i < valueBlob->ids.Length; ++i)
+                dump.Csv.Write($",{valueBlob->ids.PtrAt(i)->value}");
+        }
+        else
+        {
+            dump.Json!.WriteStartArray("ids");
+            for (var i = 0; i < valueBlob->ids.Length; ++i)
+                dump.Json.WriteStringValue(valueBlob->ids.PtrAt(i)->value.ToString());
+            dump.Json.WriteEndArray();
+        }
+
+        dump.Json?.WriteEndObject();
+    }
+
+    [AssetLmdbTable("CurrentRevisions", "ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId", UniqueKeys = true)]
+    public static void DumpCurrentRevisions(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    {
+        // ArtifactDB.cpp: ArtifactDB::m_CurrentRevisions
+
+        var keyHash = key.ReadExpectEnd<Hash128>();
+        var rev = value.ReadExpectEnd<CurrentRevision>();
+
+        if (dump.Csv != null)
+        {
+            dump.Csv.Write(
+                $"{keyHash},{rev.artifactKey.guid},{rev.artifactKey.importerId.NativeImporterType},"+
+                $"{rev.artifactKey.importerId.ScriptedImporterType},{rev.artifactID.value}");
+        }
+        else
+        {
+            dump.Json!.WriteStartObject(keyHash.ToString());
+                Write(dump, rev.artifactKey);
+                dump.Json.WriteString("ArtifactId", rev.artifactID.value.ToString());
+            dump.Json.WriteEndObject();
+        }
+    }
+
+    static void Write(DumpContext dump, in BlobArtifactKey key)
     {
         if (dump.Csv != null)
-            dump.Csv.Write($"{key.Guid},");
+            dump.Csv.Write($"{key.guid},");
         else
-            dump.Json!.WriteString("UnityGuid", key.Guid.ToString());
+            dump.Json!.WriteString("UnityGuid", key.guid.ToString());
 
-        Write(dump, key.ImporterId);
+        Write(dump, key.importerId);
     }
 
     static void Write(DumpContext dump, in ImporterId importerId)
@@ -104,53 +159,4 @@ public static class ArtifactLmdb
             dump.Json.WriteEndObject();
         }
     }
-
-    [AssetLmdbTable("ArtifactKeyToArtifactIDs", "ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId0,ArtifactId1,...", UniqueKeys = true)]
-    public static unsafe void Dump(DumpContext dump, DirectBuffer key, DirectBuffer value)
-    {
-        var keyHash = key.ReadExpectEnd<Hash128>();
-        var valueBlob = value.Cast<ArtifactIdsBlob>();
-
-        dump.Csv?.Write($"{keyHash},");
-        dump.Json?.WriteStartObject(keyHash.ToString());
-
-        Write(dump, valueBlob->ArtifactKey);
-
-        if (dump.Csv != null)
-        {
-            for (var i = 0; i < valueBlob->Ids.Length; ++i)
-                dump.Csv.Write($",{valueBlob->Ids.RefElementFromBlob(i)->Hash}");
-        }
-        else
-        {
-            dump.Json!.WriteStartArray("Ids");
-            for (var i = 0; i < valueBlob->Ids.Length; ++i)
-                dump.Json.WriteStringValue(valueBlob->Ids.RefElementFromBlob(i)->Hash.ToString());
-            dump.Json.WriteEndArray();
-        }
-
-        dump.Json?.WriteEndObject();
-    }
-
-    [AssetLmdbTable("CurrentRevisions", "ArtifactKeyHash,UnityGuid,NativeImporterType,ScriptedImporterType,ArtifactId", UniqueKeys = true)]
-    public static void DumpCurrentRevisions(DumpContext dump, DirectBuffer key, DirectBuffer value)
-    {
-        var keyHash = key.ReadExpectEnd<Hash128>();
-        var rev = value.ReadExpectEnd<CurrentRevision>();
-
-        if (dump.Csv != null)
-        {
-            dump.Csv.Write(
-                $"{keyHash},{rev.ArtifactKey.Guid},{rev.ArtifactKey.ImporterId.NativeImporterType},"+
-                $"{rev.ArtifactKey.ImporterId.ScriptedImporterType},{rev.ArtifactId.Hash}");
-        }
-        else
-        {
-            dump.Json!.WriteStartObject(keyHash.ToString());
-                Write(dump, rev.ArtifactKey);
-                dump.Json.WriteString("ArtifactId", rev.ArtifactId.Hash.ToString());
-            dump.Json.WriteEndObject();
-        }
-    }
-
 }

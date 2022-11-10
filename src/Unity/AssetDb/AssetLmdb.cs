@@ -85,7 +85,6 @@ public sealed class DumpContext : IDisposable
 
     public readonly StreamWriter? Csv;
     public readonly Utf8JsonWriter? Json;
-    public readonly StringBuilder Buffer = new();
     public readonly ReadOnlyTransaction Tx;
 
     public DumpContext(string pathNoExtension, LmdbDatabase db, bool useCsv)

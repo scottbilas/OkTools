@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -38,7 +39,7 @@ public struct Hash128
 }
 
 [PublicAPI]
-public unsafe struct UnityGuid
+public unsafe struct UnityGUID
 {
     // Be aware that because of endianness and because we store a GUID as four integers instead
     // of as the DWORD, WORD, and BYTE groupings as used by Microsoft, the individual bytes
@@ -52,7 +53,7 @@ public unsafe struct UnityGuid
     public const int SizeOf = sizeof(uint)*4;
     fixed UInt32 _data[4];
 
-    public UnityGuid(uint a, uint b, uint c, uint d) { _data[0] = a; _data[1] = b; _data[2] = c; _data[3] = d; }
+    public UnityGUID(uint a, uint b, uint c, uint d) { _data[0] = a; _data[1] = b; _data[2] = c; _data[3] = d; }
 
     static readonly char[] k_kHexToLiteral = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
@@ -76,55 +77,79 @@ public unsafe struct UnityGuid
     }
 }
 
-struct BlobString
+// IMPORTANT: these assume "this" is a pointer into blob memory. only arrive at these through other structs or
+// casts of memory. never copy them.
+//
+// note that these are not `ref structs` because a) current c# restricts ref structs being used as generic type
+// params (preventing BlobArray<BlobString> or some other type that contains a BlobOffsetPtr<x> or whatever) and b) it
+// doesn't really solve the problem, since blob types can still be copied around on the stack, which still invalidates
+// them.
+
+public struct BlobOffsetPtr<T> where T : unmanaged
 {
-    readonly int _offset; // start of string characters as an offset from "this"
+    public readonly int Offset;
 
-    public unsafe ReadOnlySpan<byte> RefBytes()
+    public unsafe T* Ptr
     {
-        fixed (BlobString* self = &this)
+        get
         {
-            var start = (byte*)self + _offset;
-
-            var end = start;
-            while (*end != 0)
-                ++end;
-
-            return new ReadOnlySpan<byte>(start, (int)(end - start));
+            fixed (BlobOffsetPtr<T>* self = &this)
+                return (T*)((byte*)self + Offset);
         }
     }
-
-    public override string ToString() =>
-        Encoding.ASCII.GetString(RefBytes());
 }
 
-struct BlobArray<T> where T : unmanaged
+public struct BlobOptional<T> where T : unmanaged
 {
-    readonly int _offset;
-    readonly uint _size; // count of elements
+    BlobOffsetPtr<T> _ptr;
 
-    public int Length => (int)_size;
+    public unsafe T* Ptr => _ptr.Offset != 0 ? _ptr.Ptr : null;
+}
 
-    public unsafe T* RefElementFromBlob(int index)
+public struct BlobString
+{
+    BlobOffsetPtr<byte> _ptr;
+
+    public unsafe void RefBytes(out byte* start, out byte* end)
     {
-        fixed (BlobArray<T>* self = &this)
-        {
-            var origin = (T*)((byte*)self + _offset);
-            return origin + index;
-        }
+        start = end = _ptr.Ptr;
+        while (*end != 0)
+            ++end;
     }
 
-    public unsafe T[] ToArrayFromBlob()
+    public override string ToString()
     {
-        fixed (BlobArray<T>* self = &this)
-        {
-            var origin = (T*)((byte*)self + _offset);
+        // this is intended to catch accidental use of ToString (like when passing into an interpolated string). it will
+        // break because "this" changes during the copy/boxing and end up accessing invalid memory. Blob* types must
+        // always remain anchored in their originating unmanaged memory.
+        throw new InvalidOperationException("Use GetString instead");
+    }
 
-            var array = new T[_size];
-            for (var i = 0; i < _size; ++i)
-                array[i] = origin[i];
+    public unsafe string GetString()
+    {
+        RefBytes(out var start, out var end);
+        return Encoding.ASCII.GetString(start, (int)(end - start));
+    }
+}
 
-            return array;
-        }
+public struct BlobArray<T> where T : unmanaged
+{
+    BlobOffsetPtr<T> _ptr;
+    readonly uint _length; // count of elements
+
+    public int Length => (int)_length;
+
+    public unsafe T* PtrAt(int index) // don't make this an indexer because BlobArrays often used as a pointer and too easy to become ambiguous
+    {
+        Debug.Assert(index >= 0 && index < _length);
+        return _ptr.Ptr + index;
+    }
+
+    public unsafe T[] ToArray()
+    {
+        var array = new T[_length];
+        for (var i = 0; i < _length; ++i)
+            array[i] = *PtrAt(i);
+        return array;
     }
 }

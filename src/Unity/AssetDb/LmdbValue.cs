@@ -92,7 +92,7 @@ public static class LmdbValue
                     if (dump.Csv != null)
                     {
                         if (i != 0)
-                            dump.Buffer.Append(',');
+                            dump.Csv.Write(',');
                         dump.Csv.Write(str);
                     }
                     else
@@ -159,11 +159,11 @@ public static class LmdbValue
                     dump.Json!.WriteStartArray(valueName);
                     for (var i = 0; i < names->Length; ++i)
                     {
-                        var blob = names->RefElementFromBlob(i);
+                        var blob = names->PtrAt(i);
                         dump.Json.WriteStartObject();
-                        dump.Json.WriteString("AssetBundleName", blob->AssetBundleName.ToString());
-                        dump.Json.WriteString("AssetBundleVariant", blob->AssetBundleVariant.ToString());
-                        dump.Json.WriteNumber("Index", blob->Index);
+                        dump.Json.WriteString("AssetBundleName", blob->assetBundleName.GetString());
+                        dump.Json.WriteString("AssetBundleVariant", blob->assetBundleVariant.GetString());
+                        dump.Json.WriteNumber("Index", blob->index);
                         dump.Json.WriteEndObject();
                     }
                     dump.Json.WriteEndArray();

@@ -1,8 +1,6 @@
-using System.Runtime.CompilerServices;
-using System.Text;
-using Spreads.Buffers;
 using UnityEngine;
 
+// ReSharper disable InconsistentNaming
 // ReSharper disable CommentTypo
 // ReSharper disable BuiltInTypeReferenceStyle
 
@@ -16,8 +14,8 @@ namespace OkTools.Unity.AssetDb;
 // SourceAssetDB.h: RootFolderPropertiesBlob
 struct RootFolderPropertiesBlob
 {
-    public UnityGuid Guid;
-    public bool Immutable;
+    public UnityGUID  Guid;
+    public bool       Immutable;
     public BlobString MountPoint;
     public BlobString Folder;
     public BlobString PhysicalPath;
@@ -25,16 +23,16 @@ struct RootFolderPropertiesBlob
 
 struct AssetBundleFullNameIndexBlob
 {
-    public BlobString AssetBundleName;
-    public BlobString AssetBundleVariant;
-    public int Index;
+    public BlobString assetBundleName;
+    public BlobString assetBundleVariant;
+    public int        index;
 }
 
-struct GuidDbValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
+struct GuidDBValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
 {
-    public UnityGuid Guid;
-    public Hash128 MetaFileHash;    // these are both SpookyV2
-    public Hash128 AssetFileHash;
+    public UnityGUID guid;
+    public Hash128   metaFileHash;  // these are both SpookyV2
+    public Hash128   assetFileHash;
 
     /* manual scanner
 
@@ -48,51 +46,12 @@ struct GuidDbValue // Modules/AssetDatabase/Editor/V2/GuidDB.h
     */
 }
 
-struct HashDbValue // Modules/AssetDatabase/Editor/V2/HashDB.h
+struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
 {
-    public Hash128 Hash;
-    public long Time;
-    public UInt64 FileSize;
-    public bool IsUntrusted;
+    public Hash128 hash;
+    public long    time;
+    public UInt64  fileSize;
+    public bool    isUntrusted;
 
-    public DateTime TimeAsDateTime => new(Time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
-}
-
-class MiscDefinition
-{
-    readonly byte[] _nameBuffer;
-
-    public readonly string Name;
-    public readonly LmdbValue.Type ValueType;
-
-    MiscDefinition(string name, LmdbValue.Type type)
-    {
-        _nameBuffer = LmdbUtils.StringToBytes(name, false);
-
-        Name = name;
-        ValueType = type;
-    }
-
-    public static MiscDefinition Get(DirectBuffer name)
-    {
-        // TODO: binary search or hashtable or whatev (remember it's "starts with")
-        foreach (var misc in k_all)
-        {
-            if (!name.Span.StartsWith(misc._nameBuffer))
-                continue;
-
-            return misc;
-        }
-
-        throw new InvalidDataException($"Unknown misc entry: {Encoding.ASCII.GetString(name)}");
-    }
-
-    static readonly MiscDefinition[] k_all =
-    {
-        // look for s_Misc_* in SourceAssetDB.cpp
-        /*s_Misc_RefreshVersion*/          new("refreshVersion",          LmdbValue.Type.SInt32),           // refreshVersion -> int version (default -1 if missing)
-        /*s_Misc_ShaderCacheClearVersion*/ new("shaderCacheClearVersion", LmdbValue.Type.SInt32),           // shaderCacheClearVersion -> int version (default -1 if missing)
-        /*s_Misc_CrashedImportPaths*/      new("crashedImportPaths",      LmdbValue.Type.MultilineString),  // crashedImportPaths -> string[] (default empty if missing)
-        /*s_AssetBundNames*/               new("assetBundleNames",        LmdbValue.Type.AssetBundleNames), // assetBundleNames -> BlobArray<AssetBundleFullNameIndex>* (needs parsing to interpret, see SourceAssetDBWriteTxn::AddAssetBundleNames)
-    };
+    public DateTime TimeAsDateTime => new(time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
 }
