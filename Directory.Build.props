@@ -30,6 +30,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <LangVersion>11</LangVersion>
 
     <!-- language -->
     <Nullable>enable</Nullable>
