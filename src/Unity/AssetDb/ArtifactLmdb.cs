@@ -12,7 +12,7 @@ public static class ArtifactLmdb
 
     public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(ArtifactLmdb));
 
-    [AssetLmdbTable("ArtifactIDPropertyIDToProperty", "ArtifactID,Property,IsInMetaFile,Value0,Value1,...")]
+    [AssetLmdbTable("ArtifactIDPropertyIDToProperty", "ArtifactID,Property,ValueType,IsInMetaFile,Value0,Value1,...")]
     public static void DumpArtifactIdPropertyIdToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
         // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDPropertyIDToProperty
@@ -20,11 +20,12 @@ public static class ArtifactLmdb
         var (property, id) = PropertyDefinition.Get<ArtifactID>(key);
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{id.value},{property.Name},{property.IsInMetaFile},");
+            dump.Csv.Write($"{id.value},{property.Name},{property.ValueType},{property.IsInMetaFile},");
         else
         {
             dump.Json!.WriteString("ArtifactID", id.value.ToString());
             dump.Json.WriteString("Property", property.Name);
+            dump.Json.WriteString("ValueType", property.ValueType.ToString());
             dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
         }
 
