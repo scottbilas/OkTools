@@ -28,7 +28,7 @@ struct ArtifactDependencies
 
 struct ArtifactDependenciesHash
 {
-    public Hash128 Value;
+    public Hash128 value;
 }
 
 struct ArtifactFileMetaInfo
@@ -135,7 +135,7 @@ struct CustomDependency
 {
     public BlobString name;
     public Hash128    valueHash;
-};
+}
 
 struct DynamicArtifactDependencies
 {
