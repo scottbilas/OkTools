@@ -9,7 +9,8 @@ static partial class Commands
     public const string DocUsageAssetDb =
 @"Usage:
   okunity assetdb tables [PROJECT]
-  okunity assetdb dump [--json] [PROJECT] [OUTDIR]
+  okunity assetdb dump [--limit ROWS] [PROJECT] [OUTDIR]
+  okunity assetdb dump --json [--combined] [--compact] [--trim] [--limit ROWS] [PROJECT] [OUTDIR]
 
 Commands:
   tables  List all tables in the asset databases
@@ -19,6 +20,12 @@ Arguments:
   OUTDIR   Location of dumped files. Defaults to project root. Any existing files will be overwritten.
 
   PROJECT  Path to a Unity project. defaults to the current directory. If given a subdir of a project, the project root will automatically be used.
+
+Options:
+  --compact     Output in compact JSON with one line per table row
+  --combined    Write a single combined file per database rather than a file per table
+  --trim        Skip writing empty JSON objects and fields
+  --limit ROWS  Limit the number of rows dumped per table
 ";
 
     public static CliExitCode RunAssetDb(CommandContext context)
@@ -70,14 +77,51 @@ Arguments:
                     throw new DocoptInputErrorException($"OUTDIR does not exist: '{outDir}'");
             }
 
-            var useCsv = context.CommandLine["--json"].IsFalse;
+            var config = new DumpConfig
+            {
+                OptJson = context.CommandLine["--json"].IsTrue,
+                OptCompact = context.CommandLine["--compact"].IsTrue,
+                OptCombined = context.CommandLine["--combined"].IsTrue,
+                OptTrim = context.CommandLine["--trim"].IsTrue,
+                OptLimit = context.CommandLine["--limit"].AsInt,
+            };
 
             void DumpTables(AssetLmdb db, IEnumerable<TableDumpSpec> specs)
             {
-                foreach (var spec in specs)
+                DumpContext? dump = null;
+                try
                 {
-                    var path = outDir.Combine($"{db.Name}-{spec.TableName}");
-                    db.DumpTable(spec, path, useCsv);
+                    if (config.OptCombined)
+                    {
+                        dump = new(outDir.Combine(db.Name), config);
+                        dump.Json!.WriteStartObject();
+                    }
+
+                    foreach (var spec in specs)
+                    {
+                        if (!config.OptCombined)
+                        {
+                            var path = outDir.Combine($"{db.Name}-{spec.TableName}");
+                            dump = new DumpContext(path, config);
+                        }
+
+                        db.DumpTable(dump!, db, spec);
+
+                        if (!config.OptCombined)
+                        {
+                            dump!.Dispose();
+                            dump = null;
+                        }
+                    }
+
+                    if (config.OptCombined)
+                    {
+                        dump!.Json!.WriteEndObject();
+                    }
+                }
+                finally
+                {
+                    dump?.Dispose();
                 }
             }
 

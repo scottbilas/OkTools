@@ -35,7 +35,7 @@ public static class ArtifactLmdb
         value.ExpectEnd();
     }
 
-    [AssetLmdbTable("ArtifactIDToArtifactDependencies", "ArtifactID,DependenciesHash,StaticDependencyHash # check json for the rest (it's complex)")]
+    [AssetLmdbTable("ArtifactIDToArtifactDependencies", "ArtifactID,DependenciesHash,StaticDependencyHash,(Check json for the rest!)", UniqueKeys = true)]
     public static unsafe void DumpArtifactIdToArtifactDependencies(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
         // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactDependencies
@@ -49,40 +49,61 @@ public static class ArtifactLmdb
         {
             dump.Json!.WriteStartObject(id.value.ToString());
             {
-                dump.Json.WriteString("DependenciesHash", deps->dependenciesHash.value.ToString());
-                dump.Json.WriteString("StaticDependencyHash", deps->staticDependencyHash.value.ToString());
+                dump.Json.WriteString("dependenciesHash", deps->dependenciesHash.value.ToString());
+                dump.Json.WriteString("staticDependencyHash", deps->staticDependencyHash.value.ToString());
 
                 // this is just redundant with the key, skip it
                 //dump.Json.WriteString("ArtifactID", deps->artifactID.value.ToString());
 
-                dump.Json.WriteStartObject("StaticDependencies");
+                dump.Json.WriteStartObject("staticDependencies");
                 {
                     var staticDependencies = deps->staticDependencies.Ptr;
 
-                    dump.Json.WriteNumber("ArtifactFormatVersion", staticDependencies->artifactFormatVersion);
-                    dump.Json.WriteNumber("AllImporterVersion", staticDependencies->allImporterVersion);
+                    dump.Json.WriteNumber("artifactFormatVersion", staticDependencies->artifactFormatVersion);
+                    dump.Json.WriteNumber("allImporterVersion", staticDependencies->allImporterVersion);
                     Write(dump, staticDependencies->importerID, "importerID");
-                    dump.Json.WriteNumber("ImporterVersion", staticDependencies->importerVersion);
-                    dump.Json.WriteString("PostprocessorType", staticDependencies->postprocessorType.ToString());
-                    dump.Json.WriteString("PostprocessorVersionHash", staticDependencies->postprocessorVersionHash.ToString());
-                    dump.Json.WriteString("NameOfAsset", staticDependencies->nameOfAsset.GetString());
-                    dump.Json.WriteStartArray("HashOfSourceAsset");
+                    dump.Json.WriteNumber("importerVersion", staticDependencies->importerVersion);
+                    if (!dump.Config.OptTrim || staticDependencies->postprocessorType != PostprocessorType.kPostprocessorNone)
+                        dump.Json.WriteString("postprocessorType", staticDependencies->postprocessorType.ToString());
+                    if (!dump.Config.OptTrim || staticDependencies->postprocessorVersionHash.IsValid)
+                        dump.Json.WriteString("postprocessorVersionHash", staticDependencies->postprocessorVersionHash.ToString());
+                    dump.Json.WriteString("nameOfAsset", staticDependencies->nameOfAsset.GetString());
+                    dump.Json.WriteStartArray("hashOfSourceAsset");
                         for (var i = 0; i < staticDependencies->hashOfSourceAsset.Length; i++)
                             Write(dump, *staticDependencies->hashOfSourceAsset.PtrAt(i), null);
                     dump.Json.WriteEndArray();
                 }
                 dump.Json.WriteEndObject();
 
-                dump.Json.WriteStartObject("DynamicDependencies");
+                // dynamicDependencies
                 {
                     var dynamicDependencies = deps->dynamicDependencies.Ptr;
+                    var openedDynamicDependencies = false;
 
-                    dump.Json.WriteStartArray("HashOfSourceAsset");
+                    bool StartArray<T>(string name, BlobArray<T> array) where T : unmanaged
+                    {
+                        if (dump.Config.OptTrim && array.Length == 0)
+                            return false;
+
+                        if (!openedDynamicDependencies)
+                        {
+                            dump.Json.WriteStartObject("dynamicDependencies");
+                            openedDynamicDependencies = true;
+                        }
+
+                        dump.Json.WriteStartArray(name);
+                        return true;
+                    }
+
+                    if (StartArray("hashOfSourceAsset", dynamicDependencies->hashOfSourceAsset))
+                    {
                         for (var i = 0; i < dynamicDependencies->hashOfSourceAsset.Length; ++i)
                             Write(dump, *dynamicDependencies->hashOfSourceAsset.PtrAt(i), null);
-                    dump.Json.WriteEndArray();
+                        dump.Json.WriteEndArray();
+                    }
 
-                    dump.Json.WriteStartArray("GuidOfPathLocation");
+                    if (StartArray("guidOfPathLocation", dynamicDependencies->guidOfPathLocation))
+                    {
                         for (var i = 0; i < dynamicDependencies->guidOfPathLocation.Length; ++i)
                         {
                             var guidOfPathLocation = dynamicDependencies->guidOfPathLocation.PtrAt(i);
@@ -91,9 +112,11 @@ public static class ArtifactLmdb
                                 dump.Json.WriteString("guid", guidOfPathLocation->guid.ToString());
                             dump.Json.WriteEndObject();
                         }
-                    dump.Json.WriteEndArray();
+                        dump.Json.WriteEndArray();
+                    }
 
-                    dump.Json.WriteStartArray("HashOfGUIDsOfChildren");
+                    if (StartArray("hashOfGUIDsOfChildren", dynamicDependencies->hashOfGUIDsOfChildren))
+                    {
                         for (var i = 0; i < dynamicDependencies->hashOfGUIDsOfChildren.Length; ++i)
                         {
                             var hashOfGUIDsOfChildren = dynamicDependencies->hashOfGUIDsOfChildren.PtrAt(i);
@@ -102,9 +125,11 @@ public static class ArtifactLmdb
                                 dump.Json.WriteString("guid", hashOfGUIDsOfChildren->hash.ToString());
                             dump.Json.WriteEndObject();
                         }
-                    dump.Json.WriteEndArray();
+                        dump.Json.WriteEndArray();
+                    }
 
-                    dump.Json.WriteStartArray("HashOfArtifact");
+                    if (StartArray("hashOfArtifact", dynamicDependencies->hashOfArtifact))
+                    {
                         for (var i = 0; i < dynamicDependencies->hashOfArtifact.Length; ++i)
                         {
                             var hashOfArtifact = dynamicDependencies->hashOfArtifact.PtrAt(i);
@@ -113,9 +138,11 @@ public static class ArtifactLmdb
                                 dump.Json.WriteString("artifactID", hashOfArtifact->artifactID.value.ToString());
                             dump.Json.WriteEndObject();
                         }
-                    dump.Json.WriteEndArray();
+                        dump.Json.WriteEndArray();
+                    }
 
-                    dump.Json.WriteStartArray("PropertyOfArtifact");
+                    if (StartArray("propertyOfArtifact", dynamicDependencies->propertyOfArtifact))
+                    {
                         for (var i = 0; i < dynamicDependencies->propertyOfArtifact.Length; ++i)
                         {
                             var propertyOfArtifact = dynamicDependencies->propertyOfArtifact.PtrAt(i);
@@ -124,28 +151,51 @@ public static class ArtifactLmdb
                                 Write(dump, &propertyOfArtifact->prop, "prop");
                             dump.Json.WriteEndObject();
                         }
-                    dump.Json.WriteEndArray();
+                        dump.Json.WriteEndArray();
+                    }
 
-    /*    public BlobOptional<BuildTargetSelection>     buildTarget;
-        public BlobOptional<BuildTargetPlatformGroup> buildTargetPlatformGroup;
-        public BlobOptional<TextureImportCompression> textureImportCompression;
-        public BlobOptional<ColorSpace>               colorSpace;
-        public BlobOptional<UInt32>                   graphicsApiMask;
-        public BlobOptional<ScriptingRuntimeVersion>  scriptingRuntimeVersion;
-        public BlobArray<CustomDependency>            customDependencies;*/
+                    if (!dump.Config.OptTrim || dynamicDependencies->buildTarget.HasValue)
+                        dump.Json.WriteString("buildTarget", dynamicDependencies->buildTarget.ToString());
+                    if (!dump.Config.OptTrim || dynamicDependencies->buildTargetPlatformGroup.HasValue)
+                        dump.Json.WriteString("buildTargetPlatformGroup", dynamicDependencies->buildTargetPlatformGroup.ToString());
+                    if (!dump.Config.OptTrim || dynamicDependencies->textureImportCompression.HasValue)
+                        dump.Json.WriteString("textureImportCompression", dynamicDependencies->textureImportCompression.ToString());
+                    if (!dump.Config.OptTrim || dynamicDependencies->colorSpace.HasValue)
+                        dump.Json.WriteString("colorSpace", dynamicDependencies->colorSpace.ToString());
+                    if (!dump.Config.OptTrim || dynamicDependencies->graphicsApiMask.HasValue)
+                        dump.Json.WriteString("graphicsApiMask", dynamicDependencies->graphicsApiMask.ToString());
+                    if (!dump.Config.OptTrim || dynamicDependencies->scriptingRuntimeVersion.HasValue)
+                        dump.Json.WriteString("scriptingRuntimeVersion", dynamicDependencies->scriptingRuntimeVersion.ToString());
+
+                    if (StartArray("customDependencies", dynamicDependencies->customDependencies))
+                    {
+                        for (var i = 0; i < dynamicDependencies->customDependencies.Length; ++i)
+                        {
+                            var customDependency = dynamicDependencies->customDependencies.PtrAt(i);
+                            dump.Json.WriteStartObject();
+                                dump.Json.WriteString("name", customDependency->name.GetString());
+                                dump.Json.WriteString("valueHash", customDependency->valueHash.ToString());
+                            dump.Json.WriteEndObject();
+                        }
+                        dump.Json.WriteEndArray();
+                    }
+
+                    if (openedDynamicDependencies)
+                        dump.Json.WriteEndObject();
+                    else
+                        dump.Json.WriteString("dynamicDependencies", "(none)");
                 }
-                dump.Json.WriteEndObject();
             }
             dump.Json.WriteEndObject();
         }
     }
 
-// TODO: ArtifactIDToArtifactMetaInfo (OMG)
 #if NO
         // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactMetaInfo
     [AssetLmdbTable("", "")]
-    public static void Dump(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    public static void DumpArtifactIDToArtifactMetaInfo(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
+        // TODO: ArtifactIDToArtifactMetaInfo (OMG)
     }
 #endif
 
@@ -242,7 +292,7 @@ public static class ArtifactLmdb
         if (dump.Csv != null)
             dump.Csv.Write($"{key.guid},");
         else
-            dump.Json!.WriteString("UnityGuid", key.guid.ToString());
+            dump.Json!.WriteString("guid", key.guid.ToString());
 
         Write(dump, key.importerId, "importerId");
         dump.Json?.WriteEndObject();
@@ -252,6 +302,8 @@ public static class ArtifactLmdb
     {
         if (dump.Csv != null)
             dump.Csv.Write($"{importerId.NativeImporterType},{importerId.ScriptedImporterType}");
+        else if (dump.Config.OptTrim && importerId.NativeImporterType == -1 && !importerId.ScriptedImporterType.IsValid)
+            dump.Json!.WriteString(objectName, "(default)");
         else
         {
             dump.Json!.WriteStartObject(objectName);

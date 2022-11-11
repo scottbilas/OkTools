@@ -127,11 +127,13 @@ public static class LmdbValue
 
                 if (dump.Csv != null)
                     dump.Csv.Write($"{id.NativeImporterType},{id.ScriptedImporterType}");
+                else if (dump.Config.OptTrim && id.NativeImporterType == -1 && !id.ScriptedImporterType.IsValid)
+                    dump.Json!.WriteString(valueName, "(default)");
                 else
                 {
                     dump.Json!.WriteStartObject(valueName);
-                    dump.Json.WriteNumber("NativeImporterType", id.NativeImporterType);
-                    dump.Json.WriteString("ScriptedImporterType", id.ScriptedImporterType.ToString());
+                        dump.Json.WriteNumber("NativeImporterType", id.NativeImporterType);
+                        dump.Json.WriteString("ScriptedImporterType", id.ScriptedImporterType.ToString());
                     dump.Json.WriteEndObject();
                 }
             }

@@ -18,6 +18,8 @@ public struct Hash128
     public const int SizeOf = sizeof(ulong)*2;
     UInt64 u64_0, u64_1;
 
+    public bool IsValid => u64_0 != 0 || u64_1 != 0;
+
     public Hash128(uint u32_0, uint u32_1, uint u32_2, uint u32_3)
     {
         u64_0 = ((ulong)u32_1) << 32 | u32_0;
@@ -97,13 +99,17 @@ public struct BlobOffsetPtr<T> where T : unmanaged
                 return (T*)((byte*)self + Offset);
         }
     }
+
+    public override unsafe string? ToString() => Ptr->ToString();
 }
 
 public struct BlobOptional<T> where T : unmanaged
 {
     BlobOffsetPtr<T> _ptr;
 
+    public bool HasValue => _ptr.Offset != 0;
     public unsafe T* Ptr => _ptr.Offset != 0 ? _ptr.Ptr : null;
+    public override string? ToString() => _ptr.Offset != 0 ? _ptr.ToString() : null;
 }
 
 public struct BlobString
@@ -138,6 +144,7 @@ public struct BlobArray<T> where T : unmanaged
     readonly uint _length; // count of elements
 
     public int Length => (int)_length;
+    public bool Any => _length != 0;
 
     public unsafe T* PtrAt(int index) // don't make this an indexer because BlobArrays often used as a pointer and too easy to become ambiguous
     {

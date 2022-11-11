@@ -1,16 +1,9 @@
 using System.Diagnostics;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Spreads.Buffers;
-using Spreads.LMDB;
 
 namespace OkTools.Unity.AssetDb;
-
-// TODO: general note for any lmdb-using code: all of the stuff i'm doing is just to get something working quick. but
-// spreads.lmdb gives us direct access to the memory returned by lmdb. there's no need to copy into arrays and strings,
-// spreads.lmdb to return structs pointing at the raw memory and defer any processing (like conversion to string) until
-// the caller actually wants it.
 
 public class AssetLmdb : LmdbDatabase
 {
@@ -32,10 +25,14 @@ public class AssetLmdb : LmdbDatabase
             $"0x{DbVersion:X}",
             SelectTableNames().OrderBy(s => s.ToLower()).ToArray());
 
-    public void DumpTable(TableDumpSpec spec, string pathNoExtension, bool useCsv)
+    public void DumpTable(DumpContext dump, AssetLmdb db, TableDumpSpec spec)
     {
         using var table = new LmdbTable(this, spec.TableName);
-        using var dump = new DumpContext(pathNoExtension, this, useCsv);
+        using var tx = db.Env.BeginReadOnlyTransaction();
+
+        var rows = table.Table.AsEnumerable(tx);
+        if (dump.Config.OptLimit != 0)
+            rows = rows.Take(dump.Config.OptLimit);
 
         if (dump.Csv != null)
         {
@@ -43,7 +40,7 @@ public class AssetLmdb : LmdbDatabase
 
             dump.Csv.Write($"{spec.CsvFields}\n");
 
-            foreach (var kvp in table.Table.AsEnumerable(dump.Tx))
+            foreach (var kvp in rows)
             {
                 spec.Dump(dump, kvp.Key, kvp.Value);
                 dump.Csv.Write('\n');
@@ -53,31 +50,48 @@ public class AssetLmdb : LmdbDatabase
         {
             Debug.Assert(dump.Json != null);
 
+            if (dump.Config.OptCombined)
+                dump.Json.WriteStartObject(spec.TableName);
+
             if (spec.UniqueKeys)
                 dump.Json.WriteStartObject();
             else
                 dump.Json.WriteStartArray();
 
-            foreach (var kvp in table.Table.AsEnumerable(dump.Tx))
+            foreach (var kvp in rows)
             {
                 if (!spec.UniqueKeys)
                     dump.Json.WriteStartObject();
                 spec.Dump(dump, kvp.Key, kvp.Value);
                 if (!spec.UniqueKeys)
                     dump.Json.WriteEndObject();
-                dump.Newline();
+                dump.NextRow();
             }
 
             if (spec.UniqueKeys)
                 dump.Json.WriteEndObject();
             else
                 dump.Json.WriteEndArray();
+
+            if (dump.Config.OptCombined)
+                dump.Json.WriteEndObject();
         }
     }
 }
 
+[UsedImplicitly]
 public record AssetLmdbInfo(string Name, string Version, string[] TableNames);
+
 public record TableDumpSpec(string TableName, string CsvFields, bool UniqueKeys, Action<DumpContext, DirectBuffer, DirectBuffer> Dump);
+
+public struct DumpConfig
+{
+    public bool OptJson;
+    public bool OptCompact;
+    public bool OptCombined;
+    public bool OptTrim;
+    public int  OptLimit;
+}
 
 public sealed class DumpContext : IDisposable
 {
@@ -85,33 +99,41 @@ public sealed class DumpContext : IDisposable
 
     public readonly StreamWriter? Csv;
     public readonly Utf8JsonWriter? Json;
-    public readonly ReadOnlyTransaction Tx;
+    public readonly DumpConfig Config;
 
-    public DumpContext(string pathNoExtension, LmdbDatabase db, bool useCsv)
+    public DumpContext(string pathNoExtension, DumpConfig config)
     {
-        var path = pathNoExtension + (useCsv ? ".csv" : ".json");
+        Config = config;
+
+        var path = pathNoExtension + (config.OptJson ? ".json" : ".csv");
         _file = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read);
 
-        if (useCsv)
-            Csv = new StreamWriter(_file);
+        if (config.OptJson)
+        {
+            var jsonOptions = new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }; // don't want '<' and '>' escaped
+            if (!config.OptCompact)
+                jsonOptions.Indented = true;
+            Json = new Utf8JsonWriter(_file, jsonOptions);
+        }
         else
-            Json = new Utf8JsonWriter(_file, new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }); // don't want '<' and '>' escaped
-
-        Tx = db.Env.BeginReadOnlyTransaction();
+            Csv = new StreamWriter(_file);
     }
 
     public void Dispose()
     {
-        Tx.Dispose();
         Csv?.Dispose();
         Json?.Dispose();
+
         _file.Dispose();
     }
 
     static readonly byte[] k_newline = { (byte)'\n' };
 
-    public void Newline()
+    public void NextRow()
     {
+        if (!Config.OptCompact)
+            return;
+
         Csv?.Flush();
         Json?.Flush();
 
