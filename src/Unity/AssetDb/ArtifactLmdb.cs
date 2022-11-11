@@ -190,15 +190,71 @@ public static class ArtifactLmdb
         }
     }
 
-#if NO
-        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactMetaInfo
-    [AssetLmdbTable("", "")]
-    public static void DumpArtifactIDToArtifactMetaInfo(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    [AssetLmdbTable("ArtifactIDToArtifactMetaInfo", "", UniqueKeys = true)]
+    public static unsafe void DumpArtifactIdToArtifactMetaInfo(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        // TODO: ArtifactIDToArtifactMetaInfo (OMG)
-    }
-#endif
+        // ArtifactDB.cpp: ArtifactDB::m_ArtifactIDToArtifactMetaInfo
 
+        var id = key.ReadExpectEnd<ArtifactID>();
+        var stats = value.Cast<ArtifactMetaInfo>();
+
+        if (dump.Csv != null)
+            dump.Csv.Write($"{id.value},{stats->artifactMetaInfoHash.value},");
+        else
+        {
+            dump.Json!.WriteStartObject(id.value.ToString());
+            dump.Json.WriteString("artifactMetaInfoHash", stats->artifactMetaInfoHash.value.ToString());
+        }
+
+        Write(dump, stats->artifactKey, "artifactKey");
+
+        if (dump.Csv != null)
+            dump.Csv.Write($",{stats->type},{stats->isImportedAssetCacheable}");
+        else
+        {
+            dump.Json!.WriteString("type", stats->type.ToString());
+            dump.Json.WriteBoolean("isImportedAssetCacheable", stats->isImportedAssetCacheable);
+
+            dump.Json.WriteStartArray("producedFiles");
+            for (var i = 0; i < stats->producedFiles.Length; ++i)
+            {
+                var producedFile = stats->producedFiles.PtrAt(i);
+                dump.Json.WriteStartObject();
+                    dump.Json.WriteString("storage", producedFile->storage.ToString());
+                    var extension = producedFile->extension.GetString();
+                    if (!dump.Config.OptTrim || extension.Length != 0)
+                        dump.Json.WriteString("extension", extension);
+                    dump.Json.WriteString("contentHash", producedFile->contentHash.ToString());
+                    if (!dump.Config.OptTrim || producedFile->inlineStorage.Length != 0)
+                        dump.Json.WriteString("inlineStorage", $"({producedFile->inlineStorage.Length} bytes)");
+                dump.Json.WriteEndObject();
+            }
+            dump.Json.WriteEndArray();
+
+            dump.Json.WriteStartArray("properties");
+            for (var i = 0; i < stats->properties.Length; ++i)
+                Write(dump, stats->properties.PtrAt(i), null);
+            dump.Json.WriteEndArray();
+
+            dump.Json.WriteStartArray("importedAssetMetaInfos");
+            for (var i = 0; i < stats->importedAssetMetaInfos.Length; ++i)
+            {
+                var metaInfo = stats->importedAssetMetaInfos.PtrAt(i);
+                dump.Json.WriteStartObject();
+                    dump.Json.WriteBoolean("postProcessedAsset", metaInfo->postProcessedAsset);
+                    Write(dump, &metaInfo->mainObjectInfo, "mainObjectInfo");
+
+                    dump.Json.WriteStartArray("objectInfo");
+                    for (var j = 0; j < metaInfo->objectInfo.Length; ++j)
+                        Write(dump, metaInfo->objectInfo.PtrAt(j), null);
+                    dump.Json.WriteEndArray();
+                dump.Json.WriteEndObject();
+            }
+            dump.Json.WriteEndArray();
+
+            dump.Json.WriteEndObject();
+        }
+    }
 
     [AssetLmdbTable("ArtifactIDToImportStats", "ArtifactID,ImportTimeMicroseconds,ArtifactPath,ImportedTimestamp,EditorRevision,UserName,ReliabilityIndex,UploadedTimestamp,UploadIpAddress", UniqueKeys = true)]
     public static unsafe void DumpArtifactIdToImportStats(DumpContext dump, DirectBuffer key, DirectBuffer value)
@@ -313,15 +369,20 @@ public static class ArtifactLmdb
         }
     }
 
-    static unsafe void Write(DumpContext dump, BlobProperty* property, string objectName)
+    static unsafe void Write(DumpContext dump, BlobProperty* property, string? objectName)
     {
         if (dump.Csv != null)
             dump.Csv.Write($"{property->id.GetString()},({property->data.Length} bytes)");
         else
         {
-            dump.Json!.WriteStartObject(objectName);
-                dump.Json.WriteString("id", property->id.GetString());
-                dump.Json.WriteString("data", $"({property->data.Length} bytes)");
+            if (objectName != null)
+                dump.Json!.WriteStartObject(objectName);
+            else
+                dump.Json!.WriteStartObject();
+
+            dump.Json.WriteString("id", property->id.GetString());
+            dump.Json.WriteString("data", $"({property->data.Length} bytes)");
+
             dump.Json.WriteEndObject();
         }
     }
@@ -341,6 +402,69 @@ public static class ArtifactLmdb
             dump.Json.WriteString("assetHash", hashOfSourceAsset.assetHash.ToString());
             dump.Json.WriteString("metaFileHash", hashOfSourceAsset.metaFileHash.ToString());
 
+            dump.Json.WriteEndObject();
+        }
+    }
+
+    static unsafe void Write(DumpContext dump, ImportedObjectMetaInfo* metaInfo, string? objectName)
+    {
+        if (dump.Csv != null)
+            dump.Csv.Write($"{metaInfo->name.GetString()},{metaInfo->typeID},{metaInfo->flags},{metaInfo->scriptClassName.name.GetString()},{metaInfo->localIdentifier}");
+        else
+        {
+            if (objectName != null)
+                dump.Json!.WriteStartObject(objectName);
+            else
+                dump.Json!.WriteStartObject();
+
+                dump.Json.WriteString("name", metaInfo->name.GetString());
+                if (!dump.Config.OptTrim || metaInfo->thumbnail.format != GraphicsFormat.kFormatNone)
+                {
+                    dump.Json.WriteStartObject("thumbnail");
+                        dump.Json.WriteString("format", metaInfo->thumbnail.format.ToString());
+                        dump.Json.WriteNumber("width", metaInfo->thumbnail.width);
+                        dump.Json.WriteNumber("height", metaInfo->thumbnail.height);
+                        dump.Json.WriteNumber("rowBytes", metaInfo->thumbnail.rowBytes);
+                        dump.Json.WriteString("image", $"({metaInfo->thumbnail.image.Length} bytes)");
+                    dump.Json.WriteEndObject();
+                }
+                dump.Json.WriteNumber("typeID", metaInfo->typeID);
+                dump.Json.WriteNumber("flags", metaInfo->flags);
+
+                var openedScriptClassName = false;
+
+                void StartScriptClassName()
+                {
+                    if (!openedScriptClassName)
+                    {
+                        dump.Json!.WriteStartObject("scriptClassName");
+                        openedScriptClassName = true;
+                    }
+                }
+
+                var scriptName = metaInfo->scriptClassName.name.GetString();
+                if (!dump.Config.OptTrim || scriptName.Length != 0)
+                {
+                    StartScriptClassName();
+                    dump.Json.WriteString("name", scriptName);
+                }
+
+                var monoScript = metaInfo->scriptClassName.monoScript;
+                if (!dump.Config.OptTrim || monoScript.guid.IsValid() || monoScript.localIdentifier != 0 || monoScript.type != -1)
+                {
+                    StartScriptClassName();
+
+                    dump.Json.WriteStartObject("monoScript");
+                        dump.Json.WriteString("guid", monoScript.guid.ToString());
+                        dump.Json.WriteNumber("localIdentifier", monoScript.localIdentifier);
+                        dump.Json.WriteNumber("type", monoScript.type);
+                    dump.Json.WriteEndObject();
+                }
+
+                if (openedScriptClassName)
+                    dump.Json.WriteEndObject();
+
+                dump.Json.WriteNumber("localIdentifier", metaInfo->localIdentifier);
             dump.Json.WriteEndObject();
         }
     }

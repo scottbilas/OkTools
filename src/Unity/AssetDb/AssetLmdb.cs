@@ -51,12 +51,20 @@ public class AssetLmdb : LmdbDatabase
             Debug.Assert(dump.Json != null);
 
             if (dump.Config.OptCombined)
-                dump.Json.WriteStartObject(spec.TableName);
-
-            if (spec.UniqueKeys)
-                dump.Json.WriteStartObject();
+            {
+                if (spec.UniqueKeys)
+                    dump.Json.WriteStartObject(spec.TableName);
+                else
+                    dump.Json.WriteStartArray(spec.TableName);
+            }
             else
-                dump.Json.WriteStartArray();
+            {
+                if (spec.UniqueKeys)
+                    dump.Json.WriteStartObject();
+                else
+                    dump.Json.WriteStartArray();
+            }
+
 
             foreach (var kvp in rows)
             {
@@ -72,9 +80,6 @@ public class AssetLmdb : LmdbDatabase
                 dump.Json.WriteEndObject();
             else
                 dump.Json.WriteEndArray();
-
-            if (dump.Config.OptCombined)
-                dump.Json.WriteEndObject();
         }
     }
 }

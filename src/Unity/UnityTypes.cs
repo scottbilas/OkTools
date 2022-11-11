@@ -59,6 +59,8 @@ public unsafe struct UnityGUID
 
     static readonly char[] k_kHexToLiteral = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
+    public bool IsValid() { return _data[0] != 0 || _data[1] != 0 || _data[2] != 0 || _data[3] != 0; }
+
     public override string ToString()
     {
         // TODO: overload that writes direct to a span
