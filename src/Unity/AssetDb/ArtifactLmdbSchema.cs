@@ -269,7 +269,9 @@ enum BuildTargetPlatform
     kBuildDeprecatedWebPlayerLZMA = 6,
     kBuildDeprecatedWebPlayerLZMAStreamed = 7,
     kBuildDeprecatedStandaloneOSXIntel64 = 27,
+#pragma warning disable CA1069
     kBuildStandaloneOSX = 2,
+#pragma warning restore CA1069
     kBuildStandaloneWinPlayer = 5,
     kBuild_iPhone = 9,
     kBuildDeprecatedPS3 = 10,

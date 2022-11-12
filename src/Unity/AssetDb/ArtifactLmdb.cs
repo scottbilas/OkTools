@@ -417,54 +417,55 @@ public static class ArtifactLmdb
             else
                 dump.Json!.WriteStartObject();
 
-                dump.Json.WriteString("name", metaInfo->name.GetString());
-                if (!dump.Config.OptTrim || metaInfo->thumbnail.format != GraphicsFormat.kFormatNone)
+            dump.Json.WriteString("name", metaInfo->name.GetString());
+            if (!dump.Config.OptTrim || metaInfo->thumbnail.format != GraphicsFormat.kFormatNone)
+            {
+                dump.Json.WriteStartObject("thumbnail");
+                    dump.Json.WriteString("format", metaInfo->thumbnail.format.ToString());
+                    dump.Json.WriteNumber("width", metaInfo->thumbnail.width);
+                    dump.Json.WriteNumber("height", metaInfo->thumbnail.height);
+                    dump.Json.WriteNumber("rowBytes", metaInfo->thumbnail.rowBytes);
+                    dump.Json.WriteString("image", $"({metaInfo->thumbnail.image.Length} bytes)");
+                dump.Json.WriteEndObject();
+            }
+            dump.Json.WriteNumber("typeID", metaInfo->typeID);
+            dump.Json.WriteNumber("flags", metaInfo->flags);
+
+            var openedScriptClassName = false;
+
+            void StartScriptClassName()
+            {
+                if (!openedScriptClassName)
                 {
-                    dump.Json.WriteStartObject("thumbnail");
-                        dump.Json.WriteString("format", metaInfo->thumbnail.format.ToString());
-                        dump.Json.WriteNumber("width", metaInfo->thumbnail.width);
-                        dump.Json.WriteNumber("height", metaInfo->thumbnail.height);
-                        dump.Json.WriteNumber("rowBytes", metaInfo->thumbnail.rowBytes);
-                        dump.Json.WriteString("image", $"({metaInfo->thumbnail.image.Length} bytes)");
-                    dump.Json.WriteEndObject();
+                    dump.Json!.WriteStartObject("scriptClassName");
+                    openedScriptClassName = true;
                 }
-                dump.Json.WriteNumber("typeID", metaInfo->typeID);
-                dump.Json.WriteNumber("flags", metaInfo->flags);
+            }
 
-                var openedScriptClassName = false;
+            var scriptName = metaInfo->scriptClassName.name.GetString();
+            if (!dump.Config.OptTrim || scriptName.Length != 0)
+            {
+                StartScriptClassName();
+                dump.Json.WriteString("name", scriptName);
+            }
 
-                void StartScriptClassName()
-                {
-                    if (!openedScriptClassName)
-                    {
-                        dump.Json!.WriteStartObject("scriptClassName");
-                        openedScriptClassName = true;
-                    }
-                }
+            var monoScript = metaInfo->scriptClassName.monoScript;
+            if (!dump.Config.OptTrim || monoScript.guid.IsValid() || monoScript.localIdentifier != 0 || monoScript.type != -1)
+            {
+                StartScriptClassName();
 
-                var scriptName = metaInfo->scriptClassName.name.GetString();
-                if (!dump.Config.OptTrim || scriptName.Length != 0)
-                {
-                    StartScriptClassName();
-                    dump.Json.WriteString("name", scriptName);
-                }
+                dump.Json.WriteStartObject("monoScript");
+                    dump.Json.WriteString("guid", monoScript.guid.ToString());
+                    dump.Json.WriteNumber("localIdentifier", monoScript.localIdentifier);
+                    dump.Json.WriteNumber("type", monoScript.type);
+                dump.Json.WriteEndObject();
+            }
 
-                var monoScript = metaInfo->scriptClassName.monoScript;
-                if (!dump.Config.OptTrim || monoScript.guid.IsValid() || monoScript.localIdentifier != 0 || monoScript.type != -1)
-                {
-                    StartScriptClassName();
+            if (openedScriptClassName)
+                dump.Json.WriteEndObject();
 
-                    dump.Json.WriteStartObject("monoScript");
-                        dump.Json.WriteString("guid", monoScript.guid.ToString());
-                        dump.Json.WriteNumber("localIdentifier", monoScript.localIdentifier);
-                        dump.Json.WriteNumber("type", monoScript.type);
-                    dump.Json.WriteEndObject();
-                }
+            dump.Json.WriteNumber("localIdentifier", metaInfo->localIdentifier);
 
-                if (openedScriptClassName)
-                    dump.Json.WriteEndObject();
-
-                dump.Json.WriteNumber("localIdentifier", metaInfo->localIdentifier);
             dump.Json.WriteEndObject();
         }
     }

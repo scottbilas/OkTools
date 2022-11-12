@@ -91,6 +91,7 @@ public unsafe struct UnityGUID
 
 public struct BlobOffsetPtr<T> where T : unmanaged
 {
+    // ReSharper disable once UnassignedReadonlyField
     public readonly int Offset;
 
     public unsafe T* Ptr
