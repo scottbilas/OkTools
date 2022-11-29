@@ -8,13 +8,13 @@ namespace OkTools.Unity.AssetDb;
 
 public static class SourceAssetLmdb
 {
-    const uint k_expectedDbVersion = 9;
+    static readonly uint[] k_expectedDbVersions = { 9, 10 };
     public static AssetLmdb OpenLmdb(NPath projectRoot) =>
-        new(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersion);
+        new(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersions);
 
     public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(SourceAssetLmdb));
 
-    [AssetLmdbTable("GuidPropertyIDToProperty", "UnityGuid,Property,ValueType,IsInMetaFile,Value0,Value1,...")]
+    [AssetLmdbTable("GuidPropertyIDToProperty", "Property,UnityGuid,ValueType,IsInMetaFile,Value0,Value1,...")]
     public static void DumpGuidPropertyIdToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
         // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
@@ -22,13 +22,13 @@ public static class SourceAssetLmdb
         var (property, unityGuid) = PropertyDefinition.Get<UnityGUID>(key);
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{unityGuid},{property.Name},{property.ValueType},{property.IsInMetaFile},");
+            dump.Csv.Write($"{property.Name},{unityGuid},{property.ValueType},{property.IsInMetaFile},");
         else
         {
-            dump.Json!.WriteString("Property", property.Name);
-            dump.Json.WriteString("ValueType", property.ValueType.ToString());
-            dump.Json.WriteString("UnityGuid", unityGuid.ToString());
+            dump.Json!.WriteString("Property", property.Name); // part 1 of key
+            dump.Json.WriteString("UnityGuid", unityGuid.ToString()); // part 2 of key
             dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
+            dump.Json.WriteString("ValueType", property.ValueType.ToString());
         }
 
         LmdbValue.Dump(dump, property.ValueType, ref value);

@@ -7,15 +7,22 @@ namespace OkTools.Unity.AssetDb;
 
 public class AssetLmdb : LmdbDatabase
 {
-    public AssetLmdb(NPath dbPath, uint supportedVersion) : base(dbPath)
+    public AssetLmdb(NPath dbPath, params uint[] supportedVersions) : base(dbPath)
     {
         using var dbVersionTable = new LmdbTable(this, "DBVersion");
         using var tx = Env.BeginReadOnlyTransaction();
 
         DbVersion = dbVersionTable.GetUint(tx, "Version");
 
-        if (DbVersion != supportedVersion)
-            throw new InvalidOperationException($"Unsupported {Name} version {DbVersion:X} (supported: {supportedVersion:X})");
+        if (!supportedVersions.Contains(DbVersion))
+        {
+            static string NiceUint(uint v) => v < 10000 ? v.ToString() : $"0x{v:X8}";
+
+            var supportedVersionsText = supportedVersions
+                .Select(NiceUint)
+                .StringJoin(", ");
+            throw new InvalidOperationException($"Unsupported {Name} version {NiceUint(DbVersion)} (supported: {supportedVersionsText})");
+        }
     }
 
     public uint DbVersion { get; }

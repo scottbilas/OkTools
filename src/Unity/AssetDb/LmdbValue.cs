@@ -9,6 +9,7 @@ public static class LmdbValue
 {
     public enum Type
     {
+        Bool,
         SInt32,
         SInt32Pair,
         SInt64,
@@ -29,6 +30,17 @@ public static class LmdbValue
 
         switch (valueType)
         {
+            case Type.Bool:
+            {
+                var b = value.Read<byte>() != 0;
+
+                if (dump.Csv != null)
+                    dump.Csv.Write(b ? "true" : "false");
+                else
+                    dump.Json!.WriteBoolean(valueName, b);
+            }
+            break;
+
             case Type.SInt32:
             {
                 var i = value.Read<Int32>();

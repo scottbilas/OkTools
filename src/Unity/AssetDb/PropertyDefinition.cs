@@ -60,6 +60,10 @@ public class PropertyDefinition
         /*StringPropertyDefinition kAssetOriginAssetPathPropDef*/            new("assetPath",                       true,  LmdbValue.Type.String),
         /*SInt32PropertyDefinition kAssetOriginUploadIdPropDef*/             new("uploadId",                        true,  LmdbValue.Type.SInt32),
 
+        // pending in assetpipeline/no-script-import
+        /*BoolPropertyDefinition kAssetRequireImportFlagPropDef*/            new("assetReqImport",                  false, LmdbValue.Type.Bool),
+        /*BoolPropertyDefinition kManagedPluginFlagPropDef*/                 new("managedPlugin",                   false, LmdbValue.Type.Bool),
+
         /*Hash128PropertyDefinition*/                                        new("ArtifactFilePropDef0",            false, LmdbValue.Type.Hash128),
         /*Hash128PropertyDefinition*/                                        new("ArtifactFilePropDef1",            false, LmdbValue.Type.Hash128),
         /*Hash128PropertyDefinition*/                                        new("ArtifactFilePropDef2",            false, LmdbValue.Type.Hash128),
