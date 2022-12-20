@@ -8,16 +8,16 @@ namespace OkTools.Unity.AssetDb;
 
 public static class SourceAssetLmdb
 {
-    static readonly uint[] k_expectedDbVersions = { 9, 10 };
+    static readonly uint[] k_expectedDbVersions = { 9, 10, 0x218FD4A3 };
     public static AssetLmdb OpenLmdb(NPath projectRoot) =>
         new(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersions);
 
     public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(SourceAssetLmdb));
 
     [AssetLmdbTable("GuidPropertyIDToProperty", "Property,UnityGuid,ValueType,IsInMetaFile,Value0,Value1,...")]
-    public static void DumpGuidPropertyIdToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    public static void DumpPropertyIdGuidToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
-        // GuidDB.cpp: GuidDB::m_GuidPropertyIDToProperty
+        // GuidDB.cpp: GuidDB::m_PropertyIDGuidToProperty
 
         var (property, unityGuid) = PropertyDefinition.Get<UnityGUID>(key);
 

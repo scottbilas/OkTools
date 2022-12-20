@@ -104,11 +104,13 @@ struct BlobImage
     public BlobArray<Byte> image;
 }
 
+enum FileIdentifierType { kInvalidType = -1, kNonAssetType = 0, kDeprecatedCachedAssetType = 1, kSerializedAssetType = 2, kMetaAssetType = 3, kAssetTypeCount = 4 }
+
 struct BlobPPtr
 {
     public UnityGUID                 guid;
     public LocalIdentifierInFileType localIdentifier;
-    public Int32                     type;
+    public FileIdentifierType        type;
 }
 
 struct BlobProperty

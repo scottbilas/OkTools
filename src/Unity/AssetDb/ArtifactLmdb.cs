@@ -450,14 +450,14 @@ public static class ArtifactLmdb
             }
 
             var monoScript = metaInfo->scriptClassName.monoScript;
-            if (!dump.Config.OptTrim || monoScript.guid.IsValid() || monoScript.localIdentifier != 0 || monoScript.type != -1)
+            if (!dump.Config.OptTrim || monoScript.guid.IsValid() || monoScript.localIdentifier != 0 || monoScript.type != FileIdentifierType.kInvalidType)
             {
                 StartScriptClassName();
 
                 dump.Json.WriteStartObject("monoScript");
                     dump.Json.WriteString("guid", monoScript.guid.ToString());
                     dump.Json.WriteNumber("localIdentifier", monoScript.localIdentifier);
-                    dump.Json.WriteNumber("type", monoScript.type);
+                    dump.Json.WriteString("type", monoScript.type.ToString());
                 dump.Json.WriteEndObject();
             }
 

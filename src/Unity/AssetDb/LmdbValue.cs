@@ -19,6 +19,8 @@ public static class LmdbValue
         Hash128,
         MultilineString,
         AssetBundleNames,
+        NamedPPtrArray,
+        BlobPPtr,
     }
 
     public static unsafe void Dump(DumpContext dump, Type valueType, ref DirectBuffer value, string? valueName = null)
@@ -181,6 +183,73 @@ public static class LmdbValue
                         dump.Json.WriteEndObject();
                     }
                     dump.Json.WriteEndArray();
+                }
+            }
+            break;
+
+            case Type.NamedPPtrArray:
+            {
+                dump.Json?.WriteStartObject(valueName);
+
+                var pairCount = value.Read<UInt32>() / 2;
+                for (var i = 0; i < pairCount; ++i)
+                {
+                    var len = value.Read<UInt16>();
+                    var str = value.ReadAscii(len, true);
+                    len = value.Read<UInt16>();
+                    if (len != sizeof(BlobPPtr))
+                        throw new InvalidDataException("Invalid PPtr length");
+                    var pptr = value.Read<BlobPPtr>();
+
+                    if (dump.Csv != null)
+                    {
+                        if (i != 0)
+                            dump.Csv.Write(',');
+                        dump.Csv.Write(pptr.Equals(default)
+                            ? $"{str}=null"
+                            : $"{str}={pptr.guid};{pptr.localIdentifier};{pptr.type}");
+                    }
+                    else
+                    {
+                        dump.Json!.WriteStartObject(str);
+                        if (pptr.type == FileIdentifierType.kInvalidType)
+                            dump.Json.WriteNumber("instanceID", 0);
+                        else
+                        {
+                            dump.Json.WriteNumber("fileID", pptr.localIdentifier);
+                            dump.Json.WriteString("guid", pptr.guid.ToString());
+                            dump.Json.WriteString("type", pptr.type.ToString());
+                        }
+                        dump.Json.WriteEndObject();
+                    }
+                }
+
+                dump.Json?.WriteEndObject();
+            }
+            break;
+
+            case Type.BlobPPtr:
+            {
+                var pptr = value.Read<BlobPPtr>();
+
+                if (dump.Csv != null)
+                {
+                    dump.Csv.Write(pptr.Equals(default)
+                        ? "null"
+                        : $"{pptr.guid};{pptr.localIdentifier};{pptr.type}");
+                }
+                else
+                {
+                    dump.Json!.WriteStartObject(valueName);
+                    if (pptr.type == FileIdentifierType.kInvalidType)
+                        dump.Json.WriteNumber("instanceID", 0);
+                    else
+                    {
+                        dump.Json.WriteNumber("fileID", pptr.localIdentifier);
+                        dump.Json.WriteString("guid", pptr.guid.ToString());
+                        dump.Json.WriteString("type", pptr.type.ToString());
+                    }
+                    dump.Json.WriteEndObject();
                 }
             }
             break;
