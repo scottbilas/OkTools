@@ -18,6 +18,8 @@ public readonly struct AddressRange
         Base = @base;
         Size = size;
     }
+
+    public bool Contains(ulong addr) => addr >= Base && addr < End;
 }
 
 public static class AddressRangeExtensions

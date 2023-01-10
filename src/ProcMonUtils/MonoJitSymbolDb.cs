@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 
 namespace OkTools.ProcMonUtils;
 
-[DebuggerDisplay("{AssemblyName}!{Symbol}")]
 public class MonoJitSymbol : IAddressRange
 {
     public AddressRange Address;
@@ -16,6 +15,29 @@ public class MonoJitSymbol : IAddressRange
     public string? Symbol;
 
     ref readonly AddressRange IAddressRange.AddressRef => ref Address;
+
+    public override string ToString()
+    {
+        var text = AssemblyName ?? "";
+        if (Symbol != null)
+            text += '!' + Symbol;
+        return text;
+    }
+
+    public string ToString(ulong addr)
+    {
+        if (!Address.Contains(addr))
+            throw new ArgumentOutOfRangeException(nameof(addr), addr, "Address is not in this symbol");
+
+        var text = "";
+        if (!string.IsNullOrEmpty(AssemblyName))
+            text += $"[{AssemblyName}] ";
+        if (!string.IsNullOrEmpty(Symbol))
+            text += $"{Symbol} ";
+
+        text += $"+ 0x{addr-Address.Base:x} (0x{addr:x})";
+        return text;
+    }
 }
 
 [DebuggerDisplay("{System.IO.Path.GetFileName(PmipPath),nq}; {DomainCreationTime.ToString(\"HH:mm:ss.fffffff\"),nq} ({_symbols.Length} symbols)")]
@@ -33,9 +55,17 @@ public class MonoJitSymbolDb
         PmipPath = monoPmipPath;
         DomainCreationTimeUtc = domainCreationTimeUtc ?? File.GetCreationTimeUtc(monoPmipPath);
 
+        // open pmip file - have to do this with compatible flags to how unity is holding it open or it will fail with access violation
+        var lines = new List<string>();
+        using (var stream = OpenPmipFile(monoPmipPath))
+        using (var reader = new StreamReader(stream))
+        {
+            while (reader.ReadLine() is { } line)
+                lines.Add(line);
+        }
+
         // parse pmip
 
-        var lines = File.ReadAllLines(monoPmipPath);
         if (lines[0] != "UnityMixedCallstacks:1.0") // 2.0 coming in https://github.com/Unity-Technologies/mono/pull/1635 (merged jun 14)
             throw new FileLoadException("Mono pmip file has unexpected header or version", monoPmipPath);
 
@@ -47,7 +77,7 @@ public class MonoJitSymbolDb
 
         var entries = new List<MonoJitSymbol>();
 
-        for (var iline = 1; iline != lines.Length; ++iline)
+        for (var iline = 1; iline != lines.Count; ++iline)
         {
             var lmatch = rx.Match(lines[iline]);
             if (!lmatch.Success)
@@ -127,4 +157,9 @@ public class MonoJitSymbolDb
 
         throw new FileLoadException("Unable to extract unity PID from mono pmip filename", monoPmipPath);
     }
+
+    // pmip files under active use need to be opened with compatible flags to how unity is holding it open,
+    // or it will fail with access violation
+    public static FileStream OpenPmipFile(string monoPmipPath) =>
+        new(monoPmipPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
 }

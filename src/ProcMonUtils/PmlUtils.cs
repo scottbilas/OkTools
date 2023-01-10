@@ -199,17 +199,8 @@ public static class PmlUtils
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
-                        var monoOffset = (int)(address - monoSymbol.Address.Base);
-
-                        if (bakedText != null)
-                        {
-                            bakedText.Write("M");
-                            if (monoSymbol.AssemblyName.Length > 0)
-                                bakedText.Write($" [{monoSymbol.AssemblyName}]");
-                            bakedText.Write($" {monoSymbol.Symbol} + 0x{monoOffset:x} (0x{address:x})\n");
-                        }
-
-                        bakedBin.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);
+                        bakedText?.Write($"M {monoSymbol.ToString(address)}");
+                        bakedBin.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, (int)(address - monoSymbol.Address.Base));
                     }
                     else
                     {

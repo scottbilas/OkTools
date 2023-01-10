@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using DocoptNet;
 using NiceIO;
+using OkTools.ProcMonUtils;
 using OkTools.Unity;
 
 static partial class Commands
@@ -477,7 +478,7 @@ Debugging:
 
                             // Unity relies on the OS for tempfile handle-closing to delete the file. if we also open a
                             // handle, it will hang around after Unity closes the handles or exits entirely.
-                            var stream = new FileStream(srcPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+                            var stream = MonoJitSymbolDb.OpenPmipFile(srcPath);
                             monitoring.Add(srcPath, stream);
                             Console.WriteLine($"...discovered {srcPath}");
                         }
