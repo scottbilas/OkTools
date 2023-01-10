@@ -11,10 +11,12 @@
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.Interactive" />
+    <PackageReference Include="TextCopy" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+    <ProjectReference Include="$(OkSrcRoot)ProcMonUtils\ProcMonUtils.csproj" />
     <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj" />
   </ItemGroup>
 

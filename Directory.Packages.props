@@ -33,6 +33,7 @@
     <PackageVersion Include="Spreads.LMDB" Version="2020.0.114" />
     <PackageVersion Include="System.Interactive" Version="6.0.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="7.0.0-preview.4.22229.4" />
+    <PackageVersion Include="TextCopy" Version="6.2.1" />
     <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.10" />
     <PackageVersion Include="Vezel.Cathode" Version="0.8.23" />
     <PackageVersion Include="YamlDotNet" Version="12.0.2" />
