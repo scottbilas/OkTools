@@ -30,7 +30,7 @@ class EnumUtilityTests
     public void GetLowercaseNames_WithCaseSensitiveUniqueNames_MatchesLowercasedFrameworkCall()
     {
         var utilNames = EnumUtility.GetLowercaseNames<SampleEnum>();
-        var frameworkNames = Enum.GetNames(typeof(SampleEnum)).Select(n => n.ToLower());
+        var frameworkNames = Enum.GetNames(typeof(SampleEnum)).Select(n => n.ToLowerInvariant());
 
         utilNames.ShouldBe(frameworkNames);
     }
