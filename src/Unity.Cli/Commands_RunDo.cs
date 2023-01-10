@@ -84,7 +84,7 @@ Options:
 
         if (replaced == 0)
         {
-            Console.WriteLine("No unknown symbols matched in {displayFile}");
+            Console.WriteLine($"No unknown symbols matched in {displayFile}");
             return CliExitCode.Success;
         }
 
