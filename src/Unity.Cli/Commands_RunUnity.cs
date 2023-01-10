@@ -287,7 +287,7 @@ Debugging:
             unityArgs.Add("-stackTraceLogType");
 
             // unity is case-sensitive and does not validate the arg, so make it nicer here
-            unityArgs.Add(stackTraceLogType.ToLower() switch
+            unityArgs.Add(stackTraceLogType.ToLowerInvariant() switch
             {
                 "none" => "None",
                 "scriptonly" => "ScriptOnly",

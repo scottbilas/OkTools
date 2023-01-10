@@ -97,7 +97,7 @@ static partial class Commands
                 var display = value switch
                 {
                     UnityEditorBuildConfig _ => "CONFIG",
-                    _ => name.ToUpper(),
+                    _ => name.ToUpperInvariant(),
                 };
 
                 fields.Add((name, display, value.GetType()));

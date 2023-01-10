@@ -490,8 +490,8 @@ namespace NiceIO
 
         public bool HasExtension(params string[] extensions)
         {
-            var extensionWithDotLower = ExtensionWithDot.ToLower();
-            return extensions.Any(e => WithDot(e).ToLower() == extensionWithDotLower);
+            var extensionWithDotLower = ExtensionWithDot.ToLowerInvariant();
+            return extensions.Any(e => WithDot(e).ToLowerInvariant() == extensionWithDotLower);
         }
 
         static string WithDot(string extension)

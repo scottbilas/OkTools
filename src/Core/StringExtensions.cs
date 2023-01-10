@@ -129,9 +129,9 @@ public static class StringExtensions
         Regex.Replace(@this, pattern, evaluator, options, matchTimeout);
 
     public static IEnumerable<string> SelectToLower(this IEnumerable<string> @this) =>
-        @this.Select(s => s.ToLower());
+        @this.Select(s => s.ToLowerInvariant());
     public static IEnumerable<string> SelectToToUpper(this IEnumerable<string> @this) =>
-        @this.Select(s => s.ToUpper());
+        @this.Select(s => s.ToUpperInvariant());
 
     // the buffer is for avoiding the builder alloc each time. useful when processing multiple lines, and can cut allocs by half.
     public static string ExpandTabs(this string @this, int tabWidth, StringBuilder? buffer = null)

@@ -30,7 +30,7 @@ public class AssetLmdb : LmdbDatabase
     public AssetLmdbInfo GetInfo() => new(
             Name,
             $"0x{DbVersion:X}",
-            SelectTableNames().OrderBy(s => s.ToLower()).ToArray());
+            SelectTableNames().OrderBy(s => s.ToLowerInvariant()).ToArray());
 
     public void DumpTable(DumpContext dump, AssetLmdb db, TableDumpSpec spec)
     {

@@ -150,8 +150,8 @@ public class OkDeList<T> : IReadOnlyList<T>
     public void FillDefault()
     {
         var spans = AsSpans;
-        spans.Span0.Fill(default!);
-        spans.Span1.Fill(default!);
+        spans.Span0.Clear();
+        spans.Span1.Clear();
     }
 
     public void Fill(in T value)
