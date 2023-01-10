@@ -199,8 +199,20 @@ public static class PmlUtils
                     }
                     else if (symCache.TryGetMonoSymbol(pmlEvent.CaptureDateTimeUtc, address, out var monoSymbol) && monoSymbol.AssemblyName != null && monoSymbol.Symbol != null)
                     {
-                        bakedText?.Write($"M {monoSymbol.ToString(address)}");
-                        bakedBin.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, (int)(address - monoSymbol.Address.Base));
+                        var monoOffset = (int)(address - monoSymbol.Address.Base);
+
+                        if (bakedText != null)
+                        {
+                            // TODO: switch this to ToString(address) - not trivial, it breaks a test that needs
+                            // debugging, possible format change due to different testing of null/empty in ToString vs
+                            // this here code.
+                            bakedText.Write("M");
+                            if (monoSymbol.AssemblyName.Length > 0)
+                                bakedText.Write($" [{monoSymbol.AssemblyName}]");
+                            bakedText.Write($" {monoSymbol.Symbol} + 0x{monoOffset:x} (0x{address:x})\n");
+                        }
+
+                        bakedBin.AddFrame(pmlEvent.EventIndex, FrameType.Mono, monoSymbol.AssemblyName, monoSymbol.Symbol, monoOffset);
                     }
                     else
                     {
