@@ -3,7 +3,7 @@ using Spreads.Buffers;
 
 namespace OkTools.Unity.AssetDb;
 
-[AttributeUsage(AttributeTargets.Method)]
+[AttributeUsage(AttributeTargets.Method), MeansImplicitUse]
 public class AssetLmdbTableAttribute : Attribute
 {
     readonly string _tableName, _csvFields;
