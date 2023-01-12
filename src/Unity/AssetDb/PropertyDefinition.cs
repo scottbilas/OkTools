@@ -11,15 +11,13 @@ public class PropertyDefinition
     readonly byte[] _nameBuffer;
 
     public readonly string Name;
-    public readonly bool IsInMetaFile;
     public readonly LmdbValue.Type ValueType;
 
-    PropertyDefinition(string name, bool isInMetaFile, LmdbValue.Type type)
+    PropertyDefinition(string name, LmdbValue.Type type)
     {
         _nameBuffer = LmdbUtils.StringToBytes(name, false);
 
         Name = name;
-        IsInMetaFile = isInMetaFile;
         ValueType = type;
     }
 

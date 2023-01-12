@@ -14,7 +14,7 @@ public static class SourceAssetLmdb
 
     public static readonly TableDumpSpec[] All = AssetLmdbTableAttribute.CreateTableDumpSpecs(typeof(SourceAssetLmdb));
 
-    [AssetLmdbTable("GuidPropertyIDToProperty", "Property,UnityGuid,ValueType,IsInMetaFile,Value0,Value1,...")]
+    [AssetLmdbTable("GuidPropertyIDToProperty", "Property,UnityGuid,ValueType,Value0,Value1,...")]
     public static void DumpPropertyIdGuidToProperty(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
         // GuidDB.cpp: GuidDB::m_PropertyIDGuidToProperty
@@ -22,12 +22,11 @@ public static class SourceAssetLmdb
         var (property, unityGuid) = PropertyDefinition.Get<UnityGUID>(key);
 
         if (dump.Csv != null)
-            dump.Csv.Write($"{property.Name},{unityGuid},{property.ValueType},{property.IsInMetaFile},");
+            dump.Csv.Write($"{property.Name},{unityGuid},{property.ValueType},");
         else
         {
             dump.Json!.WriteString("Property", property.Name); // part 1 of key
             dump.Json.WriteString("UnityGuid", unityGuid.ToString()); // part 2 of key
-            dump.Json.WriteBoolean("IsInMetaFile", property.IsInMetaFile);
             dump.Json.WriteString("ValueType", property.ValueType.ToString());
         }
 
