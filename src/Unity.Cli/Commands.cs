@@ -18,6 +18,9 @@ class CommandContext
         Debug = debug;
     }
 
+    // TODO: have the command and subcommand name passed in also and make this scoped, otherwise we will have global option name
+    // collisions across commands.
+
     public bool GetConfigBool(string variable)
     {
         if (CommandLine["--" + variable].IsTrue)
