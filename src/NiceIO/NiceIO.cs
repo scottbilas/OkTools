@@ -790,6 +790,7 @@ namespace NiceIO
         public static NPath CurrentDirectory => new(Directory.GetCurrentDirectory());
         public static NPath HomeDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         public static NPath ProgramFilesDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles));
+        public static NPath RoamingAppDataDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
         public static NPath LocalAppDataDirectory => new(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
         public static NPath SystemTempDirectory => new(Path.GetTempPath());
 
