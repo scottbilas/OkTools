@@ -54,6 +54,7 @@ Options:
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --pid-exitcode          Return the Unity process ID as the exit code (*)
+  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
@@ -429,6 +430,9 @@ Debugging:
         unityArgs.AddRange(context.CommandLine["EXTRA"].AsStrings());
 
         // TODO: -vvv style verbose level logging support
+
+        if (OperatingSystem.IsWindows() && context.GetConfigBool("no-hub"))
+            HideHubFromUnity(true, !doit);
 
         if (doit)
         {

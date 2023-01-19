@@ -8,6 +8,13 @@ using YamlSerializerBuilder = YamlDotNet.Serialization.SerializerBuilder;
 
 static partial class Commands
 {
+    static void StatusLine(bool dryRun, string message)
+    {
+        if (dryRun)
+            Console.Write("[dryrun] ");
+        Console.WriteLine(message);
+    }
+
     static void OutputJson(object thing, TextWriter where)
     {
         // json expects a newline, so use WriteLine() here
