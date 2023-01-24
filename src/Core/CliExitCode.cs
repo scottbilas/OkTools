@@ -61,3 +61,14 @@ public static class UnixSignalUtils
 
     public static CliExitCode AsCliExitCode(this UnixSignal @this) => FromSignal((int)@this);
 }
+
+public class CliErrorException : Exception
+{
+    public CliErrorException(CliExitCode code, string message)
+        : base(message)
+    {
+        Code = code;
+    }
+
+    public CliExitCode Code { get; }
+}

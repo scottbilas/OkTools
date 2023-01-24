@@ -110,6 +110,13 @@ Print help for COMMAND.
             Console.WriteLine(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
             return (int)CliExitCode.Help;
         }
+        catch (CliErrorException x)
+        {
+            Console.Error.Write(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
+            if (!x.Message.EndsWith('\n'))
+                Console.Error.WriteLine();
+            return (int)x.Code;
+        }
         catch (Exception x)
         {
             if (debugMode)
