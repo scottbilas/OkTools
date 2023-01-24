@@ -3,7 +3,7 @@
 namespace OkTools.Flog;
 
 // currently expecting main thread only for processing and processed line access. move to tasks later when needed.
-public class LogModel
+public class LogModel : IDisposable
 {
     readonly ChannelReader<LogChange> _reader;
     readonly CancellationTokenSource _cancel = new();
@@ -20,6 +20,8 @@ public class LogModel
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+
         _cancel.Cancel();
     }
 
