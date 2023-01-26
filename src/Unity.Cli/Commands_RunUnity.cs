@@ -145,7 +145,16 @@ Debugging:
 
                 unityProject = tryUnityProject;
                 projectPath = unityProject.Path;
-                Console.Write($"Loading project at {unityProject.Path}; expects {unityProject.GetVersion()}");
+
+                // should never happen, unless i am debugging something in a project :)
+                string? projectVersion;
+                try
+                {
+                    projectVersion = unityProject.GetVersion().ToString();
+                }
+                catch (UnityVersionFormatException) { projectVersion = "<invalid format>"; }
+
+                Console.Write($"Loading project at {unityProject.Path}; expects {projectVersion}");
                 var lastOpened = unityProject.GetLastOpenedTime();
                 if (lastOpened != null)
                     Console.Write($"; last opened {lastOpened.Value.ToNiceAge(true)}");
