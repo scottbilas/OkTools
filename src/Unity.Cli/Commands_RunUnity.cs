@@ -54,6 +54,7 @@ Options:
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --pid-exitcode          Return the Unity process ID as the exit code (*)
+  --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count
   --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
@@ -263,7 +264,7 @@ Debugging:
 
         // docs for unity's cl args: https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
 
-        var unityArgs = new List<string> { createProject ? "-createProject" : "-projectPath", projectPath };
+        var unityArgs = new List<object> { createProject ? "-createProject" : "-projectPath", projectPath };
         var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} }; // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
 
         if (context.GetConfigBool("enable-debugging"))
@@ -312,6 +313,13 @@ Debugging:
 
             unityArgs.Add("-executeMethod");
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
+        }
+
+        if (context.TryGetConfigInt("job-worker-count", out var workerCount))
+        {
+            //TODO status $"Limiting job worker count to {workerCount}"
+            unityArgs.Add("-job-worker-count");
+            unityArgs.Add(workerCount);
         }
 
         if (context.GetConfigBool("no-burst"))
@@ -448,7 +456,7 @@ Debugging:
                 unityStartInfo.WorkingDirectory = unityProject.Path;
 
             foreach (var arg in unityArgs)
-                unityStartInfo.ArgumentList.Add(arg);
+                unityStartInfo.ArgumentList.Add(arg.ToString()!);
             foreach (var (envName, envValue) in unityEnv)
                 unityStartInfo.Environment[envName] = envValue.ToString();
 
@@ -526,7 +534,7 @@ Debugging:
         {
             Console.WriteLine("[dryrun] Executing Unity with:");
             Console.WriteLine("[dryrun]   path        | " + useToolchain.EditorExePath);
-            Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs));
+            Console.WriteLine("[dryrun]   arguments   | " + CliUtility.CommandLineArgsToString(unityArgs.SelectToStrings()));
             Console.WriteLine("[dryrun]   environment | " + unityEnv.Select(kvp => $"{kvp.Key}={kvp.Value}").StringJoin("; "));
             if (scenePathArg != null)
                 Console.WriteLine("[dryrun]   scene       | " + scenePathArg);

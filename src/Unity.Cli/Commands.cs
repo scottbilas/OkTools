@@ -44,6 +44,22 @@ class CommandContext
         return Config.TryGetString(CommandName, null, variable, out result);
     }
 
+    public int? GetConfigInt(string variable) =>
+        TryGetConfigInt(variable, out var result) ? result : null;
+
+    public bool TryGetConfigInt(string variable, out int result)
+    {
+        if (CommandLine["--" + variable].Value is int clresult)
+        {
+            result = clresult;
+            return true;
+        }
+
+        var rc = Config.TryGetNumber(CommandName, null, variable, out var lresult);
+        result = (int)lresult; // TODO: figure out how to handle under/overflow
+        return rc;
+    }
+
     public NPath? GetConfigPath(string variable) =>
         TryGetConfigPath(variable, out var result) ? result : null;
 
