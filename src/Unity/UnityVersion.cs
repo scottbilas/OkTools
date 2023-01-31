@@ -275,8 +275,9 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
             .Where(l => l.Length > 1)
             .ToDictionary(l => l[0].Trim(), l => l[1].Trim());
 
-        if (!projectVersionDb.TryGetValue("m_EditorVersionWithRevision", out var versionTxt))
-            return FromText(projectVersionDb["m_EditorVersion"]);
+        if (!projectVersionDb.TryGetValue("m_EditorVersionWithRevision", out var versionTxt) &&
+            !projectVersionDb.TryGetValue("m_EditorVersion", out versionTxt))
+            throw new UnityVersionFormatException("<unable to find version>");
 
         var match = Regex.Match(versionTxt, @"(?<ver>\S+)\s*\((?<hash>[^)]+)\)");
         return FromText($"{match.Groups["ver"]}_{match.Groups["hash"]}");
