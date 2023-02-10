@@ -2,13 +2,13 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{C30F4B4B-DDBB-4D66-A7C0-6C71637CEC39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Tests", "tests\Core.Tests\Core.Tests.csproj", "{C778A428-E82E-4364-970E-5F1655233BF5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core-Tests", "src\Core\Core-Tests.csproj", "{C778A428-E82E-4364-970E-5F1655233BF5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceIO", "src\NiceIO\NiceIO.csproj", "{78CB0B0C-F071-4FF1-BBD4-88C7C6DA0C87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceIO.Tests", "tests\NiceIO.Tests\NiceIO.Tests.csproj", "{AB403545-CC06-4F15-B5AC-380A7F7A0B46}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceIO-Tests", "src\NiceIO-Tests\NiceIO-Tests.csproj", "{AB403545-CC06-4F15-B5AC-380A7F7A0B46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "tests\TestUtils\TestUtils.csproj", "{9937DD38-36E0-43B2-B3F8-ED451A408E29}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtils", "src\_TestUtils\TestUtils.csproj", "{9937DD38-36E0-43B2-B3F8-ED451A408E29}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog", "src\Flog\Flog.csproj", "{3FA9D639-9F10-4D03-A980-060314CB2E95}"
 EndProject
@@ -24,11 +24,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Posh", "src\Unity.Pos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "src\Flog.Cli\Flog.Cli.csproj", "{345B2DD4-E1F3-4E21-A55C-FD85CBB009D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Tests", "tests\Unity.Tests\Unity.Tests.csproj", "{157FA6DF-5AC6-442F-B261-7D509372CBE8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity-Tests", "src\Unity\Unity-Tests.csproj", "{157FA6DF-5AC6-442F-B261-7D509372CBE8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcMonUtils", "src\ProcMonUtils\ProcMonUtils.csproj", "{C3F7552C-A934-467C-A064-16C4077E846F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcMonUtils.Tests", "tests\ProcMonUtils.Tests\ProcMonUtils.Tests.csproj", "{0704E571-1C5E-4578-977A-70F2442E2DE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcMonUtils-Tests", "src\ProcMonUtils\ProcMonUtils-Tests.csproj", "{0704E571-1C5E-4578-977A-70F2442E2DE9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PmlTool.Cli", "src\PmlTool.Cli\PmlTool.Cli.csproj", "{1AF04C97-7446-4E15-9C6E-55B005D76002}"
 EndProject

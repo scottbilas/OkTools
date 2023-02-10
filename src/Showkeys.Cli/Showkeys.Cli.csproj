@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(OkTargetsRoot)Exe.targets"/>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <AssemblyName>showkeys</AssemblyName>
   </PropertyGroup>
 

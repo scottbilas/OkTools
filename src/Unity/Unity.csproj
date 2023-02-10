@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core;NiceIO</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets"/>
 
   <PropertyGroup>
-    <OkFeatures>Core;NiceIO</OkFeatures>
     <RootNamespace>OkTools.Unity</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>

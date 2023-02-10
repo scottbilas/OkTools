@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(OkTargetsRoot)Tests.targets" />
 
   <PropertyGroup>
-    <OkFeatures>NiceIO</OkFeatures>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- match the main project -->
   </PropertyGroup>
 
@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(OkSrcRoot)Unity.Cli\Unity.Cli.csproj" />
-    <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj">
+    <ProjectReference Include="Unity.csproj">
       <Aliases>Unity</Aliases><!-- disambiguate `_Include`-ref'd files (TODO: find better way..this happens because of InternalsVisibleTo)-->
     </ProjectReference>
   </ItemGroup>

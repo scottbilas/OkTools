@@ -1,0 +1,15 @@
+<Project>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <OutputPath>$(OkExeOutputPath)</OutputPath>
+
+    <!-- publishing defaults -->
+    <PublishDir>$(OkExePublishDir)</PublishDir>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishSingleFile>false</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+  </PropertyGroup>
+
+  <Import Project="Library.targets" />
+</Project>

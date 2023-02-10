@@ -1,4 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>T4</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets"/>
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -8,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="PInvoke.NTDll" />
-    <PackageReference Include="T4.Build" />
   </ItemGroup>
 
 </Project>

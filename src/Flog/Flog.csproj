@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets"/>
 
   <PropertyGroup>
-    <OkFeatures>Core</OkFeatures>
     <RootNamespace>OkTools.Flog</RootNamespace>
   </PropertyGroup>
 

@@ -1,0 +1,6 @@
+﻿<!-- https://learn.microsoft.com/en-us/visualstudio/test/configure-unit-tests-by-using-a-dot-runsettings-file?view=vs-2022#example-runsettings-file -->
+<RunSettings>
+  <RunConfiguration>
+    <!-- TestCaseFilter>same format as <x> in `dotnet test -filter <x>`</TestCaseFilter-->
+  </RunConfiguration>
+</RunSettings>

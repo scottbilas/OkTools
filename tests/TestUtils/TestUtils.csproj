@@ -1,8 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <OkFeatures>NiceIO</OkFeatures>
-    <RootNamespace>OkTools.TestUtils</RootNamespace>
-  </PropertyGroup>
-
-</Project>

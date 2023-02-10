@@ -1,14 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core;NiceIO;Docopt</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Exe.targets"/>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OkFeatures>Core;NiceIO;Docopt</OkFeatures>
     <AssemblyName>okflog</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace />
-
     <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
-
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,25 +1,21 @@
 ﻿<Project>
 
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.targets', '$(MSBuildThisFileDirectory)../'))" /> <!-- inherit from globals -->
-
   <PropertyGroup>
-    <IsPackable>false</IsPackable>
     <RootNamespace />
+    <IsPackable>false</IsPackable>
     <GenerateDependencyFile>true</GenerateDependencyFile> <!-- needed for nunit runner -->
-    <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
+    <RunSettingsFilePath>$(OkSrcRoot).runsettings</RunSettingsFilePath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Using Include="OkTools.Core" />
-    <Using Include="OkTools.TestUtils" />
     <Using Include="NUnit.Framework" />
     <Using Include="Shouldly" />
     <Using Include="System.Text" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
-    <ProjectReference Include="$(OkTestsRoot)\TestUtils\TestUtils.csproj" Condition="'$(MSBuildProjectName)' != 'TestUtils'" />
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'TestUtils'">
+    <ProjectReference Include="$(OkSrcRoot)_TestUtils\TestUtils.csproj" />
+    <Using Include="OkTools.TestUtils" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,5 +25,10 @@
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Shouldly" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <OkFeatures>$(OkFeatures);Core;NiceIO;Tests</OkFeatures>
+  </PropertyGroup>
+  <Import Project="Library.targets" />
 
 </Project>

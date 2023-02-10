@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Exe.targets"/>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <OkFeatures>Core;Docopt</OkFeatures>
     <AssemblyName>loggo</AssemblyName>
     <RootNamespace />
   </PropertyGroup>

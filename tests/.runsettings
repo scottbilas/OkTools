@@ -1,5 +1,0 @@
-﻿<RunSettings>
-  <RunConfiguration>
-    <!-- TestCaseFilter>same format as <x> in `dotnet test -filter <x>`</TestCaseFilter-->
-  </RunConfiguration>
-</RunSettings>

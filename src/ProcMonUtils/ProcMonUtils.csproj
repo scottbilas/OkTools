@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>NiceIO;Core</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
-    <OkFeatures>NiceIO;Core</OkFeatures>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>OkTools.ProcMonUtils</RootNamespace>
   </PropertyGroup>

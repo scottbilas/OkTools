@@ -89,7 +89,7 @@ Options:
             monoPmipPattern = $"pmip_{pid}_*.txt";
 
         // find the pmip file we want
-        var monoPmipPath = NPath.SystemTempDirectory.Files(monoPmipPattern!).MaxBy(f => f.FileInfo.LastWriteTime);
+        var monoPmipPath = NPath.SystemTempDirectory.Files(monoPmipPattern).MaxBy(f => f.FileInfo.LastWriteTime);
         if (monoPmipPath != null)
             return new MonoJitSymbolDb(monoPmipPath);
 
