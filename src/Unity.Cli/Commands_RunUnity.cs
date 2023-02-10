@@ -273,8 +273,17 @@ Debugging:
 
         // docs for unity's cl args: https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
 
-        var unityArgs = new List<object> { createProject ? "-createProject" : "-projectPath", projectPath };
-        var unityEnv = new Dictionary<string, object>{ {"UNITY_MIXED_CALLSTACK", 1}, {"UNITY_EXT_LOGGING", 1} }; // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
+        // begin with the standard stuff i always want (TODO: consider moving these to config vars and set there instead..?)
+        var unityArgs = new List<object>
+        {
+            createProject ? "-createProject" : "-projectPath", projectPath,
+            "-monoProfiler", "superluminal", // on by default starting with 2021.3
+        };
+        var unityEnv = new Dictionary<string, object>
+        {
+            {"UNITY_MIXED_CALLSTACK", 1},
+            {"UNITY_EXT_LOGGING", 1} // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
+        };
 
         if (context.GetConfigBool("enable-debugging"))
         {
