@@ -190,7 +190,17 @@ class UnityVersionTests : TestFixtureBase
     [Test]
     public void FromUnityProjectVersionTxt_WithInvalid_Throws()
     {
-        Should.Throw<UnityVersionFormatException>(() => UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Invalid.txt")));
+        Should.Throw<UnityVersionFormatException>(() =>
+            UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Invalid.txt")))
+            .Message.ShouldContain("2020.3.14f1-foo");
+    }
+
+    [Test]
+    public void FromUnityProjectVersionTxt_WithBroken_Throws()
+    {
+        Should.Throw<UnityVersionFormatException>(() =>
+            UnityVersion.FromUnityProjectVersionTxt(ProjectVersionTxt("Broken.txt")))
+            .Message.ShouldContain("<unable to find version>");
     }
 
     [Test]

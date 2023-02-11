@@ -275,12 +275,21 @@ public class UnityVersion : IEquatable<UnityVersion>, IComparable<UnityVersion>,
             .Where(l => l.Length > 1)
             .ToDictionary(l => l[0].Trim(), l => l[1].Trim());
 
-        if (!projectVersionDb.TryGetValue("m_EditorVersionWithRevision", out var versionTxt) &&
-            !projectVersionDb.TryGetValue("m_EditorVersion", out versionTxt))
-            throw new UnityVersionFormatException("<unable to find version>");
+        // standard style
+        if (projectVersionDb.TryGetValue("m_EditorVersionWithRevision", out var versionTxt))
+        {
+            var match = Regex.Match(versionTxt, @"(?<ver>\S+)\s*\((?<hash>[^)]+)\)");
+            if (!match.Success)
+                throw new UnityVersionFormatException(versionTxt);
 
-        var match = Regex.Match(versionTxt, @"(?<ver>\S+)\s*\((?<hash>[^)]+)\)");
-        return FromText($"{match.Groups["ver"]}_{match.Groups["hash"]}");
+            return FromText($"{match.Groups["ver"]}_{match.Groups["hash"]}");
+        }
+
+        // old style
+        if (projectVersionDb.TryGetValue("m_EditorVersion", out versionTxt))
+            return FromText(versionTxt);
+
+        throw new UnityVersionFormatException("<unable to find version>");
     }
 
     public static IEnumerable<UnityVersion> FromEditorsYml(string pathToEditorsYml)
