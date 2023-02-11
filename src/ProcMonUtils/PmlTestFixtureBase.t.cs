@@ -8,9 +8,9 @@ class PmlTestFixtureBase
     {
         var testDataPath = TestContext.CurrentContext
             .TestDirectory.ToNPath()
-            .ParentContaining("tests", true)
+            .ParentContaining("src", true)
             .DirectoryMustExist()
-            .Combine("ProcMonUtils.Tests/testdata")
+            .Combine("ProcMonUtils/testdata")
             .DirectoryMustExist();
 
         PmlPath = testDataPath.Combine("events.pml").FileMustExist();
