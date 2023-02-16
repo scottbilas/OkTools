@@ -46,6 +46,7 @@ Options:
   --create-project        Create a new project at PROJECT, which must be a folder that does not exist
   --toolchain TOOLCHAIN   Ignore project version and use this toolchain (can be full/partial version, path to toolchain, or unityhub link)
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
+  --gen-project-only      Generate the project files and then exit
   --ide                   Open code IDE after the project opens in Unity
   --enable-debugging      Enable managed code debugging (disable optimizations)
   --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
@@ -147,14 +148,17 @@ Debugging:
                 projectPath = unityProject.Path;
 
                 // should never happen, unless i am debugging something in a project :)
-                string? projectVersion;
+                string? projectVersion = null;
                 try
                 {
                     projectVersion = unityProject.GetVersion().ToString();
                 }
                 catch (UnityVersionFormatException) { projectVersion = "<invalid format>"; }
+                catch (FileNotFoundException) { /* this is ok, for test projects */ }
 
-                Console.Write($"Loading project at {unityProject.Path}; expects {projectVersion}");
+                if (projectVersion != null)
+                    Console.Write($"Loading project at {unityProject.Path}; expects {projectVersion}");
+
                 var lastOpened = unityProject.GetLastOpenedTime();
                 if (lastOpened != null)
                     Console.Write($"; last opened {lastOpened.Value.ToNiceAge(true)}");
@@ -315,6 +319,15 @@ Debugging:
                 "full" => "Full",
                 var bad => throw new DocoptInputErrorException($"Illegal stack-trace-log type {bad}")
             });
+        }
+
+        if (context.GetConfigBool("gen-project-only"))
+        {
+            unityArgs.Add("-batchmode");
+
+            unityArgs.Add("-ignorecompilererrors");
+            unityArgs.Add("-nographics");
+            unityArgs.Add("-quit");
         }
 
         if (context.GetConfigBool("ide"))

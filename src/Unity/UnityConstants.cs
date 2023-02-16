@@ -58,6 +58,14 @@ public static class UnityProjectConstants
         internal static readonly NPath ProjectVersionTxtNPath = ProjectSettingsNPath.Combine(ProjectVersionTxtFileName);
         public static readonly string ProjectVersionTxtPath = ProjectVersionTxtNPath;
 
+    public const string PackagesFolderName = "Packages";
+    internal static readonly NPath PackagesNPath = new(PackagesFolderName);
+    public static readonly string PackagesPath = PackagesNPath;
+
+        public const string ManifestJsonFileName = "manifest.json";
+        internal static readonly NPath ManifestJsonNPath = PackagesNPath.Combine(ManifestJsonFileName);
+        public static readonly string ManifestJsonPath = ManifestJsonNPath;
+
     public const string LogsFolderName = "Logs";
     internal static readonly NPath LogsNPath = new(LogsFolderName);
     public static readonly string LogsPath = LogsNPath;

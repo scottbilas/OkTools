@@ -87,13 +87,20 @@ public class UnityProject : IStructuredOutput
         TryCreateFromProjectRoot(pathToUnityProject.ToNPath());
     internal static UnityProject? TryCreateFromProjectRoot(NPath pathToUnityProject)
     {
+        // TODO: tests for this
+        // ALSO TODO: switch from files on disk to tempfs (nuget package to support this..?)
+
         // must have an assets folder (unity rule)
         if (!pathToUnityProject.Combine(UnityProjectConstants.AssetsNPath).DirectoryExists())
             return null;
 
         // must have a projectversion file
         if (!pathToUnityProject.Combine(UnityProjectConstants.ProjectVersionTxtNPath).FileExists())
-            return null;
+        {
+            // test projects may not commit the projectversion, so try this one
+            if (!pathToUnityProject.Combine(UnityProjectConstants.ManifestJsonNPath).FileExists())
+                return null;
+        }
 
         return new UnityProject(pathToUnityProject);
     }
