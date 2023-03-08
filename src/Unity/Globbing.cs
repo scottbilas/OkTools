@@ -22,25 +22,25 @@ static class Globbing
         if (fileName.Contains('*'))
             throw new ArgumentException("Wildcards not allowed", nameof(fileName));
 
-        pathSpec = pathSpec.Combine(fileName);
+        var combinedSpec = pathSpec.Combine(fileName);
 
-        var wild = pathSpec.Elements.IndexOf(e => e.Contains('*'));
+        var wild = combinedSpec.Elements.IndexOf(e => e.Contains('*'));
 
         if (wild < 0)
         {
             // just an ordinary path to a folder
-            if (pathSpec.FileExists())
-                return pathSpec.WrapInEnumerable();
+            if (combinedSpec.FileExists())
+                return combinedSpec.WrapInEnumerable();
 
             if (throwOnInvalidPathSpec)
-                throw new DirectoryNotFoundException($"Invalid glob pathspec, filename does not exist: {pathSpec}");
+                throw new FileNotFoundException($"Invalid glob pathspec '{pathSpec}', filename does not exist: {combinedSpec}");
 
             return Enumerable.Empty<NPath>();
         }
 
-        var (basePath, matchPath) = pathSpec.SplitAtElement(wild);
+        var (basePath, matchPath) = combinedSpec.SplitAtElement(wild);
         if (throwOnInvalidPathSpec && !basePath.DirectoryExists())
-            throw new DirectoryNotFoundException($"Invalid glob pathspec, base path does not exist: {pathSpec}");
+            throw new DirectoryNotFoundException($"Invalid glob pathspec '{pathSpec}', base path does not exist: {basePath}");
 
         var matcher = new Matcher();
         matcher.AddInclude(matchPath);
