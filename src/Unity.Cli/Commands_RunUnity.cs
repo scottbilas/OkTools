@@ -32,6 +32,8 @@ static partial class Commands
         * Automatic bringing to front of an existing Unity (avoid Unity's stupid handling of this)
 */
 
+    // TODO: mark these up for where they come from command line OR config file..(not all of them do yet, until lame .netconfig is fixed)
+
     public static readonly string DocUsageUnity =
 @$"Usage: okunity unity [options] [PROJECT] [-- EXTRA...]
 
@@ -55,7 +57,8 @@ Options:
   --enable-coverage       Enable Unity code coverage
   --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --pid-exitcode          Return the Unity process ID as the exit code (*)
-  --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count
+  --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count; JWC can be either X to choose an explicit number or X% to choose a percentage of machine vCPU's
+  --no-cache-server       Tell Unity not to use the cache server
   --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
   --no-burst              Completely disable Burst
@@ -96,6 +99,8 @@ Debugging:
         }
 
         var doit = !context.CommandLine["--dry-run"].IsTrue;
+        if (doit)
+            Console.WriteLine("[dryrun=true]");
 
         // TODO: move this into OkTools.Unity once we get a decent (typesafe) config-overlay system. that way, the CLI
         // can just overlay the config with whatever cl options it wants to support and keep all the logic in the lib.
@@ -193,6 +198,7 @@ Debugging:
             // TODO: explicit version may be fuzzy (like 2020.3). in that case, filter all found toolchains by that, then
             // pick whichever is the closest match to the project expected version (== is best, > is acceptable, < will require user being more explicit).
             // TODO: consider requiring a --downgrade-ok for even if the user is explicit about wanting an older version. can be very destructive, need to def be sure.
+            // TODO: consider supporting a set of comma-delimited constraints, so i can say local;debug to have it find a locallybuild build with debug config that matches the version
 
             // try as path
             var testToolchain = UnityToolchain.TryCreateFromPath(useToolchainConfig);
@@ -346,11 +352,36 @@ Debugging:
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }
 
-        if (context.TryGetConfigInt("job-worker-count", out var workerCount))
+        if (context.TryGetConfigString("job-worker-count", out var workerCountTxt))
         {
+            int workerCount;
+
+            if (workerCountTxt.EndsWith('%'))
+            {
+                if (!float.TryParse(workerCountTxt[..^1], out var percent))
+                    throw new DocoptInputErrorException($"Not a valid number: {workerCountTxt[..^1]}");
+                if (percent <= 0 || percent > 100)
+                    throw new DocoptInputErrorException($"Job worker count percent must be > 0 and <= 100 (given {workerCountTxt})");
+
+                workerCount = (int)Math.Ceiling(percent * Environment.ProcessorCount / 100);
+            }
+            else
+            {
+                if (!int.TryParse(workerCountTxt, out workerCount))
+                    throw new DocoptInputErrorException($"Not a valid number: {workerCountTxt}");
+                if (workerCount <= 0 || workerCount > Environment.ProcessorCount)
+                    throw new DocoptInputErrorException($"Job worker count percent must be > 0 and <= {Environment.ProcessorCount} (given {workerCountTxt})");
+            }
+
             //TODO status $"Limiting job worker count to {workerCount}"
             unityArgs.Add("-job-worker-count");
             unityArgs.Add(workerCount);
+        }
+
+        if (context.GetConfigBool("no-cache-server"))
+        {
+            //TODO status $"Limiting job worker count to {workerCount}"
+            unityArgs.Add("-disable-cache-server");
         }
 
         if (context.GetConfigBool("no-burst"))
@@ -377,7 +408,7 @@ Debugging:
             var logPath = projectPath
                 .Combine(UnityProjectConstants.LogsPath)
                 .EnsureDirectoryExists()
-                .Combine($"{projectPath.FileName}-editor.log");
+                .Combine($"{projectPath.FileName}-Editor.log");
 
             // rotate old log
             // TODO: give option to cap by size and/or file count the logs
@@ -605,10 +636,13 @@ Debugging:
                 return CliExitCode.ErrorUnavailable;
             }
 
-            Console.WriteLine("Process is responding, activating and bringing to the front!");
-
             if (activateMainWindow)
+            {
+                Console.WriteLine("Process is responding, activating and bringing to the front!");
                 SetForegroundWindow(mainUnity.MainWindowHandle);
+            }
+            else
+                Console.WriteLine("Process is responding");
 
             if (pidAsExitCode)
                 return (CliExitCode)(mainUnity.Id | 1<<31);
