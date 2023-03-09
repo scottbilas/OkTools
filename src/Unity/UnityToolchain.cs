@@ -18,6 +18,14 @@ public enum UnityToolchainOrigin
     LocallyBuilt, UnityDownloader, ManuallyInstalled, UnityHub, Unknown
 }
 
+// TODO: support toolchain aliases that can be assigned through the ini config chain. so i can put a .okunity in my
+// fpssample folder with aliases to "gamedev" which points at a certain folder.
+//
+// also: preferences for which toolchain to use when discovering debug vs release, locally built vs not, or when we have
+// two same versions but different hashes (go by branch name).
+//
+// maybe toolchain could be something like "gamedev+release?+local" (alias, prefer but not require release, and require a local build)
+
 [PublicAPI]
 public class UnityToolchain : IStructuredOutput
 {
