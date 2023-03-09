@@ -213,9 +213,14 @@
     [Test, Category("TODO"), Ignore("need bugfix, hacked around for now")]
     public void Reflow_WithProgramUsage_DoesNotJoinLines()
     {
-        // TODO: once this bug is resolved, remove the hack from DocoptUtility.SelectSections
+        // TODO: once this bug is resolved, remove the hack from DocoptUtility.SelectSections, and also update --no-hub to be like below formatting
 
         // TODO: something about the '--version' in there is causing the bad wrapping
+        // UPDATE: this is probably caused by the bracket. changing "[options]" to "options" probably won't show the problem.
+        //         i ran into this with a "[windows-only]" prefix on some options help text and removing the brackets fixed it. same issue happens with parens..
+        //         so it's something easy with the `\b` in s_indentRx that's causing the problem.
+        //  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
+
         Reflow(
             "Usage:\n"+
             "  loggo  [options] [DESTINATION]\n"+
