@@ -34,6 +34,8 @@ static partial class Commands
 
     // TODO: mark these up for where they come from command line OR config file..(not all of them do yet, until lame .netconfig is fixed)
 
+    // TODO: have a `okunity help unity-cli` that will download `https://docs.unity3d.com/Manual/EditorCommandLineArguments.html` and do a little bit of parsing to extract the args into a grid
+
     public static readonly string DocUsageUnity =
 @$"Usage: okunity unity [options] [PROJECT] [-- EXTRA...]
 
@@ -42,6 +44,9 @@ Description:
   Unity toolchain; see `okunity help toolchains` for how toolchains are discovered.
 
   Any arguments given in EXTRA will be passed along to the newly launched Unity process.
+  See https://docs.unity3d.com/Manual/EditorCommandLineArguments.html for some of the available options.
+
+  All of the below options will only apply to the new Unity session being launched.
 
 Options:
   --dry-run               Don't change anything, only print out what would happen instead
@@ -50,43 +55,51 @@ Options:
   --scene SCENE           After loading the project, also load this specific scene (creates or overwrites {UnityProjectConstants.LastSceneManagerSetupPath.ToNPath().ToNiceString()})
   --gen-project-only      Generate the project files and then exit
   --ide                   Open code IDE after the project opens in Unity
-  --enable-debugging      Enable managed code debugging (disable optimizations)
-  --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
   --wait-unity            Wait for the Unity process to terminate, then return its exit code (*)
-  --copy-pmips PMIPS      Watch for pmip_*.txt files created by Mono and copy them, preserving create-time, to the PMIPS folder on Unity exit (implies --wait-unity)
+  --unity-process-stats   Print out stats for the Unity process (implies `--wait-unity`)
+  --copy-pmips PMIPS      Watch for pmip_*.txt files created by Mono and copy them, preserving create-time, to the PMIPS folder on Unity exit (implies `--wait-unity`)
   --enable-coverage       Enable Unity code coverage
-  --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
   --pid-exitcode          Return the Unity process ID as the exit code (*)
   --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count; JWC can be either X to choose an explicit number or X% to choose a percentage of machine vCPU's
   --no-cache-server       Tell Unity not to use the cache server
-  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
-  --no-local-log          Disable local log feature; Unity will use global log ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})
+  --no-hub                windows-only: Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
-  --verbose-upm-logs      Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
-
-  All of these options will only apply to the new Unity session being launched.
 
   (*) The high bit will also be set to differentiate from normal CLI exit codes.
 
-Log Files:
+Log Options:
+  --no-local-log          Disable local log feature
+  --no-log-rotation       Disable the log rotation feature
+  --log-file LOGFILE      Use this log file instead of the default one
+  --stack-trace-log TYPE  Override Unity settings to use the given stack trace level for logs (TYPE can be None, ScriptOnly, or Full)
+  --verbose-upm-logs      Tell Unity Package Manager to write verbose logs ({UnityConstants.UpmLogPath.ToNPath().ToNiceString()})
+
   Unity is always directed to include timestamps in its log files, which will have this format:
     <year>-<month>-<day>T<hour>:<minute>:<second>.<milliseconds>Z|<thread-id>|<log-line>
   The timestamp is unfortunately recorded in unadjusted UTC.
 
-  Also, unless --no-local-log is used, Unity log files will be stored as `Logs/<ProjectName>-editor.log` local to the
-  project. Any existing file with this name will be rotated out to a filename with a timestamp appended to it, thus
-  preserving logs from previous sessions.
+  The Unity log file will be stored at:
 
-Debugging:
+  * (default)      -> use `Logs/<ProjectName>-editor.log`
+  * --log-file     -> use the given path LOGFILE (overrides `--no-local-log`)
+  * --no-local-log -> use `{UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()}` (Unity's default behavior)
+
+  Unless `--no-log-rotation` is set, any existing file with this name will be rotated out to a filename with a timestamp
+  appended to it, thus preserving logs from previous sessions.
+
+Debugging Options:
+  --enable-debugging      Enable managed code debugging (disable optimizations)
+  --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
+
   If using --wait-attach-debugger, Unity will pause twice during startup to allow you to attach a debugger if you want,
-  showing a messagebox and waiting for you to click OK. These messageboxes will pop up if you use this flag:
+  showing a messagebox and waiting for you to click OK. The following message boxes will pop up if you use this flag:
 
   1. Unity is ready for a native debugger to be attached
   2. Mono has started up and Unity is ready for a managed debugger to be attached. This is a good way to catch static
-     constructors, [InitializeOnLoadMethod], etc.
+     constructors, `[InitializeOnLoadMethod]`, etc.
 
-  If you will be attaching a managed debugger, be sure to also select --enable-debugging.
+  If you will be attaching a managed debugger, be sure to also select `--enable-debugging`.
 ";
 
     public static CliExitCode RunUnity(CommandContext context)
@@ -99,7 +112,7 @@ Debugging:
         }
 
         var doit = !context.CommandLine["--dry-run"].IsTrue;
-        if (doit)
+        if (!doit)
             Console.WriteLine("[dryrun=true]");
 
         // TODO: move this into OkTools.Unity once we get a decent (typesafe) config-overlay system. that way, the CLI
@@ -138,7 +151,7 @@ Debugging:
             {
                 if (!projectPath.DirectoryExists())
                 {
-                    Console.Error.WriteLine($"Could not find directory '{projectPath}'");
+                    Console.Error.WriteLine($"Directory for Unity project does not exist '{projectPath}'");
                     return CliExitCode.ErrorNoInput;
                 }
 
@@ -396,26 +409,43 @@ Debugging:
             unityArgs.Add("-enablePackageManagerTraces");
         }
 
-        if (context.GetConfigBool("no-local-log"))
+        var useDefaultLog = false;
+        var logPath = UnityConstants.UnityEditorDefaultLogPath.ToNPath();
+
+        if (context.TryGetConfigString("log-file", out var logFile))
         {
-            //TODO status "Debug logging to default ({UnityConstants.UnityEditorDefaultLogPath.ToNPath().ToNiceString()})"
+            //TODO status "Debug logging to %path"
+
+            logPath = logFile;
         }
-        else
+        else if (!context.GetConfigBool("no-local-log"))
         {
             //TODO status "Debug logging to %path"
             //TODO make log pathspec configurable
 
-            var logPath = projectPath
+            logPath = projectPath
                 .Combine(UnityProjectConstants.LogsPath)
                 .EnsureDirectoryExists()
                 .Combine($"{projectPath.FileName}-Editor.log");
+        }
+        else
+        {
+            //TODO status "Debug logging to default ({logPath})"
 
+            useDefaultLog = true;
+        }
+
+        logPath = logPath.MakeAbsolute();
+
+        if (!context.GetConfigBool("no-log-rotation"))
+        {
             // rotate old log
             // TODO: give option to cap by size and/or file count the logs
             // TODO: give format config for rotation name
             if (logPath.FileExists())
             {
-                var targetPath = logPath.ChangeFilename($"{projectPath.FileName}-editor_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.log");
+                var targetPath = logPath.ChangeFilename($"{logPath.FileNameWithoutExtension}_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.{logPath.ExtensionWithoutDot}");
+
                 if (doit)
                 {
                     // TODO: make all of this a utility function, and add file-exists exception safeties
@@ -440,9 +470,16 @@ Debugging:
                     logPath.Delete();
                 }
                 else
-                    Console.WriteLine($"[dryrun] Rotating previous log file {logPath.RelativeTo(projectPath)} to {targetPath.RelativeTo(projectPath)}");
+                {
+                    var from = logPath.IsChildOf(projectPath) ? logPath.RelativeTo(projectPath) : logPath;
+                    var to = targetPath.IsChildOf(projectPath) ? targetPath.RelativeTo(projectPath) : targetPath;
+                    Console.WriteLine($"[dryrun] Rotating previous log file {from} to {to}");
+                }
             }
+        }
 
+        if (!useDefaultLog)
+        {
             unityArgs.Add("-logFile");
             unityArgs.Add(logPath);
         }
@@ -528,15 +565,26 @@ Debugging:
 
             Console.WriteLine("Launched Unity as pid " + unityProcess.Id);
 
+            var dumpProcessStats = context.GetConfigBool("unity-process-stats");
+            var (peakPhysicalMB, peakVirtualMB, peakPagedMB) = (0L, 0L, 0L);
+
+            void UpdateProcessStats()
+            {
+                unityProcess.Refresh();
+                peakPhysicalMB = unityProcess.PeakWorkingSet64        / (1024 * 1024);
+                peakVirtualMB  = unityProcess.PeakVirtualMemorySize64 / (1024 * 1024);
+                peakPagedMB    = unityProcess.PeakPagedMemorySize64   / (1024 * 1024);
+            }
+
             // TODO: consider making this automatic if running with -batchMode
             // (maybe just add a --batch-mode instead, that does both)
-            if (context.GetConfigBool("wait-unity") || pmipDstDir != null)
+            if (context.GetConfigBool("wait-unity") || dumpProcessStats || pmipDstDir != null)
             {
                 var now = DateTime.Now;
 
                 if (pmipDstDir != null)
                 {
-                    Console.WriteLine("Monitoring for pmip_*.txt files...");
+                    Console.WriteLine("Monitoring for pmip_*.txt files and waiting for ...");
 
                     var srcDir = NPath.SystemTempDirectory;
                     var prefix = $"pmip_{unityProcess.Id}_*.txt";
@@ -557,6 +605,9 @@ Debugging:
                             Console.WriteLine($"...discovered {srcPath}");
                         }
 
+                        if (dumpProcessStats)
+                            UpdateProcessStats();
+
                         Thread.Sleep(5);
                     }
 
@@ -576,6 +627,16 @@ Debugging:
                     foreach (var file in monitoring.Values)
                         file.Close();
                 }
+                else if (dumpProcessStats)
+                {
+                    Console.Write("Gathering stats and waiting for Unity process to terminate...");
+
+                    while (!unityProcess.HasExited)
+                    {
+                        UpdateProcessStats();
+                        Thread.Sleep(5);
+                    }
+                }
                 else
                 {
                     Console.Write("Waiting for Unity process to terminate...");
@@ -583,6 +644,15 @@ Debugging:
                 }
 
                 Console.WriteLine($"exited with code {unityProcess.ExitCode} after {(DateTime.Now - now).ToNiceAge()}");
+
+                if (dumpProcessStats)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Process stats:");
+                    Console.WriteLine($" - peak physical: {peakPhysicalMB} MB");
+                    Console.WriteLine($" - peak virtual : {peakVirtualMB} MB");
+                    Console.WriteLine($" - peak paged   : {peakPagedMB} MB");
+                }
 
                 return AsCliExitCode(context.GetConfigBool("pid-exitcode")
                     ? unityProcess.Id
