@@ -40,11 +40,17 @@ static partial class Commands
 @$"Usage: okunity unity [options] [PROJECT] [-- EXTRA...]
 
 Description:
+
   Run Unity to open the given PROJECT (defaults to '.'). Uses the project version given to find the matching
   Unity toolchain; see `okunity help toolchains` for how toolchains are discovered.
 
-  Any arguments given in EXTRA will be passed along to the newly launched Unity process.
-  See https://docs.unity3d.com/Manual/EditorCommandLineArguments.html for some of the available options.
+  Any arguments given in EXTRA will be passed along to the newly launched Unity process. Unity doesn't have a way to
+  discover all possible cli args for the editor or any game projects - anybody can process argv/argc - but here are
+  some good places to look:
+
+  * See official docs at https://docs.unity3d.com/Manual/EditorCommandLineArguments.html
+  * Grep Unity source for `BootConfig::Parameter`
+  * Grep Unity source for `HasARGV`
 
   All of the below options will only apply to the new Unity session being launched.
 
@@ -89,17 +95,18 @@ Log Options:
   appended to it, thus preserving logs from previous sessions.
 
 Debugging Options:
-  --enable-debugging      Enable managed code debugging (disable optimizations)
-  --wait-attach-debugger  Unity will pause with a dialog so you can attach a debugger
+  --enable-debugging      Enable managed code debugging. This slows down Mono jitted code performance, so Unity does not
+                          enable it by default, but it is required to do any debugging of script code.
+  --wait-attach-managed   Unity will pause right after scripting system startup for attaching a managed debugger (implies `--enable-debugging`)
+  --wait-attach-native    Unity will pause very early in startup so you can attach a native debugger (*)
 
-  If using --wait-attach-debugger, Unity will pause twice during startup to allow you to attach a debugger if you want,
-  showing a messagebox and waiting for you to click OK. The following message boxes will pop up if you use this flag:
+  If using one of the `--wait-attach-*` options, Unity will pause during startup, show you a message box telling you
+  to attach a debugger, and will continue execution upon clicking OK (regardless of whether you actually attached a
+  debugger). This is very useful for when you want to debug startup code, such as static constructors and
+  `[InitializeOnLoadMethod]`.
 
-  1. Unity is ready for a native debugger to be attached
-  2. Mono has started up and Unity is ready for a managed debugger to be attached. This is a good way to catch static
-     constructors, `[InitializeOnLoadMethod]`, etc.
-
-  If you will be attaching a managed debugger, be sure to also select `--enable-debugging`.
+  (*) If you want to debug as early as possible, use the `--dry-run` option to get the command line flags okunity would
+  normally pass to Unity, and copy those to your native debugger's startup settings.
 ";
 
     public static CliExitCode RunUnity(CommandContext context)
@@ -308,16 +315,24 @@ Debugging Options:
             {"UNITY_EXT_LOGGING", 1} // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
         };
 
-        if (context.GetConfigBool("enable-debugging"))
+        var enableManagedDebugging = context.GetConfigBool("enable-debugging");
+        if (context.GetConfigBool("wait-attach-managed"))
+        {
+            //TODO status "Wait for managed debugger on Unity startup"
+            unityArgs.Add("-wait-for-managed-debugger");
+            enableManagedDebugging = true;
+        }
+
+        if (context.GetConfigBool("wait-attach-native"))
+        {
+            //TODO status "Wait for managed debugger on Unity startup"
+            unityArgs.Add("-wait-for-native-debugger");
+        }
+
+        if (enableManagedDebugging)
         {
             //TODO status "Enables debug code optimization mode, overriding the current default code optimization mode for the session."
             unityArgs.Add("-debugCodeOptimization");
-        }
-
-        if (context.GetConfigBool("wait-attach-debugger"))
-        {
-            //TODO status "Will wait for debugger on Unity startup"
-            unityEnv.Add("UNITY_GIVE_CHANCE_TO_ATTACH_DEBUGGER", 1);
         }
 
         if (context.GetConfigBool("enable-coverage"))
