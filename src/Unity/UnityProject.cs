@@ -82,6 +82,14 @@ public class UnityProject : IStructuredOutput
         return _projectRoot.Combine(UnityProjectConstants.AssetsNPath).FileInfo.CreationTime;
     }
 
+    // this file is deleted on unity startup. is a sort of fire-and-forget cli options (rsp) file.
+    public void WriteBootConfig(IEnumerable<(string key, string value)> settings)
+    {
+        File.WriteAllLines(
+            _projectRoot.Combine(UnityProjectConstants.BootConfigNPath),
+            settings.Select(s => $"{s.key}={s.value}"));
+    }
+
     // only tests this folder as root
     public static UnityProject? TryCreateFromProjectRoot(string pathToUnityProject) =>
         TryCreateFromProjectRoot(pathToUnityProject.ToNPath());

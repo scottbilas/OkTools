@@ -58,6 +58,10 @@ public static class UnityProjectConstants
         internal static readonly NPath ProjectVersionTxtNPath = ProjectSettingsNPath.Combine(ProjectVersionTxtFileName);
         public static readonly string ProjectVersionTxtPath = ProjectVersionTxtNPath;
 
+        public const string BootConfigFileName = "boot.config";
+        internal static readonly NPath BootConfigNPath = ProjectSettingsNPath.Combine(BootConfigFileName);
+        public static readonly string BootConfigPath = BootConfigNPath;
+
     public const string PackagesFolderName = "Packages";
     internal static readonly NPath PackagesNPath = new(PackagesFolderName);
     public static readonly string PackagesPath = PackagesNPath;
