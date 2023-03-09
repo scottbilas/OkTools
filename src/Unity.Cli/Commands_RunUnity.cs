@@ -40,7 +40,6 @@ static partial class Commands
 @$"Usage: okunity unity [options] [PROJECT] [-- EXTRA...]
 
 Description:
-
   Run Unity to open the given PROJECT (defaults to '.'). Uses the project version given to find the matching
   Unity toolchain; see `okunity help toolchains` for how toolchains are discovered.
 
