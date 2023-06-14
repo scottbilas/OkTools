@@ -375,6 +375,8 @@ Debugging Options:
             // whatever external editor is selected in prefs. so if you want to use `--ide` on a VS-only project, you
             // must still have the rider package included in the manifest.
 
+            // TODO: if --ide, ensure rider package in manifest.json (careful with combining with --create-project)
+
             unityArgs.Add("-executeMethod");
             unityArgs.Add("Packages.Rider.Editor.RiderScriptEditor.SyncSolutionAndOpenExternalEditor");
         }

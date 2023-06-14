@@ -162,7 +162,31 @@ Options:
 
                 if (live)
                 {
-                    Console.WriteLine(symbolicated);
+                    const string k_Prefix = "  ... ";
+                    Console.WriteLine("-----");
+
+                    foreach (var line in symbolicated.Split('\n'))
+                    {
+                        var display = (line.StartsWith('[') ? "> " : "  ") + line.Trim();
+
+                        var wrapping = false;
+                        for (;;)
+                        {
+                            var len = Math.Min(display.Length, Console.WindowWidth - 1 - (wrapping ? k_Prefix.Length : 0));
+                            if (len == 0)
+                                break;
+
+                            var print = display[..len];
+                            if (wrapping)
+                                print = k_Prefix + print.TrimStart();
+
+                            Console.WriteLine(print);
+                            display = display[len..];
+                            wrapping = true;
+                        }
+                    }
+                    Console.WriteLine("-----");
+
                     Console.WriteLine();
                 }
                 else if (optFile != "")
