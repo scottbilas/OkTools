@@ -10,7 +10,7 @@ try
 {
     var queue = new BlockingCollection<byte>();
 
-    Task.Run(() =>
+    var task = Task.Run(() =>
     {
         var array = new byte[1];
         for (;;)
@@ -32,6 +32,8 @@ try
             _ => ((char)next).ToString()
         });
     }
+
+    await task;
 }
 finally
 {
