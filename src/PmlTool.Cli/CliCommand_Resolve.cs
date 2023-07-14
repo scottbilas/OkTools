@@ -44,7 +44,7 @@ can be very large.
         Console.WriteLine("done!");
 
         var dbghelp = new DbgHelpInstance();
-        foreach (var (modulePath, index) in modulePaths.OrderBy(_ => _).Select((p, i) => (p, b: i)))
+        foreach (var (modulePath, index) in modulePaths.OrderBy(p => p).Select((p, i) => (p, b: i)))
         {
             var start = DateTime.Now;
             Console.Write($"{index+1}/{modulePaths.Count} Loading symbols for {modulePath}...");

@@ -106,7 +106,7 @@ public static class EnumerableExtensions
     // stream alteration
 
     public static IEnumerable<T> SelectMany<T>(this IEnumerable<IEnumerable<T>> @this) =>
-        @this.SelectMany(_ => _);
+        @this.SelectMany(v => v);
 
     public static IEnumerable<T> Flatten<T>(this IEnumerable @this)
     {
@@ -148,7 +148,7 @@ public static class EnumerableExtensions
     // ordering
 
     public static IOrderedEnumerable<T> Ordered<T>(this IEnumerable<T> @this) =>
-        @this.OrderBy(_ => _);
+        @this.OrderBy(v => v);
 
     public static bool IsDistinct<T>(this IEnumerable<T> @this)
     {

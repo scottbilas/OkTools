@@ -162,7 +162,7 @@ Options:
 
                 if (live)
                 {
-                    const string k_Prefix = "  ... ";
+                    const string prefix = "  ... ";
                     Console.WriteLine("-----");
 
                     foreach (var line in symbolicated.Split('\n'))
@@ -172,13 +172,13 @@ Options:
                         var wrapping = false;
                         for (;;)
                         {
-                            var len = Math.Min(display.Length, Console.WindowWidth - 1 - (wrapping ? k_Prefix.Length : 0));
+                            var len = Math.Min(display.Length, Console.WindowWidth - 1 - (wrapping ? prefix.Length : 0));
                             if (len == 0)
                                 break;
 
                             var print = display[..len];
                             if (wrapping)
-                                print = k_Prefix + print.TrimStart();
+                                print = prefix + print.TrimStart();
 
                             Console.WriteLine(print);
                             display = display[len..];

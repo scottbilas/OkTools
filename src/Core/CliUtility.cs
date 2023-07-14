@@ -59,24 +59,22 @@ public static class CliUtility
 
         using var stdoutCompleted = new ManualResetEvent(false);
         using var stderrCompleted = new ManualResetEvent(false);
-        using var process = new Process
+        using var process = new Process();
+        process.StartInfo = new ProcessStartInfo
         {
-            StartInfo = new ProcessStartInfo
-            {
-                // keep new process completely out of user view
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                ErrorDialog = false,
+            // keep new process completely out of user view
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            ErrorDialog = false,
 
-                WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory,
-                FileName = exePath,
-                Arguments = processArgsText,
+            WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory,
+            FileName = exePath,
+            Arguments = processArgsText,
 
-                RedirectStandardInput = stdinLines != null,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            }
+            RedirectStandardInput = stdinLines != null,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
         };
 
         // avoid caller needing to do this (and pretty much everybody will want it)
