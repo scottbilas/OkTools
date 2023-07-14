@@ -51,7 +51,7 @@ Print help for COMMAND.
         new("projects",   "Get info on Unity projects",           Commands.DocUsageProjects, Commands.RunProjects),
         new("assetdb",    "Do things with the asset database",    Commands.DocUsageAssetDb, Commands.RunAssetDb),
         new("info",       "Extract Unity-related info from args", Commands.DocUsageInfo, Commands.RunInfo),
-        new("git",        "Dumping ground for git experiments",   Commands.DocUsageGit, Commands.RunGit),
+        new("mr",         "Manage the monorepo",                  Commands.DocUsageMonorepo, Commands.RunMonorepo),
         new("do",         "Dumping ground for random commands",   Commands.DocUsageDo, Commands.RunDo),
         //new("purge", // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
     };
