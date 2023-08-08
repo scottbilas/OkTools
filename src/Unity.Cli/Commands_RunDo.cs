@@ -177,7 +177,7 @@ Options:
                         return match.Value;
 
                     ++replaced;
-                    return symbol.ToString(addr);
+                    return '*' + symbol.ToString(addr);
                 });
 
                 if (replaced == 0)
@@ -192,7 +192,11 @@ Options:
 
                     foreach (var line in symbolicated.Split('\n'))
                     {
-                        var display = (line.StartsWith('[') ? "> " : "  ") + line.Trim();
+                        var display = line.Trim();
+                        if (line.StartsWith('['))
+                            display = "> " + display;
+                        else if (line.StartsWith('*'))
+                            display = "* " + display[1..];
 
                         var wrapping = false;
                         for (;;)
