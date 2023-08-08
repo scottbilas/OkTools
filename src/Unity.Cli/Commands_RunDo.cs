@@ -23,7 +23,8 @@ Commands:
 {DocUsageDoCommands_Windows}
 Options:
   --pid PID   The process ID to use when finding the correct mono pmip file with symbols. If not
-              given, then it will use the most recently modified pmip_*.txt file from %TEMP%.
+              given, then it will attempt to find the main Unity process and use that. If this
+              fails, it will use the most recently modified pmip_*.txt file from %TEMP%.
   --live      Will monitor the clipboard and print symbolicated stacks to stdout when it contains
               changed text that looks like a callstack.
   --dry-run   Don't change anything, just print what would happen.
@@ -84,14 +85,38 @@ Options:
     // TODO move this out to a utility near MonoJitSymbolDb
     static MonoJitSymbolDb CreateSymbolDb(int pid = 0)
     {
-        var monoPmipPattern = "pmip_*.txt";
+        var pmipPattern = "pmip_*.txt";
         if (pid != 0)
-            monoPmipPattern = $"pmip_{pid}_*.txt";
+            pmipPattern = $"pmip_{pid}_*.txt";
 
-        // find the pmip file we want
-        var monoPmipPath = NPath.SystemTempDirectory.Files(monoPmipPattern).MaxBy(f => f.FileInfo.LastWriteTime);
-        if (monoPmipPath != null)
-            return new MonoJitSymbolDb(monoPmipPath);
+        var pmipPaths = NPath.SystemTempDirectory.Files(pmipPattern).ToArray();
+        var pmipFileInfos = new Dictionary<int /*pid*/, (NPath path, int domain)>();
+
+        // extract all the matches
+        foreach (var pmipPath in pmipPaths)
+        {
+            var match = Regex.Match(pmipPath, @"pmip_(\d+)_(\d+)\.txt");
+            if (!match.Success)
+                throw new NotImplementedException("Unexpected pmip format in `$path`");
+
+            var pmipPid = int.Parse(match.Groups[1].Value);
+            var pmipDomain = int.Parse(match.Groups[2].Value);
+
+            // keep the latest per process
+            if (!pmipFileInfos.TryGetValue(pid, out var found) || pmipDomain > found.domain)
+                pmipFileInfos[pmipPid] = (pmipPath, pmipDomain);
+        }
+
+        // where multiple pid's are found, this is where we need to detect which is the main process.
+        // easiest way to do this (though not perfect) is to just look at creation time. first
+        // created would likely be the main process.
+
+        var pmipSelectedPath = pmipFileInfos.Select(f => f.Value.path).MinBy(p => p.FileInfo.CreationTime);
+        if (pmipSelectedPath != null)
+        {
+            Console.WriteLine("Using pmip file: " + pmipSelectedPath);
+            return new MonoJitSymbolDb(pmipSelectedPath);
+        }
 
         string error;
 
