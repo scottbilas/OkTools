@@ -154,7 +154,7 @@ static partial class Commands
             table.AddRow(cells.ToArray());
         }
 
-        if (table.Rows.Any())
+        if (table.Rows.Count != 0)
         {
             // TODO: if it's just one row, print out vertical block (?)
 

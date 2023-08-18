@@ -77,7 +77,7 @@ static class DocoptExtensions
                         printed = true;
                     }
 
-                    if (Enumerable.Any(errorResult.Error))
+                    if (errorResult.Error.Length != 0)
                     {
                         Console.Error.WriteLine(errorResult.Error);
                         printed = true;

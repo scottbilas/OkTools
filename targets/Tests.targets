@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
     <GenerateDependencyFile>true</GenerateDependencyFile> <!-- needed for nunit runner -->
     <RunSettingsFilePath>$(OkSrcRoot).runsettings</RunSettingsFilePath>
+    <NoWarn>$(NoWarn);CA1861</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -61,8 +61,7 @@ namespace NiceIO
 
         public NPath(string path)
         {
-            if (path == null)
-                throw new ArgumentNullException(nameof(path));
+            ArgumentNullException.ThrowIfNull(path);
 
             path = ParseDriveLetter(path, out _driveLetter);
 
