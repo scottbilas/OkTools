@@ -16,11 +16,12 @@
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
 
     <!-- compiler -->
+    <LangVersion>latest</LangVersion>
     <DebugSymbols>false</DebugSymbols>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <LangVersion>11</LangVersion>
 
     <!-- language -->
     <Nullable>enable</Nullable>
