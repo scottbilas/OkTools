@@ -1,0 +1,6 @@
+{0}, the merry machine mode manager v{1}
+
+Usage:
+  {0} [PROFILE...]
+  {0} --help
+  {0} --version

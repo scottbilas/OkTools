@@ -1,0 +1,80 @@
+#file: noinspection SpellCheckingInspection
+
+# traits
+#
+# - valid:   true if this is available to be selected/combined
+# - combine: copy the other thing and combine it with this one via add or subtract (is "soft" - the other thing may be invalid in which case it is ignored)
+# - require: copy validity requirement of other thing and combine with this (may be "any" or "all" expr)
+# - config:  any of these entries, holds rules and state and validity and instructions
+# - target config: the final config we are accumulating and will process. user is adding/subtracting to this.
+
+# by default profiles using profiles are required, but we can do a simple combine with ? at the end
+# by default profiles using features are combined
+
+# entity: validity is controlled by detecting whether entity is connected/active. usually is a physical device but doesn't need to be. just needs a way to detect it.
+# feature: a set of processes and OS services that we can detect/start/stop when feature is activated/deactivated. may require one or more entities to be valid.
+# profile: can combine entities and features and other profiles. all features are activated/deactivated along with the profile.
+
+profiles:
+
+  offline:    -resilio -onedrive -syncthing -macrium -zerotier
+  mobile:     -kde-mover-sizer
+  minimal:    -desk
+  endurance:  minimal offline
+  desk:       streamdeck
+
+  dev:        jb_toolbox
+
+  sfact:      game lg-75
+  game:       steam razer
+
+features:
+
+  # gaming
+  streamdeck:      { select: streamdeck_xl, path: '%ProgramFiles%\Elgato\StreamDeck\StreamDeck.exe' }
+  steam:           { path: '%ProgramFiles(x86)%\Steam\Steam.exe' }
+  razer:
+    require: razer_*
+    path:
+      - razer1
+      - razer2
+    service: razer*
+  oculus:          { service: oculus* }
+  lg-75:           { require: lg_wide, action: resolution=75% }
+
+  # dev
+  jb_toolbox:      '%LOCALAPPDATA%\JetBrains\Toolbox\bin\jetbrains-toolbox.exe'
+
+  # online
+  resilio:         '%APPDATA%\Resilio Sync\Resilio Sync.exe'
+
+  # general
+  everything:      [
+                      path: '~\scoop\apps\everything\current\Everything.exe',
+                      service: everything
+                    ]
+  ferdium:         '~\scoop\apps\ferdium-nightly\current\Ferdium.exe'
+  powertoys:       '%LOCALAPPDATA%\PowerToys\PowerToys.exe'
+  kde-mover-sizer: '~\.local\share\bin\KDE Mover-Sizer for Windows x64\KDE Mover-Sizer.exe'
+  #malwarebytes
+  macrium:         { service: ? warn-active: path: reflect-monitor.exe }
+
+  # default startup stuff
+  groupy:          { service: '*groupy*' }
+  samsung:         { service: 'samsung*' }
+  zerotier:        { service: ZeroTier One }
+  rog-basics:      { service: ROG Live Service }
+  onedrive:        { ?? }
+  syncthing:       { ?? }
+
+entities:
+
+  streamdeck_xl:   {} # detect with usb query
+  razer_naga:      {} # detect with usb query
+  razer_tartarus:  {} # detect with usb query
+  razer_firefly:   {} # detect with usb query
+  lg_wide:         {} # detect with monitor query
+  gaming_dock:     {} # can detect w mac addr
+  kensington_dock: {} # can detect w mac addr
+  power:           {} # charging/charged
+  online:          {} # can ping microsoft

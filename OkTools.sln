@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{C30F4B4B-DDBB-4D66-A7C0-6C71637CEC39}"
 EndProject
@@ -31,6 +31,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PmlTool.Cli", "src\PmlTool.Cli\PmlTool.Cli.csproj", "{1AF04C97-7446-4E15-9C6E-55B005D76002}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.PerfTests", "perftests\Core.PerfTests\Core.PerfTests.csproj", "{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachMode.Cli", "src\MachMode.Cli\MachMode.Cli.csproj", "{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachModeCli-Tests", "src\MachMode.Cli\MachModeCli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -102,5 +106,13 @@ Global
 		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}.Release|Any CPU.Build.0 = Release|Any CPU
+		{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
