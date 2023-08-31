@@ -178,7 +178,9 @@ Debugging Options:
                     projectVersion = unityProject.GetVersion().ToString();
                 }
                 catch (UnityVersionFormatException) { projectVersion = "<invalid format>"; }
-                catch (FileNotFoundException) { /* this is ok, for test projects */ }
+                // these are ok, for test projects
+                catch (FileNotFoundException) {}
+                catch (DirectoryNotFoundException) {}
 
                 if (projectVersion != null)
                     Console.Write($"Loading project at {unityProject.Path}; expects {projectVersion}");
