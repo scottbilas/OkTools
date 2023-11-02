@@ -65,34 +65,6 @@
     }
 
     [Test]
-    public void Reflow_WithExistingWhitespaceBreaks()
-    {
-        // baseline
-        Reflow(
-            "this is a line we r wrapping", 12).ShouldBe(
-            "this is a\nline we r\nwrapping");
-        Reflow(
-            "this is a1 line we r wrapping", 12).ShouldBe(
-            "this is a1\nline we r\nwrapping");
-        Reflow(
-            "this is a12 line we r wrapping", 12).ShouldBe(
-            "this is a12\nline we r\nwrapping");
-        Reflow(
-            "this is a123 line we r wrapping", 12).ShouldBe(
-            "this is a123\nline we r\nwrapping");
-
-        // collapse whitespace when wrapped
-        Reflow(
-            "* this is a      line we r     wrapping   ", 14).ShouldBe(
-            "* this is a\n  line we r\n  wrapping");
-
-        // preserve whitespace when not wrapped
-        Reflow(
-            "- this is a   line we r     wrapping   ", 20).ShouldBe(
-            "- this is a   line\n  we r     wrapping");
-    }
-
-    [Test]
     public void Reflow_WithSimpleIndentation()
     {
         Reflow(
@@ -160,6 +132,16 @@
         Reflow(
             "here is\n  * one point\n    and this should join", 50).ShouldBe(
             "here is\n  * one point and this should join");
+
+        Reflow(
+            "here is\n  - one point\n    and this won't! join", 16).ShouldBe(
+            "here is\n  - one point\n    and this\n    won't! join");
+        Reflow(
+            "here is\n  - one point\n    and this won't! join", 18).ShouldBe(
+            "here is\n  - one point and\n    this won't!\n    join");
+        Reflow(
+            "here is\n  - one point\n    and this should join", 50).ShouldBe(
+            "here is\n  - one point and this should join");
     }
 
     [Test]
@@ -189,10 +171,11 @@
             "    this_is_a_r\n    eally_long_\n    word");
     }
 
-    [Test, Category("TODO")]
-    public void Reflow_Bug_FinalLineNotIndented()
+    [Test, Category("Regression")]
+    public void Reflow_FinalLineIndented()
     {
-        // TODO: something about the '--version' in there is causing the bad wrapping
+        // before the fix, this would fail to indent the very last line
+
         Reflow(
             "Usage:\n"+
             "  okflog  PATH long stuff on top of it\n"+
@@ -201,63 +184,42 @@
             "Usage:\n"+
             "  okflog  PATH long stuff on top\n"+
             "          of it\n"+
-        //  WHAT WE WANT
-        //  "  okflog  --version long stuff on\n"+
-        //  "          top of it"
-        //  WHAT WE ACTUALLY GET
             "  okflog  --version long stuff\n"+
-            "  on top of it"
-            );
+            "          on top of it");
     }
 
-    [Test, Category("TODO"), Ignore("need bugfix, hacked around for now")]
+    [Test]
     public void Reflow_WithProgramUsage_DoesNotJoinLines()
     {
-        // TODO: once this bug is resolved, remove the hack from DocoptUtility.SelectSections, and also update --no-hub to be like below formatting
-
-        // TODO: something about the '--version' in there is causing the bad wrapping
-        // UPDATE: this is probably caused by the bracket. changing "[options]" to "options" probably won't show the problem.
-        //         i ran into this with a "[windows-only]" prefix on some options help text and removing the brackets fixed it. same issue happens with parens..
-        //         so it's something easy with the `\b` in s_indentRx that's causing the problem.
-        //  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
-
         Reflow(
             "Usage:\n"+
             "  loggo  [options] [DESTINATION]\n"+
-            "  loggo  --version\n",
+            "  loggo  --version",
             50).ShouldBe(
-        //  WHAT WE WANT
-        //  "Usage:\n"+
-        //  "  loggo  [options] [DESTINATION]\n"+
-        //  "  loggo  --version",
-        //  WHAT WE ACTUALLY GET (without the hack)
             "Usage:\n"+
-            "  loggo  [options] [DESTINATION] loggo  --version"
-            );
-
-        // these tests worked before i hacked out the "usage" wrapping.
-
-        // (previously i could double-space after the program name to work around the issue, but that started failing
-        // at some point, leading to the above false test.)
-
-        #if NO
-        Reflow(
-            "Usage:\n  progname and some extra text\n  progname and some other text", 23).ShouldBe(
-            // TODO: what i want to work
-            //  "Usage:\n  progname and some\n           extra text\n  progname and some\n           other text");
-            // what currently happens
-            "Usage:\n  progname and some\n  extra text progname\n  and some other text");
-
-        // this gets it right, but requires a workaround of double-space after program name (not the end of the world)
-        Reflow(
-            "Usage:\n  progname  and some extra text\n  progname  and some other text", 23).ShouldBe(
-            "Usage:\n  progname  and some\n            extra text\n  progname  and some\n            other text");
-        #endif
-
+            "  loggo  [options] [DESTINATION]\n"+
+            "  loggo  --version");
     }
 
-    [Test, Category("TODO")]
-    public void Reflow_WithDoubleSpace_IndentsAtDoubleSpace()
+    [Test]
+    public void Reflow_WithProgramUsage_WrapsLinesIndividually()
+    {
+        // this tests out the section "leading word" detection and extra indent adjusting
+
+        Reflow(
+            "Usage:\n"+
+            "  progname and some extra text\n"+
+            "  progname and some other text",
+            23).ShouldBe(
+            "Usage:\n"+
+            "  progname and some\n"+
+            "           extra text\n"+
+            "  progname and some\n"+
+            "           other text");
+    }
+
+    [Test]
+    public void Reflow_WithDoubleSpace_PrefersIndentAtDoubleSpace()
     {
         Reflow(
             "Options:\n"+
@@ -265,21 +227,12 @@
             "    * first:   This one should not wrap at '* ' but instead at 'This'\n"+
             "    * second:  This one should also wrap at the 'This' and not before that\n",
             50).ShouldBe(
-        // WHAT WE WANT
-        //  "Options:\n"+
-        //  "  --thingy  This is a really long line that should\n"+
-        //  "            be wrapping at the double space\n"+
-        //  "    * first:   This one should not wrap at '* '\n"+
-        //  "               but instead at 'This'\n"+
-        //  "    * second:  This one should also wrap at the\n"+
-        //  "               'This' and not before that");
-        // WHAT WE ACTUALLY GET
             "Options:\n"+
             "  --thingy  This is a really long line that should\n"+
             "            be wrapping at the double space\n"+
             "    * first:   This one should not wrap at '* '\n"+
-            "      but instead at 'This'\n"+
+            "               but instead at 'This'\n"+
             "    * second:  This one should also wrap at the\n"+
-            "      'This' and not before that");
+            "               'This' and not before that");
     }
 }

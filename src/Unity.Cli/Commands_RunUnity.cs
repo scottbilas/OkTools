@@ -67,7 +67,7 @@ Options:
   --pid-exitcode          Return the Unity process ID as the exit code (*)
   --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count; JWC can be either X to choose an explicit number or X% to choose a percentage of machine vCPU's
   --no-cache-server       Tell Unity not to use the cache server
-  --no-hub                windows-only: Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
+  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
 
