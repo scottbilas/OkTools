@@ -13,6 +13,10 @@ public class DocoptReflowOptions
 [PublicAPI]
 public static class DocoptUtility
 {
+    // TODO: nothing about this (once the "Usage" hack is removed) should be specific to docopt.
+    //       can use blank lines to mean sections, detecting alignment, and - most importantly - the
+    //       "end of last double space" rule to mean the indent point for wrapping.
+
     public static string Reflow(string text, int wrapWidth) => Reflow(text, wrapWidth, new DocoptReflowOptions());
 
     public static string Reflow(string text, int wrapWidth, DocoptReflowOptions options)

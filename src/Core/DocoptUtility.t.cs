@@ -255,4 +255,31 @@
         #endif
 
     }
+
+    [Test, Category("TODO")]
+    public void Reflow_WithDoubleSpace_IndentsAtDoubleSpace()
+    {
+        Reflow(
+            "Options:\n"+
+            "  --thingy  This is a really long line that should be wrapping at the double space\n"+
+            "    * first:   This one should not wrap at '* ' but instead at 'This'\n"+
+            "    * second:  This one should also wrap at the 'This' and not before that\n",
+            50).ShouldBe(
+        // WHAT WE WANT
+        //  "Options:\n"+
+        //  "  --thingy  This is a really long line that should\n"+
+        //  "            be wrapping at the double space\n"+
+        //  "    * first:   This one should not wrap at '* '\n"+
+        //  "               but instead at 'This'\n"+
+        //  "    * second:  This one should also wrap at the\n"+
+        //  "               'This' and not before that");
+        // WHAT WE ACTUALLY GET
+            "Options:\n"+
+            "  --thingy  This is a really long line that should\n"+
+            "            be wrapping at the double space\n"+
+            "    * first:   This one should not wrap at '* '\n"+
+            "      but instead at 'This'\n"+
+            "    * second:  This one should also wrap at the\n"+
+            "      'This' and not before that");
+    }
 }
