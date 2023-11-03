@@ -2,3 +2,6 @@ artifacts/
 build/
 publish/
 temp/
+
+# "Commandline Arguments" extension to Rider generates this
+*.ddargs.json
