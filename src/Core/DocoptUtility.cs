@@ -48,7 +48,7 @@ public static class DocoptUtility
                 needEol = false;
             }
 
-            if (!section.Span.Any)
+            if (!section.Text.Any)
             {
                 result.Append(options.Eol);
                 continue;
@@ -56,15 +56,15 @@ public static class DocoptUtility
 
             // do the indent here so its whitespace doesn't get caught up in the calculations below
             // (TODO: this breaks very narrow wrapping..)
-            result.Append(section.Span.WithLength(section.TotalIndent).Span);
-            var span = section.Span.WithOffsetStart(section.TotalIndent);
+            result.Append(section.Text[..section.TotalIndent].Span);
+            var sectionText = section.Text[section.TotalIndent..];
 
             // special: if we have a really wide column indent, let's fall back to non aligned
             // (TODO: also broken with very narrow wrapping..)
             var indent = section.TotalIndent;
             if (options.IndentFallback != 0 && wrapWidth - indent < options.IndentFallback)
             {
-                indent = section.Span.TrimStartOffset()+1;
+                indent = section.Text.GetTrimStart() + 1;
                 result.Append(options.Eol);
                 result.Append(' ', indent);
             }
@@ -72,23 +72,23 @@ public static class DocoptUtility
             for (;;)
             {
                 // this is how much space we have to write into
-                var available = Math.Max(Math.Min(wrapWidth - indent, span.Length), 1);
+                var available = Math.Max(Math.Min(wrapWidth - indent, sectionText.Length), 1);
 
                 // try to find a reasonable place to break, otherwise do a hard break at the width limit
-                var write = span.Length;
+                var write = sectionText.Length;
                 if (write > available)
                 {
-                    write = span.Text.LastIndexOf(' ', span.Start + available, available+1);
+                    write = sectionText.String.LastIndexOf(' ', sectionText.SegmentStart + available, available+1);
                     if (write >= 0)
-                        write -= span.Start;
+                        write -= sectionText.SegmentStart;
                     if (write < options.MinWrapWidth)
                         write = available;
                 }
 
                 // write what will fit and advance
-                result.Append(span.Text, span.Start, span.TrimEndIndex(span.Start + write) - span.Start);
-                span = span.WithOffsetStart(write).TrimStart();
-                if (!span.Any)
+                result.Append(sectionText[..write].TrimEnd());
+                sectionText = sectionText[write..].TrimStart();
+                if (!sectionText.Any)
                     break;
 
                 result.Append(options.Eol);
@@ -101,44 +101,44 @@ public static class DocoptUtility
         return result.ToString();
     }
 
-    record Section(StringSpan Span, int Indent)
+    record Section(StringSegment Text, int Indent)
     {
         int _extraIndent;
 
-        public Section(StringSpan span) : this(span.TrimEnd(), 0)
+        public Section(StringSegment text) : this(text.TrimEnd(), 0)
         {
-            var indentMatch = Span.Match(s_indentRx0);
+            var indentMatch = Text.Match(s_indentRx0);
             if (indentMatch.Success)
-                Indent = indentMatch.Index - Span.Start + indentMatch.Length;
+                Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
             else
             {
-                indentMatch = Span.Match(s_indentRx1);
+                indentMatch = Text.Match(s_indentRx1);
                 if (indentMatch.Success)
-                    Indent = indentMatch.Index - Span.Start + indentMatch.Length;
+                    Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
                 else
-                    Indent = Span.TrimStartOffset();
+                    Indent = Text.GetTrimStart();
             }
         }
 
         public int TotalIndent => Indent + _extraIndent;
-        bool HasPrefix => Span.TrimStartOffset() < Indent; // TODO: "extra indent" and "prefix" concepts do the same thing; join them
+        bool HasPrefix => Text.GetTrimStart() < Indent; // TODO: "extra indent" and "prefix" concepts do the same thing; join them
 
         // note that this may modify the previous section if we detect duplicate leading words
         public Section? MergeWith(Section other)
         {
-            if (Span.IsEmpty || other.Span.IsEmpty || Indent != other.Indent || other.HasPrefix)
+            if (Text.IsEmpty || other.Text.IsEmpty || Indent != other.Indent || other.HasPrefix)
                 return null;
 
             if (!HasPrefix)
             {
                 // if the leading word is identical (common with program name in 'usage' lines), do not merge
-                var end = Span[Indent..].IndexOf(' ');
+                var end = Text[Indent..].IndexOf(' ');
                 if (end >= 0)
                 {
                     var wordLen = end + 1; // include the space
-                    var span0 = Span[Indent..].WithLength(wordLen);
-                    var span1 = other.Span[Indent..].WithLength(wordLen);
-                    if (span0.TextEquals(span1))
+                    var text0 = Text[Indent..(Indent+wordLen)];
+                    var text1 = other.Text[Indent..(Indent+wordLen)];
+                    if (text0.StringEquals(text1))
                     {
                         _extraIndent = other._extraIndent = wordLen;
                         return null;
@@ -147,11 +147,11 @@ public static class DocoptUtility
             }
 
             // $$$ TODO: get rid of this silliness
-            var newText = Span.ToString() + ' ' + other.Span.TrimStart();
-            return this with { Span = new StringSpan(newText) };
+            var newText = Text.ToString() + ' ' + other.Text.TrimStart();
+            return this with { Text = new StringSegment(newText) };
         }
 
-        public override string ToString() => $"{Span.ToDebugString()}; indent={Indent}, prefix={HasPrefix}";
+        public override string ToString() => $"{Text.ToDebugString()}; indent={Indent}, prefix={HasPrefix}";
     }
 
     // these regexes find where we should indent to upon wrapping, in priority order.
@@ -161,7 +161,7 @@ public static class DocoptUtility
     // - align to the text part of a '*' or '-' style bullet point
     static readonly Regex s_indentRx1 = new(@"^ *([-*]|\d+\.) ");
 
-    static IEnumerable<StringSpan> SelectLines(string text)
+    static IEnumerable<StringSegment> SelectLines(string text)
     {
         for (var start = 0; start != text.Length;)
         {
@@ -173,7 +173,7 @@ public static class DocoptUtility
             else
                 ++next;
 
-            yield return new StringSpan(text, start, end);
+            yield return new StringSegment(text, start, end - start);
             start = next;
         }
     }
@@ -182,9 +182,9 @@ public static class DocoptUtility
     {
         Section? lastSection = null;
 
-        foreach (var span in SelectLines(text))
+        foreach (var line in SelectLines(text))
         {
-            var newSection = new Section(span);
+            var newSection = new Section(line);
 
             if (lastSection != null)
             {
