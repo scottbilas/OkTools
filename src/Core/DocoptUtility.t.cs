@@ -158,24 +158,119 @@
     public void Reflow_WithBulletPoints()
     {
         Reflow(
-            "here is\n  * one point\n    and this won't! join", 16).ShouldBe(
-            "here is\n  * one point\n    and this\n    won't! join");
+            "here is\n"+
+            "  * one point\n"+
+            "    and this won't! join", 16).ShouldBe(
+            "here is\n"+
+            "  * one point\n"+
+            "    and this\n"+
+            "    won't! join");
         Reflow(
-            "here is\n  * one point\n    and this won't! join", 18).ShouldBe(
-            "here is\n  * one point and\n    this won't!\n    join");
+            "here is\n"+
+            "  * one point\n"+
+            "    and this won't! join", 18).ShouldBe(
+            "here is\n"+
+            "  * one point and\n"+
+            "    this won't!\n"+
+            "    join");
         Reflow(
-            "here is\n  * one point\n    and this should join", 50).ShouldBe(
-            "here is\n  * one point and this should join");
+            "here is\n"+
+            "  * one point\n"+
+            "    and this should join", 50).ShouldBe(
+            "here is\n"+
+            "  * one point and this should join");
 
         Reflow(
-            "here is\n  - one point\n    and this won't! join", 16).ShouldBe(
-            "here is\n  - one point\n    and this\n    won't! join");
+            "here is\n"+
+            "  - one point\n"+
+            "    and this won't! join", 16).ShouldBe(
+            "here is\n"+
+            "  - one point\n"+
+            "    and this\n"+
+            "    won't! join");
         Reflow(
-            "here is\n  - one point\n    and this won't! join", 18).ShouldBe(
-            "here is\n  - one point and\n    this won't!\n    join");
+            "here is\n"+
+            "  - one point\n"+
+            "    and this won't! join", 18).ShouldBe(
+            "here is\n"+
+            "  - one point and\n"+
+            "    this won't!\n"+
+            "    join");
         Reflow(
-            "here is\n  - one point\n    and this should join", 50).ShouldBe(
-            "here is\n  - one point and this should join");
+            "here is\n"+
+            "  - one point\n"+
+            "    and this should join", 50).ShouldBe(
+            "here is\n"+
+            "  - one point and this should join");
+
+        Reflow(
+            "here is\n"+
+            "  # one point\n"+
+            "    and this won't! join", 16).ShouldBe(
+            "here is\n"+
+            "  # one point\n"+
+            "    and this\n"+
+            "    won't! join");
+        Reflow(
+            "here is\n"+
+            "  # one point\n"+
+            "    and this won't! join", 18).ShouldBe(
+            "here is\n"+
+            "  # one point and\n"+
+            "    this won't!\n"+
+            "    join");
+        Reflow(
+            "here is\n"+
+            "  # one point\n"+
+            "    and this should join", 50).ShouldBe(
+            "here is\n"+
+            "  # one point and this should join");
+
+        Reflow(
+            "here is\n"+
+            "  // one point\n"+
+            "     and this won't! join", 16).ShouldBe(
+            "here is\n"+
+            "  // one point\n"+
+            "     and this\n"+
+            "     won't! join");
+        Reflow(
+            "here is\n"+
+            "  // one point\n"+
+            "     and this won't! join", 19).ShouldBe(
+            "here is\n"+
+            "  // one point and\n"+
+            "     this won't!\n"+
+            "     join");
+        Reflow(
+            "here is\n"+
+            "  // one point\n"+
+            "     and this should join", 50).ShouldBe(
+            "here is\n"+
+            "  // one point and this should join");
+
+        Reflow(
+            "here is\n"+
+            "  1. one point\n"+
+            "     and this won't! join", 16).ShouldBe(
+            "here is\n"+
+            "  1. one point\n"+
+            "     and this\n"+
+            "     won't! join");
+        Reflow(
+            "here is\n"+
+            "  2. one point\n"+
+            "     and this won't! join", 18).ShouldBe(
+            "here is\n"+
+            "  2. one point and\n"+
+            "     this won't!\n"+
+            "     join");
+        Reflow(
+            "here is\n"+
+            "  3. one point\n"+
+            "     and this should join", 50).ShouldBe(
+            "here is\n"+
+            "  3. one point and this should join");
     }
 
     [Test]
