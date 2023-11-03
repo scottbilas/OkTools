@@ -166,8 +166,8 @@ public static class DocoptUtility
     //
     // - align to the right side of a "docopt divider" (>= 2 spaces). higher pri to catch bulleted option lists.
     static readonly Regex s_indentRx0 = new(@"\S {2,}");
-    // - align to the text part of a '*' or '-' style bullet point
-    static readonly Regex s_indentRx1 = new(@"^ *([-*]|\d+\.) ");
+    // - align to the text part of a bullet point, number, or comment: * - // # 1.
+    static readonly Regex s_indentRx1 = new(@"^ *([-*#]|//|\d+\.) ");
 
     static IEnumerable<StringSegment> SelectLines(string text)
     {
