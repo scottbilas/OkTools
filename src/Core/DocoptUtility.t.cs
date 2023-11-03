@@ -65,6 +65,40 @@
     }
 
     [Test]
+    public void Reflow_WithExistingWhitespaceBreaks()
+    {
+        // baseline
+        Reflow(
+            "this is a line we r wrapping", 12).ShouldBe(
+            "this is a\nline we r\nwrapping");
+        Reflow(
+            "this is a1 line we r wrapping", 12).ShouldBe(
+            "this is a1\nline we r\nwrapping");
+        Reflow(
+            "this is a12 line we r wrapping", 12).ShouldBe(
+            "this is a12\nline we r\nwrapping");
+        Reflow(
+            "this is a123 line we r wrapping", 12).ShouldBe(
+            "this is a123\nline we r\nwrapping");
+
+        // these need docopt (double-space) divider to start out to avoid the large whitespace
+        // blocks being detected as such.
+
+        // collapse whitespace when wrapped
+        Reflow(
+            "this  is a      line we r     wrapping   ", 15).ShouldBe(
+            "this  is a\n"+
+            "      line we r\n"+
+            "      wrapping");
+
+        // preserve whitespace when not wrapped
+        Reflow(
+            "this  is a   line we r     wrapping   ", 20).ShouldBe(
+            "this  is a   line we\n"+
+            "      r     wrapping");
+    }
+
+    [Test]
     public void Reflow_WithSimpleIndentation()
     {
         Reflow(
