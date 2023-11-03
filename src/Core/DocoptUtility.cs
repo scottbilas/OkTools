@@ -17,6 +17,14 @@ public static class DocoptUtility
     //       can use blank lines to mean sections, detecting alignment, and - most importantly - the
     //       "end of last double space" rule to mean the indent point for wrapping.
 
+    // TODO: Reflow loop rewrite!
+    // - Get rid of the Select, move to phases.
+    // - Operate on current and next section, don't "correct the prev".
+    // - Replace "same starting word as next line" extraction with a third regex (though can't apply it the same as
+    //   the other two due to needing to extract group1 and compare)
+    // - Simplify in general
+    // - The "extra indent" should become FirstLineIndent and WrapIndent (how to indent wrapped lines in the same block)
+
     public static string Reflow(string text, int wrapWidth) => Reflow(text, wrapWidth, new DocoptReflowOptions());
 
     public static string Reflow(string text, int wrapWidth, DocoptReflowOptions options)
