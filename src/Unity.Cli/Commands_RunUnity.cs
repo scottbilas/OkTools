@@ -732,9 +732,6 @@ Debugging Options:
             else
                 Console.WriteLine("Process is responding");
 
-            if (pidAsExitCode)
-                return (CliExitCode)(mainUnity.Id | 1<<31);
-
             return pidAsExitCode ? AsCliExitCode(mainUnity.Id) : CliExitCode.Success;
         }
         finally
