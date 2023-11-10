@@ -1,20 +1,57 @@
 ﻿class CliUtilityTests
 {
     [Test]
-    public void ParseCommandLineArgs_WithMixed_ShouldReturnAllUnquotedArgs()
+    public void ParseCommandLineArgs_CommandLineArgsToString()
     {
-        var parsed = CliUtility.ParseCommandLineArgs(
-            @"""C:\path\with space\unity.exe"" -flag ""-quoted"" ""Arg With Space"" -another ""one last with space""");
-
-        parsed.ShouldBe(new[]
+        var text = """
+            "C:\path\with space\unity.exe" -flag "Arg With Space" -another "internally \"quoted strings\" yup.."
+            """;
+        var items = new[]
         {
             @"C:\path\with space\unity.exe",
             "-flag",
-            "-quoted",
             "Arg With Space",
             "-another",
-            "one last with space"
-        });
+            "internally \"quoted strings\" yup.."
+        };
+
+        var fromText = CliUtility.ParseCommandLineArgs(text).ToList();
+        var fromItems = CliUtility.CommandLineArgsToString(items);
+
+        fromItems.ShouldBe(text);
+        fromText.ShouldBe(items);
+    }
+
+    [Test]
+    public void ParseCommandLineArgs_CommandLineArgsToString_WithNoSpaces_StripsQuotes()
+    {
+        var text = "test of \"-quoted\" not needed";
+        var unquoted = "test of -quoted not needed";
+        var items = new[] { "test", "of", "-quoted", "not", "needed" };
+
+        var fromText = CliUtility.ParseCommandLineArgs(text).ToList();
+        var fromItems = CliUtility.CommandLineArgsToString(items);
+
+        fromItems.ShouldBe(unquoted);
+        fromText.ShouldBe(items);
+    }
+
+    [Test]
+    public void ParseCommandLineArgs_WithInternalQuote()
+    {
+        //var text = """
+        //one onemore\"quoted "another\"internal\"again"
+        //""";
+        var unquoted = """
+        one onemore\"quoted another\"internal\"again
+        """;
+        var items = new[] { "one", "onemore\"quoted", "another\"internal\"again" };
+
+        //var fromText = CliUtility.ParseCommandLineArgs(text).ToList();
+        var fromItems = CliUtility.CommandLineArgsToString(items);
+
+        fromItems.ShouldBe(unquoted);
+        //fromText.ShouldBe(items);  TODO: doesn't work yet
     }
 
     [Test]
@@ -22,22 +59,6 @@
     {
         CliUtility.ParseCommandLineArgs("").ShouldBeEmpty();
         CliUtility.ParseCommandLineArgs("    ").ShouldBeEmpty();
-    }
-
-    [Test]
-    public void CommandLineArgsToString_WithMixed_ShouldReturnAllUnquotedArgs()
-    {
-        var argsStr = CliUtility.CommandLineArgsToString(new[]
-        {
-            @"C:\path\with space\unity.exe",
-            "-flag",
-            "-quoted",
-            "Arg With Space",
-            "-another",
-            "one last with space"
-        });
-
-        argsStr.ShouldBe(@"""C:\path\with space\unity.exe"" -flag -quoted ""Arg With Space"" -another ""one last with space""");
     }
 
     [Test]
