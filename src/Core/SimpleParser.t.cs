@@ -1,5 +1,3 @@
-using OkTools.ProcMonUtils;
-
 // ReSharper disable StringLiteralTypo
 
 class SimpleParserTests

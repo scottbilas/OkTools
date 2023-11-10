@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace OkTools.ProcMonUtils;
-
-// TODO: promote this to Core
+namespace OkTools.Core;
 
 class SimpleParserException : Exception
 {
