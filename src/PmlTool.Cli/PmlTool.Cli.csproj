@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OkFeatures>NiceIO;Docopt</OkFeatures></PropertyGroup>
-  <Import Project="$(OkTargetsRoot)Exe.targets"/>
+  <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
     <AssemblyName>pmltool</AssemblyName>

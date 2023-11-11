@@ -1,6 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OkFeatures>T4</OkFeatures></PropertyGroup>
-  <Import Project="$(OkTargetsRoot)Library.targets"/>
+  <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

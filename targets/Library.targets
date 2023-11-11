@@ -83,7 +83,7 @@
           </Otherwise>
       </Choose>
       <ItemGroup>
-        <PackageReference Include="T4.Build" PrivateAssets="All"/>
+        <PackageReference Include="T4.Build" PrivateAssets="All" />
       </ItemGroup>
       <PropertyGroup>
         <TextTemplateTransformAll>false</TextTemplateTransformAll>

@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
-  <Import Project="$(OkTargetsRoot)Exe.targets"/>
+  <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
     <AssemblyName>machmode</AssemblyName>
