@@ -32,11 +32,11 @@
     <OkTargetsRoot>$(OkRoot)targets\</OkTargetsRoot>
 
     <!-- build -->
-    <OutputPath>$(OkRoot)artifacts\build\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath>
-    <OkExeOutputPath>$(OkRoot)build\$(MSBuildProjectName)</OkExeOutputPath>
-    <OkExeOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkExeOutputPath)\$(Configuration)</OkExeOutputPath>
-    <OkExePublishDir>$(OkRoot)publish\$(MSBuildProjectName)</OkExePublishDir>
-    <OkExePublishDir Condition="'$(Configuration)' == 'Debug'">$(OkExePublishDir)\$(Configuration)</OkExePublishDir>
+    <OutputPath>$(OkRoot)artifacts\build\bin\$(MSBuildProjectName)\$(Configuration)</OutputPath><!-- don't add trailing \ here -->
+    <OkOutputPath>$(OkRoot)build\$(MSBuildProjectName)\</OkOutputPath>
+    <OkOutputPath Condition="'$(Configuration)' == 'Debug'">$(OkOutputPath)$(Configuration)\</OkOutputPath>
+    <OkPublishDir>$(OkRoot)publish\$(MSBuildProjectName)\</OkPublishDir>
+    <OkPublishDir Condition="'$(Configuration)' == 'Debug'">$(OkPublishDir)$(Configuration)\</OkPublishDir>
     <BaseIntermediateOutputPath>$(OkRoot)artifacts\build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <GenerateDependencyFile>false</GenerateDependencyFile>
 

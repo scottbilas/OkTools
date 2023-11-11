@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <OutputPath>$(OkOutputPath)</OutputPath>
     <RootNamespace />
 
     <!-- publishing defaults -->
-    <PublishDir>$(OkExePublishDir)</PublishDir>
+    <PublishDir>$(OkPublishDir)</PublishDir>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>false</SelfContained>

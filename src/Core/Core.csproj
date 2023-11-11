@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OkFeatures>T4</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Library.targets" />
 
@@ -7,6 +7,13 @@
     <RootNamespace>OkTools.Core</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+  </PropertyGroup>
+
+  <!-- nuget -->
+  <PropertyGroup>
+    <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
+    <Title>Some OK core utility functions</Title>
+    <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

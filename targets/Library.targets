@@ -1,5 +1,11 @@
 ﻿<Project>
 
+  <!-- global -->
+
+  <PropertyGroup>
+    <PackageOutputPath>$(OkPublishDir)</PackageOutputPath>
+  </PropertyGroup>
+
   <!-- debug support -->
 
   <PropertyGroup>
