@@ -91,6 +91,12 @@
     </When>
   </Choose>
 
+  <!-- dll config -->
+
+  <PropertyGroup Condition=" !$(OkFeatures.Contains(';Exe;')) and !$(OkFeatures.Contains(';Tests;'))">
+    <AssemblyName>OkTools.$(MSBuildProjectName)</AssemblyName>
+  </PropertyGroup>
+
   <!-- library/test split -->
 
   <Choose>
