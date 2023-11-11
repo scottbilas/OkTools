@@ -80,8 +80,7 @@ partial class Screen : IDisposable
 
     public void Dispose()
     {
-        if (_disposed.IsCancellationRequested)
-            throw new ObjectDisposedException("Instance already disposed");
+        ObjectDisposedException.ThrowIf(_disposed.IsCancellationRequested, this);
         _disposed.Cancel(); // don't dispose, let finalizer get it
 
         /* https://github.com/gdamore/tcell/v2/tscreen.go

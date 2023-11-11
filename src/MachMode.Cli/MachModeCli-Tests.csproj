@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="MachModeCli.csproj" />
+    <ProjectReference Include="MachMode.Cli.csproj" />
   </ItemGroup>
 
 </Project>
