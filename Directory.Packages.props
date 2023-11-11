@@ -24,7 +24,6 @@
 
     <PackageVersion Include="docopt.net" Version="0.8.1" />
     <PackageVersion Include="DotNetConfig" Version="1.0.6" />
-    <PackageVersion Include="LibGit2Sharp" Version="0.27.2" />
     <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="7.0.0" />
     <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.3.6" />
     <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
@@ -34,13 +33,13 @@
     <PackageVersion Include="System.Interactive" Version="6.0.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="7.0.0" />
     <PackageVersion Include="TextCopy" Version="6.2.1" />
-    <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.10" />
-    <PackageVersion Include="Vezel.Cathode" Version="0.8.23" />
-    <PackageVersion Include="YamlDotNet" Version="12.0.2" />
+    <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.17" />
+    <PackageVersion Include="Vezel.Cathode" Version="0.10.40" />
+    <PackageVersion Include="YamlDotNet" Version="13.7.1" />
 
     <!-- analysis -->
 
-    <PackageVersion Include="JetBrains.Annotations" Version="2023.2.0" />
+    <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
     <!--PackageVersion Include="Meziantou.Analyzer" Version="1.0.688" /  NOT READY FOR THIS YET -->
 
     <!-- builds -->
@@ -49,13 +48,13 @@
 
     <!-- testing and debugging -->
 
-    <PackageVersion Include="benchmarkdotnet" Version="0.13.7" />
+    <PackageVersion Include="benchmarkdotnet" Version="0.13.10" />
     <PackageVersion Include="coverlet.collector" Version="6.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.7.1" />
-    <PackageVersion Include="NUnit" Version="3.13.3" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="ObjectDumper.NET" Version="4.1.3" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
