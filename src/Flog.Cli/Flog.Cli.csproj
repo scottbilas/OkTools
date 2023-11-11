@@ -5,7 +5,6 @@
   <PropertyGroup>
     <AssemblyName>okflog</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace />
     <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
   </PropertyGroup>
 

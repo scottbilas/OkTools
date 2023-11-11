@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <AssemblyName>pmltool</AssemblyName>
-    <RootNamespace />
   </PropertyGroup>
 
   <ItemGroup>

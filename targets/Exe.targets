@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <OutputPath>$(OkExeOutputPath)</OutputPath>
+    <RootNamespace />
 
     <!-- publishing defaults -->
     <PublishDir>$(OkExePublishDir)</PublishDir>
@@ -11,5 +12,8 @@
     <SelfContained>false</SelfContained>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <OkFeatures>$(OkFeatures);Exe</OkFeatures>
+  </PropertyGroup>
   <Import Project="Library.targets" />
 </Project>

@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <AssemblyName>loggo</AssemblyName>
-    <RootNamespace />
   </PropertyGroup>
 
 </Project>

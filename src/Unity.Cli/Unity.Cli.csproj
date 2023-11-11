@@ -4,7 +4,6 @@
 
   <PropertyGroup>
     <AssemblyName>okunity</AssemblyName>
-    <RootNamespace />
   </PropertyGroup>
 
   <!-- some experiments i did a while ago...

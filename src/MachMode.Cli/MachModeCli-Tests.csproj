@@ -2,10 +2,6 @@
   <PropertyGroup><OkFeatures>NiceIO</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Tests.targets" />
 
-  <PropertyGroup>
-    <RootNamespace>MachModeCli.Tests</RootNamespace>
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="MachMode.Cli.csproj" />
   </ItemGroup>

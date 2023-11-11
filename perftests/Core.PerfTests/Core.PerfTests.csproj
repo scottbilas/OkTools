@@ -2,10 +2,6 @@
   <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets"/>
 
-  <PropertyGroup>
-    <RootNamespace />
-  </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="benchmarkdotnet" />
   </ItemGroup>

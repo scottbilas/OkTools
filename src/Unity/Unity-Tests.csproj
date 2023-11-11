@@ -2,7 +2,7 @@
   <Import Project="$(OkTargetsRoot)Tests.targets" />
 
   <PropertyGroup>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- match the main project -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier> <!-- match the main project (set in Exe.targets) -->
   </PropertyGroup>
 
   <ItemGroup>

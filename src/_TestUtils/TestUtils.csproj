@@ -2,11 +2,6 @@
   <PropertyGroup><OkFeatures>NiceIO</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Tests.targets" />
 
-  <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
-    <Using Include="NiceIO" />
-  </ItemGroup>
-
   <PropertyGroup>
     <RootNamespace>OkTools.TestUtils</RootNamespace>
   </PropertyGroup>
