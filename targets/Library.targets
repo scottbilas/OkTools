@@ -37,7 +37,9 @@
   <!-- jetbrains annotations -->
 
   <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" />
+    <PackageReference Include="JetBrains.Annotations">
+      <PrivateAssets>all</PrivateAssets> <!-- keep out of nuget packages -->
+    </PackageReference>
     <Using Include="JetBrains.Annotations" />
   </ItemGroup>
 

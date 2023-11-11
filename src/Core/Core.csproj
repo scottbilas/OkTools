@@ -14,7 +14,13 @@
     <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
     <Title>Some OK core utility functions</Title>
     <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" />
