@@ -23,7 +23,4 @@ jobs:
 
       - name: Publish NuGet package
         run: |
-          dir
-          dir publish
-          dir publish/Core
-          dotnet nuget push ./publish/Core/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push publish\Core\*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
