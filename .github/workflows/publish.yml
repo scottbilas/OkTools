@@ -3,7 +3,7 @@ name: Publish NuGet package
 on:
   workflow_dispatch:
   push:
-    tags: [ 'release-*.*.*' ]
+    tags: [ 'release-*' ]
 
 jobs:
   publish:
