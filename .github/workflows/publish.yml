@@ -7,7 +7,7 @@ on:
 
 jobs:
   publish:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -22,4 +22,8 @@ jobs:
         run: dotnet publish -c Release
 
       - name: Publish NuGet package
-        run: dotnet nuget push ./publish/Core/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+        run: |
+          dir
+          dir publish
+          dir publish/Core
+          dotnet nuget push ./publish/Core/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
