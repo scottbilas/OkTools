@@ -3,7 +3,7 @@ name: Publish NuGet package
 on:
   push:
     tags:
-      - 'release-*.*.*'
+      - 'release-*'
 
 jobs:
   publish:
