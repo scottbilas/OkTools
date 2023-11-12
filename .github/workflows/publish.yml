@@ -1,0 +1,25 @@
+name: Publish NuGet package
+
+on:
+  push:
+    tags:
+      - 'release-*.*.*'
+
+jobs:
+  publish:
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.0.x'
+
+      - name: Build for publish
+        run: dotnet publish -c Release
+
+      - name: Publish NuGet package
+        run: echo "dotnet nuget push ./publish/Core/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json"
