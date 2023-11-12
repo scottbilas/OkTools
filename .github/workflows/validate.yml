@@ -4,11 +4,11 @@ on:
   push:
     # https://stackoverflow.com/questions/58139406/only-run-job-on-specific-branch-with-github-actions
     branches:
-      - dev
+      - devzzz
 
 jobs:
   validate:
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v1
