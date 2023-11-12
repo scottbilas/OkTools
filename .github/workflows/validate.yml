@@ -1,10 +1,10 @@
-name: Test pushes to dev
+name: Validate dev branch
 
 on:
   push:
     # https://stackoverflow.com/questions/58139406/only-run-job-on-specific-branch-with-github-actions
     branches:
-      - devzzz
+      - dev
 
 jobs:
   validate:
