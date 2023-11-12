@@ -1,4 +1,4 @@
-name: validate
+name: Test pushes to dev
 
 on:
   push:
