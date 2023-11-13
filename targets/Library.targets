@@ -75,7 +75,12 @@
 
   <!--NiceIO -->
   <ItemGroup Condition=" $(OkFeatures.Contains(';NiceIO;')) ">
-    <ProjectReference Include="$(OkSrcRoot)NiceIO\NiceIO.csproj" />
+    <Compile Include="$(OkSrcRoot)_Include\NiceIO.cs">
+      <Link>_Include\NiceIO.cs</Link>
+    </Compile>
+    <Compile Include="$(OkSrcRoot)_Include\NiceIO_Extra.cs">
+      <Link>_Include\NiceIO_Extra.cs</Link>
+    </Compile>
     <Using Include="NiceIO" />
   </ItemGroup>
 

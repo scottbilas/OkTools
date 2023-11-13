@@ -1,4 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>NiceIO;TestsStandalone</OkFeatures></PropertyGroup>
-  <Import Project="$(OkTargetsRoot)Tests.targets" />
-</Project>
