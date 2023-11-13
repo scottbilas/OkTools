@@ -1,0 +1,3 @@
+[submodule "src/NiceIO"]
+	path = src/NiceIO
+	url = https://github.com/scottbilas/NiceIO
