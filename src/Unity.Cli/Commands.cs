@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using DocoptNet;
 using DotNetConfig;
-using NiceIO;
 
 class CommandContext
 {

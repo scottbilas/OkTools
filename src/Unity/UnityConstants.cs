@@ -28,7 +28,7 @@ public static class UnityConstants
 [PublicAPI]
 public static class UnityProjectConstants
 {
-    public const string SceneFileExtension = ".unity";
+    public const string SceneFileExtension = "unity";
 
     public const string AssetsFolderName = "Assets";
     internal static readonly NPath AssetsNPath = new(AssetsFolderName);

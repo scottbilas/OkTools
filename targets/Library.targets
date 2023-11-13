@@ -73,17 +73,6 @@
     </Compile>
   </ItemGroup>
 
-  <!--NiceIO -->
-  <ItemGroup Condition=" $(OkFeatures.Contains(';NiceIO;')) ">
-    <Compile Include="$(OkSrcRoot)_Include\NiceIO.cs">
-      <Link>_Include\NiceIO.cs</Link>
-    </Compile>
-    <Compile Include="$(OkSrcRoot)_Include\NiceIO_Extra.cs">
-      <Link>_Include\NiceIO_Extra.cs</Link>
-    </Compile>
-    <Using Include="NiceIO" />
-  </ItemGroup>
-
   <!--T4 -->
   <Choose>
     <When Condition=" $(OkFeatures.Contains(';T4;')) ">

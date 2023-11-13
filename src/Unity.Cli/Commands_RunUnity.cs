@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using DocoptNet;
-using NiceIO;
 using OkTools.ProcMonUtils;
 using OkTools.Unity;
 
@@ -462,7 +461,7 @@ Debugging Options:
             // TODO: give format config for rotation name
             if (logPath.FileExists())
             {
-                var targetPath = logPath.ChangeFilename($"{logPath.FileNameWithoutExtension}_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.{logPath.ExtensionWithoutDot}");
+                var targetPath = logPath.ChangeFilename($"{logPath.FileNameWithoutExtension}_{logPath.FileInfo.CreationTime:yyyyMMdd_HHMMss}.{logPath.Extension}");
 
                 if (doit)
                 {
@@ -473,10 +472,10 @@ Debugging Options:
                     // never want a chance to lose log data
                     if (targetPath.FileExists())
                     {
-                        var bakPath = targetPath.ChangeExtension(targetPath.ExtensionWithoutDot + ".bak");
+                        var bakPath = targetPath.ChangeExtension(targetPath.Extension + ".bak");
                         var serial = 1;
                         while (bakPath.FileExists())
-                            bakPath = targetPath.ChangeExtension(targetPath.ExtensionWithoutDot + ".bak" + serial++);
+                            bakPath = targetPath.ChangeExtension(targetPath.Extension + ".bak" + serial++);
                         File.Move(targetPath, bakPath);
                     }
                     File.Move(logPath, targetPath);
@@ -509,7 +508,7 @@ Debugging Options:
             // TODO: what if --create-project set?
 
             var scenePath = sceneName.ToNPath();
-            if (scenePath.ExtensionWithDot != UnityProjectConstants.SceneFileExtension)
+            if (scenePath.Extension != UnityProjectConstants.SceneFileExtension)
                 scenePath = scenePath.ChangeExtension(UnityProjectConstants.SceneFileExtension);
 
             // TODO: build and leverage some kind of scene finder utility

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>NiceIO;Docopt</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Docopt</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>

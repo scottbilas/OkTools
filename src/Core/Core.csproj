@@ -7,7 +7,14 @@
     <RootNamespace>OkTools.Core</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
+    <DefineConstants>$(DefineConstants);NICEIO_PUBLIC;NICEIO_OKTOOLS</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(OkSrcRoot)NiceIO\*.cs">
+      <Link>NiceIO\%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
 
   <!-- nuget -->
   <PropertyGroup>

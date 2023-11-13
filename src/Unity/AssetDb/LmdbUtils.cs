@@ -34,7 +34,7 @@ public static class LmdbUtils
         @this.OpenDatabase(name, new DatabaseConfig(DbFlags.None));
 }
 
-class LmdbDatabase : IDisposable
+public class LmdbDatabase : IDisposable
 {
     readonly LMDBEnvironment? _env;
     readonly Dictionary<string, byte[]> _stringBytesCache = new();

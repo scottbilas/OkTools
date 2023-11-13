@@ -2,7 +2,6 @@
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using DocoptNet;
-using NiceIO;
 using OkTools.ProcMonUtils;
 using OkTools.Unity;
 using TextCopy;

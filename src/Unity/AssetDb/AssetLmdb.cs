@@ -5,7 +5,7 @@ using Spreads.Buffers;
 
 namespace OkTools.Unity.AssetDb;
 
-class AssetLmdb : LmdbDatabase
+public class AssetLmdb : LmdbDatabase
 {
     public AssetLmdb(NPath dbPath, params uint[] supportedVersions) : base(dbPath)
     {

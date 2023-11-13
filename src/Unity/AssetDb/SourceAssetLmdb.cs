@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace OkTools.Unity.AssetDb;
 
-static class SourceAssetLmdb
+public static class SourceAssetLmdb
 {
     static readonly uint[] k_expectedDbVersions = { 9, 10, 0x218FD4A3 };
     public static AssetLmdb OpenLmdb(NPath projectRoot) =>
