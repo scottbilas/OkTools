@@ -2,17 +2,14 @@ using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Builders;
 
-namespace OkTools.TestUtils;
-
-[PublicAPI]
-public struct DirectoryBackup : IDisposable
+struct DirectoryBackup : IDisposable
 {
     public DirectoryBackup(string folderPath)
     {
         _backupPath = Path.GetTempPath().ToNPath().Combine(Environment.ProcessId.ToString());
         _fullPath = folderPath.ToNPath().MakeAbsolute();
 
-        Directory.CreateDirectory(_backupPath);
+        Directory.CreateDirectory(_backupPath.ToString());
         _fullPath.CopyFiles(_backupPath, true);
     }
 
@@ -26,8 +23,7 @@ public struct DirectoryBackup : IDisposable
     NPath _fullPath;
 }
 
-[PublicAPI]
-public abstract class TestFileSystemFixture
+abstract class TestFileSystemFixture
 {
     NPath _rootDir = null!;
     protected NPath BaseDir { private set; get; } = null!;
@@ -83,7 +79,7 @@ public abstract class TestFileSystemFixture
 
 // https://stackoverflow.com/a/43339950/14582
 [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class TestCaseGenericAttribute : TestCaseAttribute, ITestBuilder
+class TestCaseGenericAttribute : TestCaseAttribute, ITestBuilder
 {
     public TestCaseGenericAttribute(params object[] arguments)
         : base(arguments)

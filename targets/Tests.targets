@@ -15,8 +15,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'TestUtils'">
-    <ProjectReference Include="$(OkSrcRoot)_TestUtils\TestUtils.csproj" />
-    <Using Include="OkTools.TestUtils" />
+    <Compile Include="$(OkSrcRoot)_Include\TestUtils.cs">
+      <Link>_Include\TestUtils.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

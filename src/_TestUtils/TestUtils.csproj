@@ -1,9 +1,0 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>NiceIO</OkFeatures></PropertyGroup>
-  <Import Project="$(OkTargetsRoot)Tests.targets" />
-
-  <PropertyGroup>
-    <RootNamespace>OkTools.TestUtils</RootNamespace>
-  </PropertyGroup>
-
-</Project>

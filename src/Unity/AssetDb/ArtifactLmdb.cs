@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace OkTools.Unity.AssetDb;
 
-public static class ArtifactLmdb
+static class ArtifactLmdb
 {
     static readonly uint[] k_expectedDbVersions = { 0x5CE21767, 0x01F5F63B };
 
