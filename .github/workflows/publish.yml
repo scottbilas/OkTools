@@ -1,9 +1,12 @@
-name: Publish NuGet package
+name: Publish NuGet Package
 
 on:
   workflow_dispatch:
   push:
     tags: [ 'release-*' ]
+
+# TODO: trigger on commit desc '/publish'
+# TODO: switch to https://github.com/xoofx/dotnet-releaser
 
 jobs:
   publish:
@@ -20,6 +23,10 @@ jobs:
 
       - name: Build for publish
         run: dotnet publish -c Release
+
+      - name: Run tests
+        run: |
+          dotnet test --nologo -l:"console;verbosity=normal" -c Release
 
       - name: Publish NuGet package
         run: |
