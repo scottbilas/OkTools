@@ -38,7 +38,7 @@
     <OkPublishDir>$(OkRoot)publish\$(MSBuildProjectName)\</OkPublishDir>
     <OkPublishDir Condition="'$(Configuration)' == 'Debug'">$(OkPublishDir)$(Configuration)\</OkPublishDir>
     <BaseIntermediateOutputPath>$(OkRoot)artifacts\build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
-    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateDependencyFile>false</GenerateDependencyFile> <!-- remember to reenable this for test projects -->
 
   </PropertyGroup>
 </Project>
