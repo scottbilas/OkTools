@@ -3,6 +3,7 @@
   <PropertyGroup>
     <RootNamespace />
     <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
     <GenerateDependencyFile>true</GenerateDependencyFile> <!-- needed for nunit runner -->
     <RunSettingsFilePath>$(OkSrcRoot).runsettings</RunSettingsFilePath>
     <NoWarn>$(NoWarn);CA1861</NoWarn>

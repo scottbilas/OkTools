@@ -2,6 +2,9 @@
   <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
+  <PropertyGroup>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="benchmarkdotnet" />
   </ItemGroup>
