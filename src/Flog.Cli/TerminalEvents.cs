@@ -6,7 +6,7 @@
     public readonly CliExitCode Code;
 }
 
-interface ITerminalEvent {}
+interface ITerminalEvent;
 
 readonly struct ErrorEvent : ITerminalEvent
 {

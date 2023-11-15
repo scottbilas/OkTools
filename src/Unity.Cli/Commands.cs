@@ -80,4 +80,4 @@ class CommandContext
     }
 }
 
-static partial class Commands { }
+static partial class Commands;

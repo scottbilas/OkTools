@@ -9,7 +9,7 @@ struct DirectoryBackup : IDisposable
         _backupPath = Path.GetTempPath().ToNPath().Combine(Environment.ProcessId.ToString());
         _fullPath = folderPath.ToNPath().MakeAbsolute();
 
-        Directory.CreateDirectory(_backupPath.ToString());
+        Directory.CreateDirectory(_backupPath.ToString()!);
         _fullPath.CopyFiles(_backupPath, true);
     }
 

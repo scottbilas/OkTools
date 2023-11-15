@@ -1,3 +1,1 @@
-﻿class UnityCliTests
-{
-}
+﻿class UnityCliTests;

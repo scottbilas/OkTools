@@ -110,7 +110,7 @@ public static class PmlUtils
         var symCacheDb = new Dictionary<int /*pid*/, SymCache>();
         var bakedBin = new PmlBakedWriter(pmlReader.EventCount);
 
-        var pmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString());
+        var pmipPaths = options.MonoPmipPaths ?? pmlReader.PmlPath.Parent.Files("pmip_*.txt").Select(p => p.ToString()!);
         var pmipFileDb = new Dictionary<int, List<NPath>>();
 
         foreach (var pmipPath in pmipPaths)

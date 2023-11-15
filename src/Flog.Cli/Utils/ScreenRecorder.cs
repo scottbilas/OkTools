@@ -2,7 +2,7 @@ using PInvoke;
 
 #if ENABLE_SCREEN_RECORDER
 
-class UnexpectedEscapeException : Exception {}
+class UnexpectedEscapeException : Exception;
 
 class ScreenRecorder
 {

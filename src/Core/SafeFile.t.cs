@@ -79,7 +79,7 @@ class SafeFileTests : TestFileSystemFixture
         (path + SafeFile.BakExtension).ToNPath().FileExists().ShouldBeFalse();
     }
 
-    class TestException : Exception {}
+    class TestException : Exception;
 
     [Test]
     public void AtomicWrite_WithTmpFileThatCannotCleanup_DoesNotThrow()

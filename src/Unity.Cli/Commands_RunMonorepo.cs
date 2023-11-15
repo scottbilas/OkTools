@@ -25,6 +25,4 @@ Options:
     }
 }
 
-class MonorepoSpec
-{
-}
+class MonorepoSpec;

@@ -65,7 +65,7 @@ public static class NativeWindows
             fixed (char* strBuffer = processParameterStr)
             {
                 if (!Kernel32.ReadProcessMemory(handle,
-                        processParameterUStr.Buffer, strBuffer, (nuint)processParameterUStr.Length, out _))
+                        processParameterUStr.Buffer, strBuffer, processParameterUStr.Length, out _))
                     throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             return processParameterStr;
