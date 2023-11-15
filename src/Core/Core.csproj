@@ -15,7 +15,7 @@
     TODO: move NiceIO to a new external folder that has overrides for directory props etc. that skips the defaulting we get from the root
     alternate: see if we can move those files to src\
     -->
-    <Compile Include="$(OkSrcRoot)NiceIO\*.cs">
+    <Compile Include="$(OkRoot)external\NiceIO\*.cs">
       <Link>NiceIO\%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>
