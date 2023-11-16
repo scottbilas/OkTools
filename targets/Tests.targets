@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <OkFeatures>$(OkFeatures);Core;NiceIO;Tests</OkFeatures>
+    <OkFeatures>$(OkFeatures);Core;Tests</OkFeatures>
   </PropertyGroup>
   <Import Project="Library.targets" />
 

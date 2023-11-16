@@ -20,7 +20,6 @@ Sure would be nice to have a "CLI Helper" nuget that does all kinds of useful te
   * Do everything with sourcegen support so we get type safety, autocomplete, self-documenting (easy schema gen)
 * Dumping abilities including to JSON and YAML
 * Efficient subprocess launching and stdin/out/err routing 
-* NiceIO++
 * Logging w/ rotation
 * VCS-awareness
 

@@ -1,23 +1,22 @@
 name: Validate Dev Branch
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ 'dev' ]
+    branches: [ dev ]
 
 jobs:
   validate:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout + submodules
+      - name: Checkout
         uses: actions/checkout@v4.1.1
-        with:
-          submodules: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3.2.0
         with:
-          dotnet-version: '7.0.x'
+          dotnet-version: 7.0.x
 
       # https://stackoverflow.com/a/70552262/14582
       - name: Run tests
