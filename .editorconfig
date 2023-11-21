@@ -18,3 +18,21 @@ indent_size = 2
 
 [*.{csproj,targets,props,config,runsettings,json,yml,yaml}]
 indent_size = 2
+
+[NiceIO.cs]
+# TODO: go back and fix niceio
+dotnet_diagnostic.CA1510.severity = silent
+dotnet_diagnostic.CA1707.severity = silent
+dotnet_diagnostic.CA1725.severity = silent
+dotnet_diagnostic.CA1816.severity = silent
+dotnet_diagnostic.CA1822.severity = silent
+dotnet_diagnostic.CA1825.severity = silent
+dotnet_diagnostic.CA1834.severity = silent
+dotnet_diagnostic.CA1845.severity = silent
+dotnet_diagnostic.CA1846.severity = silent
+dotnet_diagnostic.CA1847.severity = silent
+dotnet_diagnostic.CA1860.severity = silent
+dotnet_diagnostic.CA1865.severity = silent
+dotnet_diagnostic.CA1866.severity = silent
+dotnet_diagnostic.CA2101.severity = silent
+dotnet_diagnostic.CA2208.severity = silent
