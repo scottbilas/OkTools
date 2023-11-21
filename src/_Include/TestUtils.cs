@@ -66,7 +66,7 @@ abstract class TestFileSystemFixture
         }
 
         BaseDir.Delete();
-        if (!_rootDir.Contents().Any())
+        if (_rootDir.Contents().Length == 0)
             _rootDir.Delete();
     }
 

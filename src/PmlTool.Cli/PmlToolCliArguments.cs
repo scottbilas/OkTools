@@ -1,0 +1,2 @@
+sealed partial class PmlToolCliArguments;
+

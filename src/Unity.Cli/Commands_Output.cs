@@ -15,15 +15,17 @@ static partial class Commands
         Console.WriteLine(message);
     }
 
+    static readonly JsonSerializerOptions s_serializeOptions = new()
+    {
+        WriteIndented = true,
+        IncludeFields = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     static void OutputJson(object thing, TextWriter where)
     {
         // json expects a newline, so use WriteLine() here
-        where.WriteLine(JsonSerializer.Serialize(thing, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            IncludeFields = true,
-            Converters = { new JsonStringEnumConverter() }
-        }));
+        where.WriteLine(JsonSerializer.Serialize(thing, s_serializeOptions));
     }
 
     static void OutputYaml(object thing, TextWriter where)
