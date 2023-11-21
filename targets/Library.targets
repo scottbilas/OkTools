@@ -74,7 +74,9 @@
   </ItemGroup>
 
   <!--T4 -->
-  <Choose>
+  <!-- TEMPORARILY DISABLED - T4.Build does not support .NET 8 SDK, gets an error from a missing assembly.
+       just go with manual Rider-based T4 for now. -->
+  <!--Choose>
     <When Condition=" $(OkFeatures.Contains(';T4;')) ">
       <Choose>
         <When Condition=" $(OkFeatures.Contains(';Tests;')) ">
@@ -91,7 +93,7 @@
         <TextTemplateTransformAll>false</TextTemplateTransformAll>
       </PropertyGroup>
     </When>
-  </Choose>
+  </Choose-->
 
   <!-- dll config -->
 
