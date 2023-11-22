@@ -19,6 +19,8 @@ indent_size = 2
 [*.{csproj,targets,props,config,runsettings,json,yml,yaml}]
 indent_size = 2
 
+# .net analyzer settings
+
 [*.cs]
 
 ; public instance fields are ok when used with discretion
