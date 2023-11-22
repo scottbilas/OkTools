@@ -58,6 +58,12 @@
     <OkFeatures>;$(OkFeatures);</OkFeatures>
   </PropertyGroup>
 
+  <!--Net78 -->
+  <PropertyGroup Condition=" $(OkFeatures.Contains(';Net78;')) ">
+    <TargetFramework />
+    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+  </PropertyGroup>
+
   <!--Core -->
   <ItemGroup Condition=" $(OkFeatures.Contains(';Core;')) or $(OkFeatures.Contains(';Docopt;')) ">
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />

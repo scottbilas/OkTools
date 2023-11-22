@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>T4</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>T4;Net78</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Tests.targets" />
 
   <PropertyGroup>
