@@ -29,7 +29,7 @@
     <PackageVersion Include="OkTools.NiceIO" Version="1.0.2" />
     <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
     <PackageVersion Include="PInvoke.NTDll" Version="0.7.124" />
-    <PackageVersion Include="Spectre.Console" Version="0.47.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.48.0" />
     <PackageVersion Include="Spreads.LMDB" Version="2023.930.421" />
     <PackageVersion Include="System.Interactive" Version="6.0.1" />
     <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
