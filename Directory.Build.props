@@ -10,7 +10,7 @@
     <Copyright>Copyright © $(Authors)</Copyright>
 
     <!-- framework -->
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
