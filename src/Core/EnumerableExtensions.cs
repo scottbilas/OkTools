@@ -131,8 +131,10 @@ public static class EnumerableExtensions
 
     // copy to collection
 
+#   if !NET8_0_OR_GREATER
     public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey key, TValue value)> @this) where TKey: notnull =>
         @this.ToDictionary(item => item.key, item => item.value);
+#   endif
 
     public static Queue<T> ToQueue<T>(this IEnumerable<T> @this) =>
         new(@this);

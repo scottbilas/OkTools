@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 #pragma warning disable CA1001
 class FileStreamNativeExtensionsTests : TestFileSystemFixture
 #pragma warning restore CA1001
@@ -58,6 +60,13 @@ class FileStreamNativeExtensionsTests : TestFileSystemFixture
     public void WasFileDeleted_WithClosedFile_Throws()
     {
         _stream.Close();
+
+        #if NET8_0_OR_GREATER
+        Should
+            .Throw<Win32Exception>(() => _stream.WasFileDeleted())
+            .Message.ShouldContain("GetFileInformationByHandleEx() failed");
+        #else
         Should.Throw<ObjectDisposedException>(() => _stream.WasFileDeleted());
+        #endif
     }
 }
