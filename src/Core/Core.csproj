@@ -8,6 +8,13 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>CS1591</NoWarn>
     <DefineConstants>$(DefineConstants);NICEIO_PUBLIC</DefineConstants>
+
+    <TargetFramework />
+    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+
+    <!-- because it's a package, avoid adding requirements -->
+    <EnablePreviewFeatures>false</EnablePreviewFeatures>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -15,7 +22,7 @@
     <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
     <Title>Some OK core utility functions</Title>
     <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
-    <PackageVersion>1.0.5</PackageVersion>
+    <PackageVersion>1.0.6</PackageVersion>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
