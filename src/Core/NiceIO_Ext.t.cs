@@ -1,7 +1,3 @@
-using System;
-using NUnit.Framework;
-using Shouldly;
-
 class NiceIOTests
 {
     [Test]
