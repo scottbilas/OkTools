@@ -61,6 +61,7 @@
   <!--Net78 -->
   <PropertyGroup Condition=" $(OkFeatures.Contains(';Net78;')) ">
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <BuildInParallel>false</BuildInParallel> <!-- seems to collide when parallel 7+8 TODO debug -->
     <TargetFramework />
     <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
   </PropertyGroup>
