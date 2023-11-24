@@ -16,6 +16,11 @@ public static class EnumerableExtensions
     public static IReadOnlyList<T> OrEmpty<T>(this IReadOnlyList<T>? @this) =>
         @this ?? Array.Empty<T>();
 
+    public static bool Any<T>(this ICollection<T> @this) =>
+        @this.Count != 0;
+    public static bool IsEmpty<T>(this ICollection<T> @this) =>
+        @this.Count == 0;
+
     // singles
 
     public static T SingleOr<T>(this IEnumerable<T> @this, T defaultValue)
