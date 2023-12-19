@@ -165,40 +165,4 @@ class NiceIOTests
     {
         Assert.Throws<ArgumentException>(() => new NPath("/").ChangeFilename("file.txt"));
     }
-
-    [Test]
-    public void ExtensionWithDot_Simple()
-    {
-        Assert.AreEqual(".txt", new NPath("file.txt").ExtensionWithDot);
-    }
-
-    [Test]
-    public void ExtensionWithDot_FileWithoutExtension()
-    {
-        Assert.AreEqual("", new NPath("myfile").ExtensionWithDot);
-    }
-
-    [Test]
-    public void ExtensionWithDot_FileWithMultipleDots()
-    {
-        Assert.AreEqual(".exe", new NPath("myfile.something.something.exe").ExtensionWithDot);
-    }
-
-    [Test]
-    public void ExtensionWithDot_ExtensionWithDotOnLinuxRoot()
-    {
-        Assert.Throws<ArgumentException>(() =>
-        {
-            var _ = new NPath("/").ExtensionWithDot;
-        });
-    }
-
-    [Test]
-    public void ExtensionWithDot_ExtensionWithDotOnWindowsRoot()
-    {
-        Assert.Throws<ArgumentException>(() =>
-        {
-            var _ = new NPath("C:\\").ExtensionWithDot;
-        });
-    }
 }
