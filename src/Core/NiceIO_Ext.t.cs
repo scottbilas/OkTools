@@ -1,9 +1,10 @@
-class NiceIOTests
+partial class NiceIOTests
 {
     [Test]
     public void Elements()
     {
-        CollectionAssert.AreEqual(new[] {"my", "path", "to", "somewhere.txt"}, new NPath("/my/path/to/somewhere.txt").Elements);
+        new NPath("/my/path/to/somewhere.txt").Elements.ShouldBe(
+            new[] {"my", "path", "to", "somewhere.txt"});
     }
 
     [TestCase("a/b/c", new[] { -1, 3 })]
@@ -119,11 +120,11 @@ class NiceIOTests
 
         expected = new NPath("/my/other.file");
         actual = new NPath("/my/file.txt").ChangeFilename("other.file");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
 
         expected = new NPath("/my/folder");
         actual = new NPath("/my/path").ChangeFilename("folder");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
     }
 
     [Test]
@@ -133,11 +134,11 @@ class NiceIOTests
 
         expected = new NPath("my/other.file");
         actual = new NPath("my/file.txt").ChangeFilename("other.file");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
 
         expected = new NPath("my/folder");
         actual = new NPath("my/path").ChangeFilename("folder");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
     }
 
     [Test]
@@ -147,11 +148,11 @@ class NiceIOTests
 
         expected = new NPath("/my/path");
         actual = new NPath("/my/path/file.txt").ChangeFilename("");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
 
         expected = new NPath("my/path");
         actual = new NPath("my/path/file.txt").ChangeFilename("");
-        Assert.AreEqual(expected, actual);
+        actual.ShouldBe(expected);
     }
 
     [Test]
