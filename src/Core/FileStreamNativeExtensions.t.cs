@@ -1,4 +1,6 @@
+#if NET8_0_OR_GREATER
 using System.ComponentModel;
+#endif
 
 #pragma warning disable CA1001
 class FileStreamNativeExtensionsTests : TestFileSystemFixture
