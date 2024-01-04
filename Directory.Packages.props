@@ -26,7 +26,7 @@
     <PackageVersion Include="DotNetConfig" Version="1.0.6" />
     <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0" />
     <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.3.6" />
-    <PackageVersion Include="OkTools.NiceIO" Version="1.0.3" />
+    <PackageVersion Include="OkTools.NiceIO" Version="1.0.5" />
     <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
     <PackageVersion Include="PInvoke.NTDll" Version="0.7.124" />
     <PackageVersion Include="Spectre.Console" Version="0.48.0" />
