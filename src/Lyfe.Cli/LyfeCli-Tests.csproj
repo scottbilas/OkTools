@@ -2,7 +2,7 @@
   <Import Project="$(OkTargetsRoot)Tests.targets" />
 
   <ItemGroup>
-    <ProjectReference Include="MachMode.Cli.csproj" />
+    <ProjectReference Include="Lyfe.Cli.csproj" />
   </ItemGroup>
 
 </Project>

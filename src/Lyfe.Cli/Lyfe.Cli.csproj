@@ -3,7 +3,7 @@
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
-    <AssemblyName>machmode</AssemblyName>
+    <AssemblyName>lyfe</AssemblyName>
   </PropertyGroup>
 
 </Project>

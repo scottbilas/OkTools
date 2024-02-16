@@ -26,9 +26,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PmlTool.Cli", "src\PmlTool.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.PerfTests", "perftests\Core.PerfTests\Core.PerfTests.csproj", "{3D70F5C9-4AA8-4B3F-AB87-E23B8F6B7507}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachMode.Cli", "src\MachMode.Cli\MachMode.Cli.csproj", "{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyfe.Cli", "src\Lyfe.Cli\Lyfe.Cli.csproj", "{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachModeCli-Tests", "src\MachMode.Cli\MachModeCli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LyfeCli-Tests", "src\Lyfe.Cli\LyfeCli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

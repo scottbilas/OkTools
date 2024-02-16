@@ -20,7 +20,7 @@ if ($asusService -and ($asusService.Status -ne 'Stopped' -or $asusService.StartT
     Write-Warning 'Tell G-Helper to kill ASUS services'
 }
 
-$config = Get-Content machmode.yaml | ConvertFrom-Yaml
+$config = Get-Content lyfe.yaml | ConvertFrom-Yaml
 
 $modesConfig = [ordered]@{}
 

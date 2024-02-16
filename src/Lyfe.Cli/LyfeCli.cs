@@ -12,7 +12,7 @@
  * for now require that all locations and capabilities and profiles etc. are globally uniquely named so don't have to worry about scoping
  */
 
-var (exitCode, opt) = MachModeCliArguments.CreateParser().Parse(args, programVersion, MachModeCliArguments.Help, MachModeCliArguments.Usage);
+var (exitCode, /*opt*/_) = LyfeCliArguments.CreateParser().Parse(args, programVersion, LyfeCliArguments.Help, LyfeCliArguments.Usage);
 if (exitCode != null)
     return (int)exitCode.Value;
 
