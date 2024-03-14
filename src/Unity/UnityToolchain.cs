@@ -100,7 +100,7 @@ public class UnityToolchain : IStructuredOutput
         {
             MonoBuildConfig = (_monoDllPath.FileInfo.Length / (1024.0 * 1024)) switch
             {
-                > 4 and < 7.5 => MonoBuildConfig.Release,
+                > 4 and < 7.8 => MonoBuildConfig.Release,
                 > 9 and <  11 => MonoBuildConfig.Debug,
 
                 var sizeMb => throw new InvalidDataException(
