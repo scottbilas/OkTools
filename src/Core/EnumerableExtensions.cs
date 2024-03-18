@@ -81,6 +81,61 @@ public static class EnumerableExtensions
         return false;
     }
 
+    public static bool TryFirst<T>(this IReadOnlyList<T> @this, out T? found)
+    {
+        if (@this.Count != 0)
+        {
+            found = @this[0];
+            return true;
+        }
+
+        found = default;
+        return false;
+    }
+
+    public static bool TryLast<T>(this IEnumerable<T> @this, out T? found)
+    {
+        var matched = false;
+        found = default;
+
+        foreach (var element in @this)
+        {
+            matched = true;
+            found = element;
+        }
+
+        return matched;
+    }
+
+    public static bool TryLast<T>(this IEnumerable<T> @this, Func<T, bool> predicate, out T? found)
+    {
+        var matched = false;
+        found = default;
+
+        foreach (var element in @this)
+        {
+            if (predicate(element))
+            {
+                matched = true;
+                found = element;
+            }
+        }
+
+        return matched;
+    }
+
+    public static bool TryLast<T>(this IReadOnlyList<T> @this, out T? found)
+    {
+        if (@this.Count != 0)
+        {
+            found = @this[^1];
+            return true;
+        }
+
+        found = default;
+        return false;
+    }
+
     // filtering and searching
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: class =>
