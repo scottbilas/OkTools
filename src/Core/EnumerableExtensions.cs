@@ -49,6 +49,11 @@ public static class EnumerableExtensions
         return value;
     }
 
+    public static T First<T>(this IReadOnlyList<T> @this) =>
+        @this[0];
+    public static T Last<T>(this IReadOnlyList<T> @this) =>
+        @this[^1];
+
     public static bool TryFirst<T>(this IEnumerable<T> @this, out T? found)
     {
         foreach (var element in @this)

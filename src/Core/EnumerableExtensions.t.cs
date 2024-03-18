@@ -1,3 +1,5 @@
+using System.Collections;
+
 class EnumerableExtensionsTests
 {
     [Test]
@@ -38,6 +40,33 @@ class EnumerableExtensionsTests
         Should
             .Throw<InvalidOperationException>(() => new[] { 1, 2 }.SingleOr(() => 4))
             .Message.ShouldContain("more than one");
+    }
+
+    class DirectIndexTest<T>(int count, int index, T value) : IReadOnlyList<T>
+    {
+        public IEnumerator<T> GetEnumerator() => throw new InvalidOperationException();
+        IEnumerator IEnumerable.GetEnumerator() => throw new InvalidOperationException();
+
+        public int Count => count;
+        public T this[int i] => i == index ? value : throw new InvalidOperationException();
+    }
+
+    [Test]
+    public void First_WithReadOnlyList_ShouldOnlyCallIndexer()
+    {
+        var list = new DirectIndexTest<int>(100, 0, 123);
+
+        list.First().ShouldBe(123);
+        Should.Throw<InvalidOperationException>(() => list.AsEnumerable().First());
+    }
+
+    [Test]
+    public void Last_WithReadOnlyList_ShouldOnlyCallIndexer()
+    {
+        var list = new DirectIndexTest<int>(100, 99, 234);
+
+        list.Last().ShouldBe(234);
+        Should.Throw<InvalidOperationException>(() => list.AsEnumerable().Last());
     }
 
     [Test]
