@@ -10,6 +10,8 @@ namespace OkTools.Core;
 // $ do not use #if's for platforms. keep the binaries universal so we can build and post just
 //   one set of them to the package for CLI usage.
 
+// TODO: this file is kind of a mess. not a great way to separate plat-specific stuff as well as xplat or multi-plat stuff.
+
 [PublicAPI]
 public static class NativeUnix
 {
@@ -146,5 +148,24 @@ public static class NativeUnix
             throw new NotSupportedException("Not supported on this platform");
 
         return ret;
+    }
+
+    [DllImport("libc", SetLastError = true)]
+    static extern int readlink(string path, byte[] buffer, int size);
+
+    // TODO: make portable to windows and mac too and move out
+    static string? TryReadLink(string link)
+    {
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            throw new NotSupportedException("Not supported on this platform");
+
+        var buffer = new byte[2048];
+
+        var count = readlink(link, buffer, buffer.Length-1);
+        if (count <= 0)
+            return null;
+
+        buffer[count] = 0;
+        return Encoding.UTF8.GetString(buffer, 0, count);
     }
 }

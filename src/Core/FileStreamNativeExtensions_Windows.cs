@@ -12,6 +12,7 @@ public static class FileStreamNativeExtensions
     {
         // ReSharper disable InconsistentNaming
 
+        // TODO: PLATFORM
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetFileInformationByHandleEx(nint hFile, int FileInformationClass, nint lpFileInformation, uint dwBufferSize);
 
@@ -37,7 +38,7 @@ public static class FileStreamNativeExtensions
     {
         var size = Marshal.SizeOf<Native.FILE_STANDARD_INFO>();
         var buf = Marshal.AllocHGlobal(size);
-        
+
         try
         {
             var handle = @this.SafeFileHandle.DangerousGetHandle();
