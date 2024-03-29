@@ -41,6 +41,7 @@ public static class ComparableExtensions
     }
 }
 
+#if NET
 [PublicAPI]
 public static class ByteArrayExtensions
 {
@@ -51,6 +52,7 @@ public static class ByteArrayExtensions
     public static string ToHexString(this Span<byte> @this) =>
         Convert.ToHexString(@this);
 }
+#endif
 
 [PublicAPI]
 public static class ListExtensions

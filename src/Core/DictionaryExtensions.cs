@@ -14,7 +14,11 @@ public class EmptyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue> w
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     public int Count => 0;
     public bool ContainsKey(TKey key) => false;
+#   if NET
     public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) { value = default; return false; }
+#   else
+    public bool TryGetValue(TKey key, out TValue value) { value = default!; return false; }
+#   endif
     public TValue this[TKey key] => throw new KeyNotFoundException();
     public IEnumerable<TKey> Keys => Enumerable.Empty<TKey>();
     public IEnumerable<TValue> Values => Enumerable.Empty<TValue>();

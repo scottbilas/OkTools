@@ -1,4 +1,7 @@
 using System.Runtime.InteropServices;
+#if NET
+using System.Security.Principal;
+#endif
 
 namespace OkTools.Core;
 
@@ -8,11 +11,19 @@ public enum SysArchitecture : byte { X64, Arm64 }
 
 public static class Sys
 {
+#   if NET
     public static readonly SysPlatform Platform
-        = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? SysPlatform.Windows
-        : RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? SysPlatform.Mac
-        : RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? SysPlatform.Linux
+        = OperatingSystem.IsWindows() ? SysPlatform.Windows
+        : OperatingSystem.IsMacOS()   ? SysPlatform.Mac
+        : OperatingSystem.IsLinux()   ? SysPlatform.Linux
         : throw new NotSupportedException("Unsupported/invalid platform");
+#   else
+    public static readonly SysPlatform Platform
+        = Environment.OSVersion.Platform == PlatformID.Win32NT ? SysPlatform.Windows
+        : Environment.OSVersion.Platform == PlatformID.MacOSX  ? SysPlatform.Mac
+        : Environment.OSVersion.Platform == PlatformID.Unix    ? SysPlatform.Linux
+        : throw new NotSupportedException("Unsupported/invalid platform");
+#   endif
 
     // ReSharper disable once SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
     public static readonly SysArchitecture Architecture

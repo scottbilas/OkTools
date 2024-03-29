@@ -64,8 +64,10 @@ public static class NativeWindows
             var processParameterStr = new string('\0', processParameterUStr.Length / 2);
             fixed (char* strBuffer = processParameterStr)
             {
+                // ReSharper disable once RedundantCast
+                // ^ cast is needed for netstandard, but netcore doesn't need it
                 if (!Kernel32.ReadProcessMemory(handle,
-                        processParameterUStr.Buffer, strBuffer, processParameterUStr.Length, out _))
+                    processParameterUStr.Buffer, strBuffer, (UIntPtr)processParameterUStr.Length, out _))
                     throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             return processParameterStr;

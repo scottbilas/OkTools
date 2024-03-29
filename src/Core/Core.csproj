@@ -5,6 +5,7 @@
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>OkTools.Core</RootNamespace>
+    <TargetFrameworks>netstandard2.1;net7.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <DefineConstants>$(DefineConstants);NICEIO_PUBLIC</DefineConstants>
@@ -30,9 +31,14 @@
   <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="PInvoke.NTDll" />
-
     <PackageReference Include="OkTools.NiceIO" />
+    
     <PreprocessorValue Include="NICEIO_NAMESPACE" Value="OkTools.Core" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
+    <!-- this is needed to make the compiler happy for usage of 'dynamic' -->
+    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
   </ItemGroup>
 
 </Project>
