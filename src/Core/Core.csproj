@@ -38,7 +38,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
     <!-- this is needed to make the compiler happy for usage of 'dynamic' -->
-    <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
+    <PackageReference Include="Microsoft.CSharp" />
   </ItemGroup>
 
 </Project>
