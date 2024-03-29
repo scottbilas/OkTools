@@ -1,4 +1,3 @@
-#nullable disable
 
 namespace OkTools.Core;
 
@@ -6,13 +5,13 @@ namespace OkTools.Core;
 
 partial class NPath
 {
-    public static bool operator <(NPath left, NPath right) =>
+    public static bool operator <(NPath? left, NPath? right) =>
         left is null ? right is not null : left.CompareTo(right) < 0;
-    public static bool operator <=(NPath left, NPath right) =>
+    public static bool operator <=(NPath? left, NPath? right) =>
         left is null || left.CompareTo(right) <= 0;
-    public static bool operator >(NPath left, NPath right) =>
+    public static bool operator >(NPath? left, NPath? right) =>
         !(left <= right);
-    public static bool operator >=(NPath left, NPath right) =>
+    public static bool operator >=(NPath? left, NPath? right) =>
         !(left < right);
 
     public static implicit operator string(NPath path) =>
@@ -37,10 +36,10 @@ partial class NPath
 	    return (basePath, subPath);
     }
 
-    public NPath ParentContaining(string needle, bool returnAppended) =>
+    public NPath? ParentContaining(string needle, bool returnAppended) =>
 	    ParentContaining(needle.ToNPath(), returnAppended);
 
-    public NPath ParentContaining(NPath needle, bool returnAppended)
+    public NPath? ParentContaining(NPath needle, bool returnAppended)
     {
 	    var found = ParentContaining(needle);
 	    if (found != null && returnAppended)
@@ -52,7 +51,7 @@ partial class NPath
     // TODO: make this actually stream
     public IEnumerable<string> ReadLines()
     {
-	    foreach (var line in this.ReadAllLines())
+	    foreach (var line in ReadAllLines())
 		    yield return line;
     }
 
@@ -87,10 +86,8 @@ partial class NPath
 	    return new NPath("~").Combine(relative);
     }
 
-    public NPath Move(string dest, bool overwrite)
-    {
-	    return Move(new NPath(dest), overwrite);
-    }
+    public NPath Move(string dest, bool overwrite) =>
+        Move(new NPath(dest), overwrite);
 
     public NPath Move(NPath dest, bool overwrite)
     {

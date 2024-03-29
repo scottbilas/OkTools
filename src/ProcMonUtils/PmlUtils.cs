@@ -28,7 +28,7 @@ class SymCache : IDisposable
         if (win32Error != Win32Error.ERROR_SUCCESS &&
             win32Error != Win32Error.ERROR_PATH_NOT_FOUND &&
             win32Error != Win32Error.ERROR_NO_MORE_FILES) // this can happen if a dll has been deleted since the PML was recorded
-            throw win32Error.GetException();
+            throw win32Error.GetException()!;
     }
 
     public void LoadMonoSymbols(string pmipPath, DateTime? domainCreationTimeUtc = null)
@@ -52,7 +52,7 @@ class SymCache : IDisposable
             case Win32Error.ERROR_MOD_NOT_FOUND: // this can happen if a dll has been deleted since the PML was recorded or if it is privileged (like crowdstrike)
                 return false;
             default:
-                throw win32Error.GetException();
+                throw win32Error.GetException()!;
         }
     }
 

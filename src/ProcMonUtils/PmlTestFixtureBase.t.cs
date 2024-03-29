@@ -8,7 +8,7 @@ class PmlTestFixtureBase
     {
         var testDataPath = TestContext.CurrentContext
             .TestDirectory.ToNPath()
-            .ParentContaining("src", true)
+            .ParentContaining("src", true)!
             .DirectoryMustExist()
             .Combine("ProcMonUtils/testdata")
             .DirectoryMustExist();
