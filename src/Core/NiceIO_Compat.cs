@@ -1,6 +1,9 @@
 #nullable disable
 
 using System.Text;
+#if NETSTANDARD
+using ArgumentNullException = System.Shim.ArgumentNullException;
+#endif
 
 namespace OkTools.Core;
 

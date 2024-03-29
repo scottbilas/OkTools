@@ -7,23 +7,26 @@ namespace System.Runtime.CompilerServices
     internal static class IsExternalInit;
 }
 
-[PublicAPI]
-public class ArgumentNullException : System.ArgumentNullException
+namespace System.Shim
 {
-    public ArgumentNullException() {}
-    public ArgumentNullException(string? paramName) : base(paramName) {}
-    public ArgumentNullException(string? message, Exception? innerException) : base(message, innerException) {}
-    public ArgumentNullException(string? paramName, string? message) : base(paramName, message) {}
-
-    public static void ThrowIfNull(object? argument, string? paramName = null)
+    [PublicAPI]
+    public class ArgumentNullException : System.ArgumentNullException
     {
-        if (argument is null)
-            Throw(paramName);
-    }
+        public ArgumentNullException() {}
+        public ArgumentNullException(string? paramName) : base(paramName) {}
+        public ArgumentNullException(string? message, Exception? innerException) : base(message, innerException) {}
+        public ArgumentNullException(string? paramName, string? message) : base(paramName, message) {}
 
-    [DoesNotReturn]
-    static void Throw(string? paramName) =>
-        throw new System.ArgumentNullException(paramName);
+        public static void ThrowIfNull(object? argument, string? paramName = null)
+        {
+            if (argument is null)
+                Throw(paramName);
+        }
+
+        [DoesNotReturn]
+        static void Throw(string? paramName) =>
+            throw new System.ArgumentNullException(paramName);
+    }
 }
 
 #endif
