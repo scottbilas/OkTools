@@ -608,6 +608,8 @@ Debugging Options:
 
                     var monitoring = new Dictionary<NPath, FileStream>();
 
+                    Debug.Assert(OperatingSystem.IsWindows()); // TEMP: work around issue with "code reachable on all platforms" (CA1416) warning
+
                     while (!unityProcess.HasExited)
                     {
                         foreach (var srcPath in srcDir.Files(prefix))

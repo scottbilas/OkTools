@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using DocoptNet;
@@ -113,6 +114,8 @@ Options:
         var pmipSelectedPath = pmipFileInfos.Select(f => f.Value.path).MinBy(p => p.FileInfo.CreationTime);
         if (pmipSelectedPath != null)
         {
+            Debug.Assert(OperatingSystem.IsWindows()); // TEMP: work around issue with "code reachable on all platforms" (CA1416) warning
+
             Console.WriteLine("Using pmip file: " + pmipSelectedPath);
             return new MonoJitSymbolDb(pmipSelectedPath);
         }
@@ -171,6 +174,8 @@ Options:
                 var replaced = 0;
                 var symbolicated = rx.Replace(stack, match =>
                 {
+                    Debug.Assert(OperatingSystem.IsWindows()); // TEMP: work around issue with "code reachable on all platforms" (CA1416) warning
+
                     var addr = ulong.Parse(match.Groups[1].Value, NumberStyles.HexNumber);
                     if (!symbolDb.TryFindSymbol(addr, out var symbol))
                         return match.Value;
