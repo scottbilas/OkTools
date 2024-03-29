@@ -124,8 +124,27 @@ partial class NPath
 	    if (FileExists())
 	    {
 		    dest.EnsureParentDirectoryExists();
-		    //FileSystem.Active.File_Move(this, dest, overwrite); TODO UPDATE
-		    File.Move(ToString(SlashMode.Native), dest.ToString(SlashMode.Native), overwrite);
+
+            var srcNativePath = ToString(SlashMode.Native);
+            var dstNativePath = dest.ToString(SlashMode.Native);
+
+#           if NETSTANDARD
+
+            if (overwrite)
+            {
+                // emulate overwrite for .net standard which doesn't have this param (.net core has had it since 3.1)
+                if (File.Exists(srcNativePath))
+                    File.Replace(srcNativePath, dstNativePath, null); // null == no backup
+                else
+                    File.Move(srcNativePath, dstNativePath);
+            }
+            else
+                FileSystem.Active.File_Move(this, dest); // TODO UPDATE TO SUPPORT OVERWRITE
+
+#           else
+		    File.Move(srcNativePath, dstNativePath, overwrite);
+#           endif
+
 		    return dest;
 	    }
 
