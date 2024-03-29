@@ -1,6 +1,28 @@
 class DictionaryExtensionsTests
 {
     [Test]
+    public void DefaultDictionary_Basics()
+    {
+        var dict1 = new DefaultDictionary<string, int>(123);
+        dict1["hi"].ShouldBe(123);
+        dict1.Count.ShouldBe(1);
+
+        var dict2 = new DefaultDictionary<string, int>(_ => 234);
+        dict2["there"].ShouldBe(234);
+        dict2["there"].ShouldBe(234);
+        dict2.Count.ShouldBe(1);
+        dict2["foo"].ShouldBe(234);
+        dict2.Count.ShouldBe(2);
+
+        var dict3 = new DefaultDictionary<string, int>(int.Parse);
+        dict3["2024"].ShouldBe(2024);
+        dict3.Count.ShouldBe(1);
+        dict3["100"].ShouldBe(100);
+        dict3["284"].ShouldBe(284);
+        dict3.Count.ShouldBe(3);
+    }
+
+    [Test]
     public void OrEmpty_WithNonNullInput_ReturnsInput()
     {
         var dictionary = new Dictionary<int, string> {[0] = "zero" };
