@@ -1,8 +1,9 @@
-﻿# Publishing NiceIO
+﻿# Publishing OkTools.Core
 
 Do this:
 
 * Edit `Core.csproj` and bump the `PackageVersion`
+* `dotnet build src/Core/Core.csproj --nologo -c Release`
 * `dotnet test src/Core/Core-Tests.csproj --nologo`
 * Send it to GitHub
   * `git commit/reset` and get to a clean state
