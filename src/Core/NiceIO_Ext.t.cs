@@ -4,7 +4,7 @@ partial class NiceIOTests
     public void Elements()
     {
         new NPath("/my/path/to/somewhere.txt").Elements.ShouldBe(
-            new[] {"my", "path", "to", "somewhere.txt"});
+            ["my", "path", "to", "somewhere.txt"]);
     }
 
     [TestCase("a/b/c", new[] { -1, 3 })]
@@ -29,23 +29,23 @@ partial class NiceIOTests
         b.DriveLetter.ShouldBe(driveLetter);
         b.Elements.ShouldBeEmpty();
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "path", "to", "thing.txt" });
+        s.Elements.ShouldBe(["path", "to", "thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
 
         (b, s) = npath.SplitAtElement(1);
         b.IsRelative.ShouldBeFalse();
         b.DriveLetter.ShouldBe(driveLetter);
-        b.Elements.ShouldBe(new[] { "path" });
+        b.Elements.ShouldBe(["path"]);
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "to", "thing.txt" });
+        s.Elements.ShouldBe(["to", "thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
 
         (b, s) = npath.SplitAtElement(2);
         b.IsRelative.ShouldBeFalse();
         b.DriveLetter.ShouldBe(driveLetter);
-        b.Elements.ShouldBe(new[] { "path", "to" });
+        b.Elements.ShouldBe(["path", "to"]);
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "thing.txt" });
+        s.Elements.ShouldBe(["thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
     }
 
@@ -57,23 +57,23 @@ partial class NiceIOTests
 
         var (b, s) = npath.SplitAtElement(0);
         b.IsRelative.ShouldBeTrue();
-        b.Elements.ShouldBe(new[] { "." }); // TODO: unsure about this
+        b.Elements.ShouldBe(["."]); // TODO: unsure about this
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "path", "to", "thing.txt" });
+        s.Elements.ShouldBe(["path", "to", "thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
 
         (b, s) = npath.SplitAtElement(1);
         b.IsRelative.ShouldBeTrue();
-        b.Elements.ShouldBe(new[] { "path" });
+        b.Elements.ShouldBe(["path"]);
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "to", "thing.txt" });
+        s.Elements.ShouldBe(["to", "thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
 
         (b, s) = npath.SplitAtElement(2);
         b.IsRelative.ShouldBeTrue();
-        b.Elements.ShouldBe(new[] { "path", "to" });
+        b.Elements.ShouldBe(["path", "to"]);
         s.IsRelative.ShouldBeTrue();
-        s.Elements.ShouldBe(new[] { "thing.txt" });
+        s.Elements.ShouldBe(["thing.txt"]);
         b.Combine(s).ToString().ShouldBe(npath.ToString());
     }
 
@@ -90,8 +90,8 @@ partial class NiceIOTests
         bn.TildeCollapse().TildeExpand().ShouldBe(bn);
     }
 
-    static (string, string)[] TildeExpandCollapse_Source() => new[]
-    {
+    static (string, string)[] TildeExpandCollapse_Source() =>
+    [
         // basics
 
         ("~", NPath.HomeDirectory.ToString()),
@@ -110,8 +110,8 @@ partial class NiceIOTests
         // absolutes
 
         ("c:/blah/file.txt", "c:/blah/file.txt"),
-        ("c:/~/blah/file.txt", "c:/~/blah/file.txt"),
-    };
+        ("c:/~/blah/file.txt", "c:/~/blah/file.txt")
+    ];
 
     [Test]
     public void ChangeFilename_Absolute()
