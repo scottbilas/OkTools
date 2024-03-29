@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
 
@@ -53,6 +54,28 @@ partial class NPath
     {
 	    foreach (var line in ReadAllLines())
 		    yield return line;
+    }
+
+#   if NETSTANDARD
+    static readonly Regex s_shellExpandRx = new(@"\$\w+");
+    static Regex ShellExpandRx() => s_shellExpandRx;
+#   else
+    [GeneratedRegex(@"\$\w+")]
+    private static partial Regex ShellExpandRx();
+#   endif
+
+    public NPath ShellExpand()
+    {
+        var path = ShellExpandRx()
+            .Replace(_path, m => Environment.GetEnvironmentVariable(m.Value[1..]) ?? m.Value);
+
+        // some env vars are like 'ProgramFiles(x86)' so just support %name% style expansion too
+        if (path.Contains('%'))
+            path = Environment.ExpandEnvironmentVariables(path);
+
+        return path
+            .ToNPath()
+            .TildeExpand();
     }
 
     public NPath TildeExpand()
