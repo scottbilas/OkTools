@@ -15,12 +15,12 @@ public static class TimeSpanExtensions
 #   endif
 
     // TODO: merge this with ToNiceAge
-    public static string ToNiceString(TimeSpan? timeSpan, bool limitGranularityToSeconds = false)
+    public static string ToNiceString(this TimeSpan? @this, bool limitGranularityToSeconds = false)
     {
-        if (timeSpan == null)
+        if (@this == null)
             return "(null)";
 
-        var ts = timeSpan.Value;
+        var ts = @this.Value;
 
         if (!limitGranularityToSeconds)
         {
