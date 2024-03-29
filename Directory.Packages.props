@@ -26,7 +26,7 @@
     <PackageVersion Include="DotNetConfig" Version="1.0.6" />
     <PackageVersion Include="Microsoft.Extensions.FileSystemGlobbing" Version="8.0.0" />
     <PackageVersion Include="Microsoft.PowerShell.SDK" Version="7.3.6" />
-    <PackageVersion Include="OkTools.NiceIO" Version="1.0.5" />
+    <PackageVersion Include="OkTools.NiceIO" Version="1.0.6" />
     <PackageVersion Include="PInvoke.Kernel32" Version="0.7.124" />
     <PackageVersion Include="PInvoke.NTDll" Version="0.7.124" />
     <PackageVersion Include="Spectre.Console" Version="0.48.0" />
@@ -36,7 +36,7 @@
     <PackageVersion Include="TextCopy" Version="6.2.1" />
     <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="3.4.17" />
     <PackageVersion Include="Vezel.Cathode" Version="0.10.40" />
-    <PackageVersion Include="YamlDotNet" Version="13.7.1" />
+    <PackageVersion Include="YamlDotNet" Version="15.1.2" />
 
     <!-- analysis -->
 
@@ -49,15 +49,15 @@
 
     <!-- testing and debugging -->
 
-    <PackageVersion Include="benchmarkdotnet" Version="0.13.11" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.0">
+    <PackageVersion Include="benchmarkdotnet" Version="0.13.12" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-    <PackageVersion Include="NUnit" Version="4.0.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageVersion Include="ObjectDumper.NET" Version="4.1.3" />
+    <PackageVersion Include="ObjectDumper.NET" Version="4.1.3" /> <!-- !!! use the linqpad thingy (search linqpad in nuget) -->
     <PackageVersion Include="Shouldly" Version="4.2.1" />
 
   </ItemGroup>
