@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 #if NET
 using System.Security.Principal;
@@ -33,4 +34,25 @@ public static class Sys
             System.Runtime.InteropServices.Architecture.Arm64 => SysArchitecture.Arm64,
             _ => throw new NotSupportedException("Unsupported/invalid architecture")
         };
+
+#   if NET
+    public static bool IsSudo() =>
+        OperatingSystem.IsWindows() ? IsWindowsSudo() : IsUnixSudo();
+#   endif
+
+#   if NET
+    static bool IsWindowsSudo() =>
+#       pragma warning disable CA1416
+        new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+#       pragma warning restore CA1416
+#   endif
+
+    static bool IsUnixSudo() =>
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/usr/bin/id",
+            Arguments = "-u",
+            RedirectStandardOutput = true,
+            UseShellExecute = false
+        })?.StandardOutput.ReadToEnd().Trim() == "0";
 }
