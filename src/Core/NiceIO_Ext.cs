@@ -218,10 +218,10 @@ partial class NPath
     public NPath[] SafeDirectories(string filter, bool recurse = false) =>
         DirectoryExists() ? Directories(filter, recurse) : [];
 
-    public static Stream SharedOpenRead(string path) =>
-        File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-    public static Stream SharedOpenReadWrite(string path) =>
-        File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
-    public static StreamReader SharedOpenReader(string path) =>
-        new(SharedOpenRead(path));
+    public Stream OpenReadShared() =>
+        File.Open(ToString(SlashMode.Native), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+    public Stream OpenReadWriteShared() =>
+        File.Open(ToString(SlashMode.Native), FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+    public StreamReader OpenReaderShared() =>
+        new(OpenReadShared());
 }
