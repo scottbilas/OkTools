@@ -166,4 +166,11 @@ partial class NiceIOTests
     {
         Assert.Throws<ArgumentException>(() => new NPath("/").ChangeFilename("file.txt"));
     }
+
+    [Test]
+    public void ChangeFilenameOnly_Basics()
+    {
+        "abc/def.ghi".ToNPath().ChangeFilenameOnly("foo").ShouldBe("abc/foo.ghi".ToNPath());
+        "abc/def.ghi".ToNPath().ChangeFilenameOnly(n => n.ToUpper()).ShouldBe("abc/DEF.ghi".ToNPath());
+    }
 }

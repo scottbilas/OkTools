@@ -162,6 +162,10 @@ partial class NPath
 
     public NPath ChangeFilename(string newFilename) =>
 	    newFilename == "" ? Parent : Parent.Combine(newFilename);
+    public NPath ChangeFilenameOnly(string filenameOnly) =>
+        ChangeFilename(filenameOnly).ChangeExtension(Extension);
+    public NPath ChangeFilenameOnly(Func<string, string> filenameOnlyModifier) =>
+        ChangeFilenameOnly(filenameOnlyModifier(FileNameWithoutExtension));
 
     public NPath MakeRelative() =>
         IsRelative ? this : RelativeTo(CurrentDirectory);

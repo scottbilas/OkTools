@@ -5,6 +5,8 @@
   <PropertyGroup>
     <!-- nunit won't test a netstandard dll https://stackoverflow.com/questions/48043023/how-can-i-get-nunit3testadapter-to-work-with-net-standard-2-0#comment85869899_48043394 -->
     <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>$(NoWarn);CA1311</NoWarn>
   </PropertyGroup>
 </Project>
