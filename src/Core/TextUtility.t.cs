@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 class TextUtilityTests
 {
     [Test]
@@ -69,5 +71,26 @@ class TextUtilityTests
         Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abc"));
         Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abcde"));
         Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abcdef"));
+    }
+
+    [TestCase("abc", "",     false)]
+    [TestCase("abc", "*",    true)]
+    [TestCase("abc", "*abc", true)]
+    [TestCase("abc", "?abc", false)]
+    [TestCase("abc", "*bc",  true)]
+    [TestCase("abc", "?bc",  true)]
+    [TestCase("abc", "*ab",  false)]
+    [TestCase("abc", "abc*", true)]
+    [TestCase("abc", "abc?", false)]
+    [TestCase("abc", "ab*",  true)]
+    [TestCase("abc", "ab*c", true)]
+    [TestCase("abc", "ab?c", false)]
+    [TestCase("abc", "abc",  true)]
+    [TestCase("abc", "ab",   false)]
+    [TestCase("abc", "ab?",  true)]
+    public void WildcardToRegexText(string test, string wildcard, bool expected)
+    {
+        var regexText = TextUtility.WildcardToRegexText(wildcard);
+        Regex.IsMatch(test, regexText).ShouldBe(expected);
     }
 }

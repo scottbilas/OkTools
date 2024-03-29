@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace OkTools.Core;
 
 [PublicAPI]
@@ -52,4 +54,7 @@ public static class TextUtility
 
         return text[0] | (text[1] << 8) | (text[2] << 16) | (text[3] << 24);
     }
+
+    public static string WildcardToRegexText(string wildcard) =>
+        "^" + Regex.Escape(wildcard).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
 }
