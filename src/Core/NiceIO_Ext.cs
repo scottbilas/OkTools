@@ -162,4 +162,55 @@ partial class NPath
 
     public NPath ChangeFilename(string newFilename) =>
 	    newFilename == "" ? Parent : Parent.Combine(newFilename);
+
+    public NPath MakeRelative() =>
+        IsRelative ? this : RelativeTo(CurrentDirectory);
+    public NPath MakeRelative(NPath relativeTo) =>
+        IsRelative ? this : RelativeTo(relativeTo);
+
+    // todo:
+    //   * probably want to escape things besides just space (see https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Quoting)
+    //   * unix should use single quote rather than double, to avoid interpolation kicking in (or $ should be escaped too)
+    public string ToCliArgString(SlashMode slashMode = SlashMode.Forward) =>
+        ToString().Contains(' ') ? InQuotes(slashMode) : ToString(slashMode);
+
+    public NPath MustExist()
+    {
+        if (!FileExists() && !DirectoryExists())
+            throw new FileNotFoundException("File or directory expected to exist: " + this);
+
+        return this;
+    }
+
+    public IEnumerable<NPath> SelfAndRecursiveParents
+    {
+        get
+        {
+            for (var candidate = this;; candidate = candidate.Parent)
+            {
+                yield return candidate;
+
+                if (candidate.IsRoot || candidate._path == ".")
+                    yield break;
+            }
+        }
+    }
+
+    public NPath? TryFindFileInSelfAndParents(string filename)
+    {
+        var subPath = filename.ToNPath();
+        return SelfAndRecursiveParents.FirstOrDefault(p => p.FileExists(subPath))?.Combine(subPath);
+    }
+
+    public NPath FindFileInSelfAndParents(string filename) =>
+        TryFindFileInSelfAndParents(filename)
+        ?? throw new FileNotFoundException($"Could not find file in ancestry: {filename} (search from '{this}')");
+
+    // TODO: there is a difference between windows and linux (and probably mac) here. if the dir does not exist,
+    // the windows driver will return an empty array. linux will throw DirectoryNotFoundException.
+    // make them work the same and get rid of "SafeDirectories".
+    public NPath[] SafeDirectories(bool recurse = false) =>
+        DirectoryExists() ? Directories(recurse) : [];
+    public NPath[] SafeDirectories(string filter, bool recurse = false) =>
+        DirectoryExists() ? Directories(filter, recurse) : [];
 }
