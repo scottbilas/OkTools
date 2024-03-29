@@ -3,6 +3,41 @@
 [PublicAPI]
 public static class TimeSpanExtensions
 {
+    public static TimeSpan Sum(this IEnumerable<TimeSpan> @this) =>
+        @this.Aggregate(default(TimeSpan), (acc, next) => acc + next);
+
+#   if NETSTANDARD
+    public static double TotalMicroseconds(this TimeSpan @this) => (double)@this.Ticks / 10;
+    public static int Microseconds(this TimeSpan @this) => (int)(@this.Ticks / 10 % 1000);
+#   else
+    public static double TotalMicroseconds(this TimeSpan @this) => @this.TotalMicroseconds;
+    public static int Microseconds(this TimeSpan @this) => @this.Microseconds;
+#   endif
+
+    // TODO: merge this with ToNiceAge
+    public static string ToNiceString(TimeSpan? timeSpan, bool limitGranularityToSeconds = false)
+    {
+        if (timeSpan == null)
+            return "(null)";
+
+        var ts = timeSpan.Value;
+
+        if (!limitGranularityToSeconds)
+        {
+            if (ts.TotalMilliseconds < 5 && ts.Microseconds() != 0) // don't bother printing usec if it's zero (most likely this TimeSpan was constructed direct from msec)
+                return $"{(int)ts.TotalMicroseconds()}us";
+            if (ts.TotalSeconds < 5)
+                return $"{ts.TotalMilliseconds:0}ms";
+        }
+        if (ts.TotalMinutes < 1)
+            return $"{ts.TotalSeconds:0.0}s";
+        if (ts.TotalHours < 1)
+            return $"{(int)ts.TotalMinutes}m {ts.Seconds}s";
+        if (ts.TotalDays < 1)
+            return $"{(int)ts.TotalHours}h {ts.Minutes}m {ts.Seconds}s";
+        return $"{(int)ts.TotalDays}d {ts.Hours}h {ts.Minutes}m";
+    }
+
     public static string ToNiceAge(this TimeSpan @this, bool ago = false)
     {
         var agoText = ago ? " ago" : "";
