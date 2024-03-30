@@ -1,7 +1,5 @@
 {
-  // needed until this is fixed: https://youtrack.jetbrains.com/issue/RSRP-495984/InspectCode-fails-to-run-code-style-analysis-from-.NET-SDK-8.0.200
   "sdk": {
-    "rollForward": "latestPatch",
     "allowPrerelease": false
   }
 }
