@@ -7,7 +7,7 @@
 
 var debugMode = false;
 
-var (exitCode, opt) = FlogCliArguments.CreateParser().Parse(args, programVersion, FlogCliArguments.Help, FlogCliArguments.Usage,
+var (exitCode, opt) = StaleCliArguments.CreateParser().Parse(args, programVersion, StaleCliArguments.Help, StaleCliArguments.Usage,
     opts =>
     {
         if (!Enum.TryParse(opts.OptWrap, true, out WrapType _))
@@ -21,8 +21,8 @@ try
 {
     debugMode = opt.OptDebug;
 
-    using var flogApp = new FlogApp(opt);
-    return (int)await flogApp.Run();
+    using var staleApp = new StaleApp(opt);
+    return (int)await staleApp.Run();
 }
 catch (CliExitException x)
 {

@@ -1,4 +1,4 @@
-﻿using OkTools.Flog;
+﻿using OkTools.Stale;
 
 class StatusView : ViewBase
 {

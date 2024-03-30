@@ -1,6 +1,6 @@
-﻿using OkTools.Flog;
+﻿using OkTools.Stale;
 
-class FlogApp : IDisposable
+class StaleApp : IDisposable
 {
     readonly Screen _screen = new();
     readonly LogView _logPane;
@@ -21,7 +21,7 @@ class FlogApp : IDisposable
 
     State _state = State.LogView;
 
-    public FlogApp(FlogCliArguments opts)
+    public StaleApp(StaleCliArguments opts)
     {
         _screen.Options.FollowByDefault = !opts.OptNoFollow;
         _screen.Options.WrapByDefault = Enum.Parse<WrapType>(opts.OptWrap, true);
@@ -53,9 +53,9 @@ class FlogApp : IDisposable
 
     readonly struct AutoCursor : IDisposable
     {
-        readonly FlogApp _owner;
+        readonly StaleApp _owner;
 
-        public AutoCursor(FlogApp owner)
+        public AutoCursor(StaleApp owner)
         {
             _owner = owner;
             _owner._screen.OutShowCursor(false);

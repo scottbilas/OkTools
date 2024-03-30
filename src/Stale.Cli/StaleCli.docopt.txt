@@ -1,4 +1,4 @@
-{0}, the logfile analyzer v{1}
+{0}, the streaming output processor v{1}
 
 Usage:
   {0} [options] PATH

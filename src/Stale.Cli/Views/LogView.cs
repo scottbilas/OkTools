@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using OkTools.Flog;
+using OkTools.Stale;
 
 class LogView : ViewBase
 {

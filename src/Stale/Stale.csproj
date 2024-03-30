@@ -3,7 +3,7 @@
   <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
-    <RootNamespace>OkTools.Flog</RootNamespace>
+    <RootNamespace>OkTools.Stale</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

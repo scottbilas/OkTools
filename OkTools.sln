@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.cspro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core-Tests", "src\Core\Core-Tests.csproj", "{C778A428-E82E-4364-970E-5F1655233BF5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog", "src\Flog\Flog.csproj", "{3FA9D639-9F10-4D03-A980-060314CB2E95}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stale", "src\Stale\Stale.csproj", "{3FA9D639-9F10-4D03-A980-060314CB2E95}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Loggo.Cli", "src\Loggo.Cli\Loggo.Cli.csproj", "{32E37DBC-9AB9-4B3F-A60C-E819ECE42934}"
 EndProject
@@ -14,7 +14,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity", "src\Unity\Unity.cs
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity.Cli", "src\Unity.Cli\Unity.Cli.csproj", "{70F0123B-AB42-4ECA-80CF-75B8FFF93C74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "src\Flog.Cli\Flog.Cli.csproj", "{345B2DD4-E1F3-4E21-A55C-FD85CBB009D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stale.Cli", "src\Stale.Cli\Stale.Cli.csproj", "{345B2DD4-E1F3-4E21-A55C-FD85CBB009D2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Unity-Tests", "src\Unity\Unity-Tests.csproj", "{157FA6DF-5AC6-442F-B261-7D509372CBE8}"
 EndProject

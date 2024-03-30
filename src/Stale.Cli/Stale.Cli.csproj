@@ -3,13 +3,13 @@
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
-    <AssemblyName>okflog</AssemblyName>
+    <AssemblyName>stale</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(OkSrcRoot)Flog\Flog.csproj" />
+    <ProjectReference Include="..\Stale\Stale.csproj" />
   </ItemGroup>
 
   <ItemGroup>

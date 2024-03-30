@@ -1,4 +1,4 @@
-﻿namespace OkTools.Flog;
+﻿namespace OkTools.Stale;
 
 /*
 readonly struct LogEntry
