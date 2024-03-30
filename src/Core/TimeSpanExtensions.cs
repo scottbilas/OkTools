@@ -14,28 +14,26 @@ public static class TimeSpanExtensions
     public static int Microseconds(this TimeSpan @this) => @this.Microseconds;
 #   endif
 
+    public static string ToNiceString(this TimeSpan? @this, bool limitGranularityToSeconds = false) =>
+        @this != null ? ToNiceString(@this.Value) : "(null)";
+
     // TODO: merge this with ToNiceAge
-    public static string ToNiceString(this TimeSpan? @this, bool limitGranularityToSeconds = false)
+    public static string ToNiceString(this TimeSpan @this, bool limitGranularityToSeconds = false)
     {
-        if (@this == null)
-            return "(null)";
-
-        var ts = @this.Value;
-
         if (!limitGranularityToSeconds)
         {
-            if (ts.TotalMilliseconds < 5 && ts.Microseconds() != 0) // don't bother printing usec if it's zero (most likely this TimeSpan was constructed direct from msec)
-                return $"{(int)ts.TotalMicroseconds()}us";
-            if (ts.TotalSeconds < 5)
-                return $"{ts.TotalMilliseconds:0}ms";
+            if (@this.TotalMilliseconds < 5 && @this.Microseconds() != 0) // don't bother printing usec if it's zero (most likely this TimeSpan was constructed direct from msec)
+                return $"{(int)@this.TotalMicroseconds()}us";
+            if (@this.TotalSeconds < 5)
+                return $"{@this.TotalMilliseconds:0}ms";
         }
-        if (ts.TotalMinutes < 1)
-            return $"{ts.TotalSeconds:0.0}s";
-        if (ts.TotalHours < 1)
-            return $"{(int)ts.TotalMinutes}m {ts.Seconds}s";
-        if (ts.TotalDays < 1)
-            return $"{(int)ts.TotalHours}h {ts.Minutes}m {ts.Seconds}s";
-        return $"{(int)ts.TotalDays}d {ts.Hours}h {ts.Minutes}m";
+        if (@this.TotalMinutes < 1)
+            return $"{@this.TotalSeconds:0.0}s";
+        if (@this.TotalHours < 1)
+            return $"{(int)@this.TotalMinutes}m {@this.Seconds}s";
+        if (@this.TotalDays < 1)
+            return $"{(int)@this.TotalHours}h {@this.Minutes}m {@this.Seconds}s";
+        return $"{(int)@this.TotalDays}d {@this.Hours}h {@this.Minutes}m";
     }
 
     public static string ToNiceAge(this TimeSpan @this, bool ago = false)
