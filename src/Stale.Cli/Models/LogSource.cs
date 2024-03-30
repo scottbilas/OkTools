@@ -3,8 +3,6 @@ using System.IO.Pipelines;
 using System.Text;
 using System.Threading.Channels;
 
-namespace OkTools.Stale;
-
 static class LogSource
 {
     public static async Task TailFileAsync(string path, ChannelWriter<LogChange> writer, CancellationToken cancel)

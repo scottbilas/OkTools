@@ -1,6 +1,4 @@
-﻿using OkTools.Stale;
-
-class StatusView : ViewBase
+﻿class StatusView : ViewBase
 {
     record struct FilterStatus(int Count, int CountWhenLastActive, Int2 ScrollPos, bool IsFollowing, WrapType WrapType)
     {

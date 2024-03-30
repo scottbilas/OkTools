@@ -1,5 +1,3 @@
-namespace OkTools.Stale;
-
 public interface ILineDataSource
 {
     uint Version { get; }

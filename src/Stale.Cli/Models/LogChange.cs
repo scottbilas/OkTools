@@ -1,6 +1,4 @@
-﻿namespace OkTools.Stale;
-
-/*
+﻿/*
 readonly struct LogEntry
 {
     // ulong id

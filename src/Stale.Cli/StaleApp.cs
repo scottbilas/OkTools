@@ -1,6 +1,4 @@
-﻿using OkTools.Stale;
-
-class StaleApp : IDisposable
+﻿class StaleApp : IDisposable
 {
     readonly Screen _screen = new();
     readonly LogView _logPane;

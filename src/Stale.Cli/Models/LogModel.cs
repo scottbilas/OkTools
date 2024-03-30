@@ -1,7 +1,5 @@
 ﻿using System.Threading.Channels;
 
-namespace OkTools.Stale;
-
 // currently expecting main thread only for processing and processed line access. move to tasks later when needed.
 public class LogModel : IDisposable
 {

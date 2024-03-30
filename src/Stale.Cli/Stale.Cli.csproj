@@ -9,16 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stale\Stale.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="System.Interactive" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="DotNetConfig" />
+    <PackageReference Include="System.IO.Pipelines" />
     <PackageReference Include="Vezel.Cathode" />
     <Using Include="Vezel.Cathode" />
     <Using Include="Vezel.Cathode.Text" />
