@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Exe.targets" />
+
+  <PropertyGroup>
+    <AssemblyName>okflog</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(OkSrcRoot)Flog\Flog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetConfig" />
+    <PackageReference Include="PInvoke.Kernel32" />
+    <PackageReference Include="System.Interactive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vezel.Cathode" />
+    <Using Include="Vezel.Cathode" />
+    <Using Include="Vezel.Cathode.Text" />
+    <Using Include="Vezel.Cathode.Text.Control" />
+  </ItemGroup>
+
+</Project>

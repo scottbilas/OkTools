@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets" />
+
+  <PropertyGroup>
+    <RootNamespace>OkTools.Flog</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DotNetConfig" />
+    <PackageReference Include="System.IO.Pipelines" />
+  </ItemGroup>
+
+</Project>
