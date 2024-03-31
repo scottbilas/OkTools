@@ -21,4 +21,4 @@ jobs:
       # https://stackoverflow.com/a/70552262/14582
       - name: Run tests
         run: |
-          dotnet test --nologo -l:"console;verbosity=normal"
+          dotnet test --nologo -l:"console;verbosity=normal" OkTools.sln

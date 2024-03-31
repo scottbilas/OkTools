@@ -23,7 +23,7 @@ jobs:
 
       - name: Run tests
         run: |
-          dotnet test --nologo -l:"console;verbosity=normal" -c Release
+          dotnet test --nologo -l:"console;verbosity=normal" src\Core\Core-Tests.csproj -c Release
 
       - name: Pack nuget
         run: dotnet pack src\Core\Core.csproj -c Release
