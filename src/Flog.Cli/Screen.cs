@@ -19,7 +19,7 @@ partial class Screen : IDisposable
 
         _terminal = Terminal.System;
         if (!Terminal.StandardIn.IsInteractive)
-            throw new CliExitException("This app requires an interactive terminal", CliExitCode.ErrorUsage);
+            throw new CliErrorException(CliExitCode.ErrorUsage, "This app requires an interactive terminal");
 
         /* https://github.com/gdamore/tcell/v2/tscreen.go
 

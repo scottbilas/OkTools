@@ -24,7 +24,7 @@ try
     using var flogApp = new FlogApp(opt);
     return (int)await flogApp.Run();
 }
-catch (CliExitException x)
+catch (CliErrorException x)
 {
     if (x.InnerException != null)
     {

@@ -1,13 +1,5 @@
 ﻿using System.Drawing;
 
-class CliExitException : Exception
-{
-    public CliExitException(string message, CliExitCode code) : base(message) { Code = code; }
-    public CliExitException(string message, Exception innerException, CliExitCode code) : base(message, innerException) { Code = code; }
-
-    public readonly CliExitCode Code;
-}
-
 interface ITerminalEvent;
 
 readonly struct ErrorEvent : ITerminalEvent
