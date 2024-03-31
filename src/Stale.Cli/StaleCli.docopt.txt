@@ -1,12 +1,6 @@
 {0}, the streaming output processor v{1}
 
 Usage:
-  {0} [options] PATH
-  {0} --help
-  {0} --version
-
-Options:
-  --no-follow  Start out at the top of files by default
-  --wrap=WRAP  Start out with wrap type `exact` (exact width), `nice` (try to find reasonable breaks), and
-               `none` (horizontal scroll instead) [default: none]
-  --debug      Enable extra debug features
+  {0} [--debug] exec -- COMMAND [ARG...]
+  {0} [-h | --help]
+  {0} [-v | --version]

@@ -74,8 +74,6 @@
 
     public async Task<CliExitCode> Run()
     {
-        // TODO: save session state on any kind of exit (or periodically save it as we go..); make sure to do this atomically
-
         var events = new EventBuffer<ITerminalEvent>();
 
         for (;;)
