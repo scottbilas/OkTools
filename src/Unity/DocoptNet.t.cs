@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using DocoptNet;
+using Dumpify;
 
 // this file is just here to validate that docopt.net options work the way i think they do.
 // the grammar is tweaky and easy for me to mess up.

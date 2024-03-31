@@ -10,6 +10,7 @@
     <!-- system -->
 
     <!-- TODO: get rid of this. i need it because some package i'm using is directly referencing old stuff, causing a downgrade, and msbuild/nuget wants me to be explicit here. -->
+    <PackageVersion Include="Dumpify" Version="0.6.5" />
     <PackageVersion Include="System.Collections" Version="4.3.0" />
     <PackageVersion Include="System.Diagnostics.Debug" Version="4.3.0" />
     <PackageVersion Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
@@ -58,7 +59,6 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
-    <PackageVersion Include="ObjectDumper.NET" Version="4.1.17" /> <!-- !!! use the linqpad thingy (search linqpad in nuget) -->
     <PackageVersion Include="Shouldly" Version="4.2.1" />
 
   </ItemGroup>

@@ -16,13 +16,6 @@
     <EmbedAllSources>true</EmbedAllSources>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <PackageReference Include="ObjectDumper.NET" />
-    <Compile Include="$(OkSrcRoot)_Include\ObjectDumperExtensions.cs">
-      <Link>_Include\ObjectDumperExtensions.cs</Link>
-    </Compile>
-  </ItemGroup>
-
   <!-- global usings -->
 
   <ItemGroup>
