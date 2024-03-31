@@ -22,7 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.collector">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" /> <!-- i'm told that this also sets property IsTestProject=true -->
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />

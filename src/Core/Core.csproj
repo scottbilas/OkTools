@@ -31,14 +31,12 @@
   <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="PInvoke.NTDll" />
+
     <PackageReference Include="OkTools.NiceIO" />
-
     <PreprocessorValue Include="NICEIO_NAMESPACE" Value="OkTools.Core" Visible="false" />
-  </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
     <!-- this is needed to make the compiler happy for usage of 'dynamic' -->
-    <PackageReference Include="Microsoft.CSharp" />
+    <PackageReference Include="Microsoft.CSharp" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
   </ItemGroup>
 
 </Project>

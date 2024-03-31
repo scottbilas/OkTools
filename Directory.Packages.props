@@ -9,20 +9,7 @@
 
     <!-- system -->
 
-    <!-- TODO: get rid of this. i need it because some package i'm using is directly referencing old stuff, causing a downgrade, and msbuild/nuget wants me to be explicit here. -->
-    <PackageVersion Include="Dumpify" Version="0.6.5" />
-    <PackageVersion Include="System.Collections" Version="4.3.0" />
-    <PackageVersion Include="System.Diagnostics.Debug" Version="4.3.0" />
-    <PackageVersion Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
-    <PackageVersion Include="System.Resources.ResourceManager" Version="4.3.0" />
-    <PackageVersion Include="System.Runtime.Extensions" Version="4.3.1" />
-    <PackageVersion Include="System.Runtime.Handles" Version="4.3.0" />
-    <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageVersion Include="System.Text.Encoding.Extensions" Version="4.3.0" />
-    <PackageVersion Include="System.Threading" Version="4.3.0" />
-
-    <!-- general -->
-
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.49-beta" />
     <PackageVersion Include="docopt.net" Version="0.8.1" />
     <PackageVersion Include="DotNetConfig" Version="1.0.6" />
     <PackageVersion Include="Microsoft.CSharp" Version="4.7.0" />
@@ -43,7 +30,6 @@
     <!-- analysis -->
 
     <PackageVersion Include="JetBrains.Annotations" Version="2023.3.0" />
-    <!--PackageVersion Include="Meziantou.Analyzer" Version="1.0.688" /  NOT READY FOR THIS YET -->
 
     <!-- builds -->
 
@@ -52,10 +38,8 @@
     <!-- testing and debugging -->
 
     <PackageVersion Include="benchmarkdotnet" Version="0.13.12" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageVersion>
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+    <PackageVersion Include="Dumpify" Version="0.6.5" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
