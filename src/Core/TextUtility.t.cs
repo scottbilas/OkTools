@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-class TextUtilityTests
+partial class TextUtilityTests
 {
     [Test]
     public void DetectEolType_WithStopAfterWindow_ReturnsMatchAfterStopping()

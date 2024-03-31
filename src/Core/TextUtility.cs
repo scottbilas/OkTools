@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
@@ -57,4 +58,99 @@ public static class TextUtility
 
     public static string WildcardToRegexText(string wildcard) =>
         "^" + Regex.Escape(wildcard).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
+
+    public static Regex WildcardToRegex(string wildcard, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
+        new(WildcardToRegexText(wildcard), rxOptions);
+
+    public static bool IsWildcardPattern(string patternToTest) =>
+        patternToTest.Any(c => c is '*' or '?');
+
+    public delegate bool Replacer(ReadOnlySpan<char> macroName, TextWriter writer);
+
+    public static int ReplaceMacros(string source, TextWriter writer, Replacer replacer)
+    {
+        var found = 0;
+
+        var span = source.AsSpan();
+        var offset = 0;
+        for (;;)
+        {
+            // find start of next macro, writing remainder if no more macros
+            var begin = span.IndexOf("{{");
+            if (begin < 0)
+            {
+                writer.Write(span);
+                break;
+            }
+
+            // write what was before the macro and advance
+            var oldSpan = span;
+            writer.Write(span[..begin]);
+            span = span[(begin+2)..];
+            offset += begin+2;
+
+            // find end of this macro
+            var end = span.IndexOf("}}");
+            if (end < 0)
+                throw new FormatException($"Macro starting at offset {offset} and beginning with '{oldSpan.SliceSafe(0, 20).ToString()}' was not closed");
+
+            // collect the macro name and advance
+            var macro = span[..end];
+            span = span[(end+2)..];
+            offset += end+2;
+
+            // find replacement matching the macro
+            if (!replacer(macro, writer))
+                throw new FormatException($"Unrecognized macro '{macro.ToString()}'");
+
+            ++found;
+        }
+
+        return found;
+    }
+
+    public static string ReplaceMacros(string source, Replacer replacer)
+    {
+        var sb = new StringBuilder();
+        ReplaceMacros(source, new StringWriter(sb), replacer);
+        return sb.ToString();
+    }
+
+    public static string ReplaceMacros(string source, params (string name, Action<TextWriter> replacer)[] replacements) =>
+        ReplaceMacros(source, CreateMacroReplacer(replacements));
+
+    public static Replacer CreateMacroReplacer(params (string name, Action<TextWriter> replacer)[] replacements) =>
+        CreateMacroReplacer(10, replacements);
+
+    public static Replacer CreateMacroReplacer(int useDictIfLengthAtLeast, params (string name, Action<TextWriter> replacer)[] replacements)
+    {
+        // if it's small, do a linear search
+        if (replacements.Length < useDictIfLengthAtLeast)
+        {
+            return (macroName, writer) =>
+            {
+                foreach (var (name, action) in replacements)
+                {
+                    if (!macroName.SequenceEqual(name))
+                        continue;
+
+                    action(writer);
+                    return true;
+                }
+
+                return false;
+            };
+        }
+
+        // bigger gets a dict, more setup time and alloc, but faster lookup
+        var dict = replacements.ToDictionary();
+        return (macroName, writer) =>
+        {
+            if (!dict.TryGetValue(macroName.ToString(), out var action))
+                return false;
+
+            action(writer);
+            return true;
+        };
+    }
 }
