@@ -21,14 +21,14 @@
 
     public StaleApp(StaleCliArguments opts)
     {
-        _screen.Options.FollowByDefault = !opts.OptNoFollow;
-        _screen.Options.WrapByDefault = Enum.Parse<WrapType>(opts.OptWrap, true);
+        //$$$_screen.Options.FollowByDefault = !opts.OptNoFollow;
+        //$$$_screen.Options.WrapByDefault = Enum.Parse<WrapType>(opts.OptWrap, true);
 
         _screen.OutShowCursor(false);
 
         // main view
 
-        var logFilePath = opts.ArgPath!;
+        var logFilePath = "";//$$$opts.ArgPath!;
         _logModel = new LogModel(logFilePath);
         _logPane = new LogView(_screen, _logModel) { Enabled = true };
 
