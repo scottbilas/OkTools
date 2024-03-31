@@ -19,7 +19,7 @@
     <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
     <Title>Some OK core utility functions</Title>
     <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
-    <PackageVersion>1.0.12</PackageVersion>
+    <PackageVersion>1.0.13</PackageVersion>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
@@ -32,7 +32,7 @@
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="PInvoke.NTDll" />
     <PackageReference Include="OkTools.NiceIO" />
-    
+
     <PreprocessorValue Include="NICEIO_NAMESPACE" Value="OkTools.Core" Visible="false" />
   </ItemGroup>
 
