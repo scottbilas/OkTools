@@ -1,8 +1,5 @@
 using DocoptNet;
 
-// fine to use console directly here, it's outside of any tui work
-#pragma warning disable RS0030
-
 // ReSharper disable MethodHasAsyncOverload
 
 class HelpCommandResult : IHelpResult
@@ -21,11 +18,22 @@ static class DocoptExtensions
         public string Usage => throw new InvalidOperationException(); // using params
     }
 
+    // TODO: fix, i hate this API
     public static (CliExitCode? code, T parsed) Parse<T>(this IHelpFeaturingParser<T> @this,
         IReadOnlyCollection<string> args,
         string programVersion, string help, string usage,
-        Func<T, object?>? postParse = null)
+        Func<T, object?>? postParse = null,
+        TextWriter? outWriter = null,
+        TextWriter? errWriter = null,
+        int? wrapWidth = null)
     {
+        // vezel warns about this, but if using vezel we should set outWriter/errWriter
+#       pragma warning disable RS0030
+        outWriter ??= Console.Out;
+        errWriter ??= Console.Error;
+        wrapWidth ??= Console.WindowWidth;
+#       pragma warning restore RS0030
+
         (CliExitCode? code, T parsed) rc = default; // note the T instead of T? because it will never be null if CliExitCode is null
 
         try
@@ -58,13 +66,13 @@ static class DocoptExtensions
 
                 case IHelpResult helpResult:
                     var helpText = FormatHelp(helpResult.Help, programVersion);
-                    Console.WriteLine(DocoptUtility.Reflow(helpText, Console.WindowWidth));
+                    outWriter.WriteLine(DocoptUtility.Reflow(helpText, wrapWidth.Value));
                     rc.code = CliExitCode.Help;
                     break;
 
                 case IVersionResult:
                     var shortDescription = FormatHelp(help[..help.IndexOf('\n')].Trim(), programVersion);
-                    Console.WriteLine(shortDescription);
+                    outWriter.WriteLine(shortDescription);
                     rc.code = CliExitCode.Help;
                     break;
 
@@ -73,21 +81,21 @@ static class DocoptExtensions
 
                     if (args.Count != 0)
                     {
-                        Console.Error.WriteLine("Bad command line: " + args.StringJoin(' '));
+                        errWriter.WriteLine("Bad command line: " + args.StringJoin(' '));
                         printed = true;
                     }
 
                     if (errorResult.Error.Length != 0)
                     {
-                        Console.Error.WriteLine(errorResult.Error);
+                        errWriter.WriteLine(errorResult.Error);
                         printed = true;
                     }
 
                     if (printed)
-                        Console.Error.WriteLine();
+                        errWriter.WriteLine();
 
                     var usageText = FormatHelp(usage, programVersion);
-                    Console.Error.WriteLine(DocoptUtility.Reflow(usageText, Console.WindowWidth));
+                    errWriter.WriteLine(DocoptUtility.Reflow(usageText, wrapWidth.Value));
 
                     rc.code = CliExitCode.ErrorUsage;
                     break;
@@ -104,9 +112,9 @@ static class DocoptExtensions
         }
         catch (Exception x)
         {
-            Console.Error.WriteLine("Internal error!");
-            Console.Error.WriteLine();
-            Console.Error.WriteLine(x);
+            errWriter.WriteLine("Internal error!");
+            errWriter.WriteLine();
+            errWriter.WriteLine(x);
             rc.code = CliExitCode.ErrorSoftware;
         }
 

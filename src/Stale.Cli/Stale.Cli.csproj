@@ -9,11 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DotNetConfig" />
-    <PackageReference Include="PInvoke.Kernel32" />
+    <PackageReference Include="Dumpify" />
+    <PackageReference Include="Microsoft.Windows.CsWin32">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Spectre.Console" />
-    <PackageReference Include="System.Interactive" />
-    <PackageReference Include="System.IO.Pipelines" />
     <PackageReference Include="Vezel.Cathode" />
   </ItemGroup>
 

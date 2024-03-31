@@ -4,7 +4,7 @@ Usage:
   {0} [--record RECORDED] -- COMMAND [ARG...]
   {0} --play RECORDED [--speed SPEED]
   {0} -h | --help
-  {0} -v | --version
+  {0} --version
 
 Description:
   Run COMMAND with optional ARG list and monitor+render its output.
@@ -15,3 +15,8 @@ Options:
                      testing.
   --speed SPEED      Set playback speed. Can either be a number like "10ms" (10 milliseconds delay per line) or "3.2x"
                      (3.2x the speed of the original).
+
+Special:
+  --verbose          Log extra things
+
+  This can be applied to any command line as long as it appears before anything else.
