@@ -1,4 +1,6 @@
-﻿class CliExitException : Exception
+﻿using System.Drawing;
+
+class CliExitException : Exception
 {
     public CliExitException(string message, CliExitCode code) : base(message) { Code = code; }
     public CliExitException(string message, Exception innerException, CliExitCode code) : base(message, innerException) { Code = code; }
@@ -58,9 +60,9 @@ readonly struct CharEvent : ITerminalEvent
 
 readonly struct ResizeEvent : ITerminalEvent
 {
-    public readonly TerminalSize NewSize;
+    public readonly Size NewSize;
 
-    public ResizeEvent(TerminalSize newSize)
+    public ResizeEvent(Size newSize)
     {
         NewSize = newSize;
     }

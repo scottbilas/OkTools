@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Threading.Channels;
 
 partial class Screen : IDisposable
@@ -70,7 +71,7 @@ partial class Screen : IDisposable
 
     public async void PostEvent(ITerminalEvent evt) => await _terminalEvents.Writer.WriteAsync(evt, _disposed.Token);
 
-    public TerminalSize Size => _terminal.Size;
+    public Size Size => _terminal.Size;
     public ChannelReader<ITerminalEvent> Events => _terminalEvents.Reader;
     public Options Options { get; } = new();
 
@@ -118,7 +119,7 @@ partial class Screen : IDisposable
 
     void OnSignaled(TerminalSignalContext signal) => PostEvent(new SignalEvent(signal.Signal));
 
-    void OnResized(TerminalSize size)
+    void OnResized(Size size)
     {
         PostEvent(new ResizeEvent(size));
 

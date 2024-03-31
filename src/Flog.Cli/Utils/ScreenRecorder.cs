@@ -1,3 +1,4 @@
+using System.Drawing;
 using PInvoke;
 
 #if ENABLE_SCREEN_RECORDER
@@ -33,7 +34,7 @@ class ScreenRecorder
         }
     }
 
-    public void OnResized(TerminalSize size)
+    public void OnResized(Size size)
     {
         _nextSize = new Int2(size.Width, size.Height);
     }
