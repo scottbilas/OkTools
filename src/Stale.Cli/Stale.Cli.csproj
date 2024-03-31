@@ -11,13 +11,10 @@
   <ItemGroup>
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="PInvoke.Kernel32" />
+    <PackageReference Include="Spectre.Console" />
     <PackageReference Include="System.Interactive" />
     <PackageReference Include="System.IO.Pipelines" />
-
     <PackageReference Include="Vezel.Cathode" />
-    <Using Include="Vezel.Cathode" />
-    <Using Include="Vezel.Cathode.Text" />
-    <Using Include="Vezel.Cathode.Text.Control" />
   </ItemGroup>
 
 </Project>

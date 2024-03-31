@@ -1,6 +1,17 @@
 {0}, the streaming output processor v{1}
 
 Usage:
-  {0} [--debug] exec -- COMMAND [ARG...]
-  {0} [-h | --help]
-  {0} [-v | --version]
+  {0} [--record RECORDED] -- COMMAND [ARG...]
+  {0} --play RECORDED [--speed SPEED]
+  {0} -h | --help
+  {0} -v | --version
+
+Description:
+  Run COMMAND with optional ARG list and monitor+render its output.
+
+Options:
+  --record RECORDED  Serialize output into RECORDED for later playback.
+  --play RECORDED    Deserialize output from RECORDED and play back as if it was running live. Useful for deterministic
+                     testing.
+  --speed SPEED      Set playback speed. Can either be a number like "10ms" (10 milliseconds delay per line) or "3.2x"
+                     (3.2x the speed of the original).
