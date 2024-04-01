@@ -15,7 +15,7 @@ try
 
     var (exitCode, opts) = StaleCliArguments.CreateParser().Parse(
         args, programVersion, StaleCliArguments.Help, StaleCliArguments.Usage,
-        outWriter: Terminal.TerminalOut.ToTextWriter(),
+        outWriter: Terminal.StandardOut.ToTextWriter(),
         errWriter: Terminal.StandardError.ToTextWriter(),
         wrapWidth: Terminal.Size.Width);
     if (exitCode != null)

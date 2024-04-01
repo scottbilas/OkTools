@@ -16,7 +16,7 @@ static class Extensions
         // to dumpify to support that.
 
         public RendererConfig AdjustConfig(in RendererConfig config) => config;
-        public TextWriter TextWriter { get; } = Terminal.TerminalOut.ToTextWriter();
+        public TextWriter TextWriter { get; } = Terminal.StandardOut.ToTextWriter();
     }
 
     public static void DumpTerminal<T>(this T @this, string label) => @this.Dump(
