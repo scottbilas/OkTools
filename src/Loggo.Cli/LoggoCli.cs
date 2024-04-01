@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics;
+using System.Text.RegularExpressions;
 using DocoptNet;
 
 const string programVersion = "0.1";
@@ -24,7 +25,11 @@ void Dispose()
 }
 // ReSharper restore AccessToModifiedClosure
 
-Console.CancelKeyPress += (_, _) => Dispose();
+Console.CancelKeyPress += (_, _) =>
+{
+    Dispose();
+    Environment.Exit((int)UnixSignal.KeyboardInterrupt.AsCliExitCode());
+};
 
 try
 {
@@ -45,6 +50,8 @@ try
     var optWidth = ParseMinMaxInt(opt.OptWidth);
     var optSize = TryParseSize(opt.OptSize);
     var optLines = TryParseInt(opt.OptLines);
+    var optTime = TryParseDouble(opt.OptTime);
+    var optExit = TryParseInt(opt.OptExitcode);
 
     string[]? patternLines = null;
     if (File.Exists(opt.OptPattern))
@@ -54,13 +61,23 @@ try
         optWidth = (maxWidth, maxWidth);
     }
 
+    var start = DateTime.Now;
+
     var csb = new CharSpanBuilder(optWidth.max + 2); // room for \r\n
 
     for (var (written, lineNum) = (0L, 0);; ++lineNum)
     {
+        if (Console.KeyAvailable)
+        {
+            Console.ReadKey(true); // ignore so it doesn't end up in parent process
+            return (int)UnixSignal.KeyboardQuit.AsCliExitCode();
+        }
+
         if (optLines != null && lineNum >= optLines)
             break;
         if (optSize != null && written >= optSize)
+            break;
+        if (optTime != null && (DateTime.Now - start).TotalSeconds >= optTime)
             break;
         if (optLines == null && optSize == null && patternLines != null && lineNum == patternLines.Length)
             break;
@@ -135,6 +152,8 @@ try
             if (delay > 0 && opt.OptIntraLineDelay)
             {
                 // TODO: implement me
+                // TODO: also have it write out a little special char like $ when it does this to help identify them when delay is short
+                throw new DocoptInputErrorException("Sorry intra-line delay is not supported yet");
             }
 
             fileWriter?.Write(chars.Array!, chars.Offset, write);
@@ -150,6 +169,9 @@ try
         if (delay > 0)
             Thread.Sleep(delay);
     }
+
+    if (optExit != null)
+        return optExit.Value;
 
     return (int)CliExitCode.Success;
 }
@@ -172,6 +194,14 @@ static int? TryParseInt(string? str)
         return null;
 
     return int.Parse(str!);
+}
+
+static double? TryParseDouble(string? str)
+{
+    if (str.IsNullOrEmpty())
+        return null;
+
+    return double.Parse(str!);
 }
 
 static long? TryParseSize(string? str)

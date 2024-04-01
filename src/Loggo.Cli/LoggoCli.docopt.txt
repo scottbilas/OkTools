@@ -5,6 +5,9 @@ Usage:
   {0} --help
   {0} --version
 
+Description:
+  Generate fake log lines, optionally writing to DESTINATION.
+
 Options:
   --stdout            Mirror to stdout as well (defaults to true if DESTINATION not specified)
   --line-nums         Prefix each line with a line number. Note that a minimum length specified with `--width` will get
@@ -13,14 +16,20 @@ Options:
   --width WIDTH       Width of generated lines [default: 1,200]
   --size SIZE         Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
   --lines LINES       Stop generating after LINES lines
+  --time TIME         Stop generating after TIME seconds
   --pattern PATTERN   Pattern to use for generated lines (one of: lorem, nums, loggy, PATH) [default: nums]
   --eol EOL           End of line character to use (one of: crlf, lf, mix) [default: lf]
-  --overwrite         Overwrite existing log file if it already exists
-  --delete-on-exit    Delete log file when program exits for any reason
   --intra-line-delay  Use some of the time from DELAY to delay randomly in the middle of writing each line. This is
                       useful for testing that a tail-follow utility can handle partially written lines.
   --rng-seed SEED     Use the provided SEED (an integer) to initialize the random number generator. (Good for tests and
                       anything else that requires determinism.)
+  --exitcode CODE     Exit with CODE on a normal exit; ctrl-c abort will exit with 128+SIGINT (130)
+
+File options:
+  --overwrite         Overwrite existing file if it already exists
+  --delete-on-exit    Delete log file when program exits for any reason
+
+  These options only apply if DESTINATION is specified.
 
 Notes:
   * DELAY and WIDTH can be ""min,max"" entries separated by a comma (for example `1MB,50GB`). Both min and max will be
