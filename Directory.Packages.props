@@ -24,7 +24,7 @@
     <PackageVersion Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageVersion Include="TextCopy" Version="6.2.1" />
     <PackageVersion Include="Vanara.Pinvoke.Dbghelp" Version="4.0.0" />
-    <PackageVersion Include="Vezel.Cathode" Version="0.12.42" />
+    <PackageVersion Include="Vezel.Cathode" Version="0.13.25" />
     <PackageVersion Include="YamlDotNet" Version="15.1.2" />
 
     <!-- analysis -->

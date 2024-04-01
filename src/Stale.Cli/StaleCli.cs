@@ -1,8 +1,5 @@
-﻿using Vezel.Cathode;
 
 const string programVersion = "0.1";
-
-Terminal.System.HackFixNewlineOptions();
 
 var verbose = true;
 
