@@ -48,6 +48,7 @@ try
 
     var optLineDelay = ParseMinMaxInt(opt.OptLineDelay);
     var optWidth = ParseMinMaxInt(opt.OptWidth);
+    var optErrPeriod = TryParseMinMaxInt(opt.OptErrPeriod);
 
     var optStopSize = TryParseSize(opt.OptStopSize);
     var optStopLines = TryParseInt(opt.OptStopLines);
@@ -65,6 +66,7 @@ try
     var start = DateTime.Now;
 
     var csb = new CharSpanBuilder(optWidth.max + 2); // room for \r\n
+    int? nextErrorLine = null;
 
     for (var (written, lineNum) = (0L, 0);; ++lineNum)
     {
@@ -83,6 +85,9 @@ try
         if (optStopLines == null && optStopSize == null && patternLines != null && lineNum == patternLines.Length)
             break;
 
+        if (nextErrorLine == null && optErrPeriod != null)
+            nextErrorLine = lineNum + rng.Next(optErrPeriod.Value.min, optErrPeriod.Value.max + 1);
+
         csb.Clear();
 
         if (opt.OptPrefixLineNum)
@@ -95,6 +100,13 @@ try
         {
             csb.Append(DateTime.Now.ToString(opt.OptPrefixTime));
             csb.Append(": ");
+        }
+
+        var isErrorLine = nextErrorLine == lineNum;
+        if (isErrorLine)
+        {
+            nextErrorLine = null;
+            csb.Append("stderr: ");
         }
 
         var minWidth = Math.Max(optWidth.min, csb.Length - 1); // always ensure we print the full line number and colon (minus space)
@@ -165,7 +177,12 @@ try
 
             fileWriter?.Write(chars.Array!, chars.Offset, write);
             if (optStdout)
-                Console.Write(chars.Array!, chars.Offset, write);
+            {
+                if (isErrorLine)
+                    Console.Error.Write(chars.Array!, chars.Offset, write);
+                else
+                    Console.Write(chars.Array!, chars.Offset, write);
+            }
 
             written += write;
             chars = chars[write..];
@@ -189,6 +206,17 @@ finally
 
 static (int min, int max) ParseMinMaxInt(string str)
 {
+    var split = str.Split(',', 2);
+    var min = int.Parse(split[0]);
+    var max = split.Length == 2 ? int.Parse(split[1]) : min;
+    return (min, max);
+}
+
+static (int min, int max)? TryParseMinMaxInt(string? str)
+{
+    if (str == null)
+        return null;
+
     var split = str.Split(',', 2);
     var min = int.Parse(split[0]);
     var max = split.Length == 2 ? int.Parse(split[1]) : min;
