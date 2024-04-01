@@ -46,12 +46,13 @@ try
             FileShare.ReadWrite | FileShare.Delete));
     }
 
-    var optDelay = ParseMinMaxInt(opt.OptDelay);
+    var optLineDelay = ParseMinMaxInt(opt.OptLineDelay);
     var optWidth = ParseMinMaxInt(opt.OptWidth);
-    var optSize = TryParseSize(opt.OptSize);
-    var optLines = TryParseInt(opt.OptLines);
-    var optTime = TryParseDouble(opt.OptTime);
-    var optExit = TryParseInt(opt.OptExitcode);
+
+    var optStopSize = TryParseSize(opt.OptStopSize);
+    var optStopLines = TryParseInt(opt.OptStopLines);
+    var optStopTime = TryParseDouble(opt.OptStopTime);
+    var optExitCode = TryParseInt(opt.OptExitCode);
 
     string[]? patternLines = null;
     if (File.Exists(opt.OptPattern))
@@ -73,20 +74,26 @@ try
             return (int)UnixSignal.KeyboardQuit.AsCliExitCode();
         }
 
-        if (optLines != null && lineNum >= optLines)
+        if (optStopLines != null && lineNum >= optStopLines)
             break;
-        if (optSize != null && written >= optSize)
+        if (optStopSize != null && written >= optStopSize)
             break;
-        if (optTime != null && (DateTime.Now - start).TotalSeconds >= optTime)
+        if (optStopTime != null && (DateTime.Now - start).TotalSeconds >= optStopTime)
             break;
-        if (optLines == null && optSize == null && patternLines != null && lineNum == patternLines.Length)
+        if (optStopLines == null && optStopSize == null && patternLines != null && lineNum == patternLines.Length)
             break;
 
         csb.Clear();
 
-        if (opt.OptLineNums)
+        if (opt.OptPrefixLineNum)
         {
             csb.Append(lineNum+1);
+            csb.Append(": ");
+        }
+
+        if (opt.OptPrefixTime != null)
+        {
+            csb.Append(DateTime.Now.ToString(opt.OptPrefixTime));
             csb.Append(": ");
         }
 
@@ -142,7 +149,7 @@ try
         csb.Length = Math.Min(csb.Length, width);
         csb.Append(eol);
 
-        var delay = rng.Next(optDelay.min, optDelay.max + 1);
+        var delay = rng.Next(optLineDelay.min, optLineDelay.max + 1);
         var chars = csb.Chars;
 
         while (chars.Count > 0)
@@ -170,8 +177,8 @@ try
             Thread.Sleep(delay);
     }
 
-    if (optExit != null)
-        return optExit.Value;
+    if (optExitCode != null)
+        return optExitCode.Value;
 
     return (int)CliExitCode.Success;
 }

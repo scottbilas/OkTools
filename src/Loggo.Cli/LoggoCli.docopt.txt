@@ -10,20 +10,21 @@ Description:
 
 Options:
   --stdout            Mirror to stdout as well (defaults to true if DESTINATION not specified)
-  --line-nums         Prefix each line with a line number. Note that a minimum length specified with `--width` will get
+  --prefix-line-num   Prefix each line with a line number. Note that a minimum length specified with `--width` will get
                       overridden to ensure that the line number+colon prefix is always printed.
-  --delay DELAY       Delay between each line being added to the log in ms [default: 1,5]
-  --width WIDTH       Width of generated lines [default: 1,200]
-  --size SIZE         Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
-  --lines LINES       Stop generating after LINES lines
-  --time TIME         Stop generating after TIME seconds
-  --pattern PATTERN   Pattern to use for generated lines (one of: lorem, nums, loggy, PATH) [default: nums]
-  --eol EOL           End of line character to use (one of: crlf, lf, mix) [default: lf]
+  --prefix-time FMT   Prefix each line with a timestamp. FMT is a c# format string (for example `o` or `HH:mm:ss.fff`)
+  --line-delay DELAY  Delay between each line being added to the log in ms [default: 1,5]
   --intra-line-delay  Use some of the time from DELAY to delay randomly in the middle of writing each line. This is
                       useful for testing that a tail-follow utility can handle partially written lines.
+  --width WIDTH       Width of generated lines [default: 1,200]
+  --pattern PATTERN   Pattern to use for generated lines (one of: lorem, nums, loggy, PATH) [default: nums]
+  --eol EOL           End of line character to use (one of: crlf, lf, mix) [default: lf]
   --rng-seed SEED     Use the provided SEED (an integer) to initialize the random number generator. (Good for tests and
                       anything else that requires determinism.)
-  --exitcode CODE     Exit with CODE on a normal exit; ctrl-c abort will exit with 128+SIGINT (130)
+  --stop-size SIZE    Stop generating after total log output gets to this size (can postfix SIZE with kb mb gb)
+  --stop-lines LINES  Stop generating after LINES lines
+  --stop-time TIME    Stop generating after TIME seconds
+  --exit-code CODE    Exit with CODE on a normal exit; ctrl-c abort will exit with 128+SIGINT (130)
 
 File options:
   --overwrite         Overwrite existing file if it already exists
