@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics;
+using System.Text.Json;
 using System.Threading.Channels;
 using Vezel.Cathode;
 using Vezel.Cathode.Processes;
 
 const string programVersion = "0.1";
+const int jsonVersion = 1;
 
 var ctx = new Context();
 
@@ -84,10 +86,43 @@ try
         _ = Task.Run(() => Write(cmd.StandardOut.TextReader, false), ctx.Cancel.Token);
         _ = Task.Run(() => Write(cmd.StandardError.TextReader, true), ctx.Cancel.Token);
 
-        await foreach (var capture in captures.Reader.ReadAllAsync())
-            Terminal.OutLine($"{DateTime.Now:HH:mm:ss.fff} -> {capture.When:HH:mm:ss.fff} >> {(capture.IsStdErr ? '!' : ' ')}{capture.Line}");
+        var jsonStream = ctx.Options.OptRecord != null
+            ? File.Create(ctx.Options.OptRecord)
+            : Terminal.StandardOut.Stream;
 
-        Terminal.OutLine($"{ctx.Options.ArgCommand} EXITING with code {cmd.Completion.Result}");
+        await using var writer = new StreamWriter(jsonStream);
+        writer.AutoFlush = true;
+
+        await using var json = new Utf8JsonWriter(jsonStream);
+        json.WriteStartObject();
+        json.WriteNumber("version", jsonVersion);
+        json.WriteStartArray("captures");
+        json.Flush();
+        writer.Write('\n');
+
+        await foreach (var capture in captures.Reader.ReadAllAsync(ctx.Cancel.Token))
+        {
+            writer.Write('\n');
+
+            json.WriteStartObject();
+            if (capture.IsStdErr)
+                json.WriteBoolean("isStdErr", true);
+            json.WriteString("when", capture.When);
+            json.WriteString("line", capture.Line);
+            json.WriteEndObject();
+            json.Flush();
+        }
+
+        json.WriteEndArray();
+        json.Flush();
+        writer.Write("\n\n");
+
+        json.WriteNumber("exitcode", cmd.Completion.Result);
+
+        json.WriteEndObject();
+        json.Flush();
+
+        writer.Write('\n');
 
         return (int)CliExitCode.Success;
     }
