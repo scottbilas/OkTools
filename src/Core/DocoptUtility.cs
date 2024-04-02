@@ -117,12 +117,12 @@ public static class DocoptUtility
 
         public Section(StringSegment text) : this(text.TrimEnd(), 0)
         {
-            var indentMatch = Text.Match(s_indentRx0);
+            var indentMatch = Text.Match(k_indentRx0);
             if (indentMatch.Success)
                 Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
             else
             {
-                indentMatch = Text.Match(s_indentRx1);
+                indentMatch = Text.Match(k_indentRx1);
                 if (indentMatch.Success)
                     Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
                 else
@@ -167,9 +167,9 @@ public static class DocoptUtility
     // these regexes find where we should indent to upon wrapping, in priority order.
     //
     // - align to the right side of a "docopt divider" (>= 2 spaces). higher pri to catch bulleted option lists.
-    static readonly Regex s_indentRx0 = new(@"\S {2,}");
+    static readonly Regex k_indentRx0 = new(@"\S {2,}");
     // - align to the text part of a bullet point, number, or comment: * - // # 1.
-    static readonly Regex s_indentRx1 = new(@"^ *([-*#]|//|\d+\.) ");
+    static readonly Regex k_indentRx1 = new(@"^ *([-*#]|//|\d+\.) ");
 
     static IEnumerable<StringSegment> SelectLines(string text)
     {
