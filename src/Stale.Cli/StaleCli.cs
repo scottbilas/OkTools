@@ -1,46 +1,107 @@
+﻿using System.Diagnostics;
+using System.Threading.Channels;
+using Vezel.Cathode;
+using Vezel.Cathode.Processes;
 
 const string programVersion = "0.1";
 
-var verbose = true;
+var ctx = new Context();
+
+Terminal.Signaled += signalContext =>
+{
+    if (signalContext.Signal == TerminalSignal.Interrupt)
+        ctx.Cancel.Cancel();
+};
 
 try
 {
-    if (args.FirstOrDefault() == "--verbose")
     {
-        Terminal.OutLine("Enabling verbose mode");
-        args = args.Skip(1).ToArray();
+        ctx.IsVerbose = args.FirstOrDefault() == "--verbose";
+        if (ctx.IsVerbose)
+        {
+            ctx.VerboseLine("Enabling verbose mode");
+            args = args.Skip(1).ToArray();
+        }
+
+        var (exitCode, options) = StaleCliArguments.CreateParser().Parse(
+            args, programVersion, StaleCliArguments.Help, StaleCliArguments.Usage,
+            outWriter: Terminal.StandardOut.ToTextWriter(),
+            errWriter: Terminal.StandardError.ToTextWriter(),
+            wrapWidth: Terminal.Size.Width);
+        if (exitCode != null)
+            return (int)exitCode.Value;
+
+        ctx.Options = options;
     }
-    else
-        verbose = false;
 
-    var (exitCode, opts) = StaleCliArguments.CreateParser().Parse(
-        args, programVersion, StaleCliArguments.Help, StaleCliArguments.Usage,
-        outWriter: Terminal.StandardOut.ToTextWriter(),
-        errWriter: Terminal.StandardError.ToTextWriter(),
-        wrapWidth: Terminal.Size.Width);
-    if (exitCode != null)
-        return (int)exitCode.Value;
+    ctx.VerboseDump(ctx.Options);
 
-    if (verbose)
-        opts.DumpTerminal("opts");
-
-    if (opts.ArgCommand != null)
+    if (ctx.Options.ArgCommand != null)
     {
-        Terminal.OutLine($"Command: `{CliUtility.CommandLineArgsToString(opts.ArgArg.Prepend(opts.ArgCommand))}`");
-        if (opts.OptRecord != null)
-            Terminal.OutLine($"  -> record to '{opts.OptRecord}'");
+        // TODO: consider checking if it's a console app
+        // (see IsWindowsApplication at PowerShell\src\System.Management.Automation\engine\NativeCommandProcessor.cs:1199)
+
+        if (ctx.IsVerbose)
+        {
+            var msg = $"Command: `{CliUtility.CommandLineArgsToString(ctx.Options.ArgArg.Prepend(ctx.Options.ArgCommand))}`";
+            if (ctx.Options.OptRecord != null)
+                msg += $" (record to '{ctx.Options.OptRecord}')";
+            ctx.VerboseLine(msg);
+        }
+
+        var cmd = new ChildProcessBuilder()
+            .WithFileName(ctx.Options.ArgCommand)
+            .WithArguments(ctx.Options.ArgArg)
+            .WithRedirections(false, true, true)
+            .WithCreateWindow(false)
+            .WithWindowStyle(ProcessWindowStyle.Hidden)
+            .WithCancellationToken(ctx.Cancel.Token)
+            .WithThrowOnError(false)
+            .Run();
+
+        var captures = Channel.CreateUnbounded<Capture>(new UnboundedChannelOptions { SingleReader = true });
+
+        var open = 0;
+
+        async void Write(TextReader reader, bool isStdErr)
+        {
+            Terminal.OutLine($"> Adding reader for {(isStdErr ? "stderr" : "stdout")}");
+
+            ++open;
+            while (!ctx.Cancel.IsCancellationRequested)
+            {
+                var line = await reader.ReadLineAsync(ctx.Cancel.Token);
+                if (line == null)
+                {
+                    if (--open == 0)
+                        captures.Writer.Complete();
+                    break;
+                }
+
+                await captures.Writer.WriteAsync(new Capture(isStdErr, DateTime.Now, line));
+            }
+        }
+
+        _ = Task.Run(() => Write(cmd.StandardOut.TextReader, false), ctx.Cancel.Token);
+        _ = Task.Run(() => Write(cmd.StandardError.TextReader, true), ctx.Cancel.Token);
+
+        await foreach (var capture in captures.Reader.ReadAllAsync())
+            Terminal.OutLine($"{DateTime.Now:HH:mm:ss.fff} -> {capture.When:HH:mm:ss.fff} >> {(capture.IsStdErr ? '!' : ' ')}{capture.Line}");
+
+        Terminal.OutLine($"{ctx.Options.ArgCommand} EXITING with code {cmd.Completion.Result}");
+
         return (int)CliExitCode.Success;
     }
 
-    if (opts.OptPlay != null)
+    if (ctx.Options.OptPlay != null)
     {
-        Terminal.OutLine($"Play: {opts.OptPlay}");
-        if (opts.OptSpeed != null)
+        Terminal.OutLine($"Play: {ctx.Options.OptPlay}");
+        if (ctx.Options.OptSpeed != null)
         {
-            if (opts.OptSpeed.EndsWith('x'))
-                Terminal.OutLine($"  -> at {opts.OptSpeed} speed");
+            if (ctx.Options.OptSpeed.EndsWith('x'))
+                Terminal.OutLine($"  -> at {ctx.Options.OptSpeed} speed");
             else
-                Terminal.OutLine($"  -> at {opts.OptSpeed} msec per line");
+                Terminal.OutLine($"  -> at {ctx.Options.OptSpeed} msec per line");
         }
         return (int)CliExitCode.Success;
     }
@@ -49,6 +110,8 @@ try
 }
 catch (Exception x)
 {
-    x.TerminalOut(verbose);
+    ctx.Error(x);
     return (int)CliExitCode.ErrorSoftware;
 }
+
+readonly record struct Capture(bool IsStdErr, DateTime When, string Line);
