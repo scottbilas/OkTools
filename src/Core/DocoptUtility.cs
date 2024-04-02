@@ -5,6 +5,9 @@ namespace OkTools.Core;
 
 public class DocoptReflowOptions
 {
+    public const int DefaultWrapWidth = 120;
+
+    public int DesiredWrapWidth;
     public int MinWrapWidth;
     public int IndentFallback = 15;
     public string Eol = "\n";
@@ -25,25 +28,24 @@ public static class DocoptUtility
     // - Simplify in general
     // - The "extra indent" should become FirstLineIndent and WrapIndent (how to indent wrapped lines in the same block)
 
-    public static string Reflow(string text, int wrapWidth) => Reflow(text, wrapWidth, new DocoptReflowOptions());
+    public static string Reflow(string text, int wrapWidth) => Reflow(text, new DocoptReflowOptions { DesiredWrapWidth = wrapWidth});
+    public static string Reflow(string text) => Reflow(text, new DocoptReflowOptions());
 
-    public static string Reflow(string text, int wrapWidth, DocoptReflowOptions options)
+    public static string Reflow(string text, DocoptReflowOptions options)
     {
         // TODO: support a line break marker, such as a backslash at the end of a line. This would tell reflow not to join
         //       that line with the next.
 
         // TODO: try to keep [default: foo] together on the same line
 
-        // TODO: make the max wrap width optional. right now i'm just arbitrarily picking something big-ish. too big and
-        // it's just ridiculous to try to read..
+        var wrapWidth = options.DesiredWrapWidth;
+        if (wrapWidth == 0)
+            wrapWidth = DocoptReflowOptions.DefaultWrapWidth;
+        else if (wrapWidth <= 0)
+            throw new ArgumentOutOfRangeException($"Out of range 0 < {wrapWidth}");
 
-        if (wrapWidth > 120)
-            wrapWidth = 120;
-
-        if (wrapWidth <= 0)
-            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $"Out of range 0 < {wrapWidth}");
         if (options.MinWrapWidth < 0 || options.MinWrapWidth >= wrapWidth)
-            throw new ArgumentOutOfRangeException(nameof(wrapWidth), $"{nameof(options.MinWrapWidth)} out of range 0 <= {options.MinWrapWidth} < {wrapWidth}");
+            throw new ArgumentOutOfRangeException($"{nameof(options.MinWrapWidth)} out of range 0 <= {options.MinWrapWidth} < {wrapWidth}");
 
         var result = new StringBuilder();
 

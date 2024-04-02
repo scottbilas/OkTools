@@ -31,7 +31,7 @@ static class DocoptExtensions
 #       pragma warning disable RS0030
         outWriter ??= Console.Out;
         errWriter ??= Console.Error;
-        wrapWidth ??= Console.WindowWidth;
+        wrapWidth ??= !Console.IsOutputRedirected ? Console.WindowWidth : 0;
 #       pragma warning restore RS0030
 
         (CliExitCode? code, T parsed) rc = default; // note the T instead of T? because it will never be null if CliExitCode is null
