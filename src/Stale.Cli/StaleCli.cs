@@ -95,13 +95,13 @@ try
 
     if (ctx.Options.OptPlay != null)
     {
-        Terminal.OutLine($"Play: {ctx.Options.OptPlay}");
+        ctx.OutLine($"Play: {ctx.Options.OptPlay}");
         if (ctx.Options.OptSpeed != null)
         {
             if (ctx.Options.OptSpeed.EndsWith('x'))
-                Terminal.OutLine($"  -> at {ctx.Options.OptSpeed} speed");
+                ctx.OutLine($"  -> at {ctx.Options.OptSpeed} speed");
             else
-                Terminal.OutLine($"  -> at {ctx.Options.OptSpeed} msec per line");
+                ctx.OutLine($"  -> at {ctx.Options.OptSpeed} msec per line");
         }
         return (int)CliExitCode.Success;
     }
