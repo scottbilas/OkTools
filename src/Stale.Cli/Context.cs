@@ -105,7 +105,7 @@ class Context : IDisposable
         // to dumpify to support that.
 
         public RendererConfig AdjustConfig(in RendererConfig config) => config;
-        public TextWriter TextWriter { get; } = Terminal.StandardOut.ToTextWriter();
+        public TextWriter TextWriter { get; } = Terminal.StandardOut.TextWriter;
     }
 
     readonly IAnsiConsole _ansiConsole;
