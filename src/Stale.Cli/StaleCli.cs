@@ -65,20 +65,19 @@ try
 
         async void Write(TextReader reader, bool isStdErr)
         {
-            Terminal.OutLine($"> Adding reader for {(isStdErr ? "stderr" : "stdout")}");
+            Interlocked.Increment(ref open);
 
-            ++open;
             while (!ctx.Cancel.IsCancellationRequested)
             {
                 var line = await reader.ReadLineAsync(ctx.Cancel.Token);
                 if (line == null)
                 {
-                    if (--open == 0)
+                    if (Interlocked.Decrement(ref open) == 0)
                         captures.Writer.Complete();
                     break;
                 }
 
-                await captures.Writer.WriteAsync(new Capture(isStdErr, DateTime.Now, line));
+                await captures.Writer.WriteAsync(new Capture(isStdErr, DateTime.Now, line), ctx.Cancel.Token);
             }
         }
 
