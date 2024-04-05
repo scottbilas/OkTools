@@ -37,4 +37,20 @@
   </PropertyGroup>
   <Import Project="Library.targets" />
 
+  <!-- pass location of test data files into an attribute for tests to use -->
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <ItemGroup>
+      <AssemblyAttributes Include="TestFilesLocationAttribute">
+        <_Parameter1>$(ProjectDir)TestFiles</_Parameter1>
+      </AssemblyAttributes>
+    </ItemGroup>
+    <WriteCodeFragment
+      Condition="Exists('$(ProjectDir)TestFiles')"
+      AssemblyAttributes="@(AssemblyAttributes)" Language="C#"
+      OutputDirectory="$(IntermediateOutputPath)" OutputFile="BuildProperties.cs">
+      <Output TaskParameter="OutputFile" ItemName="Compile" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
+  </Target>
+
 </Project>

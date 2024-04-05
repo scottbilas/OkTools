@@ -3,7 +3,7 @@ using System.ComponentModel;
 #endif
 
 #pragma warning disable CA1001
-class FileStreamNativeExtensionsTests : TestFileSystemFixture
+class FileStreamNativeExtensionsTests : TempFileSystemFixture
 #pragma warning restore CA1001
 {
     NPath _path = null!;

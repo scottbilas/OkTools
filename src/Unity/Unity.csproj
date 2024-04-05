@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestFiles\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" />
     <PackageReference Include="Spreads.LMDB" />

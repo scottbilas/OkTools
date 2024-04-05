@@ -1,6 +1,6 @@
 // ReSharper disable StringLiteralTypo
 
-class UnityVersionTests : TestFixtureBase
+class UnityVersionTests : TestFilesFixture
 {
     NPath ProjectVersionTxt(string name) => TestFiles.Combine("ProjectVersionTxt", name).FileMustExist();
     NPath EditorYml(string name) => TestFiles.Combine("EditorYml", name).FileMustExist();

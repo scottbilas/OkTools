@@ -1,4 +1,4 @@
-﻿class UnityProjectTests : TestFixtureBase
+﻿class UnityProjectTests : TestFilesFixture
 {
     NPath Project(string repo, string project) => TestFiles.Combine("EditorYml", repo, project).DirectoryMustExist();
 

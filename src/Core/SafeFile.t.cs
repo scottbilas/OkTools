@@ -1,4 +1,4 @@
-class SafeFileTests : TestFileSystemFixture
+class SafeFileTests : TempFileSystemFixture
 {
     [Test]
     public void SetReadOnly_AppliesProperFileAttributes()
