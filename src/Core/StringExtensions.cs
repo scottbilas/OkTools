@@ -38,7 +38,6 @@ public static class StringExtensions
     public static int IndexOfNot(this string @this, char value) =>
         @this.IndexOfNot(value, 0, @this.Length);
 
-
     // note: we follow the good SpanHelpers.LastIndexOf() convention (span starts at start) rather than the bad string.LastIndexOf convention (span ends at start+1)
     public static int LastIndexOfNot(this string @this, char value, int startIndex, int count)
     {
@@ -107,6 +106,13 @@ public static class StringExtensions
 
     public static IEnumerable<string> SelectToStrings<T>(this IEnumerable<T> @this) =>
         @this.Select(v => v?.ToString()).WhereNotNull();
+
+    public static string[] SplitTrimRemoveEmpty(this string @this) => @this
+#       if NETSTANDARD
+        .Split(';').Select(p => p.Trim()).Where(p => p != "").ToArray();
+#       else
+        .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+#       endif
 
     public static string StringJoin<T>(this IEnumerable<T> @this, string separator) =>
         string.Join(separator, @this);
