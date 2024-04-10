@@ -175,4 +175,29 @@ public static class StringExtensions
         buffer.Clear();
         return expanded;
     }
+
+    static readonly char[] k_escapeThese = [' ', '\"', '\n', '\t'];
+
+    public static string SimpleEscape(this string @this)
+    {
+        if (@this.Length == 0)
+            return "\"\"";
+        if (@this.IndexOfAny(k_escapeThese) < 0)
+            return @this;
+
+        var sb = new StringBuilder();
+        sb.Append('"');
+        foreach (var c in @this)
+        {
+            switch (c)
+            {
+                case '\"': sb.Append("\\\""); break;
+                case '\n': sb.Append("\\n");  break;
+                case '\t': sb.Append("\\t");  break;
+                default  : sb.Append(c);      break;
+            }
+        }
+        sb.Append('"');
+        return sb.ToString();
+    }
 }

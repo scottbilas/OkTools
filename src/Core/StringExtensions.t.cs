@@ -255,4 +255,15 @@ class StringExtensionsTests
         "\tb".ExpandTabs(2, buffer).ShouldBe("  b"); // not "  a b"
         buffer.Length.ShouldBe(0);
     }
+
+    [TestCase("", "\"\"")]
+    [TestCase(" ", "\" \"")]
+    [TestCase("abc", "abc")]
+    [TestCase("abc def", "\"abc def\"")]
+    [TestCase(" abc def ", "\" abc def \"")]
+    [TestCase("abc\"def\nghijkl", "\"abc\\\"def\\nghijkl\"")]
+    public void SimpleEscape(string test, string expected)
+    {
+        test.SimpleEscape().ShouldBe(expected);
+    }
 }
