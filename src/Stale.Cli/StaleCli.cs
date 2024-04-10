@@ -10,6 +10,7 @@ using Vezel.Cathode.Processes;
 const string programVersion = "0.1";
 const int jsonVersion = 1;
 
+var programStart = DateTime.Now;
 using var ctx = new Context();
 
 // ReSharper disable AccessToDisposedClosure
@@ -77,7 +78,7 @@ try
         ctx.VerboseDump(ctx.Options);
 
     if (ctx.Options.CmdRecord)
-        return (int)await Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, ctx.Options.ArgArg.ToArray());
+        return Return(Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
 
     if (ctx.Options.CmdPlay)
     {
@@ -130,12 +131,14 @@ try
                 ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at original speed");
         }
 
-        return (int)await Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken);
+        return Return(Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
     }
 
     // $$$ DO THE REAL PROGRAM HERE
 
     throw new UnreachableCodeException();
+
+    //Return(...);
 }
 catch (CliErrorException x)
 {
@@ -148,13 +151,26 @@ catch (Exception x)
     return (int)CliExitCode.ErrorSoftware;
 }
 
+int Return(Task<CliExitCode> task)
+{
+    var result = task.Result;
+
+    if (ctx.IsVerbose)
+    {
+        var elapsed = DateTime.Now - programStart;
+        ctx.VerboseLine($"Finished in {elapsed.TotalSeconds:F3}s with exit code {result} ({(int)result})");
+    }
+
+    return (int)result;
+}
+
 async Task<CliExitCode> Record(string? recordedPath, string command, IReadOnlyList<string> args)
 {
     var (cmd, captures) = Exec(command, args);
 
     if (ctx.IsVerbose)
     {
-        ctx.VerboseLine($">{cmd.Id} $ {command} {args}");
+        ctx.VerboseLine($">{cmd.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}");
         ctx.VerboseLine($" (Recording to ${ctx.Options.ArgRecorded ?? "stdout"})");
     }
 
