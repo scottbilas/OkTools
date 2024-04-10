@@ -5,7 +5,13 @@
   <PropertyGroup>
     <AssemblyName>stale</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DefineConstants Condition="'$(Configuration)'=='Debug'">ENABLE_SCREEN_RECORDER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' != 'Debug' ">
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <SelfContained>true</SelfContained>
+    <PublshTrimmed>true</PublshTrimmed>
+    <PublishAot>true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
