@@ -1,22 +1,27 @@
 {0}, the streaming output processor v{1}
 
 Usage:
-  {0} [--record RECORDED] -- COMMAND [ARG...]
-  {0} --play RECORDED [--speed SPEED]
+  {0} -- COMMAND [ARG...]
+  {0} record [RECORDED] -- COMMAND [ARG...]
+  {0} play RECORDED [--speed SPEED]
   {0} -h | --help
   {0} --version
 
-Description:
-  Run COMMAND with optional ARG list and monitor+render its output.
+Description
+  The main behavior is to run COMMAND with optional ARG list and monitor+render its output.
+
+Commands:
+  record  Run COMMAND with optional ARG list and store it to RECORDED (defaults to stdout) for later playback.
+  play    Deserialize output from RECORDED and play back as if it was running live. Useful for deterministic testing.
 
 Options:
-  --record RECORDED  Serialize output into RECORDED for later playback.
-  --play RECORDED    Deserialize output from RECORDED and play back as if it was running live. Useful for deterministic
-                     testing.
-  --speed SPEED      Set playback speed. Can either be a number like "10ms" (10 milliseconds delay per line) or "3.2x"
-                     (3.2x the speed of the original).
+  --speed SPEED  Set playback speed. Can either be:
+                 - A time like "10ms" (10 milliseconds delay per line) in which case it ignores the original capture
+                   timings and plays back at a fixed rate per line. Set to 0ms to play at maximum speed.
+                 - A ratio like "3.2x" where it will play back the original timings but sped up/down by the multiplier
+                   (> 1 is faster, < 1 is slower). Set to 1x to attempt to play back at the original speed.
 
 Special:
-  --verbose          Log extra things
-
-  This can be applied to any command line as long as it appears before anything else.
+  --verbose  Log a lot of detail about what is happening. This can be applied to any command line as long as it appears
+             before anything else.
+  --cwd      Use this as the working dir for {0}. Defaults to shell's working dir.

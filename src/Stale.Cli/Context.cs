@@ -8,6 +8,8 @@ using Vezel.Cathode;
 
 class Context : IDisposable
 {
+    readonly CancellationTokenSource _cancelSource = new();
+
     public Context()
     {
         _ansiConsole = new TerminalAnsiConsole(this);
@@ -15,13 +17,15 @@ class Context : IDisposable
 
     public void Dispose()
     {
-        Cancel.Dispose();
+        _cancelSource.Dispose();
     }
 
-    public StaleCliArguments Options = null!;
-    public bool IsVerbose = true;
+    public CancellationToken CancelToken => _cancelSource.Token;
+    public bool IsCancellationRequested => _cancelSource.IsCancellationRequested;
+    public void Cancel() => _cancelSource.Cancel();
 
-    public readonly CancellationTokenSource Cancel = new();
+    public StaleCliArguments Options = null!;
+    public bool IsVerbose;
 
     public void VerboseLine(string text)
     {
