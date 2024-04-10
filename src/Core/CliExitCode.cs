@@ -10,9 +10,9 @@
 [PublicAPI]
 public enum CliExitCode
 {
-    Help = 0,
-    #pragma warning disable CA1069
     Success = 0,
+    #pragma warning disable CA1069
+    Help = 0,
     #pragma warning restore CA1069
     ErrorGeneral = 1,
 
