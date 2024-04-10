@@ -1,3 +1,4 @@
+using System.Reflection;
 using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Builders;
@@ -23,9 +24,30 @@ struct DirectoryBackup : IDisposable
     NPath _fullPath;
 }
 
-abstract class TestFileSystemFixture
+[AttributeUsage(AttributeTargets.Assembly)]
+class TestFilesLocationAttribute : Attribute
+{
+    public TestFilesLocationAttribute(string location) => Location = location;
+    public string Location { get; }
+}
+
+// this fixture will give access to the TestFiles/ folder
+abstract class TestFilesFixture
+{
+    protected NPath TestFiles { get; } = (Assembly
+        .GetExecutingAssembly()
+        .GetCustomAttribute<TestFilesLocationAttribute>()
+        ?? throw new InvalidOperationException("Expected [TestFilesLocation] normally added by Test.targets is missing; is there a TestFiles folder?"))
+        .Location
+        .ToNPath()
+        .DirectoryMustExist();
+}
+
+// this fixture will create a new directory for each test to use for file tests, and delete it afterwards
+abstract class TempFileSystemFixture
 {
     NPath _rootDir = null!;
+    NPath _originalCwd = null!;
     protected NPath BaseDir { private set; get; } = null!;
     protected string Eol { set; get; } = "\n";
     protected string TestDirectory { set; get; } = TestContext.CurrentContext.TestDirectory;
@@ -44,12 +66,17 @@ abstract class TestFileSystemFixture
     [SetUp]
     public void InitTest()
     {
+        _originalCwd = NPath.CurrentDirectory;
         if (!BaseDir.Exists())
             BaseDir.CreateDirectory();
     }
 
     [TearDown]
-    public void CleanupTest() => DeleteTestFileSystem();
+    public void CleanupTest()
+    {
+        NPath.SetCurrentDirectory(_originalCwd);
+        DeleteTestFileSystem();
+    }
 
     protected void DeleteTestFileSystem()
     {
@@ -59,8 +86,8 @@ abstract class TestFileSystemFixture
         // TODO: add support for handling readonly files/dirs to NiceIO
 
         foreach (var path in BaseDir
-                 .Contents(true)
-                 .Where(f => (File.GetAttributes(f) & FileAttributes.ReadOnly) != 0))
+            .Contents(true)
+            .Where(f => (File.GetAttributes(f) & FileAttributes.ReadOnly) != 0))
         {
             File.SetAttributes(path, File.GetAttributes(path) & ~FileAttributes.ReadOnly);
         }

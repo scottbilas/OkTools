@@ -29,10 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="TestFiles\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="PInvoke.NTDll" />
 

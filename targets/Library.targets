@@ -112,6 +112,7 @@
       <ItemGroup>
         <Compile Include="*.t.cs" />
         <None Remove="*" />
+        <None Remove="TestFiles\**" />
       </ItemGroup>
     </When>
     <Otherwise>
