@@ -78,7 +78,7 @@ try
         ctx.VerboseDump(ctx.Options);
 
     if (ctx.Options.CmdRecord)
-        return Return(Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
+        return Return(() => Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
 
     if (ctx.Options.CmdPlay)
     {
@@ -89,7 +89,7 @@ try
         {
             var success = false;
 
-            var m = Regex.Match(ctx.Options.OptSpeed, @"(?<ratio>[0-9.])x|(?<delay>\d+)ms");
+            var m = Regex.Match(ctx.Options.OptSpeed, @"(?<ratio>[0-9.]+)x|(?<delay>\d+)ms");
             var ratioGroup = m.Groups["ratio"];
             var delayGroup = m.Groups["delay"];
 
@@ -131,7 +131,7 @@ try
                 ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at original speed");
         }
 
-        return Return(Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
+        return Return(() => Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
     }
 
     // $$$ DO THE REAL PROGRAM HERE
@@ -151,14 +151,19 @@ catch (Exception x)
     return (int)CliExitCode.ErrorSoftware;
 }
 
-int Return(Task<CliExitCode> task)
+int Return(Func<Task<CliExitCode>> task)
 {
-    var result = task.Result;
+    var operationStart = DateTime.Now;
+
+    var result = task().Result;
 
     if (ctx.IsVerbose)
     {
-        var elapsed = DateTime.Now - programStart;
-        ctx.VerboseLine($"Finished in {elapsed.TotalSeconds:F3}s with exit code {result} ({(int)result})");
+        var operationElapsed = DateTime.Now - operationStart;
+        var programElapsed   = DateTime.Now - programStart;
+        ctx.VerboseLine(
+            $"Finished in {operationElapsed.TotalSeconds:F3}s (total {programElapsed.TotalSeconds:F3}s) "+
+            $"with exit code {result} ({(int)result})");
     }
 
     return (int)result;
@@ -244,7 +249,7 @@ async Task<CliExitCode> Play(string recordedPath, double? ratio, int? delay, Can
             if (last != null)
             {
                 var delta = (when - last.Value).TotalMilliseconds;
-                await Task.Delay((int)(delta * ratio.Value), cancel); // returns CompletedTask if delay (int ms) is 0
+                await Task.Delay((int)(delta / ratio.Value), cancel); // returns CompletedTask if delay (int ms) is 0
             }
             last = when;
         }
