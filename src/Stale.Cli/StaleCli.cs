@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using DocoptNet;
+using Spectre.Console;
 using Vezel.Cathode;
 using Vezel.Cathode.Processes;
 
@@ -20,6 +21,10 @@ Terminal.Signaled += signalContext =>
 {
     if (signalContext.Signal != TerminalSignal.Interrupt)
         return;
+
+    // TODO: pass through ctrl-c and attempt to let the child process exit gracefully
+    // (may also need to handle ctrl-break, ctrl-close, etc)
+    // (may also need to pass y/n confirmation thingy)
 
     ctx.Cancel();
 };
@@ -78,7 +83,7 @@ try
         ctx.VerboseDump(ctx.Options);
 
     if (ctx.Options.CmdRecord)
-        return Return(() => Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
+        return Run(() => Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
 
     if (ctx.Options.CmdPlay)
     {
@@ -131,14 +136,10 @@ try
                 ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at original speed");
         }
 
-        return Return(() => Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
+        return Run(() => Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
     }
 
-    // $$$ DO THE REAL PROGRAM HERE
-
-    throw new UnreachableCodeException();
-
-    //Return(...);
+    return Run(() => Main(ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
 }
 catch (CliErrorException x)
 {
@@ -151,7 +152,7 @@ catch (Exception x)
     return (int)CliExitCode.ErrorSoftware;
 }
 
-int Return(Func<Task<CliExitCode>> task)
+int Run(Func<Task<CliExitCode>> task)
 {
     var operationStart = DateTime.Now;
 
@@ -169,13 +170,66 @@ int Return(Func<Task<CliExitCode>> task)
     return (int)result;
 }
 
+async Task<CliExitCode> Main(string command, IReadOnlyList<string> args)
+{
+    var (process, captures) = ShellExec(command, args);
+
+    var dims = Terminal.Size;
+    Terminal.Resized += size => dims = size; // TODO: also do a re-layout
+
+    const string statusColor = "bold yellow on navyblue";
+    const string stderrColor = "white on darkred";
+
+    var status = $">{process.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}";
+    if (status.Length <= dims.Width)
+        ctx.OutMarkupLine($"[{statusColor}]{status.PadRight(dims.Width).EscapeMarkup()}[/]");
+    else
+        ctx.OutMarkupLine($"[{statusColor}]{status[..(dims.Width-1)].EscapeMarkup()}[/][blue]»[/]");
+
+    await foreach (var capture in captures.ReadAllAsync(ctx.CancelToken))
+    {
+        void Process()
+        {
+            var span = capture.Line.AsSpan();
+            if (span.Length == 0)
+            {
+                ctx.OutLine();
+                return;
+            }
+
+            void Out(ReadOnlySpan<char> span)
+            {
+                // TODO: should i be using async versions of these Out funcs..?
+
+                if (capture.IsStdErr)
+                    ctx.OutMarkupLine($"[{stderrColor}]{span.ToString().PadRight(dims.Width).EscapeMarkup()}[/]");
+                else
+                    ctx.OutLine(span);
+            }
+
+            while (span.Length > dims.Width)
+            {
+                Out(span[..dims.Width]);
+                span = span[dims.Width..];
+            }
+
+            if (span.Length > 0)
+                Out(span);
+        }
+
+        Process();
+    }
+
+    return CliExitCode.Success;
+}
+
 async Task<CliExitCode> Record(string? recordedPath, string command, IReadOnlyList<string> args)
 {
-    var (cmd, captures) = Exec(command, args);
+    var (process, captures) = ShellExec(command, args);
 
     if (ctx.IsVerbose)
     {
-        ctx.VerboseLine($">{cmd.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}");
+        ctx.VerboseLine($">{process.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}");
         ctx.VerboseLine($" (Recording to ${ctx.Options.ArgRecorded ?? "stdout"})");
     }
 
@@ -210,7 +264,7 @@ async Task<CliExitCode> Record(string? recordedPath, string command, IReadOnlyLi
     json.Flush();
     writer.Write("\n\n");
 
-    json.WriteNumber("exitcode", cmd.Completion.Result);
+    json.WriteNumber("exitcode", process.Completion.Result);
 
     json.WriteEndObject();
     json.Flush();
@@ -265,8 +319,11 @@ async Task<CliExitCode> Play(string recordedPath, double? ratio, int? delay, Can
     return (CliExitCode)exitCode;
 }
 
-(ChildProcess cmd, ChannelReader<Capture> reader) Exec(NPath command, IReadOnlyList<string> args)
+(ChildProcess process, ChannelReader<Capture> reader) ShellExec(NPath command, IReadOnlyList<string> args)
 {
+    if (ShellExecUtility.ConfigureProcessExitToAlsoKillChildProcesses() && ctx.IsVerbose)
+        ctx.VerboseLine("Configuring OS to kill child processes if the current process exits");
+
     // TODO: consider checking if it's a console app
     // (see IsWindowsApplication at PowerShell\src\System.Management.Automation\engine\NativeCommandProcessor.cs:1199)
 
@@ -274,7 +331,7 @@ async Task<CliExitCode> Play(string recordedPath, double? ratio, int? delay, Can
     if (extraArgs.Any())
         args = [..extraArgs, ..args];
 
-    var cmd = new ChildProcessBuilder()
+    var process = new ChildProcessBuilder()
         .WithFileName(commandPath)
         .WithArguments(args)
         .WithRedirections(false, true, true)
@@ -306,10 +363,10 @@ async Task<CliExitCode> Play(string recordedPath, double? ratio, int? delay, Can
         }
     }
 
-    _ = Task.Run(() => Write(cmd.StandardOut.TextReader, false), ctx.CancelToken);
-    _ = Task.Run(() => Write(cmd.StandardError.TextReader, true), ctx.CancelToken);
+    _ = Task.Run(() => Write(process.StandardOut.TextReader, false), ctx.CancelToken);
+    _ = Task.Run(() => Write(process.StandardError.TextReader, true), ctx.CancelToken);
 
-    return (cmd, captures.Reader);
+    return (process, captures.Reader);
 }
 
 readonly record struct Capture(bool IsStdErr, DateTime When, string Line)

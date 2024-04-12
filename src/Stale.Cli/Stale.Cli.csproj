@@ -16,11 +16,13 @@
 
   <ItemGroup>
     <PackageReference Include="Dumpify" />
-    <PackageReference Include="Microsoft.Windows.CsWin32">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="Spectre.Console" />
+
     <PackageReference Include="Vezel.Cathode" />
+    <!--Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\obj\src\core\release\Vezel.Cathode.dll"/>
+    <Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\bin\src\common\release\Vezel.Cathode.Common.dll"/>
+    <Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\bin\src\native\debug_win-x64\Vezel.Cathode.Native.dll"/-->
+
   </ItemGroup>
 
 </Project>

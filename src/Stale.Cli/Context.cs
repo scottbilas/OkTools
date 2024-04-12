@@ -39,22 +39,34 @@ class Context : IDisposable
             _ansiConsole.MarkupInterpolated($"[grey]{text}[/]");
     }
 
+    public void OutLine() =>
+        Terminal.OutLine();
+
     public void OutLine<T>(T value) =>
         Terminal.OutLine(value);
     public void Out<T>(T value) =>
         Terminal.Out(value);
+
+    public void OutLine(ReadOnlySpan<char> span)
+    {
+        Terminal.Out(span); // no OutLine provided for ReadOnlySpan<char>
+        Terminal.OutLine();
+    }
+    public void Out(ReadOnlySpan<char> span) =>
+        Terminal.Out(span);
+
     public void OutLine(IRenderable renderable) =>
         Terminal.OutLine(renderable.ToAnsi());
     public void Out(IRenderable renderable) =>
         Terminal.Out(renderable.ToAnsi());
 
     public void OutMarkupLine(string text) =>
-        _ansiConsole.MarkupLine(text);
+        _ansiConsole.MarkupLine(text!);
     public void OutMarkup(string text) =>
         _ansiConsole.Markup(text);
-    public void OutMarkupLine(FormattableString value) =>
+    public void OutMarkupLineInterp(FormattableString value) =>
         _ansiConsole.MarkupLineInterpolated(value);
-    public void OutMarkup(FormattableString value) =>
+    public void OutMarkupInterp(FormattableString value) =>
         _ansiConsole.MarkupInterpolated(value);
 
     public void ErrorLine<T>(T value) =>
