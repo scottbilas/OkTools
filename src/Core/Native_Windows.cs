@@ -1,9 +1,44 @@
-﻿using System.Runtime.InteropServices;
-using PInvoke;
+﻿using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Windows.Wdk.System.Threading;
+using Windows.Win32.Foundation;
+using Windows.Win32.System.Threading;
+using static Windows.Win32.PInvoke;
+using static Windows.Wdk.PInvoke;
 
 namespace OkTools.Core;
 
+#if !NETSTANDARD
+[SupportedOSPlatform("windows5.1.2600")]
+#endif
+public class NtStatusException : Exception
+{
+    internal NtStatusException(NTSTATUS status, string? message = null, Exception? inner = null)
+        : base(message ?? status.ToFullString(), inner) => Status = status;
+
+    internal NTSTATUS Status { get; }
+}
+
+#if !NETSTANDARD
+[SupportedOSPlatform("windows5.1.2600")]
+#endif
+static class NativeWindowsExtensions
+{
+    public static void ThrowOnError(this NTSTATUS @this)
+    {
+        if (@this.SeverityCode == NTSTATUS.Severity.Error)
+            throw new NtStatusException(@this);
+    }
+
+    public static HANDLE AsRawHandle(this SafeHandle @this) =>
+        new(@this.DangerousGetHandle());
+}
+
 [PublicAPI]
+#if !NETSTANDARD
+[SupportedOSPlatform("windows5.1.2600")]
+#endif
 public static class NativeWindows
 {
     public static string GetProcessCurrentDirectory(int processId) =>
@@ -15,14 +50,14 @@ public static class NativeWindows
     {
         try { return GetProcessCurrentDirectory(processId); }
         catch (Win32Exception) { return null; }
-        catch (NTStatusException) { return null; }
+        catch (NtStatusException) { return null; }
     }
 
     public static string? SafeGetProcessCommandLine(int processId)
     {
         try { return GetProcessCommandLine(processId); }
         catch (Win32Exception) { return null; }
-        catch (NTStatusException) { return null; }
+        catch (NtStatusException) { return null; }
     }
 
     // these constants from https://stackoverflow.com/a/23842609/14582
@@ -37,44 +72,41 @@ public static class NativeWindows
         if (sizeof(void*) != 8)
             throw new NotSupportedException("Requires 64-bit OS");
 
-        var handle = Kernel32.OpenProcess(Kernel32.ProcessAccess.PROCESS_QUERY_INFORMATION | Kernel32.ProcessAccess.PROCESS_VM_READ, false, processId);
+        using var handle = OpenProcess_SafeHandle(
+            PROCESS_ACCESS_RIGHTS.PROCESS_QUERY_INFORMATION | PROCESS_ACCESS_RIGHTS.PROCESS_VM_READ,
+            false,
+            (uint)processId);
         if (handle.IsInvalid)
             throw new Win32Exception(Marshal.GetLastWin32Error());
 
-        try
+        uint dummy = 0;
+        var processBasicInformation = new PROCESS_BASIC_INFORMATION();
+        NtQueryInformationProcess(handle.AsRawHandle(), PROCESSINFOCLASS.ProcessBasicInformation,
+            &processBasicInformation, (uint)Marshal.SizeOf(processBasicInformation), ref dummy).ThrowOnError();
+
+        byte* processParametersPtr;
+        if (!ReadProcessMemory(handle,
+                (byte*)processBasicInformation.PebBaseAddress + k_processParametersOffset,
+                &processParametersPtr, (nuint)sizeof(byte*), null))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        var processParameterUStr = new UNICODE_STRING();
+        if (!ReadProcessMemory(handle.AsRawHandle(),
+                processParametersPtr + offset, &processParameterUStr, (nuint)Marshal.SizeOf(processParameterUStr), null))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        if (processParameterUStr.Buffer == null || processParameterUStr.Length == 0)
+            return "";
+
+        var processParameterStr = new string('\0', processParameterUStr.Length / 2);
+        fixed (char* strBuffer = processParameterStr)
         {
-            var processBasicInformation = new NTDll.PROCESS_BASIC_INFORMATION();
-            NTDll.NtQueryInformationProcess(handle, NTDll.PROCESSINFOCLASS.ProcessBasicInformation,
-                &processBasicInformation, Marshal.SizeOf(processBasicInformation), out _).ThrowOnError();
-
-            byte* processParametersPtr;
-            if (!Kernel32.ReadProcessMemory(handle,
-                    (byte*)processBasicInformation.PebBaseAddress + k_processParametersOffset,
-                    &processParametersPtr, (nuint)sizeof(byte*), out _))
+            // ReSharper disable once RedundantCast
+            // ^ cast is needed for netstandard, but netcore doesn't need it
+            if (!ReadProcessMemory(handle.AsRawHandle(),
+                processParameterUStr.Buffer, strBuffer, (nuint)processParameterUStr.Length, null))
                 throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            var processParameterUStr = new NTDll.UNICODE_STRING();
-            if (!Kernel32.ReadProcessMemory(handle,
-                    processParametersPtr + offset, &processParameterUStr, (nuint)Marshal.SizeOf(processParameterUStr), out _))
-                throw new Win32Exception(Marshal.GetLastWin32Error());
-
-            if (processParameterUStr.Buffer == null || processParameterUStr.Length == 0)
-                return "";
-
-            var processParameterStr = new string('\0', processParameterUStr.Length / 2);
-            fixed (char* strBuffer = processParameterStr)
-            {
-                // ReSharper disable once RedundantCast
-                // ^ cast is needed for netstandard, but netcore doesn't need it
-                if (!Kernel32.ReadProcessMemory(handle,
-                    processParameterUStr.Buffer, strBuffer, (UIntPtr)processParameterUStr.Length, out _))
-                    throw new Win32Exception(Marshal.GetLastWin32Error());
-            }
-            return processParameterStr;
         }
-        finally
-        {
-            handle.Close();
-        }
+        return processParameterStr;
     }
 }

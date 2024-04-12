@@ -1,7 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using PInvoke;
+using System.Runtime.Versioning;
+using Windows.Win32.Foundation;
 
+#if !NETSTANDARD
+[SupportedOSPlatform("windows5.1.2600")]
+#endif
 class NativeWindowsTests
 {
     [Test]
@@ -43,9 +48,9 @@ class NativeWindowsTests
     public void GetProcessX_WithInvalidProcessId_ThrowsInvalidParameter(int pid)
     {
         Should.Throw<Win32Exception>(() => NativeWindows.GetProcessCurrentDirectory(pid))
-            .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_INVALID_PARAMETER);
+            .NativeErrorCode.ShouldBe((int)WIN32_ERROR.ERROR_INVALID_PARAMETER);
         Should.Throw<Win32Exception>(() => NativeWindows.GetProcessCommandLine(pid))
-            .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_INVALID_PARAMETER);
+            .NativeErrorCode.ShouldBe((int)WIN32_ERROR.ERROR_INVALID_PARAMETER);
     }
 
     [Test]
@@ -54,9 +59,9 @@ class NativeWindowsTests
         using var process = Process.GetProcessesByName("csrss")[0];
 
         Should.Throw<Win32Exception>(() => NativeWindows.GetProcessCurrentDirectory(process.Id))
-            .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_ACCESS_DENIED);
+            .NativeErrorCode.ShouldBe((int)WIN32_ERROR.ERROR_ACCESS_DENIED);
         Should.Throw<Win32Exception>(() => NativeWindows.GetProcessCommandLine(process.Id))
-            .NativeErrorCode.ShouldBe(Win32ErrorCode.ERROR_ACCESS_DENIED);
+            .NativeErrorCode.ShouldBe((int)WIN32_ERROR.ERROR_ACCESS_DENIED);
     }
 
     [TestCase(0), TestCase(int.MaxValue)]

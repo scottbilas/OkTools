@@ -29,8 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="PInvoke.Kernel32" />
-    <PackageReference Include="PInvoke.NTDll" />
+    <PackageReference Include="Microsoft.Windows.CsWin32">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
 
     <PackageReference Include="OkTools.NiceIO" />
     <PreprocessorValue Include="NICEIO_NAMESPACE" Value="OkTools.Core" Visible="false" />
