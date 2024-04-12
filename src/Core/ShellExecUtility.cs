@@ -1,10 +1,14 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using Windows.Win32.Security;
 using Windows.Win32.System.JobObjects;
+using Microsoft.Win32.SafeHandles;
 using static Windows.Win32.PInvoke;
+
+#if !NETSTANDARD
+using System.Runtime.Versioning;
+#endif
 
 namespace OkTools.Core;
 
@@ -80,17 +84,15 @@ public static class ShellExecUtility
             var ext => throw new CliErrorException(CliExitCode.ErrorUsage, $"Unsupported command extension '.{ext}'")
         };
 
-    static bool s_childProcessesSelfDestructOnParentExit;
+    static SafeFileHandle? s_childProcessesSelfDestructOnParentExitJob;
 
 #   if !NETSTANDARD
     [SupportedOSPlatform("windows5.1.2600")]
 #   endif
     public static unsafe bool ConfigureProcessExitToAlsoKillChildProcesses()
     {
-        if (s_childProcessesSelfDestructOnParentExit)
+        if (s_childProcessesSelfDestructOnParentExitJob == null)
             return false;
-
-        s_childProcessesSelfDestructOnParentExit = true;
 
         // below is adapted from https://www.meziantou.net/killing-all-child-processes-when-the-parent-exits-job-object.htm
 
@@ -140,6 +142,10 @@ public static class ShellExecUtility
         // processes will be associated to this Job Object automatically.
         if (!AssignProcessToJobObject(jobHandle, Process.GetCurrentProcess().SafeHandle))
             throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        // hold onto this thing. if the finalizer is called it will kill the job, which will kill this and any child
+        // processes. an alternative would be to add a ref on it, but then we'd need a bool to track state.
+        s_childProcessesSelfDestructOnParentExitJob = jobHandle;
 
         return true;
     }
