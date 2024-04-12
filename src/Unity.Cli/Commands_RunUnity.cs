@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using DocoptNet;
 using OkTools.ProcMonUtils;
 using OkTools.Unity;
@@ -193,7 +194,7 @@ Debugging Options:
             projectPath = projectPath.MakeAbsolute();
         }
 
-        if (unityProject != null)
+        if (unityProject != null && OperatingSystem.IsWindowsVersionAtLeast(5, 1, 2600))
         {
             // check if unity is already running on that project
 
@@ -699,6 +700,7 @@ Debugging Options:
     [DllImport("user32.dll")]
     static extern bool SetForegroundWindow(nint hWnd);
 
+    [SupportedOSPlatform("windows5.1.2600")]
     static CliExitCode? TryActivateExistingUnity(UnityProject project, bool activateMainWindow, bool pidAsExitCode)
     {
         var unityProcesses = Unity.FindUnityProcessesForProject(project.Path);

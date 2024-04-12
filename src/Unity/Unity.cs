@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Runtime.Versioning;
 
 namespace OkTools.Unity;
 
@@ -36,8 +37,11 @@ public static class Unity
     public static IEnumerable<UnityToolchain> FindCustomToolchains(string pathSpec, bool throwOnInvalidPathSpec) =>
         FindToolchains(pathSpec.ToNPath(), null, throwOnInvalidPathSpec);
 
+    [SupportedOSPlatform("windows5.1.2600")]
     public static IReadOnlyList<Process> FindUnityProcessesForProject(string projectPath)
         => FindUnityProcessesForProject(projectPath.ToNPath());
+
+    [SupportedOSPlatform("windows5.1.2600")]
     internal static IReadOnlyList<Process> FindUnityProcessesForProject(NPath projectPath)
     {
         var matches = new List<Process>();
@@ -54,6 +58,7 @@ public static class Unity
         return matches;
     }
 
+    [SupportedOSPlatform("windows5.1.2600")]
     public static Process? TryFindMainUnityProcess(IEnumerable<Process> unityProcesses)
     {
         foreach (var unityProcess in unityProcesses.Where(p => p.MainWindowHandle != default))
