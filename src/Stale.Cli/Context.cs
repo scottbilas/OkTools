@@ -6,6 +6,37 @@ using Vezel.Cathode;
 
 #pragma warning disable CA1822
 
+enum StatType
+{
+    Init,
+    Command,
+}
+
+class Stat
+{
+    DateTime? _start, _stop;
+
+    public void Start()
+    {
+        if (_start != null)
+            throw new InvalidOperationException("already started");
+        _start = DateTime.Now;
+    }
+
+    public void Stop()
+    {
+        if (_start == null)
+            throw new InvalidOperationException("not started");
+        if (_stop != null)
+            throw new InvalidOperationException("already stopped");
+        _stop = DateTime.Now;
+    }
+
+    public DateTime StartTime => _start ?? throw new InvalidOperationException("did not start");
+    public DateTime StopTime => _stop ?? throw new InvalidOperationException("did not stop");
+    public TimeSpan Elapsed => StopTime - StartTime;
+}
+
 class Context : IDisposable
 {
     readonly CancellationTokenSource _cancelSource = new();
@@ -42,11 +73,6 @@ class Context : IDisposable
     public void OutLine() =>
         Terminal.OutLine();
 
-    public void OutLine<T>(T value) =>
-        Terminal.OutLine(value);
-    public void Out<T>(T value) =>
-        Terminal.Out(value);
-
     public void OutLine(ReadOnlySpan<char> span)
     {
         Terminal.Out(span); // no OutLine provided for ReadOnlySpan<char>
@@ -61,7 +87,7 @@ class Context : IDisposable
         Terminal.Out(renderable.ToAnsi());
 
     public void OutMarkupLine(string text) =>
-        _ansiConsole.MarkupLine(text!);
+        _ansiConsole.MarkupLine(text);
     public void OutMarkup(string text) =>
         _ansiConsole.Markup(text);
     public void OutMarkupLineInterp(FormattableString value) =>
@@ -98,6 +124,8 @@ class Context : IDisposable
         output: s_dumpOutput,
         tableConfig: new() { ShowTableHeaders = false });
 
+    public Stat this[StatType type] => _stats[(int)type];
+
     class TerminalAnsiConsole(Context ctx) : IAnsiConsole
     {
         // we only need Write()
@@ -125,6 +153,7 @@ class Context : IDisposable
     }
 
     readonly IAnsiConsole _ansiConsole;
+    readonly Stat[] _stats = EnumUtility.GetNames<StatType>().Select(_ => new Stat()).ToArray();
 
     static readonly IDumpOutput s_dumpOutput = new TerminalDumpOutput();
     static readonly ColorConfig k_verboseDumpColors = new(new DumpColor("#808080"));

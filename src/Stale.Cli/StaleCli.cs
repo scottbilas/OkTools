@@ -13,6 +13,8 @@ const int jsonVersion = 1;
 
 var programStart = DateTime.Now;
 using var ctx = new Context();
+ctx[StatType.Init].Start();
+var logStats = false;
 
 // ReSharper disable AccessToDisposedClosure
 // ^ talking about ctx here, it's ok, it outlives everything
@@ -40,6 +42,8 @@ try
         {
             if (args[i] == "--verbose")
                 isVerbose = true;
+            else if (args[i] == "--stats")
+                logStats = true;
             else if (args[i] == "--cwd")
             {
                 if (++i == args.Length)
@@ -58,6 +62,9 @@ try
             ctx.IsVerbose = true;
             ctx.VerboseLine("Enabling verbose mode");
         }
+
+        if (logStats && ctx.IsVerbose)
+            ctx.VerboseLine("Enabling stats printout at end");
 
         if (useCwd != null)
         {
@@ -154,17 +161,46 @@ catch (Exception x)
 
 int Run(Func<Task<CliExitCode>> task)
 {
-    var operationStart = DateTime.Now;
+    ctx[StatType.Init].Stop();
 
+    ctx[StatType.Command].Start();
     var result = task().Result;
+    ctx[StatType.Command].Stop();
 
-    if (ctx.IsVerbose)
+    if (logStats)
     {
-        var operationElapsed = DateTime.Now - operationStart;
+        ctx.OutMarkupLine("[aqua]-- Stats from run --[/]");
+        var table = new Table() { Border = TableBorder.Minimal };
+        table.AddColumn("Stat");
+        table.AddColumn("Start");
+        table.AddColumn("Stop");
+        table.AddColumn("Elapsed");
+
+        foreach (var statType in EnumUtility.GetValues<StatType>())
+        {
+            var stat = ctx[statType];
+            table.AddRow(
+                statType.ToString(),
+                stat.StartTime.ToString("hh:mm:ss.fff"),
+                stat.StopTime.ToString("hh:mm:ss.fff"),
+                stat.Elapsed.TotalSeconds.ToString("F3"));
+        }
+
+        var totalStart = ctx[EnumUtility.GetValues<StatType>().First()].StartTime;
+        var totalStop = ctx[EnumUtility.GetValues<StatType>().Last()].StopTime;
+        table.AddRow(
+            "Total",
+            totalStart.ToString("hh:mm:ss.fff"),
+            totalStop.ToString("hh:mm:ss.fff"),
+            (totalStop - totalStart).TotalSeconds.ToString("F3"));
+
+        ctx.Out(table);
+
+/*        var operationElapsed = DateTime.Now - operationStart;
         var programElapsed   = DateTime.Now - programStart;
-        ctx.VerboseLine(
+        ctx.OutLine(
             $"Finished in {operationElapsed.TotalSeconds:F3}s (total {programElapsed.TotalSeconds:F3}s) "+
-            $"with exit code {result} ({(int)result})");
+            $"with exit code {result} ({(int)result})");*/
     }
 
     return (int)result;
@@ -181,10 +217,10 @@ async Task<CliExitCode> Main(string command, IReadOnlyList<string> args)
     const string stderrColor = "white on darkred";
 
     var status = $">{process.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}";
-    if (status.Length <= dims.Width)
-        ctx.OutMarkupLine($"[{statusColor}]{status.PadRight(dims.Width).EscapeMarkup()}[/]");
-    else
-        ctx.OutMarkupLine($"[{statusColor}]{status[..(dims.Width-1)].EscapeMarkup()}[/][blue]»[/]");
+    ctx.OutMarkupLine(
+        status.Length <= dims.Width
+        ? $"[{statusColor}]{status.PadRight(dims.Width).EscapeMarkup()}[/]"
+        : $"[{statusColor}]{status[..(dims.Width-1)].EscapeMarkup()}[/][blue]»[/]");
 
     await foreach (var capture in captures.ReadAllAsync(ctx.CancelToken))
     {
