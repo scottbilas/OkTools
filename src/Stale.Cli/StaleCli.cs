@@ -191,11 +191,6 @@ async Task<CliExitCode> Main(string command, IReadOnlyList<string> args)
         void Process()
         {
             var span = capture.Line.AsSpan();
-            if (span.Length == 0)
-            {
-                ctx.OutLine();
-                return;
-            }
 
             void Out(ReadOnlySpan<char> span)
             {
@@ -205,6 +200,13 @@ async Task<CliExitCode> Main(string command, IReadOnlyList<string> args)
                     ctx.OutMarkupLine($"[{stderrColor}]{span.ToString().PadRight(dims.Width).EscapeMarkup()}[/]");
                 else
                     ctx.OutLine(span);
+            }
+
+            // this would be a blank line, not "no line"
+            if (span.Length == 0)
+            {
+                Out(span);
+                return;
             }
 
             while (span.Length > dims.Width)
