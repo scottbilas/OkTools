@@ -1,3 +1,11 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using Windows.Win32.Security;
+using Windows.Win32.System.JobObjects;
+using static Windows.Win32.PInvoke;
+
 namespace OkTools.Core;
 
 public static class ShellExecUtility
@@ -71,4 +79,68 @@ public static class ShellExecUtility
 
             var ext => throw new CliErrorException(CliExitCode.ErrorUsage, $"Unsupported command extension '.{ext}'")
         };
+
+    static bool s_childProcessesSelfDestructOnParentExit;
+
+#   if !NETSTANDARD
+    [SupportedOSPlatform("windows5.1.2600")]
+#   endif
+    public static unsafe bool ConfigureProcessExitToAlsoKillChildProcesses()
+    {
+        if (s_childProcessesSelfDestructOnParentExit)
+            return false;
+
+        s_childProcessesSelfDestructOnParentExit = true;
+
+        // below is adapted from https://www.meziantou.net/killing-all-child-processes-when-the-parent-exits-job-object.htm
+
+        // Ensure the handle is not duplicated in the child processes.
+        // This would break JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE as there
+        // all child processes would have a handle for the Job Object.
+        // Thus, closing the root process would not terminate all processes
+        // in the hierarchy as the Job object would still be referenced by
+        // other child processes.
+        var securityAttributes = new SECURITY_ATTRIBUTES
+        {
+            // Ensure the handle is not duplicated in the child processes.
+            // This would break JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE as there
+            // all child processes would have a handle for the Job Object.
+            // Thus, closing the root process would not terminate all processes
+            // in the hierarchy as the Job object would still be referenced by
+            // other child processes.
+            bInheritHandle = false,
+            lpSecurityDescriptor = null,
+            nLength = (uint)Marshal.SizeOf<SECURITY_ATTRIBUTES>(),
+        };
+
+        var jobHandle = CreateJobObject(securityAttributes, null);
+        if (jobHandle.IsInvalid)
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        // Configure the Job Object to kill all processes when the root process is killed.
+        var info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+        {
+            BasicLimitInformation = new JOBOBJECT_BASIC_LIMIT_INFORMATION
+            {
+                // Kill all processes associated to the job when the last handle is closed
+                LimitFlags = JOB_OBJECT_LIMIT.JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+            },
+        };
+
+        if (!SetInformationJobObject(
+                jobHandle,
+                JOBOBJECTINFOCLASS.JobObjectExtendedLimitInformation,
+                &info,
+                (uint)Marshal.SizeOf<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>()))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        // Assign the Job object to the current process.
+        // As we don't allow child processes to escape from the Job object in the LimitFlags using
+        // JOB_OBJECT_LIMIT_BREAKAWAY_OK or JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK, all child
+        // processes will be associated to this Job Object automatically.
+        if (!AssignProcessToJobObject(jobHandle, Process.GetCurrentProcess().SafeHandle))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+
+        return true;
+    }
 }

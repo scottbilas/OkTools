@@ -67,4 +67,7 @@
     // TODO: TESTS TO WRITE
     //
     // check that "./jam foo" does not search outside current directory (no PATH)
+
+    // add test for ConfigureProcessExitToAlsoKillChildProcesses somehow..note that it messes with the current process, which isn't so nice.
+    // can nunit start a process just for a test?
 }
