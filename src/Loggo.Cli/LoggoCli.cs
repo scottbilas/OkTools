@@ -69,7 +69,7 @@ try
 
     for (var (written, lineNum) = (0L, 0);; ++lineNum)
     {
-        if (Console.KeyAvailable)
+        if (!Console.IsInputRedirected && Console.KeyAvailable)
         {
             Console.ReadKey(true); // ignore so it doesn't end up in parent process
             return (int)UnixSignal.KeyboardQuit.AsCliExitCode();
