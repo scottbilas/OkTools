@@ -133,7 +133,7 @@ partial class NPath
             if (overwrite)
             {
                 // emulate overwrite for .net standard which doesn't have this param (.net core has had it since 3.1)
-                if (File.Exists(srcNativePath))
+                if (File.Exists(dstNativePath))
                     File.Replace(srcNativePath, dstNativePath, null); // null == no backup
                 else
                     File.Move(srcNativePath, dstNativePath);
