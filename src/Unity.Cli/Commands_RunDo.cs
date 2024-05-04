@@ -33,7 +33,7 @@ Options:
 
     public static string DocUsageDoUsage_Windows => !OperatingSystem.IsWindows() ? "" :
 @"  okunity do killhub [--dry-run]
-  okunity do hidehub [--kill-hub] [--dry-run]
+  okunity do hidehub [--killhub] [--dry-run]
 ";
 
     public static string DocUsageDoCommands_Windows => !OperatingSystem.IsWindows() ? "" : @"
@@ -59,7 +59,7 @@ Options:
 ";
 
     public static string DocUsageDoOptions_Windows => !OperatingSystem.IsWindows() ? "" :
-@"  --kill-hub  Also run `do killhub` as part of this command.
+@"  --killhub  Also run `do killhub` as part of this command.
 ";
 
     public static CliExitCode RunDo(CommandContext context)
@@ -75,7 +75,7 @@ Options:
 
         if (OperatingSystem.IsWindows() && context.CommandLine["hidehub"].IsTrue)
         {
-            HideHubFromUnity(context.CommandLine["--kill-hub"].IsTrue, context.CommandLine["--dry-run"].IsTrue);
+            HideHubFromUnity(context.CommandLine["--killhub"].IsTrue, context.CommandLine["--dry-run"].IsTrue);
             return CliExitCode.Success;
         }
 

@@ -10,7 +10,7 @@ static partial class Commands
     // TODO: partial matches (like ignore hash and go with most recent install)
     // TODO: option to kill unity if found running (perhaps only if not responding..otherwise give it a quit message and a 15s or whatever timeout, then fall back to kill)
     // TODO: --create-project option (probably should also require --toolchain..difficult to choose a default)
-    // TODO: --kill-hub option
+    // TODO: --killhub option
     // TODO: let --toolchain specify another project path or a projectversion so can mean "launch project x with the same unity as project y uses"
     // TODO: `--prefer-toolchain LocallyBuilt` or something that lets me say "use the one i built rather than the installed" and does a semi-fuzzy match on versioning, because obvs it will be a bit different from projectversion.txt expectation
     // TODO: use '!' to mean "last". for example `oku unity !` will run unity with the last project chosen. (requires obvs saving out this data..also need to be careful with context about where we might allow a ! for any given flag..what about --toolchain !, right? last for that project, last for any project..? use !! for 'global' and ! for "last local if applicable"?)
@@ -67,7 +67,7 @@ Options:
   --pid-exitcode          Return the Unity process ID as the exit code (*)
   --job-worker-count JWC  Set a limit on both a) job worker thread count and b) shader compiler process count; JWC can be either X to choose an explicit number or X% to choose a percentage of machine vCPU's
   --no-cache-server       Tell Unity not to use the cache server
-  --no-hub                [windows-only] Run `okunity do hidehub --kill-hub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
+  --no-hub                [windows-only] Run `okunity do hidehub --killhub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
 
