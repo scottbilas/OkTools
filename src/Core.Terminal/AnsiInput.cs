@@ -265,7 +265,9 @@ public static class AnsiInput
             new(CSI+"1;5D",  new(ConsoleKey.LeftArrow,  ctrl: true)),
 
             new(CSI+"1~",    new(ConsoleKey.Home)),
+            new(CSI+"1;5H",  new(ConsoleKey.Home, ctrl: true)),
             new(CSI+"4~",    new(ConsoleKey.End)),
+            new(CSI+"1;5F",  new(ConsoleKey.End, ctrl: true)),
 
             new(CSI+"5~",    new(ConsoleKey.PageUp)),
             new(CSI+"6~",    new(ConsoleKey.PageDown)),
