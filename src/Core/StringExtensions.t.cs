@@ -196,6 +196,28 @@ class StringExtensionsTests
         enumerable.StringJoin('\n').ShouldBe("abc\n57\n-14\nz");
     }
 
+    [TestCase("", "")]
+    [TestCase("abc", "abc")]
+    [TestCase("Abc", "abc")]
+    [TestCase("ABC", "aBC")]
+    [TestCase("abc Def", "abc Def")]
+    [TestCase("Abc Def", "abc Def")]
+    public void ToLowerFirstChar(string str, string expected)
+    {
+        str.ToLowerFirstChar().ShouldBe(expected);
+    }
+
+    [TestCase("", "")]
+    [TestCase("abc", "Abc")]
+    [TestCase("Abc", "Abc")]
+    [TestCase("ABC", "ABC")]
+    [TestCase("abc dEF", "Abc dEF")]
+    [TestCase("Abc dEF", "Abc dEF")]
+    public void ToUpperFirstChar(string str, string expected)
+    {
+        str.ToUpperFirstChar().ShouldBe(expected);
+    }
+
     [Test]
     public void ExpandTabs_WithEmpty_Returns_Empty()
     {

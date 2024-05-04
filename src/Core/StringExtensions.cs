@@ -134,9 +134,29 @@ public static class StringExtensions
     public static string RegexReplace(this string @this, string pattern, MatchEvaluator evaluator, RegexOptions options, TimeSpan matchTimeout) =>
         Regex.Replace(@this, pattern, evaluator, options, matchTimeout);
 
+    public static string ToLowerFirstChar(this string @this)
+    {
+        if (@this.Length == 0)
+            return @this;
+        if (!char.IsUpper(@this[0]))
+            return @this;
+
+        return @this[0].ToLower() + @this[1..];
+    }
+
+    public static string ToUpperFirstChar(this string @this)
+    {
+        if (@this.Length == 0)
+            return @this;
+        if (!char.IsLower(@this[0]))
+            return @this;
+
+        return @this[0].ToUpper() + @this[1..];
+    }
+
     public static IEnumerable<string> SelectToLower(this IEnumerable<string> @this) =>
         @this.Select(s => s.ToLowerInvariant());
-    public static IEnumerable<string> SelectToToUpper(this IEnumerable<string> @this) =>
+    public static IEnumerable<string> SelectToUpper(this IEnumerable<string> @this) =>
         @this.Select(s => s.ToUpperInvariant());
 
     // the buffer is for avoiding the builder alloc each time. useful when processing multiple lines, and can cut allocs by half.

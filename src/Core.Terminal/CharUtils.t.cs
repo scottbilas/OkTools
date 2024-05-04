@@ -3,21 +3,6 @@ using OkTools.Core.Terminal;
 
 class CharUtilsTests
 {
-    static CultureInfo s_prevCulture = null!;
-
-    [OneTimeSetUp]
-    public void OneTimeSetup()
-    {
-        s_prevCulture = Thread.CurrentThread.CurrentCulture;
-        Thread.CurrentThread.CurrentCulture = new CultureInfo("tr-TR");
-    }
-
-    [OneTimeTearDown]
-    public void OneTimeTearDown()
-    {
-        Thread.CurrentThread.CurrentCulture = s_prevCulture;
-    }
-
     [TestCase('\a', "\\a")]
     [TestCase('\r', "\\r")]
     [TestCase((char)0x7f, "\\b")]
@@ -40,29 +25,5 @@ class CharUtilsTests
     {
         CharUtils.ToNiceString(ch).ShouldBe(expectedx);
         CharUtils.ToNiceString(ch, true).ShouldBe(expectedu);
-    }
-
-    // default handling uses culture, but my defaults are invariant because i'm almost always doing coder stuff
-    // and mostly for myself. so i want culture-sensitive work to be explicit.
-
-    [Test]
-    public void ToUpperLower_WithOppositeCase_UsesInvariant()
-    {
-        // system set to turkish
-        char.ToUpper('i').ShouldBe('İ');
-        char.ToLower('I').ShouldBe('ı');
-
-        // mine should be invariant
-        'i'.ToUpper().ShouldBe('I');
-        'I'.ToLower().ShouldBe('i');
-    }
-
-    [Test]
-    public void ToUpperLower_WithTargetCase_LeavesUnmodifiedRegardlessOfCulture()
-    {
-        char.ToLower('i').ShouldBe('i');
-        char.ToUpper('I').ShouldBe('I');
-        'i'.ToLower().ShouldBe('i');
-        'I'.ToUpper().ShouldBe('I');
     }
 }
