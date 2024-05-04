@@ -1,4 +1,5 @@
-﻿using System.IO.Pipelines;
+﻿using System.Buffers;
+using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Vezel.Cathode.IO;
@@ -24,10 +25,11 @@ public static class AnsiInput
 
         try
         {
-            // windows apparently has a bug preventing cancelable key reading, so we are forced to add an intermediate
-            // pipe that can have a read-with-timeout. see https://github.com/vezel-dev/cathode/issues/165#issuecomment-2085666036.
+            // we need an independently running task for reading raw input, because of an apparent windows bug doing
+            // read+timeout (which we are doing on the pipe in another task).
+            // see https://github.com/vezel-dev/cathode/issues/165#issuecomment-2085666036.
 
-            var rawInputPipe = new Pipe(new PipeOptions());
+            var rawInputPipe = new Pipe();
             rawReader = Task.Run(async () =>
             {
                 var buffer = new byte[100];
@@ -63,100 +65,117 @@ public static class AnsiInput
     {
         // main loop: read input, parse into key events and yield them
 
-        var inputBuffer = new StreamableBuffer<byte>();
+        var arrayPool = ArrayPool<byte>.Shared;
+        var readAtLeast = 1;
+
         while (!cancel.IsCancellationRequested)
         {
             var timerExpired = false;
 
-            if (inputBuffer.HasUnread)
+            ReadResult read;
+            if (readAtLeast > 1)
             {
-                // detect standalone ESC
-                var cancelTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-                cancelTimeout.CancelAfter(k_standaloneEscTimeoutMs);
+                // possibilities when we have a timeout:
+                //
+                //  1. it was user hitting esc ("standalone esc")
+                //  2. it's an unrecognized esc sequence (need to add cases to the matcher)
+                //  3. the sequence didn't completely fit in a packet, and the continuing packet arrives too late
+
+                var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancel);
+                timeout.CancelAfter(k_standaloneEscTimeoutMs);
                 try
                 {
-                    await ReadAsync(cancelTimeout.Token);
+                    read = await inPipe.ReadAtLeastAsync(readAtLeast + 1, timeout.Token);
                 }
-                catch (OperationCanceledException x) when (x.CancellationToken == cancelTimeout.Token)
+                catch (OperationCanceledException x) when (x.CancellationToken == timeout.Token)
                 {
                     timerExpired = true;
+                    inPipe.TryRead(out read); // ok take whatever we have
                 }
             }
             else
             {
-                await ReadAsync(cancel);
+                read = await inPipe.ReadAsync(cancel);
             }
 
-            async ValueTask ReadAsync(CancellationToken readCancel)
-            {
-                var read = await inPipe.ReadAsync(readCancel);
-                inputBuffer.Write(read.Buffer);
-                inPipe.AdvanceTo(read.Buffer.End);
-            }
+            // flatten into an array, which we iterate through with an ArraySegment (spans not allowed in async)
+            var inputBuffer = arrayPool.Rent((int)read.Buffer.Length);
+            read.Buffer.CopyTo(inputBuffer);
+            var inputSegment = new ArraySegment<byte>(inputBuffer, 0, (int)read.Buffer.Length);
 
-            // sub-loop: parse raw input into key events and yield them
-            while (inputBuffer.HasUnread && !cancel.IsCancellationRequested)
+            while (!inputSegment.IsEmpty())
             {
-                var keyEvent = TryParseKey(inputBuffer, timerExpired);
+                if (cancel.IsCancellationRequested)
+                    yield break;
+
+                var keyEvent = TryParseKey(ref inputSegment, timerExpired);
                 if (keyEvent == null)
                     break;
 
                 yield return keyEvent.Value;
             }
 
-            // if we've consumed all input, reuse the memory for further writes
-            if (!inputBuffer.HasUnread)
-                inputBuffer.Reset();
+            // if we didn't consume all the data, we'll need to request more next time, or it will just return the same thing
+            readAtLeast = inputSegment.Count + 1;
+
+            inPipe.AdvanceTo(read.Buffer.GetPosition(inputSegment.Offset));
+            arrayPool.Return(inputBuffer);
         }
     }
 
-    static KeyEvent? TryParseKey(StreamableBuffer<byte> inputBuffer, bool timerExpired)
+    static KeyEvent? TryParseKey(ref ArraySegment<byte> input, bool timerExpired)
     {
-        var unread = inputBuffer.UnreadSpan;
-
-        // pass through anything that isn't part of an esc sequence. this will include printable chars and also utf-8.
-        if (unread[0] != ESC)
+        static void Skip(ref ArraySegment<byte> input)
         {
-            // control char
-            return IsControlChar(unread[0])
-                ? ParseControlChar((char)inputBuffer.Read())
-                : new KeyEvent((char)inputBuffer.Read());
+            input = input[1..];
         }
 
-        if (unread.Length >= k_minExtendedMapping)
+        static byte Read(ref ArraySegment<byte> input)
+        {
+            var b = input[0];
+            Skip(ref input);
+            return b;
+        }
+
+        // pass through anything that isn't part of an esc sequence. this will include printable chars and also utf-8.
+        if (input[0] != ESC)
+        {
+            var b = Read(ref input);
+            return IsControlChar(b)
+                ? ParseControlChar(b)
+                : new KeyEvent((char)b);
+        }
+
+        if (input.Count >= k_minExtendedMapping)
         {
             foreach (var mapping in k_extendedMappings)
             {
-                var matchLen = CountSame<byte>(mapping.Pattern.AsSpan(), unread);
+                var matchLen = CountSame<byte>(mapping.Pattern.AsSpan(), input);
                 if (matchLen == mapping.Pattern.Length)
                 {
-                    inputBuffer.SeekReader(mapping.Pattern.Length);
+                    input = input[matchLen..];
                     return mapping.Event;
                 }
             }
         }
 
         if (timerExpired)
-        {
-            inputBuffer.AdvanceReader();
-            return ParseControlChar(ESC);
-        }
+            return ParseControlChar(Read(ref input));
 
         // plain esc leave alone for possible timeout
-        if (unread.Length == 1)
+        if (input.Count == 1)
             return null;
 
         // alt-control/printable chars. this is potentially ambiguous with some escape sequences so this must come after
         // the above check.
 
         // skip the esc, we're definitely returning something now
-        inputBuffer.AdvanceReader();
-        var ch = unread[1];
+        Skip(ref input);
 
-        if (IsControlChar(ch) && ch != ESC) // don't want held-down esc key to sometimes come through as alt-ESC
-            return ParseControlChar((char)inputBuffer.Read()) with { Alt=true };
-        if (IsPrintableChar(ch))
-            return new KeyEvent((char)inputBuffer.Read(), alt: true);
+        if (IsControlChar(input[0]) && input[0] != ESC) // don't want held-down esc key to sometimes come through as alt-ESC
+            return ParseControlChar(Read(ref input)) with { Alt = true };
+        if (IsPrintableChar(input[0]))
+            return new KeyEvent((char)Read(ref input), alt: true);
 
         // ESC followed by more must be a plain ESC (or a sequence we don't recognize, which we'll just pass through)
         return ParseControlChar(ESC);
@@ -211,6 +230,7 @@ public static class AnsiInput
 
     static KeyEvent ParseControlChar(char ch) =>
         ch == '\x7f' ? new(ConsoleKey.Backspace, BS) : k_controlChars[ch];
+    static KeyEvent ParseControlChar(byte b) => ParseControlChar((char)b);
 
     readonly struct KeyMapping
     {
