@@ -6,13 +6,12 @@
 [PublicAPI]
 public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = false, bool Shift = false, bool Ctrl = false)
 {
-    public bool AnyModifiers => Alt || Shift || Ctrl;
-    public bool NoModifiers  => !Alt && !Shift && !Ctrl;
-
     public KeyEvent(ConsoleKey key, bool alt = false, bool shift = false, bool ctrl = false)
         : this(key, default, alt, shift, ctrl) {}
     public KeyEvent(char ch, bool alt = false, bool shift = false, bool ctrl = false)
         : this(default, ch, alt, shift, ctrl) {}
+
+    public ConsoleModifiers Modifiers => (Alt ? ConsoleModifiers.Alt : 0) | (Shift ? ConsoleModifiers.Shift : 0) | (Ctrl ? ConsoleModifiers.Control : 0);
 
     public override string ToString()
     {
@@ -35,7 +34,7 @@ public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = fal
             wrapInBrackets = str.Length > 1;
         }
 
-        if (NoModifiers)
+        if (Modifiers == 0)
             return wrapInBrackets ? $"<{str}>" : str;
 
         return $"<{(Alt?"!":"")}{(Shift?"+":"")}{(Ctrl?"^":"")}{str}>";
