@@ -7,7 +7,7 @@
 
     <!-- publishing defaults -->
     <PublishDir>$(OkPublishDir)</PublishDir>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <PublishSingleFile>false</PublishSingleFile>
     <SelfContained>false</SelfContained>
   </PropertyGroup>
