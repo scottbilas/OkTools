@@ -86,12 +86,14 @@ public static class ShellExecUtility
 
     static SafeFileHandle? s_childProcessesSelfDestructOnParentExitJob;
 
-#   if !NETSTANDARD
-    [SupportedOSPlatform("windows5.1.2600")]
-#   endif
     public static unsafe bool ConfigureProcessExitToAlsoKillChildProcesses()
     {
-        if (s_childProcessesSelfDestructOnParentExitJob == null)
+        #if !NETSTANDARD
+        if (!OperatingSystem.IsWindowsVersionAtLeast(5, 1, 2600))
+            throw new NotImplementedException("Implement me for this platform!");
+        #endif
+
+        if (s_childProcessesSelfDestructOnParentExitJob != null)
             return false;
 
         // below is adapted from https://www.meziantou.net/killing-all-child-processes-when-the-parent-exits-job-object.htm
