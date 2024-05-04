@@ -30,7 +30,9 @@ Symbolicator, query, and conversion tool for Process Monitor ([procmon](https://
 
 ## showkeys (Showkeys.Cli)
 
-Showkeys for Windows. Virtual terminal sequences. Useful when debugging TUI apps on Windows. Finished.
+Showkeys-ish for Windows. Prints virtual terminal sequences for keypresses. Useful when debugging TUI apps on Windows. Finished, but I drop in to tweak it sometimes.
+
+[CLI docs](src/Showkeys.Cli/Program.cs#9)
 
 ## stale (Stale.Cli)
 

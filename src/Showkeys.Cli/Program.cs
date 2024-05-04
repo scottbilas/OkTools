@@ -1,41 +1,139 @@
-﻿using System.Collections.Concurrent;
+﻿using System.Runtime.CompilerServices;
+using DocoptNet;
+using OkTools.Core.Terminal;
+using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Terminal;
 
-OutLine("Ctrl-C to quit");
-OutLine();
+const string help = """
+    showkeys, the terminal utils thingy
 
-EnableRawMode();
+    Usage:
+      showkeys show [--dotnet | --ansi]
+      showkeys drive
+      showkeys --help
 
-try
+    Commands:
+      show   Print out the ansi keycodes of the keys you press.
+      drive  Exercise the terminal to see what different vt100 sequences do.
+
+    Options:
+      --dotnet  Use the built-in dotnet Console key reader in cooked mode, rather than Cathode (ansi sequences, raw mode).
+      --ansi    Use OkTools.Core.Terminal.AnsiInputReaderReader to receive key events.
+    """;
+
+var cb = new ControlBuilder();
+
+void Flush()
 {
-    var queue = new BlockingCollection<byte>();
+    Out(cb.Span);
+    cb.Clear();
+}
 
-    var task = Task.Run(() =>
+return Docopt.CreateParser(help).Parse(args) switch
+{
+    IArgumentsResult<IDictionary<string, ArgValue>> result
+        => (int)await Run(result.Arguments),
+    IHelpResult
+        => ShowHelp(),
+    IInputErrorResult error
+        => ShowError(error.Usage),
+    var unknown
+        => throw new SwitchExpressionException(unknown)
+};
+
+int ShowHelp() { OutLine(help); return (int)CliExitCode.Success; }
+int ShowError(string usage) { ErrorLine(usage); return (int)CliExitCode.ErrorUsage; }
+
+async Task<CliExitCode> Run(IDictionary<string, ArgValue> options)
+{
+    OutLine("Ctrl-C to quit");
+    OutLine();
+
+    try
     {
-        var array = new byte[1];
-        for (;;)
+        if (options["show"].IsTrue)
         {
-            Read(array);
-            queue.Add(array[0]);
+            if (options["--dotnet"].IsTrue)
+                return ShowKeysDotnet();
+
+            EnableRawMode();
+
+            return options["--ansi"].IsTrue
+                ? await ShowKeysParserRaw()
+                : ShowKeysCathodeRaw();
         }
 
-        // ReSharper disable once FunctionNeverReturns
-    });
+        if (options["drive"].IsTrue)
+            return await Drive();
 
-    for (var next = 0; next != 3; )
+        throw new InvalidOperationException("Invalid command");
+    }
+    catch (CliErrorException ex)
     {
-        Out((next = queue.Take()) switch
+        return ex.Code;
+    }
+    finally
+    {
+        cb.Clear();
+        cb.SoftReset();
+        Flush();
+
+        DisableRawMode();
+    }
+}
+
+#pragma warning disable RS0030 // bypass Console.* analyzers
+CliExitCode ShowKeysDotnet()
+{
+    Console.CancelKeyPress += (_, _) => Environment.Exit((int)UnixSignal.KeyboardInterrupt.AsCliExitCode());
+
+    for (;;)
+    {
+        var keyInfo = Console.ReadKey(true);
+
+        OutLine($"key={keyInfo.Key} char='{CharUtils.ToNiceString(keyInfo.KeyChar)}' mod={keyInfo.Modifiers}");
+    }
+}
+#pragma warning restore RS0030
+
+CliExitCode ShowKeysCathodeRaw()
+{
+    var buffer = new byte[100];
+    for (;;)
+    {
+        var read = Read(buffer);
+        for (var i = 0; i < read; ++i)
         {
-            3 => "^C",
-            0x1b => "^[",
-            '\r' => "\n",
-            _ => ((char)next).ToString()
-        });
+            var c = (char)buffer[i];
+            Out(CharUtils.ToNiceString(c));
+
+            if (c == ControlConstants.ETX)
+                return UnixSignal.KeyboardInterrupt.AsCliExitCode();
+        }
+        Out("\r\n");
+    }
+}
+
+async Task<CliExitCode> ShowKeysParserRaw()
+{
+    await foreach (var item in AnsiInput.SelectReadKeysAsync(TerminalIn))
+    {
+        await OutAsync($"{item}\r\n");
+        if (item is { Char: 'c', Ctrl: true })
+            return UnixSignal.KeyboardInterrupt.AsCliExitCode();
     }
 
-    await task;
+    return CliExitCode.Success;
 }
-finally
+
+async Task<CliExitCode> Drive()
 {
-    DisableRawMode();
+    OutLine("Ctrl-C to quit");
+    OutLine();
+
+    EnableRawMode();
+
+    await Task.Delay(0);
+
+    return CliExitCode.Success;
 }
