@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets" />
+
+  <PropertyGroup>
+    <RootNamespace>OkTools.Core.Terminal</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Vezel.Cathode" />
+  </ItemGroup>
+
+</Project>

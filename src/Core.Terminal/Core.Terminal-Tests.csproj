@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(OkTargetsRoot)Tests.targets" />
+
+  <ItemGroup>
+    <ProjectReference Include="Core.Terminal.csproj" />
+  </ItemGroup>
+</Project>
