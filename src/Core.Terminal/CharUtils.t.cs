@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using OkTools.Core.Terminal;
 
 class CharUtilsTests
 {
