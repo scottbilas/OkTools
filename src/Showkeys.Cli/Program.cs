@@ -1,7 +1,9 @@
-﻿using System.Runtime.CompilerServices;
+using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DocoptNet;
 using OkTools.Core.Terminal;
+using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Terminal;
 
@@ -131,7 +133,17 @@ async Task<CliExitCode> ShowKeysParser()
 
     await foreach (var item in AnsiInput.SelectReadKeysAsync(TerminalIn))
     {
-        await OutAsync($"{item}\r\n");
+        var (prefix, special, normal) = item.ToComponentStrings();
+        cb.Clear();
+        cb.SetForegroundColor(Color.Yellow);
+        cb.Print(prefix);
+        cb.SetForegroundColor(Color.Aqua);
+        cb.Print(special);
+        cb.ResetAttributes();
+        cb.Print(normal);
+        cb.Print("\r\n");
+        await OutAsync(cb);
+
         if (item is { Char: 'c', Ctrl: true })
             return UnixSignal.KeyboardInterrupt.AsCliExitCode();
     }

@@ -1,4 +1,4 @@
-﻿namespace OkTools.Core.Terminal;
+namespace OkTools.Core.Terminal;
 
 // TODO: let's also pack in a little 10-char (null-term) array to store the captured pattern, and have little helpers to access it.
 // sometimes might be nicer when detecting ctrl-c for example, and may help with diagnostics as well when there is a misfire on the key matcher.
@@ -38,5 +38,33 @@ public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = fal
             return wrapInBrackets ? $"<{str}>" : str;
 
         return $"<{(Alt?"!":"")}{(Shift?"+":"")}{(Ctrl?"^":"")}{str}>";
+    }
+
+    public (string prefix, string special, string normal) ToComponentStrings()
+    {
+        string special = "", normal = "";
+
+        if (Char is >= ' ' and <= '~')
+        {
+            if (Char == ' ')
+                special = "⎵";
+            else
+                normal = Char.ToString();
+        }
+        else if (Key != ConsoleKey.None)
+            special = Key.ToString();
+        else
+        {
+            normal = CharUtils.ToNiceString(Char);
+            if (normal.Length > 1)
+            {
+                special = normal;
+                normal = "";
+            }
+        }
+
+        return (
+            $"{(Alt ? "!" : "")}{(Shift ? "+" : "")}{(Ctrl ? "^" : "")}",
+            special, normal);
     }
 }
