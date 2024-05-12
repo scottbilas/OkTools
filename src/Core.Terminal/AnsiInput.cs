@@ -146,32 +146,28 @@ public static class AnsiInput
                 : new KeyEvent((char)b);
         }
 
-        if (input.Count >= k_minExtendedMapping)
+        var (advance, keyEvent) = ParseEscSequence(input);
+        if (keyEvent != null)
         {
-            foreach (var mapping in k_extendedMappings)
-            {
-                var matchLen = CountSame<byte>(mapping.Pattern.AsSpan(), input);
-                if (matchLen == mapping.Pattern.Length)
-                {
-                    input = input[matchLen..];
-                    return mapping.Event;
-                }
-            }
+            input = input[advance..];
+            return keyEvent;
         }
 
         if (timerExpired)
             return ParseControlChar(Read(ref input));
 
+        // TODO: what a sequence is split across packets? we need to store and wait with timeout for the rest. early-out
+        // of the wait if we find a second esc in the buffer, or if the total length > some small number that is the max
+        // possible esc sequence length...
+
         // plain esc leave alone for possible timeout
         if (input.Count == 1)
             return null;
 
-        // alt-control/printable chars. this is potentially ambiguous with some escape sequences so this must come after
-        // the above check.
-
         // skip the esc, we're definitely returning something now
         Skip(ref input);
 
+        // alt-control/printable chars. potentially ambiguous with some escape sequences so this must come after ParseEscSequence().
         if (IsControlChar(input[0]) && input[0] != ESC) // don't want held-down esc key to sometimes come through as alt-ESC
             return ParseControlChar(Read(ref input)) with { Alt = true };
         if (IsPrintableChar(input[0]))
@@ -244,66 +240,125 @@ public static class AnsiInput
         }
     }
 
-    static readonly KeyMapping[] k_extendedMappings =
-        [
-            // helpful for other similar needs
+    static (int advance, KeyEvent? keyEvent) ParseEscSequence(ReadOnlySpan<byte> input)
+    {
+        // helpful for other similar needs
 
-            // https://github.com/microsoft/terminal/blob/main/src/terminal/input/terminalInput.cpp#L317
-            // https://invisible-island.net/xterm/ctlseqs/ctlseqs.pdf
-            // https://github.com/gdamore/tcell/blob/main/tscreen.go#L271
-            // https://github.com/termbox/termbox/blob/master/termbox.h#L53
+        // https://github.com/microsoft/terminal/blob/main/src/terminal/input/terminalInput.cpp#L317
+        // https://invisible-island.net/xterm/ctlseqs/ctlseqs.pdf
+        // https://github.com/gdamore/tcell/blob/main/tscreen.go#L271
+        // https://github.com/termbox/termbox/blob/master/termbox.h#L53
 
-            new(CSI+"Z",     ParseControlChar('\t') with { Shift=true }),
+        // everything in here is at least ESC+2 long
+        if (input.Length < 3)
+            return default;
 
-            new(CSI+"A",     new(ConsoleKey.UpArrow)),
-            new(CSI+"1;5A",  new(ConsoleKey.UpArrow,    ctrl: true)),
-            new(CSI+"B",     new(ConsoleKey.DownArrow)),
-            new(CSI+"1;5B",  new(ConsoleKey.DownArrow,  ctrl: true)),
-            new(CSI+"C",     new(ConsoleKey.RightArrow)),
-            new(CSI+"1;5C",  new(ConsoleKey.RightArrow, ctrl: true)),
-            new(CSI+"D",     new(ConsoleKey.LeftArrow)),
-            new(CSI+"1;5D",  new(ConsoleKey.LeftArrow,  ctrl: true)),
+        if (input[1] == 'O')
+        {
+            return (char)input[2] switch
+            {
+                'P' => (3, new(ConsoleKey.F1)),
+                'Q' => (3, new(ConsoleKey.F2)),
+                'R' => (3, new(ConsoleKey.F3)),
+                'S' => (3, new(ConsoleKey.F4)),
+                _ => default
+            };
+        }
 
-            new(CSI+"1~",    new(ConsoleKey.Home)),
-            new(CSI+"1;5H",  new(ConsoleKey.Home, ctrl: true)),
-            new(CSI+"4~",    new(ConsoleKey.End)),
-            new(CSI+"1;5F",  new(ConsoleKey.End, ctrl: true)),
+        if (input[1] != '[')
+            return default;
 
-            new(CSI+"5~",    new(ConsoleKey.PageUp)),
-            new(CSI+"6~",    new(ConsoleKey.PageDown)),
+        // CSI from here on out
 
-            new(CSI+"2~",    new(ConsoleKey.Insert)),
-            new(CSI+"3~",    new(ConsoleKey.Delete)),
+        static (int advance, KeyEvent? keyEvent) WithModifiers(int advance, char code, ConsoleKey key)
+        {
+            if (key == default)
+                return default;
 
-            new(ESC+"OP",    new(ConsoleKey.F1)),
-            new(ESC+"OQ",    new(ConsoleKey.F2)),
-            new(ESC+"OR",    new(ConsoleKey.F3)),
-            new(ESC+"OS",    new(ConsoleKey.F4)),
-            new(CSI+"15~",   new(ConsoleKey.F5)),
-            new(CSI+"15;2~", new(ConsoleKey.F5, shift: true)),
-            new(CSI+"17~",   new(ConsoleKey.F6)),
-            new(CSI+"17;2~", new(ConsoleKey.F6, shift: true)),
-            new(CSI+"18~",   new(ConsoleKey.F7)),
-            new(CSI+"18;2~", new(ConsoleKey.F7, shift: true)),
-            new(CSI+"19~",   new(ConsoleKey.F8)),
-            new(CSI+"19;2~", new(ConsoleKey.F8, shift: true)), // TODO: use this pattern for F8 to implement a more general CSI parser (using something like SimpleParser class)
-            new(CSI+"19;3~", new(ConsoleKey.F8, alt: true)),
-            new(CSI+"19;4~", new(ConsoleKey.F8, alt: true, shift: true)),
-            new(CSI+"19;5~", new(ConsoleKey.F8, ctrl: true)),
-            new(CSI+"19;6~", new(ConsoleKey.F8, ctrl: true, shift: true)),
-            new(CSI+"19;7~", new(ConsoleKey.F8, ctrl: true, alt: true)),
-            new(CSI+"19;8~", new(ConsoleKey.F8, ctrl: true, alt: true, shift: true)),
-            new(CSI+"20~",   new(ConsoleKey.F9)),
-            new(CSI+"20;2~", new(ConsoleKey.F9, shift: true)),
-            new(CSI+"21~",   new(ConsoleKey.F10)),
-            new(CSI+"21;2~", new(ConsoleKey.F10, shift: true)),
-            new(CSI+"23~",   new(ConsoleKey.F11)),
-            new(CSI+"23;2~", new(ConsoleKey.F11, shift: true)),
-            new(CSI+"24~",   new(ConsoleKey.F12)),
-            new(CSI+"24;2~", new(ConsoleKey.F12, shift: true)),
-        ];
+            var modifier = code switch
+            {
+                '2' => ConsoleModifiers.Shift,
+                '3' => ConsoleModifiers.Alt,
+                '4' => ConsoleModifiers.Alt | ConsoleModifiers.Shift,
+                '5' => ConsoleModifiers.Control,
+                '6' => ConsoleModifiers.Control | ConsoleModifiers.Shift,
+                '7' => ConsoleModifiers.Control | ConsoleModifiers.Alt,
+                '8' => ConsoleModifiers.Control | ConsoleModifiers.Alt | ConsoleModifiers.Shift,
+                _ => default,
+            };
 
-    static readonly int k_minExtendedMapping = k_extendedMappings.Min(m => m.Pattern.Length);
+            if (modifier == 0)
+                return default;
+
+            return (advance, new(key, modifier));
+        };
+
+        return input[2..] switch
+        {
+            [(byte)'Z'] => (3, ParseControlChar('\t') with { Shift=true }),
+
+            [(byte)'A'] => (3, new(ConsoleKey.UpArrow)),
+            [(byte)'B'] => (3, new(ConsoleKey.DownArrow)),
+            [(byte)'C'] => (3, new(ConsoleKey.RightArrow)),
+            [(byte)'D'] => (3, new(ConsoleKey.LeftArrow)),
+
+            [var a, (byte)';', var c, var d] => WithModifiers(6, (char)c, ((char)a, (char)d) switch
+            {
+                ('1', 'A') => ConsoleKey.UpArrow,
+                ('1', 'B') => ConsoleKey.DownArrow,
+                ('1', 'C') => ConsoleKey.RightArrow,
+                ('1', 'D') => ConsoleKey.LeftArrow,
+                ('1', 'F') => ConsoleKey.End,
+                ('1', 'H') => ConsoleKey.Home,
+                ('1', 'P') => ConsoleKey.F1,
+                ('1', 'Q') => ConsoleKey.F2,
+                ('1', 'R') => ConsoleKey.F3,
+                ('1', 'S') => ConsoleKey.F4,
+                ('5', '~') => ConsoleKey.PageUp,
+                ('6', '~') => ConsoleKey.PageDown,
+                _ => default,
+            }),
+
+            [var a, (byte)'~'] => (char)a switch
+            {
+                '1' => (4, new(ConsoleKey.Home)),
+                '2' => (4, new(ConsoleKey.Insert)),
+                '3' => (4, new(ConsoleKey.Delete)),
+                '4' => (4, new(ConsoleKey.End)),
+                '5' => (4, new(ConsoleKey.PageUp)),
+                '6' => (4, new(ConsoleKey.PageDown)),
+                _ => default
+            },
+
+            [var a, var b, (byte)';', var d, (byte)'~'] => WithModifiers(7, (char)d, ((char)a, (char)b) switch
+            {
+                ('1', '5') => ConsoleKey.F5,
+                ('1', '7') => ConsoleKey.F6,
+                ('1', '8') => ConsoleKey.F7,
+                ('1', '9') => ConsoleKey.F8,
+                ('2', '0') => ConsoleKey.F9,
+                ('2', '1') => ConsoleKey.F10,
+                ('2', '3') => ConsoleKey.F11,
+                ('2', '4') => ConsoleKey.F12,
+                _ => default
+            }),
+
+            [var a, var b, (byte)'~'] => ((char)a, (char)b) switch
+            {
+                ('1', '5') => (5, new(ConsoleKey.F5)),
+                ('1', '7') => (5, new(ConsoleKey.F6)),
+                ('1', '8') => (5, new(ConsoleKey.F7)),
+                ('1', '9') => (5, new(ConsoleKey.F8)),
+                ('2', '0') => (5, new(ConsoleKey.F9)),
+                ('2', '1') => (5, new(ConsoleKey.F10)),
+                ('2', '3') => (5, new(ConsoleKey.F11)),
+                ('2', '4') => (5, new(ConsoleKey.F12)),
+                _ => default
+            },
+
+            _ => default
+        };
+    }
 
     static int CountSame<T>(ReadOnlySpan<T> span1, ReadOnlySpan<T> span2) where T : IEquatable<T>
     {

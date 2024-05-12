@@ -1,4 +1,4 @@
-namespace OkTools.Core.Terminal;
+﻿namespace OkTools.Core.Terminal;
 
 // TODO: let's also pack in a little 10-char (null-term) array to store the captured pattern, and have little helpers to access it.
 // sometimes might be nicer when detecting ctrl-c for example, and may help with diagnostics as well when there is a misfire on the key matcher.
@@ -10,6 +10,10 @@ public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = fal
         : this(key, default, alt, shift, ctrl) {}
     public KeyEvent(char ch, bool alt = false, bool shift = false, bool ctrl = false)
         : this(default, ch, alt, shift, ctrl) {}
+    public KeyEvent(ConsoleKey key, ConsoleModifiers modifiers)
+        : this(key, default, (modifiers & ConsoleModifiers.Alt) != 0, (modifiers & ConsoleModifiers.Shift) != 0, (modifiers & ConsoleModifiers.Control) != 0) {}
+    public KeyEvent(char ch, ConsoleModifiers modifiers)
+        : this(default, ch, (modifiers & ConsoleModifiers.Alt) != 0, (modifiers & ConsoleModifiers.Shift) != 0, (modifiers & ConsoleModifiers.Control) != 0) {}
 
     public ConsoleModifiers Modifiers => (Alt ? ConsoleModifiers.Alt : 0) | (Shift ? ConsoleModifiers.Shift : 0) | (Ctrl ? ConsoleModifiers.Control : 0);
 
