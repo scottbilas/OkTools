@@ -1,4 +1,4 @@
-using System.Drawing;
+﻿using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DocoptNet;
@@ -25,12 +25,22 @@ const string help = """
       --save    Save the screen before entering drive mode and restore it afterwards.
     """;
 
-var cb = new ControlBuilder();
+var controlBuilder = new ControlBuilder(100);
 
-void Flush()
+void OutControl(Action<ControlBuilder> action)
 {
-    Out(cb.Span);
-    cb.Clear();
+    controlBuilder.Clear();
+    action(controlBuilder);
+    Out(controlBuilder.Span);
+    controlBuilder.Clear();
+}
+
+string StringControl(Action<ControlBuilder> action)
+{
+    action(controlBuilder);
+    var s = controlBuilder.ToString();
+    controlBuilder.Clear();
+    return s;
 }
 
 return Docopt.CreateParser(help).Parse(args) switch
@@ -76,10 +86,7 @@ async Task<CliExitCode> Run(IDictionary<string, ArgValue> options)
     }
     finally
     {
-        cb.Clear();
-        cb.SoftReset();
-        Flush();
-
+        OutControl(c => c.SoftReset());
         DisableRawMode();
     }
 }
@@ -98,6 +105,7 @@ CliExitCode ShowKeysDotnet()
 
         OutLine($"key={keyInfo.Key} char='{CharUtils.ToNiceString(keyInfo.KeyChar)}' mod={keyInfo.Modifiers}");
     }
+// ReSharper disable once FunctionNeverReturns
 }
 #pragma warning restore RS0030
 
@@ -134,15 +142,14 @@ async Task<CliExitCode> ShowKeysParser()
     await foreach (var item in AnsiInput.SelectReadKeysAsync(TerminalIn))
     {
         var (prefix, special, normal) = item.ToComponentStrings();
-        cb.Clear();
-        cb.SetForegroundColor(Color.Yellow);
-        cb.Print(prefix);
-        cb.SetForegroundColor(Color.Aqua);
-        cb.Print(special);
-        cb.ResetAttributes();
-        cb.Print(normal);
-        cb.Print("\r\n");
-        await OutAsync(cb);
+        OutControl(c => c
+            .SetForegroundColor(Color.Yellow)
+            .Print(prefix)
+            .SetForegroundColor(Color.Aqua)
+            .Print(special)
+            .ResetAttributes()
+            .Print(normal)
+            .Print("\r\n"));
 
         if (item is { Char: 'c', Ctrl: true })
             return UnixSignal.KeyboardInterrupt.AsCliExitCode();
@@ -154,18 +161,36 @@ async Task<CliExitCode> ShowKeysParser()
 async Task<CliExitCode> Drive(bool save)
 {
     EnableRawMode();
-    using var _ = save ? new SaveScreen() : null;
+    using var _ = save ? new AlternateScreen(OutControl) : (IDisposable?)null;
 
-    var size = Size;
+    var size = Terminal.Size;
     OutLineRaw($"Terminal size: {size.Width}x{size.Height}");
     OutLineRaw();
 
-    const string driveHelp = """
-        Keys:
-         f     fill screen with a pattern (repeat to cycle patterns)
-         h     print this help again
-        ^c, q  quit
-        """;
+    var driveHelp = """
+        [u]fills[/]:
+          f              fill screen with a pattern (repeat to cycle patterns)
+          1-9            print this many lines with existing fill pattern
+          h ?            print this help again
+
+        [u]moves[/]:
+          ←↓↑→ home end  move cursor around/start line/end line
+          ^home ^end     move cursor top-left/bottom-right screen
+          enter          \r\n
+          ^↓↑            scroll buffer up/down
+
+        [u]control[/]:
+          ^l             clear screen
+          !←↓↑→          set scroll margin (↓↑ bottom, ←→ top)
+          space          do nothing, run loop (re-print status)
+          ^c q           quit
+        """
+        .Replace("[u]", StringControl(c => c.SetDecorations(underline: true)))
+        .Replace("[/]", StringControl(c => c.ResetAttributes()))
+        .RegexReplace("[+!^]+", m => StringControl(c => c
+            .SetForegroundColor(Color.Yellow)
+            .Print(m.Value)
+            .ResetAttributes()));
 
     void OutLineRaw(string text = "") => Out($"{text}\r\n");
 
@@ -199,94 +224,204 @@ async Task<CliExitCode> Drive(bool save)
     };
     // ReSharper restore StringLiteralTypo
 
+    void PrintPatternLines(int count)
+    {
+        switch (pattern)
+        {
+            case 0:
+                var sb = new StringBuilder();
+                for (var y = 0; y < count; ++y)
+                {
+                    while (sb.Length < size.Width)
+                        sb.Append($"{loremIpsum[Random.Shared.Next(loremIpsum.Length)]} ");
+                    Out(sb.ToString()[..size.Width]);
+                    if (y != size.Height-1)
+                        OutLineRaw();
+                    sb.Clear();
+                }
+                Out('\r');
+                break;
+
+            default:
+                throw new InvalidOperationException();
+        }
+    }
+
+    var (scrollTop, scrollBottom) = (0, size.Height-1);
+
+    void PrintStatus(string error)
+    {
+#       pragma warning disable RS0030
+        var pos = Console.GetCursorPosition();
+#       pragma warning restore RS0030
+
+        using var _ = new SaveRestoreCursor(OutControl);
+
+        OutControl(c => c
+            // scroll margins
+            .MoveCursorTo(scrollTop, 0)
+            .SetForegroundColor(Color.Yellow)
+            .Print("⎴")
+            .MoveCursorTo(scrollBottom, 0)
+            .Print("⎵")
+            // status
+            .MoveCursorTo(10000, 1)
+            .SetForegroundColor(Color.Cyan)
+            .Print($"[ pos={pos.Left},{pos.Top} scroll={scrollTop}:{scrollBottom} error={error} ]".AsSpanSafe(0, size.Width-1)));
+    }
+
     await foreach (var item in AnsiInput.SelectReadKeysAsync(TerminalIn))
     {
+        var error = "";
+
+        void SetScrollMargin(int top, int bottom)
+        {
+            if (scrollTop < 0)
+            {
+                error = "scrollTop < 0";
+                return;
+            }
+            if (scrollBottom < scrollTop)
+            {
+                error = "scrollBottom < scrollTop";
+                return;
+            }
+
+            using var _ = new SaveRestoreCursor(OutControl);
+            OutControl(c => c.SetScrollMargin(top, bottom));
+            scrollTop = top;
+            scrollBottom = bottom;
+        }
+
         switch (item)
         {
-            case { Char: 'f', Modifiers: 0 }:
-                switch (pattern)
-                {
-                    case 0:
-                        var sb = new StringBuilder();
-                        for (var y = 0; y < size.Height; ++y)
-                        {
-                            while (sb.Length < size.Width)
-                                sb.Append($"{loremIpsum[Random.Shared.Next(loremIpsum.Length)]} ");
-                            Out(sb.ToString()[..size.Width]);
-                            if (y != size.Height-1)
-                                OutLineRaw();
-                            sb.Clear();
-                        }
-                        Out('\r');
-                        break;
-                }
+            // fills
 
+            case { Char: 'f', Modifiers: 0 }:
+                PrintPatternLines(size.Height);
                 if (++pattern == 1)
                     pattern = 0;
                 break;
 
-            case { Char: 'h', Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorTo(10000, 0));
+            case { Char: var c and >= '1' and <= '9', Modifiers: 0 }:
+                PrintPatternLines(c - '0');
+                break;
+
+            case { Char: 'h' or '?', Modifiers: 0 }:
+                OutControl(c => c.MoveCursorTo(10000, 0));
                 OutLineRaw();
                 OutLineRaw();
                 Help();
                 break;
 
+            // moves
+
             case { Key: ConsoleKey.LeftArrow, Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorLeft(1));
+                OutControl(c => c.MoveCursorLeft(1));
                 break;
             case { Key: ConsoleKey.RightArrow, Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorRight(1));
+                OutControl(c => c.MoveCursorRight(1));
                 break;
             case { Key: ConsoleKey.UpArrow, Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorUp(1));
+                OutControl(c => c.MoveCursorUp(1));
                 break;
             case { Key: ConsoleKey.DownArrow, Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorDown(1));
-                break;
-
-            case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Control }:
-                Out(new ControlBuilder().MoveBufferDown(1));
-                break;
-            case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Control }:
-                Out(new ControlBuilder().MoveBufferUp(1));
-                break;
-
-            case { Key: ConsoleKey.Enter, Modifiers: 0 }:
-                Out("\r\n");
+                OutControl(c => c.MoveCursorDown(1));
                 break;
 
             case { Key: ConsoleKey.Home, Modifiers: 0 }:
                 Out('\r');
                 break;
             case { Key: ConsoleKey.Home, Modifiers: ConsoleModifiers.Control }:
-                Out(new ControlBuilder().MoveCursorTo(0, 0));
+                OutControl(c => c.MoveCursorTo(0, 0));
                 break;
 
             case { Key: ConsoleKey.End, Modifiers: 0 }:
-                Out(new ControlBuilder().MoveCursorRight(10000));
+                OutControl(c => c.MoveCursorRight(10000));
                 break;
             case { Key: ConsoleKey.End, Modifiers: ConsoleModifiers.Control }:
-                Out(new ControlBuilder().MoveCursorTo(10000, 10000));
+                OutControl(c => c.MoveCursorTo(10000, 10000));
                 break;
 
-            case { Char: 'c', Modifiers: ConsoleModifiers.Control } or { Char: 'q', Modifiers: 0 }:
+            case { Key: ConsoleKey.Enter, Modifiers: 0 }:
+                Out("\r\n");
+                break;
+
+            case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Control }:
+                OutControl(c => c.MoveBufferDown(1));
+                break;
+            case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Control }:
+                OutControl(c => c.MoveBufferUp(1));
+                break;
+
+            // control
+
+            case { Char: 'l', Modifiers: ConsoleModifiers.Control }:
+                OutControl(c => c.ClearScreen());
+                break;
+
+            case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Alt }:
+                SetScrollMargin(scrollTop, scrollBottom-1);
+                break;
+            case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Alt }:
+                SetScrollMargin(scrollTop, scrollBottom+1);
+                break;
+            case { Key: ConsoleKey.LeftArrow, Modifiers: ConsoleModifiers.Alt }:
+                SetScrollMargin(scrollTop-1, scrollBottom);
+                break;
+            case { Key: ConsoleKey.RightArrow, Modifiers: ConsoleModifiers.Alt }:
+                SetScrollMargin(scrollTop+1, scrollBottom);
+                break;
+
+            case { Char: ' ', Modifiers: 0 }:
+                // do nothing
+                break;
+
+            case { Char: 'c', Modifiers: ConsoleModifiers.Control }:
                 return UnixSignal.KeyboardInterrupt.AsCliExitCode();
+            case { Char: 'q', Modifiers: 0 }:
+                return CliExitCode.Success;
         }
+
+        PrintStatus(error);
     }
 
     return CliExitCode.Success;
 }
 
-class SaveScreen : IDisposable
+readonly struct SaveRestoreCursor : IDisposable
 {
-    public SaveScreen()
+    readonly Action<Action<ControlBuilder>> _outControl;
+
+    public SaveRestoreCursor(Action<Action<ControlBuilder>> outControl)
     {
-        Out("\x1b[?1049h");
+        _outControl = outControl;
+        _outControl(c => c
+            .SaveCursorState()
+            .SetCursorVisibility(false));
     }
 
     public void Dispose()
     {
-        Out("\x1b[?1049l");
+        _outControl(c => c
+            .ResetAttributes()
+            .RestoreCursorState()
+            .SetCursorVisibility(true));
+    }
+}
+
+readonly struct AlternateScreen : IDisposable
+{
+    readonly Action<Action<ControlBuilder>> _outControl;
+
+    public AlternateScreen(Action<Action<ControlBuilder>> outControl)
+    {
+        _outControl = outControl;
+        _outControl(c => c.SetScreenBuffer(ScreenBuffer.Alternate));
+    }
+
+    public void Dispose()
+    {
+        _outControl(c => c.SetScreenBuffer(ScreenBuffer.Main));
     }
 }
