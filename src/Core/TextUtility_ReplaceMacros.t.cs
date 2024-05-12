@@ -1,6 +1,6 @@
 partial class TextUtilityTests
 {
-    static string ReplaceMacros(string source, params (string name, Action<TextWriter> replacer)[] replacements)
+    static string Replace(string source, params (string name, Action<TextWriter> replacer)[] replacements)
     {
         var dictReplacer = TextUtility.CreateMacroReplacer(0, replacements);
         var arrayReplacer = TextUtility.CreateMacroReplacer(1000, replacements);
@@ -18,7 +18,7 @@ partial class TextUtilityTests
     [TestCase("xyzzy\n{{macro}}{{macro}}**more", "xyzzy\nvaluevalue**more")]
     public void ReplaceMacros_Basics(string text, string expected)
     {
-        ReplaceMacros(text,
+        Replace(text,
                 ("macro", w => w.Write("value")),
                 ("another", w => w.Write("**result**")),
                 ("spaces are ok", w => w.Write("yes they are")))
@@ -33,7 +33,7 @@ partial class TextUtilityTests
     {
         Should
             .Throw<FormatException>(() =>
-                ReplaceMacros(text, ("valid", _ => {})))
+                Replace(text, ("valid", _ => {})))
             .Message.ShouldContain("was not closed");
     }
 
@@ -45,7 +45,7 @@ partial class TextUtilityTests
     {
         Should
             .Throw<FormatException>(() =>
-                ReplaceMacros(text, ("valid", _ => {})))
+                Replace(text, ("valid", _ => {})))
             .Message.ShouldContain("Unrecognized macro");
     }
 
@@ -55,6 +55,10 @@ partial class TextUtilityTests
     [TestCase(" abc  \n   foobar  ")]
     public void ReplaceMacros_WithNoMacro_ReturnsSame(string text)
     {
-        ReplaceMacros(text).ShouldBe(text);
+        var replaced = Replace(text);
+        replaced.ShouldBe(text);
+
+        // we should get the exact same string back if no work was done on it
+        ReferenceEquals(replaced, text).ShouldBeTrue();
     }
 }

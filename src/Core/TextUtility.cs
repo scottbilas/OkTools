@@ -67,36 +67,35 @@ public static class TextUtility
 
     public delegate bool Replacer(ReadOnlySpan<char> macroName, TextWriter writer);
 
-    public static int ReplaceMacros(string source, TextWriter writer, Replacer replacer)
+    public static int ReplaceMacros(ReadOnlySpan<char> source, TextWriter writer, Replacer replacer)
     {
         var found = 0;
 
-        var span = source.AsSpan();
         var offset = 0;
         for (;;)
         {
             // find start of next macro, writing remainder if no more macros
-            var begin = span.IndexOf("{{");
+            var begin = source.IndexOf("{{");
             if (begin < 0)
             {
-                writer.Write(span);
+                writer.Write(source);
                 break;
             }
 
             // write what was before the macro and advance
-            var oldSpan = span;
-            writer.Write(span[..begin]);
-            span = span[(begin+2)..];
+            var oldSpan = source;
+            writer.Write(source[..begin]);
+            source = source[(begin+2)..];
             offset += begin+2;
 
             // find end of this macro
-            var end = span.IndexOf("}}");
+            var end = source.IndexOf("}}");
             if (end < 0)
                 throw new FormatException($"Macro starting at offset {offset} and beginning with '{oldSpan.SliceSafe(0, 20).ToString()}' was not closed");
 
             // collect the macro name and advance
-            var macro = span[..end];
-            span = span[(end+2)..];
+            var macro = source[..end];
+            source = source[(end+2)..];
             offset += end+2;
 
             // find replacement matching the macro
@@ -109,11 +108,18 @@ public static class TextUtility
         return found;
     }
 
+    public static bool ContainsMacros(ReadOnlySpan<char> source) =>
+        source.IndexOf("{{") >= 0;
+
     public static string ReplaceMacros(string source, Replacer replacer)
     {
+        if (!ContainsMacros(source))
+            return source;
+
         var sb = new StringBuilder();
-        ReplaceMacros(source, new StringWriter(sb), replacer);
-        return sb.ToString();
+        return ReplaceMacros(source, new StringWriter(sb), replacer) == 0
+            ? source
+            : sb.ToString();
     }
 
     public static string ReplaceMacros(string source, params (string name, Action<TextWriter> replacer)[] replacements) =>
@@ -124,6 +130,10 @@ public static class TextUtility
 
     public static Replacer CreateMacroReplacer(int useDictIfLengthAtLeast, params (string name, Action<TextWriter> replacer)[] replacements)
     {
+        // $$$ TODO: validate that the macro names are valid, and that there are no duplicates
+        // also if there is no end marker when move to support $macro type names, check for ambiguous/overlapping names
+        // (for example they cannot contain '{{' or '}}' or be empty, or have "macro_a" and "macro_ab" as separate macros)
+
         // if it's small, do a linear search
         if (replacements.Length < useDictIfLengthAtLeast)
         {
