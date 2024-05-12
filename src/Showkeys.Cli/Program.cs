@@ -68,7 +68,7 @@ async Task<CliExitCode> Run(IDictionary<string, ArgValue> options)
                 return ShowKeysDotnet();
 
             return options["--ansi"].IsTrue
-                ? await ShowKeysParser()
+                ? await ShowKeysAnsiInput()
                 : ShowKeysCathode();
         }
 
@@ -132,7 +132,7 @@ CliExitCode ShowKeysCathode()
     }
 }
 
-async Task<CliExitCode> ShowKeysParser()
+async Task<CliExitCode> ShowKeysAnsiInput()
 {
     OutLine("Ctrl-C to quit");
     OutLine();
