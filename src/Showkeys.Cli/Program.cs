@@ -171,6 +171,7 @@ async Task<CliExitCode> Drive(bool save)
         [u]fills[/]:
           f              fill screen with a pattern (repeat to cycle patterns)
           1-9            print this many lines with existing fill pattern
+          ^1-9           print this many words with existing fill pattern
           h ?            print this help again
 
         [u]moves[/]:
@@ -224,6 +225,8 @@ async Task<CliExitCode> Drive(bool save)
     };
     // ReSharper restore StringLiteralTypo
 
+    string NextLoremIpsum() => loremIpsum[Random.Shared.Next(loremIpsum.Length)];
+
     void PrintPatternLines(int count)
     {
         switch (pattern)
@@ -233,13 +236,29 @@ async Task<CliExitCode> Drive(bool save)
                 for (var y = 0; y < count; ++y)
                 {
                     while (sb.Length < size.Width)
-                        sb.Append($"{loremIpsum[Random.Shared.Next(loremIpsum.Length)]} ");
+                        sb.Append(NextLoremIpsum() + " ");
                     Out(sb.ToString()[..size.Width]);
                     if (y != size.Height-1)
                         OutLineRaw();
                     sb.Clear();
                 }
                 Out('\r');
+                break;
+
+            default:
+                throw new InvalidOperationException();
+        }
+    }
+
+    void PrintPatternWords(int count)
+    {
+        switch (pattern)
+        {
+            case 0:
+                var sb = new StringBuilder();
+                for (var i = 0; i < count; ++i)
+                    sb.Append(NextLoremIpsum() + " ");
+                Out(sb.ToString());
                 break;
 
             default:
@@ -305,6 +324,10 @@ async Task<CliExitCode> Drive(bool save)
 
             case { Char: var c and >= '1' and <= '9', Modifiers: 0 }:
                 PrintPatternLines(c - '0');
+                break;
+
+            case { Char: var c and >= '1' and <= '9', Modifiers: ConsoleModifiers.Alt }:
+                PrintPatternWords(c - '0');
                 break;
 
             case { Char: 'h' or '?', Modifiers: 0 }:
