@@ -9,12 +9,12 @@ class StatusView : ViewBase
 
     // TODO: rethink this whole thing..maybe just go with a simple double buffering of the char[]
     readonly char[] _buffer = new char[100];
-    char[] _text = Array.Empty<char>();
+    char[] _text = [];
     bool _changed = true;
 
     NPath? _logPath;
     int _currentFilterIndex;
-    FilterStatus[] _filterStatuses = Array.Empty<FilterStatus>();
+    FilterStatus[] _filterStatuses = [];
 
     public StatusView(Screen screen) : base(screen) {}
 

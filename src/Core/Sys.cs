@@ -47,7 +47,7 @@ public static class Sys
 #       pragma warning restore CA1416
 #   endif
 
-    static bool IsUnixSudo() =>
+    static bool IsUnixSudo() => // works on mac too
         Process.Start(new ProcessStartInfo
         {
             FileName = "/usr/bin/id",
