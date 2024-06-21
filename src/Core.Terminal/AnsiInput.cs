@@ -2,6 +2,7 @@
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Channels;
 using Vezel.Cathode.IO;
 using static Vezel.Cathode.Text.Control.ControlConstants;
 
@@ -16,6 +17,26 @@ public static class AnsiInput
     // TODO: what about ConfigureAwait(false) in here?
 
     static readonly TimeSpan k_standaloneEscTimeoutMs = TimeSpan.FromMilliseconds(50); // tcell uses this timeout
+
+    public static async Task ReadKeysAsync<T>(TerminalReader rawInput, ChannelWriter<T> events, Func<KeyEvent, T> converter, CancellationToken cancel = default)
+    {
+        try
+        {
+            await foreach (var item in SelectReadKeysAsync(rawInput, cancel))
+                await events.WriteAsync(converter(item), cancel);
+        }
+        catch (Exception x)
+        {
+            events.TryComplete(x);
+        }
+        finally
+        {
+            events.TryComplete();
+        }
+    }
+
+    public static Task ReadKeysAsync(TerminalReader rawInput, ChannelWriter<KeyEvent> events, CancellationToken cancel = default) =>
+        ReadKeysAsync(rawInput, events, v => v, cancel);
 
     public static async IAsyncEnumerable<KeyEvent> SelectReadKeysAsync(TerminalReader rawInput, [EnumeratorCancellation] CancellationToken cancel = default)
     {
@@ -77,7 +98,7 @@ public static class AnsiInput
             {
                 // possibilities when we have a timeout:
                 //
-                //  1. it was user hitting esc ("standalone esc")
+                //  1. it was user hitting esc ("standalone esc") - note that this case is included for completeness here but handled elsewhere
                 //  2. it's an unrecognized esc sequence (need to add cases to the matcher)
                 //  3. the sequence didn't completely fit in a packet, and the continuing packet arrives too late
 
