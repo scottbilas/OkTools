@@ -39,8 +39,8 @@
 
     <PackageVersion Include="benchmarkdotnet" Version="0.13.12" />
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
-    <PackageVersion Include="Dumpify" Version="0.6.5" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageVersion Include="Dumpify" Version="0.6.6" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageVersion Include="NUnit" Version="4.1.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
     <PackageVersion Include="Shouldly" Version="4.2.1" />
