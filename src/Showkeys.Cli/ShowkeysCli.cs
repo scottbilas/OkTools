@@ -320,46 +320,55 @@ async Task<CliExitCode> Drive(bool save)
 
         using var __ = new SaveRestoreCursor(OutControl);
 
-        OutControl(c => c
+        OutControl(cb =>
+        {
             // scroll margins
-            .MoveCursorTo(scrollTop, 0)
-            .SetForegroundColor(Color.Yellow)
-            .Print("⎴")
-            .MoveCursorTo(scrollBottom, 0)
-            .Print("⎵")
+            if (scrollTop != scrollBottom)
+            {
+                cb
+                    .MoveCursorTo(scrollTop, 0)
+                    .SetForegroundColor(Color.Yellow)
+                    .Print("⎴")
+                    .MoveCursorTo(scrollBottom, 0)
+                    .Print("⎵");
+            }
+            else
+            {
+                cb
+                    .MoveCursorTo(scrollTop, 0)
+                    .SetForegroundColor(Color.Yellow)
+                    .Print("⦗");
+            }
+
             // status
-            .MoveCursorTo(10000, 1)
-            .SetForegroundColor(Color.Cyan)
-            .Print($"[ p={cursorPos.x},{cursorPos.y} sz={size.Width}:{size.Height} sc={scrollTop}:{scrollBottom} err={error} ]  ".AsSpanSafe(0, size.Width - 1)));
+            cb
+                .MoveCursorTo(10000, 1)
+                .SetForegroundColor(Color.Cyan)
+                .Print((
+                    $"[ p={cursorPos.x},{cursorPos.y} sz={size.Width}:{size.Height} "+
+                    $"sc={scrollTop}:{scrollBottom} err={error} ]  "
+                    ).AsSpanSafe(0, size.Width - 1));
+        });
     }
 
     PrintStatus("");
 
     void SetScrollMargin(int top, int bottom, out string error)
     {
-        if (top < 0)
-        {
-            error = "top < 0";
-            return;
-        }
-        if (bottom <= top)
-        {
-            error = "bottom <= top";
-            return;
-        }
-        if (bottom >= size.Height)
-        {
-            error = "bottom >= size.Height";
-            return;
-        }
-
         using var __ = new SaveRestoreCursor(OutControl); // changing scroll marging always sets cursor to top left of region
-        OutControl(c => c.SetScrollMargin(top, bottom));
-
-        scrollTop = top;
-        scrollBottom = bottom;
 
         error = "";
+        try
+        {
+            OutControl(c => c.SetScrollMargin(top, bottom));
+
+            scrollTop = top;
+            scrollBottom = bottom;
+        }
+        catch (ArgumentOutOfRangeException x)
+        {
+            error = $"out of range: {x.ParamName}";
+        }
     }
 
     var events = Channel.CreateUnbounded<IEvent>();
