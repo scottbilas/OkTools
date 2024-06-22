@@ -6,6 +6,7 @@ public static class CharUtils
     {
         return c switch
         {
+            '\0'      => @"\0", // unix shows as ^@ but it's more common as \0
             '\a'      => @"\a", // ctrl-g or ctrl-' (bell)
             '\b'      => @"\b", // ctrl-h (backspace)
             '\t'      => @"\t", // ctrl-i or tab (horizontal tab)
