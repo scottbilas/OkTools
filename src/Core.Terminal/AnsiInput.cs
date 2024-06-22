@@ -322,6 +322,8 @@ public static class AnsiInput
             [(byte)'B'] => (3, new(ConsoleKey.DownArrow)),
             [(byte)'C'] => (3, new(ConsoleKey.RightArrow)),
             [(byte)'D'] => (3, new(ConsoleKey.LeftArrow)),
+            [(byte)'F'] => (3, new(ConsoleKey.End)),
+            [(byte)'H'] => (3, new(ConsoleKey.Home)),
 
             [var a, (byte)';', var c, var d] => WithModifiers(6, (char)c, ((char)a, (char)d) switch
             {
