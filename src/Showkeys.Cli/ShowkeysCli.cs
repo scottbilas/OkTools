@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Channels;
@@ -95,8 +95,8 @@ async Task<CliExitCode> Run(IDictionary<string, ArgValue> options)
 #pragma warning disable RS0030 // bypass Console.* analyzers
 CliExitCode ShowKeysDotnet()
 {
-    OutLine("Ctrl-C to quit");
-    OutLine();
+    Console.WriteLine("Ctrl-C to quit");
+    Console.WriteLine();
 
     Console.CancelKeyPress += (_, _) => Environment.Exit((int)UnixSignal.KeyboardInterrupt.AsCliExitCode());
 
@@ -104,7 +104,7 @@ CliExitCode ShowKeysDotnet()
     {
         var keyInfo = Console.ReadKey(true);
 
-        OutLine($"key={keyInfo.Key} char='{CharUtils.ToNiceString(keyInfo.KeyChar)}' mod={keyInfo.Modifiers}");
+        Console.WriteLine($"key={keyInfo.Key} char='{CharUtils.ToNiceString(keyInfo.KeyChar)}' mod={keyInfo.Modifiers}");
     }
 // ReSharper disable once FunctionNeverReturns
 }
