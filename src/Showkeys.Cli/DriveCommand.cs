@@ -5,6 +5,8 @@ using OkTools.Core.Terminal;
 using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 
+// ReSharper disable AccessToModifiedClosure
+
 class DriveCommand
 {
     readonly ControlBuilder _cb = new(100);
@@ -13,6 +15,7 @@ class DriveCommand
     Size _terminalSize;
     int _scrollTop, _scrollBottom;
     Point _cursorPos;
+    CursorConstrainMode _cursorConstrainMode;
 
     public async Task<CliExitCode> RunAsync(bool save)
     {
@@ -66,7 +69,9 @@ class DriveCommand
                 // fills
 
                 case { Char: 'f', Modifiers: 0 }:
-                    PrintPatternLines(_terminalSize.Height);
+                    OutControl(cb => cb.SaveCursorState());
+                    PrintPatternLines(_scrollBottom - _scrollTop + 1);
+                    OutControl(cb => cb.RestoreCursorState());
                     if (++_pattern == 1)
                         _pattern = 0;
                     break;
@@ -90,47 +95,74 @@ class DriveCommand
                 // moves
 
                 case { Key: ConsoleKey.LeftArrow, Modifiers: 0 }:
-                    OutControl(c => c.MoveCursorLeft(1));
+                    OutControl(cb => cb.MoveCursorLeft());
                     break;
                 case { Key: ConsoleKey.RightArrow, Modifiers: 0 }:
-                    OutControl(c => c.MoveCursorRight(1));
+                    OutControl(cb => cb.MoveCursorRight());
                     break;
                 case { Key: ConsoleKey.UpArrow, Modifiers: 0 }:
-                    OutControl(c => c.MoveCursorUp(1));
+                    OutControl(cb => cb.ReverseLineFeed()); // MoveCursorDown/Up does not scroll
                     break;
                 case { Key: ConsoleKey.DownArrow, Modifiers: 0 }:
-                    OutControl(c => c.MoveCursorDown(1));
+                    OutControl(cb => cb.LineFeed()); // MoveCursorDown/Up does not scroll
+                    break;
+                case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Shift }:
+                    OutControl(cb => cb.MoveCursorTo((_cursorPos.Y-1).ClampMin(0), _cursorPos.X));
+                    break;
+                case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Shift }:
+                    OutControl(cb => cb.MoveCursorTo((_cursorPos.Y+1).ClampMaxExcl(_terminalSize.Height), _cursorPos.X));
                     break;
 
                 case { Key: ConsoleKey.Home, Modifiers: 0 }:
-                    Out('\r');
+                    OutControl(cb => cb.MoveCursorHomeLine());
                     break;
                 case { Key: ConsoleKey.Home, Modifiers: ConsoleModifiers.Control }:
-                    OutControl(c => c.MoveCursorTo(0, 0));
+                    OutControl(cb => cb.MoveCursorHome());
                     break;
 
                 case { Key: ConsoleKey.End, Modifiers: 0 }:
-                    OutControl(c => c.MoveCursorRight(10000));
+                    OutControl(cb => cb.MoveCursorEndLine());
                     break;
                 case { Key: ConsoleKey.End, Modifiers: ConsoleModifiers.Control }:
-                    OutControl(c => c.MoveCursorTo(10000, 10000));
+                    OutControl(cb => cb.MoveCursorEnd());
                     break;
 
                 case { Key: ConsoleKey.Enter, Modifiers: 0 }:
-                    Out("\r\n");
+                    OutControl(cb => cb.CarriageReturn().LineFeed());
                     break;
 
                 case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Control }:
-                    OutControl(c => c.MoveBufferDown(1));
+                    OutControl(cb => cb.MoveBufferDown());
                     break;
                 case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Control }:
-                    OutControl(c => c.MoveBufferUp(1));
+                    OutControl(cb => cb.MoveBufferUp());
                     break;
 
                 // control
 
+                case { Char: '\\', Modifiers: 0 }:
+                    _cursorConstrainMode = _cursorConstrainMode == CursorConstrainMode.Margin
+                        ? CursorConstrainMode.Screen : CursorConstrainMode.Margin;
+                    OutControl(cb =>
+                    {
+                        cb.SetCursorConstrainMode(_cursorConstrainMode);
+                        cb.MoveCursorTo(_cursorPos.Y - _scrollTop, _cursorPos.X);
+                    });
+                    break;
+
                 case { Char: 'l', Modifiers: ConsoleModifiers.Control }:
-                    OutControl(c => c.ClearScreen());
+                    OutControl(cb =>
+                    {
+                        using var _ = cb.AutoSaveRestoreCursorState();
+                        for (var line = _scrollTop; line <= _scrollBottom; ++line)
+                        {
+                            cb.MoveCursorTo(line, 0);
+                            cb.ClearLine();
+                        }
+                    });
+                    break;
+                case { Char: 'l', Modifiers: ConsoleModifiers.Alt }:
+                    OutControl(cb => cb.ClearScreen());
                     break;
 
                 case { Char: '[', Modifiers: 0 }:
@@ -199,7 +231,6 @@ class DriveCommand
     }
 
     static void Out(ReadOnlySpan<char> span) => Terminal.Out(span);
-    static void Out(char c) => Terminal.Out(c);
     static void Out(StringBuilder sb) => Terminal.Out(sb.ToString()); // FUTURE: cathode support iterating stringbuilder chunks
     static void OutLineRaw(string text = "") => Out($"{text}\r\n");
 
@@ -237,7 +268,8 @@ class DriveCommand
                 .SetForegroundColor(Color.Cyan)
                 .Print((
                     $"[ p={_cursorPos.X},{_cursorPos.Y} sz={_terminalSize.Width}:{_terminalSize.Height} "+
-                    $"sc={_scrollTop}:{_scrollBottom} err={error} ]  "
+                    $"sc={_scrollTop}:{_scrollBottom} [{_cursorConstrainMode.ToString().ToLowerInvariant()}] "+
+                    $"err={error} ]  "
                 ).AsSpanSafe(0, _terminalSize.Width - 1));
         });
     }
@@ -249,7 +281,7 @@ class DriveCommand
         error = "";
         try
         {
-            OutControl(c => c.SetScrollMargin(top, bottom));
+            OutControl(cb => cb.SetScrollMargin(top, bottom));
 
             _scrollTop = top;
             _scrollBottom = bottom;
@@ -263,7 +295,7 @@ class DriveCommand
     void ResetScrollMargin()
     {
         using var _ = new SaveRestoreCursor(OutControl); // changing scroll marging always sets cursor to top left of region
-        OutControl(c => c.Print(ControlConstants.CSI).Print(";r")); // consider adding to cathode
+        OutControl(cb => cb.ResetScrollMargin());
 
         _scrollTop = 0;
         _scrollBottom = _terminalSize.Height-1;
@@ -300,14 +332,25 @@ class DriveCommand
                 {
                     while (_sb.Length < width)
                         _sb.Append(NextLoremIpsum() + " ");
-                    Out(_sb.ToString().AsSpan(0, width));
-                    if (_cursorPos.Y != _terminalSize.Height-1)
-                        ++_cursorPos.Y;
-                    else if (y != count-1)
-                        OutLineRaw();
-                    OutControl(cb => cb.MoveCursorTo(_cursorPos.Y, _cursorPos.X));
+                    var str = _sb.ToString();
                     _sb.Clear();
+
+                    OutControl(cb =>
+                    {
+                        cb.Print(str.AsSpan(0, width));
+
+                        if (y != count-1)
+                        {
+                            cb.LineFeed();
+                            if (_cursorPos.Y != _scrollBottom)
+                                ++_cursorPos.Y;
+                        }
+
+                        cb.MoveCursorTo(_cursorPos.Y, _cursorPos.X);
+                    });
                 }
+
+                OutControl(cb => cb.MoveCursorTo(_cursorPos.Y, _cursorPos.X));
                 break;
 
             default:
@@ -349,17 +392,17 @@ class DriveCommand
           1-9            print this many words with existing fill pattern
           !1-9           print this many random non-whitespace chars
           h ?            print this help again
-
         [u]moves[/]:
           ←↓↑→ home end  move cursor around/start line/end line
+          +↓↑            down/up ignoring margin (no constraint, no scroll)
           ^home ^end     move cursor top-left/bottom-right screen
           enter          \r\n
           ^↓↑            scroll buffer up/down
-
         [u]control[/]:
-          ^l             clear screen
+          ^l !l          clear margin area / screen
           !←↓↑→          set scroll margin (↓↑ bottom, ←→ top)
           [ ] ![         set top / bottom scroll margin / clear it
+          \              set cursor constrain mode screen / margin
           space          do nothing, run loop (re-print status)
           ^c q           quit
         """;
@@ -377,10 +420,10 @@ class DriveCommand
 
         var markup = SplitHelp(
             ProcessHelp(
-                    StringControl(c => c.SetDecorations(underline: true)),
-                    StringControl(c => c.ResetAttributes()))
-                .RegexReplace("[+!^]+", m => StringControl(c => c
-                    .SetForegroundColor(Color.Yellow)
+                    StringControl(cb => cb.SetDecorations(underline: true)),
+                    StringControl(cb => cb.ResetAttributes()))
+                .RegexReplace("[+!^]+", m => StringControl(cb => cb
+                    .SetForegroundColor(Color.Magenta)
                     .Print(m.Value)
                     .ResetAttributes())));
 
