@@ -206,7 +206,7 @@ public static class AnsiInput
         // these are collisions i have noticed. when receiving one, we have to pick how to translate it
         // back to a key. a few other notes:
         //
-        // * ctrl-number cannot be detected at all given it is always overloaded.
+        // * ctrl-number cannot be detected at all given it is almost always overloaded (see below table). also 'ctrl-1' just comes in as '1'.
         // * shift-ctrl-letter cannot be detected
         // * alt-ctrl-shift-letter same problem as shift-ctrl-letter, we simply get an esc in front of it
         // * alt-letter or alt-shift-letter is fine, it comes through as esc+key (shifted or unshifted)
