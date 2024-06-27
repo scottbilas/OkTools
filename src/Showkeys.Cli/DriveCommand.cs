@@ -1,5 +1,6 @@
 ﻿using System.Drawing;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using OkTools.Core.Terminal;
 using Vezel.Cathode;
@@ -386,19 +387,19 @@ class DriveCommand
     });
 
     const string k_driveHelp = """
-        [u]fills[/]:
+        fills:
           f              fill screen with a pattern (repeat to cycle patterns)
           F1-F12         print this many lines with existing fill pattern
           1-9            print this many words with existing fill pattern
           !1-9           print this many random non-whitespace chars
           h ?            print this help again
-        [u]moves[/]:
+        moves:
           ←↓↑→ home end  move cursor around/start line/end line
           +↓↑            down/up ignoring margin (no constraint, no scroll)
           ^home ^end     move cursor top-left/bottom-right screen
           enter          \r\n
           ^↓↑            scroll buffer up/down
-        [u]control[/]:
+        control:
           ^l !l          clear margin area / screen
           !←↓↑→          set scroll margin (↓↑ bottom, ←→ top)
           [ ] ![         set top / bottom scroll margin / clear it
@@ -409,9 +410,8 @@ class DriveCommand
 
     void Help()
     {
-        string ProcessHelp(string underline, string reset) => k_driveHelp
-            .Replace("[u]", underline)
-            .Replace("[/]", reset);
+        string ProcessHelp(string set, string reset) => k_driveHelp
+            .RegexReplace("^(.*):", m => set + m.Groups[1].Value + reset, RegexOptions.Multiline);
 
         string[] SplitHelp(string text) => text
             .Split('\n')
@@ -420,8 +420,8 @@ class DriveCommand
 
         var markup = SplitHelp(
             ProcessHelp(
-                    StringControl(cb => cb.SetDecorations(underline: true)),
-                    StringControl(cb => cb.ResetAttributes()))
+                    StringControl(cb => cb.SetBackgroundColor(Color.DarkSlateBlue).Print("  ")),
+                    StringControl(cb => cb.Print("  ").ResetAttributes()))
                 .RegexReplace("[+!^]+", m => StringControl(cb => cb
                     .SetForegroundColor(Color.Magenta)
                     .Print(m.Value)
