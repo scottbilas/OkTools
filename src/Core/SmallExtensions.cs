@@ -13,6 +13,17 @@ public static class ObjectExtensions
 }
 
 [PublicAPI]
+public static class IntExtensions
+{
+    public static int ClampMin(this int @this, int min) =>
+        @this < min ? min : @this;
+    public static int ClampMax(this int @this, int max) =>
+        @this > max ? max : @this;
+    public static int ClampMaxExcl(this int @this, int max) =>
+        @this >= max ? max-1 : @this;
+}
+
+[PublicAPI]
 public static class RefTypeExtensions
 {
     public static IEnumerable<T> WrapInEnumerable<T>(this T @this)
