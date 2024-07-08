@@ -45,9 +45,9 @@ public static class ControlBuilderExtensions
     public static ControlBuilder MoveCursorEnd(this ControlBuilder @this) =>
         @this.MoveCursorTo(10000, 10000);
 
-    public static void MoveCursorHomeLine(this ControlBuilder @this) =>
+    public static void MoveCursorLineStart(this ControlBuilder @this) =>
         @this.CarriageReturn();
-    public static void MoveCursorEndLine(this ControlBuilder @this) =>
+    public static void MoveCursorLineEnd(this ControlBuilder @this) =>
         @this.MoveCursorRight(10000);
 
     public static ControlBuilder MoveCursorUp(this ControlBuilder @this) =>

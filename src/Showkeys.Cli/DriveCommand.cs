@@ -115,14 +115,14 @@ class DriveCommand
                     break;
 
                 case { Key: ConsoleKey.Home, Modifiers: 0 }:
-                    OutControl(cb => cb.MoveCursorHomeLine());
+                    OutControl(cb => cb.MoveCursorLineStart());
                     break;
                 case { Key: ConsoleKey.Home, Modifiers: ConsoleModifiers.Control }:
                     OutControl(cb => cb.MoveCursorHome());
                     break;
 
                 case { Key: ConsoleKey.End, Modifiers: 0 }:
-                    OutControl(cb => cb.MoveCursorEndLine());
+                    OutControl(cb => cb.MoveCursorLineEnd());
                     break;
                 case { Key: ConsoleKey.End, Modifiers: ConsoleModifiers.Control }:
                     OutControl(cb => cb.MoveCursorEnd());
