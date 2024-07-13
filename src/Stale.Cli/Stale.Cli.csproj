@@ -7,6 +7,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DefineConstants>$(DefineConstants);ENABLE_TASK_CREATION_TRACKING</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)' != 'Debug' ">
     <PublishReadyToRun>true</PublishReadyToRun>
     <SelfContained>true</SelfContained>
