@@ -6,10 +6,6 @@ using Windows.Win32.System.JobObjects;
 using Microsoft.Win32.SafeHandles;
 using static Windows.Win32.PInvoke;
 
-#if !NETSTANDARD
-using System.Runtime.Versioning;
-#endif
-
 namespace OkTools.Core;
 
 public static class ShellExecUtility

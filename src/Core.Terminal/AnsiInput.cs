@@ -1,7 +1,6 @@
 ﻿using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Channels;
 using Vezel.Cathode.IO;
 using static Vezel.Cathode.Text.Control.ControlConstants;
@@ -249,18 +248,6 @@ public static class AnsiInput
         ch == '\x7f' ? new(ConsoleKey.Backspace, BS) : k_controlChars[ch];
     static KeyEvent ParseControlChar(byte b) => ParseControlChar((char)b);
 
-    readonly struct KeyMapping
-    {
-        public readonly byte[] Pattern; // pattern to match input against
-        public readonly KeyEvent Event; // what we send out when receiving this
-
-        public KeyMapping(string pattern, KeyEvent evt)
-        {
-            Pattern = Encoding.ASCII.GetBytes(pattern);
-            Event = evt;
-        }
-    }
-
     static (int advance, KeyEvent? keyEvent) ParseEscSequence(ReadOnlySpan<byte> input)
     {
         // helpful for other similar needs
@@ -312,7 +299,7 @@ public static class AnsiInput
                 return default;
 
             return (advance, new(key, modifier));
-        };
+        }
 
         return input[2..] switch
         {

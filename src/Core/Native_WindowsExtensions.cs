@@ -3,9 +3,12 @@
 
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Diagnostics.Debug;
+
+#if !NETSTANDARD
+using System.Runtime.Versioning;
+#endif
 
 namespace Windows.Win32
 {

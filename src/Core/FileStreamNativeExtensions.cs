@@ -35,9 +35,12 @@ public static class FileStreamNativeExtensions
     // just report that it's at eof and give no errors, but this function will detect that case.
     public static bool WasFileDeleted(this FileStream @this)
     {
+        if (@this.SafeFileHandle == null)
+            throw new ArgumentException("FileStream is not open", nameof(@this));
+
         var size = Marshal.SizeOf<Native.FILE_STANDARD_INFO>();
         var buf = Marshal.AllocHGlobal(size);
-        
+
         try
         {
             var handle = @this.SafeFileHandle.DangerousGetHandle();

@@ -1,6 +1,7 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-#if NET
+
+#if NET // NET=="not netstandard"
+using System.Diagnostics;
 using System.Security.Principal;
 #endif
 
@@ -47,6 +48,7 @@ public static class Sys
 #       pragma warning restore CA1416
 #   endif
 
+#   if NET
     static bool IsUnixSudo() => // works on mac too
         Process.Start(new ProcessStartInfo
         {
@@ -55,4 +57,5 @@ public static class Sys
             RedirectStandardOutput = true,
             UseShellExecute = false
         })?.StandardOutput.ReadToEnd().Trim() == "0";
+#   endif
 }

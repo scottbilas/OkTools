@@ -1,11 +1,14 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
 using Windows.Wdk.System.Threading;
 using Windows.Win32.Foundation;
 using Windows.Win32.System.Threading;
 using static Windows.Win32.PInvoke;
 using static Windows.Wdk.PInvoke;
+
+#if !NETSTANDARD
+using System.Runtime.Versioning;
+#endif
 
 namespace OkTools.Core;
 

@@ -131,7 +131,7 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         public DebugView(IDictionary<TKey, TValue> dictionary) =>
             _dict = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden), UsedImplicitly]
         public KeyValuePair<TKey, TValue>[] Items
         {
             get
