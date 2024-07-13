@@ -14,7 +14,7 @@
   <PropertyGroup Condition=" '$(Configuration)' != 'Debug' ">
     <PublishReadyToRun>true</PublishReadyToRun>
     <SelfContained>true</SelfContained>
-    <PublshTrimmed>true</PublshTrimmed>
+    <PublishTrimmed>true</PublishTrimmed>
     <PublishAot>true</PublishAot>
   </PropertyGroup>
 
