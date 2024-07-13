@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -120,6 +121,13 @@ public static class StringExtensions
         string.Join(separator, @this);
     public static string StringJoin<T>(this IEnumerable<T> @this) =>
         string.Join("", @this);
+
+    public static string StringJoin(this ITuple @this, string separator) =>
+        string.Join(separator, @this.SelectObjects());
+    public static string StringJoin(this ITuple @this, char separator) =>
+        string.Join(separator, @this.SelectObjects());
+    public static string StringJoin(this ITuple @this) =>
+        string.Join("", @this.SelectObjects());
 
     public static string RegexReplace(this string @this, string pattern, string replacement) =>
         Regex.Replace(@this, pattern, replacement);

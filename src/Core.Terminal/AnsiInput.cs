@@ -14,7 +14,7 @@ namespace OkTools.Core.Terminal;
 [PublicAPI]
 public static class AnsiInput
 {
-    // TODO: what about ConfigureAwait(false) in here?
+    // TODO: what about ConfigureAwait(false) in here? cli apps don't have a sync context so the behavior already equivalent to not capturing context
 
     static readonly TimeSpan k_standaloneEscTimeoutMs = TimeSpan.FromMilliseconds(50); // tcell uses this timeout
 

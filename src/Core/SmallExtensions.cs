@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace OkTools.Core;
 
 [PublicAPI]
@@ -93,5 +95,15 @@ public static class ListExtensions
     public static void DropBack<T>(this IList<T> @this)
     {
         @this.RemoveAt(@this.Count - 1);
+    }
+}
+
+[PublicAPI]
+public static class TupleExtensions
+{
+    public static IEnumerable<object?> SelectObjects(this ITuple @this)
+    {
+        for (var i = 0; i < @this.Length; ++i)
+            yield return @this[i];
     }
 }
