@@ -1,24 +1,22 @@
-﻿using System.Diagnostics;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Threading.Channels;
+using System.Diagnostics;
+using System.Globalization;
 using DocoptNet;
 using Spectre.Console;
 using Vezel.Cathode;
-using Vezel.Cathode.Processes;
 
 const string programVersion = "0.1";
-const int jsonVersion = 1;
 
-var programStart = DateTime.Now;
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
 using var ctx = new Context();
-ctx[StatType.Init].Start();
+ctx[PerfStatType.Init].Start();
 var logStats = false;
 
 // ReSharper disable AccessToDisposedClosure
 // ^ talking about ctx here, it's ok, it outlives everything
 
+/* // doesn't do anything in raw mode; unsure we need it
 Terminal.Signaled += signalContext =>
 {
     if (signalContext.Signal != TerminalSignal.Interrupt)
@@ -30,9 +28,25 @@ Terminal.Signaled += signalContext =>
 
     ctx.Cancel();
 };
+*/
+
+/*
+// TODO: figure out why i need this event to catch a ctrl-c from --pause (is it because pause uses Console.ReadKey?)
+#pragma warning disable RS0030
+Console.CancelKeyPress += (_, _) =>
+{
+    // TODO: pass through ctrl-c and attempt to let the child process exit gracefully
+
+    ctx.Cancel();
+};
+#pragma warning restore RS0030
+*/
 
 try
 {
+    if (!Terminal.StandardIn.IsInteractive)
+        throw new CliErrorException(CliExitCode.ErrorUsage, "This app requires an interactive terminal");
+
     {
         var isVerbose = false;
         NPath? useCwd = null;
@@ -49,6 +63,13 @@ try
                 if (++i == args.Length)
                     throw new DocoptInputErrorException("--cwd needs a path");
                 useCwd = args[i];
+            }
+            else if (args[i] == "--dbgpause")
+            {
+                ctx.Out("Waiting for debugger to attach...");
+                while (!Debugger.IsAttached)
+                    Thread.Sleep(100);
+                ctx.OutLine("attached!");
             }
             else
             {
@@ -90,82 +111,59 @@ try
         ctx.VerboseDump(ctx.Options);
 
     if (ctx.Options.CmdRecord)
-        return Run(() => Record(ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
+        return await Exec(async () => (int)await Playback.Record(ctx, ctx.Options.ArgRecorded, ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
 
-    if (ctx.Options.CmdPlay)
+    if (ctx.Options is { CmdPlay: true, OptPassthru: true })
     {
-        double? ratio = null;
-        int? delay = null;
-
-        if (ctx.Options.OptSpeed != null)
+        return await Exec(async () =>
         {
-            var success = false;
-
-            var m = Regex.Match(ctx.Options.OptSpeed, @"(?<ratio>[0-9.]+)x|(?<delay>\d+)ms");
-            var ratioGroup = m.Groups["ratio"];
-            var delayGroup = m.Groups["delay"];
-
-            if (ratioGroup.Success)
-            {
-                if (double.TryParse(ratioGroup.Value, out var value) && value > 0)
-                {
-                    ratio = value;
-                    success = true;
-                }
-            }
-            else if (delayGroup.Success)
-            {
-                if (int.TryParse(delayGroup.Value, out var value) && value >= 0)
-                {
-                    delay = value;
-                    success = true;
-                }
-            }
-
-            if (!success)
-            {
-                throw new CliErrorException(
-                    CliExitCode.ErrorUsage,
-                    "Unable to parse speed argument; needs to be a ratio like 1.23x or a delay like 456ms");
-            }
-        }
-
-        if (ctx.IsVerbose)
-        {
-            // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (ratio != null && ratio != 1.0)
-                ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at {ratio}x speed");
-            else if (delay == 0)
-                ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at maximum speed");
-            else if (delay != null)
-                ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at {delay}ms per line");
-            else
-                ctx.VerboseLine($"Playing back '{ctx.Options.ArgRecorded}' at original speed");
-        }
-
-        return Run(() => Play(ctx.Options.ArgRecorded!, ratio, delay, ctx.CancelToken));
+            var child = Playback.StartPlayback(ctx, new PlaybackOptions(ctx.Options));
+            await foreach (var capture in child.Captures.ReadAllAsync(ctx.CancelToken))
+                await (capture.IsStdErr ? Terminal.StandardError : Terminal.StandardOut).WriteLineAsync(capture.Line, ctx.CancelToken);
+            return await child.Exited;
+        });
     }
 
-    return Run(() => Main(ctx.Options.ArgCommand!, [..ctx.Options.ArgArg]));
+    using var app = new StaleApp(ctx);
+
+    StaleChildProcess child;
+    if (ctx.Options.CmdPlay)
+        child = Playback.StartPlayback(ctx, new PlaybackOptions(ctx.Options));
+    else
+    {
+        var command = ctx.Options.ArgCommand!;
+        IReadOnlyList<string> childArgs = [..ctx.Options.ArgArg];
+        child = TerminalUtils.ShellExec(ctx, command, childArgs);
+    }
+
+    return await Exec(async () => (int)await app.Run(new StaleOptions(ctx.Options), child));
 }
 catch (CliErrorException x)
 {
     ctx.ErrorLine(x.Message);
+    ctx.LongTasks.AbortAll();
     return (int)x.Code;
+}
+catch (OperationCanceledException)
+{
+    ctx.ErrorLine("Aborted");
+    ctx.LongTasks.AbortAll();
+    return (int)UnixSignal.KeyboardInterrupt.AsCliExitCode();
 }
 catch (Exception x)
 {
     ctx.Error(x);
+    ctx.LongTasks.AbortAll();
     return (int)CliExitCode.ErrorSoftware;
 }
 
-int Run(Func<Task<CliExitCode>> task)
+async Task<int> Exec(Func<Task<int>> task)
 {
-    ctx[StatType.Init].Stop();
+    ctx[PerfStatType.Init].Stop();
 
-    ctx[StatType.Command].Start();
-    var result = task().Result;
-    ctx[StatType.Command].Stop();
+    ctx[PerfStatType.Command].Start();
+    var result = await task();
+    ctx[PerfStatType.Command].Stop();
 
     if (logStats)
     {
@@ -176,7 +174,7 @@ int Run(Func<Task<CliExitCode>> task)
         table.AddColumn("Stop");
         table.AddColumn("Elapsed");
 
-        foreach (var statType in EnumUtility.GetValues<StatType>())
+        foreach (var statType in EnumUtility.GetValues<PerfStatType>())
         {
             var stat = ctx[statType];
             table.AddRow(
@@ -186,8 +184,8 @@ int Run(Func<Task<CliExitCode>> task)
                 stat.Elapsed.TotalSeconds.ToString("F3"));
         }
 
-        var totalStart = ctx[EnumUtility.GetValues<StatType>().First()].StartTime;
-        var totalStop = ctx[EnumUtility.GetValues<StatType>().Last()].StopTime;
+        var totalStart = ctx[EnumUtility.GetValues<PerfStatType>().First()].StartTime;
+        var totalStop = ctx[EnumUtility.GetValues<PerfStatType>().Last()].StopTime;
         table.AddRow(
             "Total",
             totalStart.ToString("hh:mm:ss.fff"),
@@ -195,219 +193,7 @@ int Run(Func<Task<CliExitCode>> task)
             (totalStop - totalStart).TotalSeconds.ToString("F3"));
 
         ctx.Out(table);
-
-/*        var operationElapsed = DateTime.Now - operationStart;
-        var programElapsed   = DateTime.Now - programStart;
-        ctx.OutLine(
-            $"Finished in {operationElapsed.TotalSeconds:F3}s (total {programElapsed.TotalSeconds:F3}s) "+
-            $"with exit code {result} ({(int)result})");*/
     }
 
-    return (int)result;
-}
-
-async Task<CliExitCode> Main(string command, IReadOnlyList<string> args)
-{
-    var (process, captures) = ShellExec(command, args);
-
-    var dims = Terminal.Size;
-    Terminal.Resized += size => dims = size; // TODO: also do a re-layout
-
-    const string statusColor = "bold yellow on navyblue";
-    const string stderrColor = "white on darkred";
-
-    var status = $">{process.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}";
-    ctx.OutMarkupLine(
-        status.Length <= dims.Width
-        ? $"[{statusColor}]{status.PadRight(dims.Width).EscapeMarkup()}[/]"
-        : $"[{statusColor}]{status[..(dims.Width-1)].EscapeMarkup()}[/][blue]»[/]");
-
-    await foreach (var capture in captures.ReadAllAsync(ctx.CancelToken))
-    {
-        void Process()
-        {
-            var span = capture.Line.AsSpan();
-
-            void Out(ReadOnlySpan<char> span)
-            {
-                // TODO: should i be using async versions of these Out funcs..?
-
-                if (capture.IsStdErr)
-                    ctx.OutMarkupLine($"[{stderrColor}]{span.ToString().PadRight(dims.Width).EscapeMarkup()}[/]");
-                else
-                    ctx.OutLine(span);
-            }
-
-            // this would be a blank line, not "no line"
-            if (span.Length == 0)
-            {
-                Out(span);
-                return;
-            }
-
-            while (span.Length > dims.Width)
-            {
-                Out(span[..dims.Width]);
-                span = span[dims.Width..];
-            }
-
-            if (span.Length > 0)
-                Out(span);
-        }
-
-        Process();
-    }
-
-    return CliExitCode.Success;
-}
-
-async Task<CliExitCode> Record(string? recordedPath, string command, IReadOnlyList<string> args)
-{
-    var (process, captures) = ShellExec(command, args);
-
-    if (ctx.IsVerbose)
-    {
-        ctx.VerboseLine($">{process.Id} $ {command} {CliUtility.CommandLineArgsToString(args)}");
-        ctx.VerboseLine($" (Recording to ${ctx.Options.ArgRecorded ?? "stdout"})");
-    }
-
-    var jsonStream = recordedPath != null
-        ? File.Create(recordedPath)
-        : Terminal.StandardOut.Stream;
-
-    await using var writer = new StreamWriter(jsonStream);
-    writer.AutoFlush = true;
-
-    await using var json = new Utf8JsonWriter(jsonStream, new JsonWriterOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
-    json.WriteStartObject();
-    json.WriteNumber("version", jsonVersion);
-    json.WriteStartArray("captures");
-    json.Flush();
-    writer.Write('\n');
-
-    await foreach (var capture in captures.ReadAllAsync(ctx.CancelToken))
-    {
-        writer.Write('\n');
-
-        json.WriteStartObject();
-        if (capture.IsStdErr)
-            json.WriteBoolean("isStdErr", true);
-        json.WriteString("when", capture.When);
-        json.WriteString("line", capture.Line);
-        json.WriteEndObject();
-        json.Flush();
-    }
-
-    json.WriteEndArray();
-    json.Flush();
-    writer.Write("\n\n");
-
-    json.WriteNumber("exitcode", process.Completion.Result);
-
-    json.WriteEndObject();
-    json.Flush();
-
-    writer.Write('\n');
-
-    return CliExitCode.Success;
-}
-
-async Task<CliExitCode> Play(string recordedPath, double? ratio, int? delay, CancellationToken cancel)
-{
-    using var reader = new StreamReader(File.OpenRead(recordedPath));
-
-    var json = await JsonDocument.ParseAsync(reader.BaseStream, default, cancel);
-
-    var version = json.RootElement.GetProperty("version").GetInt32();
-    if (version != jsonVersion)
-        throw new CliErrorException(CliExitCode.ErrorDataErr, $"Recorded file '{recordedPath}' is version {{version}}, expected {{jsonVersion}}");
-
-    var captures = json.RootElement.GetProperty("captures");
-    var exitCode = json.RootElement.GetProperty("exitcode").GetInt32();
-
-    if (ratio == null && delay == null)
-        ratio = 1;
-
-    DateTime? last = null;
-
-    foreach (var capture in captures.EnumerateArray())
-    {
-        var isStdErr = capture.TryGetProperty("isStdErr", out var isStdErrEl) && isStdErrEl.GetBoolean();
-        var when = capture.GetProperty("when").GetDateTime();
-        var line = capture.GetProperty("line").GetString();
-
-        if (ratio != null)
-        {
-            if (last != null)
-            {
-                var delta = (when - last.Value).TotalMilliseconds;
-                await Task.Delay((int)(delta / ratio.Value), cancel); // returns CompletedTask if delay (int ms) is 0
-            }
-            last = when;
-        }
-        else if (delay != 0)
-            await Task.Delay(delay!.Value, cancel);
-
-        if (isStdErr)
-            Terminal.StandardError.WriteLine(line);
-        else
-            Terminal.StandardOut.WriteLine(line);
-    }
-
-    return (CliExitCode)exitCode;
-}
-
-(ChildProcess process, ChannelReader<Capture> reader) ShellExec(NPath command, IReadOnlyList<string> args)
-{
-    if (ShellExecUtility.ConfigureProcessExitToAlsoKillChildProcesses() && ctx.IsVerbose)
-        ctx.VerboseLine("Configuring OS to kill child processes if the current process exits");
-
-    // TODO: consider checking if it's a console app
-    // (see IsWindowsApplication at PowerShell\src\System.Management.Automation\engine\NativeCommandProcessor.cs:1199)
-
-    var (commandPath, extraArgs) = ShellExecUtility.ResolveShellCommand(command);
-    if (extraArgs.Any())
-        args = [..extraArgs, ..args];
-
-    var process = new ChildProcessBuilder()
-        .WithFileName(commandPath)
-        .WithArguments(args)
-        .WithRedirections(false, true, true)
-        .WithCreateWindow(false)
-        .WithWindowStyle(ProcessWindowStyle.Hidden)
-        .WithCancellationToken(ctx.CancelToken)
-        .WithThrowOnError(false)
-        .Run();
-
-    var captures = Channel.CreateUnbounded<Capture>(new UnboundedChannelOptions { SingleReader = true });
-
-    var open = 0;
-
-    async void Write(TextReader reader, bool isStdErr)
-    {
-        Interlocked.Increment(ref open);
-
-        while (!ctx.IsCancellationRequested)
-        {
-            var line = await reader.ReadLineAsync(ctx.CancelToken);
-            if (line == null)
-            {
-                if (Interlocked.Decrement(ref open) == 0)
-                    captures.Writer.Complete();
-                break;
-            }
-
-            await captures.Writer.WriteAsync(new Capture(isStdErr, DateTime.Now, line), ctx.CancelToken);
-        }
-    }
-
-    _ = Task.Run(() => Write(process.StandardOut.TextReader, false), ctx.CancelToken);
-    _ = Task.Run(() => Write(process.StandardError.TextReader, true), ctx.CancelToken);
-
-    return (process, captures.Reader);
-}
-
-readonly record struct Capture(bool IsStdErr, DateTime When, string Line)
-{
-    public override string ToString() => $"{(IsStdErr ? "! " : "")}{Line.SimpleEscape()} ({When:g})";
+    return result;
 }

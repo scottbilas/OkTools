@@ -1,9 +1,9 @@
 {0}, the streaming output processor v{1}
 
 Usage:
-  {0} -- COMMAND [ARG...]
+  {0} [--pause] [--start START] -- COMMAND [ARG...]
   {0} record [RECORDED] -- COMMAND [ARG...]
-  {0} play RECORDED [--speed SPEED]
+  {0} play RECORDED [--speed SPEED] [--pause] [--start START] [--passthru]
   {0} -h | --help
   {0} --version
 
@@ -15,14 +15,18 @@ Commands:
   play    Deserialize output from RECORDED and play back as if it was running live. Useful for deterministic testing.
 
 Options:
+  --pause        Wait for a keystroke before every line printed
+  --start START  Start at the START vertical position (if set, will also clear the screen)
   --speed SPEED  Set playback speed. Can either be:
                  - A time like "10ms" (10 milliseconds delay per line) in which case it ignores the original capture
                    timings and plays back at a fixed rate per line. Set to 0ms to play at maximum speed.
                  - A ratio like "3.2x" where it will play back the original timings but sped up/down by the multiplier
                    (> 1 is faster, < 1 is slower). Set to 1x to attempt to play back at the original speed.
+  --passthru     Just pass through the captures to the terminal, don't run it by Stale main processing.
 
 Special:
-  --verbose  Log a lot of detail about what is happening. This can be applied to any command line as long as it appears
-             before anything else.
-  --stats    Log cheap but useful stats about the run after command completion.
-  --cwd      Use this as the working dir for {0}. Defaults to shell's working dir.
+  --verbose   Log a lot of detail about what is happening. This can be applied to any command line as long as it appears
+              before anything else.
+  --stats     Log cheap but useful stats about the run after command completion.
+  --cwd       Use this as the working dir for {0}. Defaults to shell's working dir.
+  --dbgpause  Pause before running the command to allow attaching a debugger.

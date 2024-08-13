@@ -1,18 +1,20 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Dumpify;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using Vezel.Cathode;
+using InvalidOperationException = System.InvalidOperationException;
 
 #pragma warning disable CA1822
 
-enum StatType
+enum PerfStatType
 {
     Init,
     Command,
 }
 
-class Stat
+class PerfStat
 {
     DateTime? _start, _stop;
 
@@ -40,34 +42,75 @@ class Stat
 class Context : IDisposable
 {
     readonly CancellationTokenSource _cancelSource = new();
+    readonly LongTasks _longTasks;
 
     public Context()
     {
-        _ansiConsole = new TerminalAnsiConsole(this);
+        _longTasks = new(_cancelSource.Token);
     }
 
     public void Dispose()
     {
         _cancelSource.Dispose();
+
+        var stillRunning = _longTasks.GetTasksSnapshot();
+        if (stillRunning.Any())
+        {
+            if (IsVerbose || Debugger.IsAttached)
+            {
+                ErrorLine("Long tasks were still running on exit:");
+                for (var i = 0; i < stillRunning.Count; ++i)
+                {
+                    var task = stillRunning[i];
+                    ErrorLine($"  [{i+1}/{stillRunning.Count}] \"{task.Name}\"");
+                    ErrorLine($"  serial={task.Serial}, id={task.Task.Id}, status={task.Task.Status}");
+                    ErrorLine(task.Creation.ToString().Split('\n').Select(l => " " + l).StringJoin("\n"));
+                }
+            }
+            else
+                ErrorLine("Long tasks were still running on exit: " + stillRunning.Select(v => v.Name).StringJoin(", "));
+        }
     }
 
     public CancellationToken CancelToken => _cancelSource.Token;
     public bool IsCancellationRequested => _cancelSource.IsCancellationRequested;
     public void Cancel() => _cancelSource.Cancel();
 
+    public LongTasks LongTasks => _longTasks;
+
     public StaleCliArguments Options = null!;
-    public bool IsVerbose;
+    public bool IsVerbose; // TODO: either make readonly for better JIT or force caller to check this before calling Verbose funcs
 
     public void VerboseLine(string text)
     {
         if (IsVerbose)
-            _ansiConsole.MarkupLineInterpolated($"[grey]{text}[/]");
+            OutMarkupLineInterp($"[grey]{text}[/]");
     }
 
     public void Verbose(string text)
     {
         if (IsVerbose)
-            _ansiConsole.MarkupInterpolated($"[grey]{text}[/]");
+            OutMarkupInterp($"[grey]{text}[/]");
+    }
+
+    [Conditional("DEBUG")]
+    public void DebugLine(string text)
+    {
+        var frames = new StackTrace(1)
+            .GetFrames()
+            .Reverse()
+            .SelectWhere(frame =>
+            {
+                var name = MiscUtils.ToNiceMethodName(frame.GetMethod()!);
+
+                // "just my code" only
+                return (name, !name.StartsWith("System."));
+            });
+
+        Debug.WriteLine(
+            $"{Environment.CurrentManagedThreadId,2}: "+
+            $"#{Task.CurrentId ?? '-',2} | "+
+            $"{MiscUtils.SequenceDuplicatesAsDots(frames).StringJoin(" ↗ ")} ⦚ {text}");
     }
 
     public void OutLine() =>
@@ -87,16 +130,18 @@ class Context : IDisposable
         Terminal.Out(renderable.ToAnsi());
 
     public void OutMarkupLine(string text) =>
-        _ansiConsole.MarkupLine(text);
+        OutLine(new Markup(text).ToAnsi());
     public void OutMarkup(string text) =>
-        _ansiConsole.Markup(text);
+        Out(new Markup(text).ToAnsi());
     public void OutMarkupLineInterp(FormattableString value) =>
-        _ansiConsole.MarkupLineInterpolated(value);
+        OutLine(Markup.FromInterpolated(value).ToAnsi());
     public void OutMarkupInterp(FormattableString value) =>
-        _ansiConsole.MarkupInterpolated(value);
+        Out(Markup.FromInterpolated(value).ToAnsi());
 
     public void ErrorLine<T>(T value) =>
         Terminal.ErrorLine(value);
+    public void ErrorLine() =>
+        Terminal.ErrorLine();
     public void Error<T>(T value) =>
         Terminal.Error(value);
 
@@ -124,23 +169,7 @@ class Context : IDisposable
         output: s_dumpOutput,
         tableConfig: new() { ShowTableHeaders = false });
 
-    public Stat this[StatType type] => _stats[(int)type];
-
-    class TerminalAnsiConsole(Context ctx) : IAnsiConsole
-    {
-        // we only need Write()
-        public Profile Profile => throw new InvalidOperationException();
-        public IAnsiConsoleCursor Cursor => throw new InvalidOperationException();
-        public IAnsiConsoleInput Input => throw new InvalidOperationException();
-        public IExclusivityMode ExclusivityMode => throw new InvalidOperationException();
-        public RenderPipeline Pipeline => throw new InvalidOperationException();
-        public void Clear(bool home) => throw new InvalidOperationException();
-
-        public void Write(IRenderable renderable)
-        {
-            ctx.Out(renderable);
-        }
-    }
+    public PerfStat this[PerfStatType type] => _stats[(int)type];
 
     class TerminalDumpOutput : IDumpOutput
     {
@@ -152,8 +181,7 @@ class Context : IDisposable
         public TextWriter TextWriter { get; } = Terminal.StandardOut.TextWriter;
     }
 
-    readonly IAnsiConsole _ansiConsole;
-    readonly Stat[] _stats = EnumUtility.GetNames<StatType>().Select(_ => new Stat()).ToArray();
+    readonly PerfStat[] _stats = EnumUtility.GetNames<PerfStatType>().Select(_ => new PerfStat()).ToArray();
 
     static readonly IDumpOutput s_dumpOutput = new TerminalDumpOutput();
     static readonly ColorConfig k_verboseDumpColors = new(new DumpColor("#808080"));
