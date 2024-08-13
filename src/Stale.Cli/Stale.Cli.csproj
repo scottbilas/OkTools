@@ -19,6 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Core.Terminal\Core.Terminal.csproj" />
+
     <PackageReference Include="Dumpify" />
     <PackageReference Include="Spectre.Console" />
 

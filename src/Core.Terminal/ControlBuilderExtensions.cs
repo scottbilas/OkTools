@@ -39,6 +39,19 @@ public static class ControlBuilderExtensions
     public static ControlBuilder Print(this ControlBuilder @this, ReadOnlyMemory<char> mem) =>
         @this.Print(mem.Span);
 
+    public static void PrintLine(this ControlBuilder @this) =>
+        @this.Print("\r\n");
+    public static void PrintLine(this ControlBuilder @this, ReadOnlySpan<char> span)
+    {
+        @this.Print(span);
+        @this.PrintLine();
+    }
+
+    public static void ShowCursor(this ControlBuilder @this, bool visible = true) =>
+        @this.SetCursorVisibility(visible);
+    public static void HideCursor(this ControlBuilder @this) =>
+        @this.SetCursorVisibility(false);
+
     // these are affected by current CursorOrigin
     public static ControlBuilder MoveCursorHome(this ControlBuilder @this) =>
         @this.Print(CSI).Print('H');

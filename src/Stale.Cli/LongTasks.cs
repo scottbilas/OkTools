@@ -26,11 +26,11 @@ record LongTask(string Name
 class LongTasks
 {
     readonly Dictionary<int, LongTask> _tasks = new();
-    readonly CancellationToken _stopToken;
+    readonly CancellationTokenSource _stopTokenSource;
 
     public LongTasks(CancellationToken stopToken)
     {
-        _stopToken = stopToken;
+        _stopTokenSource = CancellationTokenSource.CreateLinkedTokenSource(stopToken);
     }
 
     public IReadOnlyList<LongTask> GetTasksSnapshot()
@@ -39,11 +39,20 @@ class LongTasks
             return [.._tasks.Values];
     }
 
+    public void AbortAll()
+    {
+        lock (_tasks)
+        {
+            _stopTokenSource.Cancel();
+            _tasks.Clear();
+        }
+    }
+
     // use this for fire-and-forget functions that shouldn't fail, but we definitely want to catch when they do so can
     // improve error handling of them. def worse to have them fail quietly in the background.
     public LongTask Run(string taskName, Func<CancellationToken, Task> action, CancellationToken? stopToken = null)
     {
-        stopToken ??= _stopToken;
+        stopToken ??= _stopTokenSource.Token;
 
         // doing this through ctx so that in the future i can do a little nicer handling of a background task
         // failure, like adding extra supporting data to a log file or whatever.
