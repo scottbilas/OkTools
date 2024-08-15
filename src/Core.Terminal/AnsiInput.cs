@@ -163,7 +163,7 @@ public static class AnsiInput
             var b = Read(ref input);
             return IsControlChar(b)
                 ? ParseControlChar(b)
-                : new KeyEvent((char)b);
+                : new KeyEvent((char)b); // see TODO on k_controlChars
         }
 
         var (advance, keyEvent) = ParseEscSequence(input);
@@ -191,7 +191,7 @@ public static class AnsiInput
         if (IsControlChar(input[0]) && input[0] != ESC) // don't want held-down esc key to sometimes come through as alt-ESC
             return ParseControlChar(Read(ref input)) with { Alt = true };
         if (IsPrintableChar(input[0]))
-            return new KeyEvent((char)Read(ref input), alt: true);
+            return new KeyEvent((char)Read(ref input), alt: true); // see TODO on k_controlChars
 
         // ESC followed by more must be a plain ESC (or a sequence we don't recognize, which we'll just pass through)
         return ParseControlChar(ESC);
@@ -200,6 +200,7 @@ public static class AnsiInput
     static bool IsControlChar(byte b) => b is <= 0x1f or 0x7f;
     static bool IsPrintableChar(byte b) => b is >= 0x20 and <= 0x7e;
 
+    // TODO: it would be nice to also have 'q' as ConsoleKey.Q+none and 'Q' as ConsoleKey.Q+shift etc. for 0x20-0x7e
     static readonly KeyEvent[] k_controlChars =
     [
         // these are collisions i have noticed. when receiving one, we have to pick how to translate it
