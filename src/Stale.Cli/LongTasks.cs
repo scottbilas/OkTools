@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-record LongTask(string Name
+record LongTask(string Name, bool Weak
 #   if ENABLE_TASK_CREATION_TRACKING
     , StackTrace Creation
 #   endif
@@ -50,14 +50,23 @@ class LongTasks
 
     // use this for fire-and-forget functions that shouldn't fail, but we definitely want to catch when they do so can
     // improve error handling of them. def worse to have them fail quietly in the background.
-    public LongTask Run(string taskName, Func<CancellationToken, Task> action, CancellationToken? stopToken = null)
+    //
+    // weak = don't care if it's still running at the end
+
+    public LongTask RunWeak(string taskName, Func<CancellationToken, Task> action, CancellationToken? stopToken = null) =>
+        Run(taskName, true, action, stopToken);
+
+    public LongTask Run(string taskName, Func<CancellationToken, Task> action, CancellationToken? stopToken = null) =>
+        Run(taskName, false, action, stopToken);
+
+    LongTask Run(string taskName, bool weak, Func<CancellationToken, Task> action, CancellationToken? stopToken = null)
     {
         stopToken ??= _stopTokenSource.Token;
 
         // doing this through ctx so that in the future i can do a little nicer handling of a background task
         // failure, like adding extra supporting data to a log file or whatever.
 
-        var task = new LongTask(taskName, new StackTrace());
+        var task = new LongTask(taskName, true, new StackTrace());
         var assigned = false;
 
         async Task LongAction()

@@ -1,10 +1,12 @@
-﻿using Spectre.Console;
+﻿using System.Diagnostics;
+using Spectre.Console;
 
 class StatusPane
 {
     readonly Screen _screen;
     readonly string _color;
     string _text = "";
+    int _top;
 
     // FUTURE: get rid of 'color' and do a segment config approach like starship etc.
     public StatusPane(Screen screen, int top, string color)
@@ -14,7 +16,15 @@ class StatusPane
         Top = top;
     }
 
-    public int Top;
+    public int Top
+    {
+        get => _top;
+        set
+        {
+            Debug.Assert(value >= 0 && value < _screen.ScreenHeight);
+            _top = value;
+        }
+    }
 
     public void Invalidate() => _text = "";
 
@@ -28,12 +38,21 @@ class StatusPane
               $"[{Constants.WrapColor}]{Constants.WrapText}[/]");
     }
 
+    public void PrintLine(string text)
+    {
+        Print(text);
+        _screen.Control.PrintLine();
+    }
+
     public void Update(string text)
     {
+        // TODO: maybe find a span to ffwd to and print limited update (for when simple stuff like coords is changing)
+        // (but don't overengineer..just very basic test to reduce update size)
+
         if (_text == text)
             return;
 
-        using var _ = _screen.SaveRestoreCursorPos(0, Top, flushOnDispose: true);
+        using var _ = _screen.SaveRestoreCursorPos(0, Top);
         Print(text);
     }
 }

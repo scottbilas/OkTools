@@ -30,18 +30,6 @@ Terminal.Signaled += signalContext =>
 };
 */
 
-/*
-// TODO: figure out why i need this event to catch a ctrl-c from --pause (is it because pause uses Console.ReadKey?)
-#pragma warning disable RS0030
-Console.CancelKeyPress += (_, _) =>
-{
-    // TODO: pass through ctrl-c and attempt to let the child process exit gracefully
-
-    ctx.Cancel();
-};
-#pragma warning restore RS0030
-*/
-
 try
 {
     if (!Terminal.StandardIn.IsInteractive)
@@ -124,19 +112,19 @@ try
         });
     }
 
-    using var app = new StaleApp(ctx);
+    var staleOptions = new StaleOptions(ctx.Options);
 
-    StaleChildProcess child;
+    ChildProcess child;
     if (ctx.Options.CmdPlay)
         child = Playback.StartPlayback(ctx, new PlaybackOptions(ctx.Options));
     else
     {
         var command = ctx.Options.ArgCommand!;
         IReadOnlyList<string> childArgs = [..ctx.Options.ArgArg];
-        child = TerminalUtils.ShellExec(ctx, command, childArgs);
+        child = ChildProcess.ShellExec(ctx, command, childArgs);
     }
 
-    return await Exec(async () => (int)await app.Run(new StaleOptions(ctx.Options), child));
+    return await Exec(async () => (int)await StaleApp.Run(ctx, staleOptions, child));
 }
 catch (CliErrorException x)
 {
@@ -144,17 +132,41 @@ catch (CliErrorException x)
     ctx.LongTasks.AbortAll();
     return (int)x.Code;
 }
-catch (OperationCanceledException)
-{
-    ctx.ErrorLine("Aborted");
-    ctx.LongTasks.AbortAll();
-    return (int)UnixSignal.KeyboardInterrupt.AsCliExitCode();
-}
 catch (Exception x)
 {
     ctx.Error(x);
     ctx.LongTasks.AbortAll();
     return (int)CliExitCode.ErrorSoftware;
+}
+
+void LogStats()
+{
+    ctx.OutMarkupLine("[aqua]-- Stats from run --[/]");
+    var table = new Table() { Border = TableBorder.Minimal };
+    table.AddColumn("Stat");
+    table.AddColumn("Start");
+    table.AddColumn("Stop");
+    table.AddColumn("Elapsed");
+
+    foreach (var statType in EnumUtility.GetValues<PerfStatType>())
+    {
+        var stat = ctx[statType];
+        table.AddRow(
+            statType.ToString(),
+            stat.StartTime.ToString("hh:mm:ss.fff"),
+            stat.StopTime.ToString("hh:mm:ss.fff"),
+            stat.Elapsed.TotalSeconds.ToString("F3"));
+    }
+
+    var totalStart = ctx[EnumUtility.GetValues<PerfStatType>().First()].StartTime;
+    var totalStop = ctx[EnumUtility.GetValues<PerfStatType>().Last()].StopTime;
+    table.AddRow(
+        "Total",
+        totalStart.ToString("hh:mm:ss.fff"),
+        totalStop.ToString("hh:mm:ss.fff"),
+        (totalStop - totalStart).TotalSeconds.ToString("F3"));
+
+    ctx.Out(table);
 }
 
 async Task<int> Exec(Func<Task<int>> task)
@@ -166,34 +178,7 @@ async Task<int> Exec(Func<Task<int>> task)
     ctx[PerfStatType.Command].Stop();
 
     if (logStats)
-    {
-        ctx.OutMarkupLine("[aqua]-- Stats from run --[/]");
-        var table = new Table() { Border = TableBorder.Minimal };
-        table.AddColumn("Stat");
-        table.AddColumn("Start");
-        table.AddColumn("Stop");
-        table.AddColumn("Elapsed");
-
-        foreach (var statType in EnumUtility.GetValues<PerfStatType>())
-        {
-            var stat = ctx[statType];
-            table.AddRow(
-                statType.ToString(),
-                stat.StartTime.ToString("hh:mm:ss.fff"),
-                stat.StopTime.ToString("hh:mm:ss.fff"),
-                stat.Elapsed.TotalSeconds.ToString("F3"));
-        }
-
-        var totalStart = ctx[EnumUtility.GetValues<PerfStatType>().First()].StartTime;
-        var totalStop = ctx[EnumUtility.GetValues<PerfStatType>().Last()].StopTime;
-        table.AddRow(
-            "Total",
-            totalStart.ToString("hh:mm:ss.fff"),
-            totalStop.ToString("hh:mm:ss.fff"),
-            (totalStop - totalStart).TotalSeconds.ToString("F3"));
-
-        ctx.Out(table);
-    }
+        LogStats();
 
     return result;
 }

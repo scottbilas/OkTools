@@ -1,16 +1,15 @@
 ﻿using System.Diagnostics;
 using System.Threading.Channels;
-using Spectre.Console;
-using Spectre.Console.Advanced;
-using Spectre.Console.Rendering;
 using Vezel.Cathode.Processes;
 
-static class TerminalUtils
+record ChildProcess(
+    string Command,
+    IReadOnlyList<string> Args,
+    ChannelReader<LineCapture> Captures,
+    int Id,
+    Task<int> Exited)
 {
-    public static string ToAnsi(this IRenderable @this) =>
-        AnsiConsole.Console.ToAnsi(@this);
-
-    public static StaleChildProcess ShellExec(Context ctx, NPath command, IReadOnlyList<string> args)
+    public static ChildProcess ShellExec(Context ctx, NPath command, IReadOnlyList<string> args)
     {
         var captures = Channel.CreateUnbounded<LineCapture>(new UnboundedChannelOptions { SingleReader = true });
 

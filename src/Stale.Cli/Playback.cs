@@ -54,7 +54,7 @@ static class Playback
 
     public static async Task<CliExitCode> Record(Context ctx, string? recordedPath, string command, IReadOnlyList<string> args)
     {
-        var child = TerminalUtils.ShellExec(ctx, command, args);
+        var child = ChildProcess.ShellExec(ctx, command, args);
 
         if (ctx.IsVerbose)
         {
@@ -163,7 +163,7 @@ static class Playback
         return CliExitCode.Success;
     }
 
-    public static StaleChildProcess StartPlayback(Context ctx, PlaybackOptions playbackOptions)
+    public static ChildProcess StartPlayback(Context ctx, PlaybackOptions playbackOptions)
     {
         var captures = Channel.CreateUnbounded<LineCapture>(new UnboundedChannelOptions { SingleReader = true });
 

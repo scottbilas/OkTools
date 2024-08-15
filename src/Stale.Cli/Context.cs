@@ -39,6 +39,7 @@ class PerfStat
     public TimeSpan Elapsed => StopTime - StartTime;
 }
 
+[PublicAPI]
 class Context : IDisposable
 {
     readonly CancellationTokenSource _cancelSource = new();
@@ -54,7 +55,7 @@ class Context : IDisposable
         _cancelSource.Dispose();
 
         var stillRunning = _longTasks.GetTasksSnapshot();
-        if (stillRunning.Any())
+        if (stillRunning.Any(t => !t.Weak))
         {
             if (IsVerbose || Debugger.IsAttached)
             {
@@ -62,13 +63,20 @@ class Context : IDisposable
                 for (var i = 0; i < stillRunning.Count; ++i)
                 {
                     var task = stillRunning[i];
-                    ErrorLine($"  [{i+1}/{stillRunning.Count}] \"{task.Name}\"");
+                    Error($"  [{i+1}/{stillRunning.Count}] \"{task.Name}\"");
+                    if (task.Weak)
+                        Error(" (weak)");
+                    ErrorLine();
                     ErrorLine($"  serial={task.Serial}, id={task.Task.Id}, status={task.Task.Status}");
                     ErrorLine(task.Creation.ToString().Split('\n').Select(l => " " + l).StringJoin("\n"));
                 }
             }
             else
-                ErrorLine("Long tasks were still running on exit: " + stillRunning.Select(v => v.Name).StringJoin(", "));
+            {
+                ErrorLine("Long tasks were still running on exit: " + stillRunning
+                    .Select(v => v.Name + (v.Weak ? " (weak)" : ""))
+                    .StringJoin(", "));
+            }
         }
     }
 
@@ -84,7 +92,7 @@ class Context : IDisposable
     public void VerboseLine(string text)
     {
         if (IsVerbose)
-            OutMarkupLineInterp($"[grey]{text}[/]");
+            OutMarkupInterpLine($"[grey]{text}[/]");
     }
 
     public void Verbose(string text)
@@ -113,37 +121,48 @@ class Context : IDisposable
             $"{MiscUtils.SequenceDuplicatesAsDots(frames).StringJoin(" ↗ ")} ⦚ {text}");
     }
 
-    public void OutLine() =>
-        Terminal.OutLine();
+    // Out
 
-    public void OutLine(ReadOnlySpan<char> span)
-    {
-        Terminal.Out(span); // no OutLine provided for ReadOnlySpan<char>
-        Terminal.OutLine();
-    }
-    public void Out(ReadOnlySpan<char> span) =>
-        Terminal.Out(span);
+    public       void      Out         (string text)                => Terminal.Out(text);
+    public       void      Out         (ReadOnlySpan<char> span)    => Terminal.Out(span);
+    public       void      Out         (IRenderable renderable)     => Out(renderable.ToAnsi());
+    public       ValueTask OutAsync    (string text)                => Terminal.OutAsync(text, CancelToken);
+    public       ValueTask OutAsync    (ReadOnlyMemory<char> chars) => Terminal.OutAsync(chars, CancelToken);
+    public       ValueTask OutAsync    (IRenderable renderable)     => OutAsync(renderable.ToAnsi());
 
-    public void OutLine(IRenderable renderable) =>
-        Terminal.OutLine(renderable.ToAnsi());
-    public void Out(IRenderable renderable) =>
-        Terminal.Out(renderable.ToAnsi());
+    public       void      OutLine     ()                           => Terminal.OutLine();
+    public       void      OutLine     (string text)                => Terminal.OutLine(text);
+    public       void      OutLine     (ReadOnlySpan<char> span)    { Out(span); OutLine(); } // no OutLine provided for ReadOnlySpan<char>
+    public       void      OutLine     (IRenderable renderable)     => OutLine(renderable.ToAnsi());
+    public       ValueTask OutLineAsync()                           => Terminal.OutLineAsync(CancelToken);
+    public       ValueTask OutLineAsync(string text)                => Terminal.OutLineAsync(text, CancelToken);
+    public async ValueTask OutLineAsync(ReadOnlyMemory<char> chars) { await OutAsync(chars); await OutLineAsync(); } // no OutLineAsync provided for ReadOnlyMemory<char>
+    public       ValueTask OutLineAsync(IRenderable renderable)     => OutLineAsync(renderable.ToAnsi());
 
-    public void OutMarkupLine(string text) =>
-        OutLine(new Markup(text).ToAnsi());
-    public void OutMarkup(string text) =>
-        Out(new Markup(text).ToAnsi());
-    public void OutMarkupLineInterp(FormattableString value) =>
-        OutLine(Markup.FromInterpolated(value).ToAnsi());
-    public void OutMarkupInterp(FormattableString value) =>
-        Out(Markup.FromInterpolated(value).ToAnsi());
+    // Markup
 
-    public void ErrorLine<T>(T value) =>
-        Terminal.ErrorLine(value);
-    public void ErrorLine() =>
-        Terminal.ErrorLine();
-    public void Error<T>(T value) =>
-        Terminal.Error(value);
+    public       void      Out                     (string text, Style style)                      => Out(new Text(text, style));
+    public       ValueTask OutAsync                (string text, Style style)                      => OutAsync(new Text(text, style));
+    public       void      OutLine                 (string text, Style style)                      => OutLine(new Text(text, style));
+    public       ValueTask OutLineAsync            (string text, Style style)                      => OutLineAsync(new Text(text, style));
+    public       void      OutMarkup               (string markup, Style? style = null)            => Out(new Markup(markup, style).ToAnsi());
+    public       ValueTask OutMarkupAsync          (string markup, Style? style = null)            => OutAsync(new Markup(markup, style).ToAnsi());
+    public       void      OutMarkupLine           (string markup, Style? style = null)            => OutLine(new Markup(markup, style).ToAnsi());
+    public       ValueTask OutMarkupLineAsync      (string markup, Style? style = null)            => OutLineAsync(new Markup(markup, style).ToAnsi());
+    public       void      OutMarkupInterp         (FormattableString markup, Style? style = null) => Out(Markup.FromInterpolated(markup, style).ToAnsi());
+    public       ValueTask OutMarkupInterpAsync    (FormattableString markup, Style? style = null) => OutAsync(Markup.FromInterpolated(markup, style).ToAnsi());
+    public       void      OutMarkupInterpLine     (FormattableString markup, Style? style = null) => OutLine(Markup.FromInterpolated(markup, style).ToAnsi());
+    public       ValueTask OutMarkupInterpLineAsync(FormattableString markup, Style? style = null) => OutLineAsync(Markup.FromInterpolated(markup, style).ToAnsi());
+
+    // Error
+
+    public void      Error         (string value) => Terminal.Error(value);
+    public ValueTask ErrorAsync    (string value) => Terminal.ErrorAsync(value, CancelToken);
+
+    public void      ErrorLine     ()             => Terminal.ErrorLine();
+    public void      ErrorLine     (string value) => Terminal.ErrorLine(value);
+    public ValueTask ErrorLineAsync()             => Terminal.ErrorLineAsync(CancelToken);
+    public ValueTask ErrorLineAsync(string value) => Terminal.ErrorLineAsync(value, CancelToken);
 
     public void Error(Exception exception, bool fullInfo) => Error(exception
         .GetRenderable(fullInfo
@@ -151,6 +170,8 @@ class Context : IDisposable
             : ExceptionFormats.ShortenEverything)
         .ToAnsi());
     public void Error(Exception exception) => Error(exception, IsVerbose);
+
+    // Verbose/Dump
 
     public void VerboseDump<T>(T value, [CallerArgumentExpression(nameof(value))] string? label = null)
     {
@@ -169,7 +190,11 @@ class Context : IDisposable
         output: s_dumpOutput,
         tableConfig: new() { ShowTableHeaders = false });
 
+    // Other
+
     public PerfStat this[PerfStatType type] => _stats[(int)type];
+
+    // Private
 
     class TerminalDumpOutput : IDumpOutput
     {
