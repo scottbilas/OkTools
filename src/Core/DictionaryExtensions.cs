@@ -13,7 +13,9 @@ public class EmptyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue> w
 
     EmptyDictionary() {} // use `.Instance`
 
+    [MustDisposeResource]
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => Enumerable.Empty<KeyValuePair<TKey, TValue>>().GetEnumerator();
+    [MustDisposeResource]
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     public int Count => 0;
     public bool ContainsKey(TKey key) => false;
@@ -23,8 +25,8 @@ public class EmptyDictionary<TKey, TValue> : IReadOnlyDictionary<TKey, TValue> w
     public bool TryGetValue(TKey key, out TValue value) { value = default!; return false; }
 #   endif
     public TValue this[TKey key] => throw new KeyNotFoundException();
-    public IEnumerable<TKey> Keys => Enumerable.Empty<TKey>();
-    public IEnumerable<TValue> Values => Enumerable.Empty<TValue>();
+    public IEnumerable<TKey> Keys => [];
+    public IEnumerable<TValue> Values => [];
 }
 
 [PublicAPI]
@@ -92,6 +94,7 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
     public ICollection<TKey> Keys => _dict.Keys;
     public ICollection<TValue> Values => _dict.Values;
 
+    [MustDisposeResource]
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() => _dict.GetEnumerator();
 
 #   if NET
@@ -120,6 +123,7 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         set => _dict[key] = value;
     }
 
+    [MustDisposeResource]
     IEnumerator IEnumerable.GetEnumerator() => _dict.GetEnumerator();
     IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
     IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
