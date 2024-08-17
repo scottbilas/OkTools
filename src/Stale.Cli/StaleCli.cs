@@ -16,20 +16,6 @@ var logStats = false;
 // ReSharper disable AccessToDisposedClosure
 // ^ talking about ctx here, it's ok, it outlives everything
 
-/* // doesn't do anything in raw mode; unsure we need it
-Terminal.Signaled += signalContext =>
-{
-    if (signalContext.Signal != TerminalSignal.Interrupt)
-        return;
-
-    // TODO: pass through ctrl-c and attempt to let the child process exit gracefully
-    // (may also need to handle ctrl-break, ctrl-close, etc)
-    // (may also need to pass y/n confirmation thingy)
-
-    ctx.Cancel();
-};
-*/
-
 try
 {
     if (!Terminal.StandardIn.IsInteractive)
