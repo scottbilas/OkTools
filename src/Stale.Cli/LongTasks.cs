@@ -66,7 +66,7 @@ class LongTasks
         // doing this through ctx so that in the future i can do a little nicer handling of a background task
         // failure, like adding extra supporting data to a log file or whatever.
 
-        var task = new LongTask(taskName, true, new StackTrace());
+        var task = new LongTask(taskName, weak, new StackTrace());
         var assigned = false;
 
         async Task LongAction()
