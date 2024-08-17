@@ -5,6 +5,12 @@ using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 using Color = Spectre.Console.Color;
 
+class CliExitException : Exception
+{
+    public CliExitException(string message)
+        : base(message) {}
+}
+
 readonly struct StaleOptions
 {
     public StaleOptions(StaleCliArguments args)
@@ -171,7 +177,7 @@ class StaleApp : IDisposable
         if (isStdErr)
             _screen.Control.Print(chars.ToString(), k_stdErrStyle);
         else
-            _screen.Control.Print(chars);
+            _screen.Control.Print(chars.Span);
         ControlFinishLogLine(newline);
     }
 
@@ -238,6 +244,7 @@ class StaleApp : IDisposable
         await _screen.FlushStdoutAsync(_ctx.CancelToken);
     }
 
+    // ReSharper disable once UnusedMember.Local
     void DebugRenderCursorPos()
     {
         {
@@ -269,8 +276,9 @@ class StaleApp : IDisposable
             }
 
             if (evt is { Char: 'q', Modifiers: 0 })
-                _ctx.Cancel();
-            else if (evt is { Char: '\r', Modifiers: 0 })
+                throw new CliExitException("User quit");
+
+            if (evt is { Char: '\r', Modifiers: 0 })
                 _pauseSkip = 0;
             else if (evt is { Char: ' ', Modifiers: 0 })
                 _pauseSkip = 9;

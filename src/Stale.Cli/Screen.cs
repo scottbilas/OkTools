@@ -75,7 +75,7 @@ class Screen : IDisposable
         if (_cb.Span.IsEmpty)
             return;
 
-        _terminal.Out(_cb.Memory);
+        _terminal.Out(_cb.Span);
         _cb.Clear(10*1024);
     }
 

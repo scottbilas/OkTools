@@ -126,6 +126,13 @@ try
 
     return await Exec(async () => (int)await StaleApp.Run(ctx, staleOptions, child));
 }
+catch (CliExitException x)
+{
+    ctx.LongTasks.AbortAll();
+    if (ctx.IsVerbose)
+        ctx.Verbose(x.Message);
+    return (int)CliExitCode.Success;
+}
 catch (CliErrorException x)
 {
     ctx.ErrorLine(x.Message);

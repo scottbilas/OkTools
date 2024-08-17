@@ -19,8 +19,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="BannedSymbols.txt" />
     <ProjectReference Include="..\Core.Terminal\Core.Terminal.csproj" />
-
     <PackageReference Include="Dumpify" />
     <PackageReference Include="Spectre.Console" />
 
