@@ -43,18 +43,23 @@ class PerfStat
 class Context : IDisposable
 {
     readonly CancellationTokenSource _cancelSource = new();
-    readonly LongTasks _longTasks;
+    readonly IDumpOutput _dumpOutput;
 
-    public Context()
+    public Context(VirtualTerminal? terminal = null)
     {
-        _longTasks = new(_cancelSource.Token);
+#       pragma warning disable RS0030
+        Terminal = terminal ?? Vezel.Cathode.Terminal.System;
+#       pragma warning restore RS0030
+
+        LongTasks = new(_cancelSource.Token);
+        _dumpOutput = new TerminalDumpOutput(Terminal);
     }
 
     public void Dispose()
     {
         _cancelSource.Dispose();
 
-        var stillRunning = _longTasks.GetTasksSnapshot();
+        var stillRunning = LongTasks.GetTasksSnapshot();
         if (stillRunning.Any(t => !t.Weak))
         {
             if (IsVerbose || Debugger.IsAttached)
@@ -84,7 +89,8 @@ class Context : IDisposable
     public bool IsCancellationRequested => _cancelSource.IsCancellationRequested;
     public void Cancel() => _cancelSource.Cancel();
 
-    public LongTasks LongTasks => _longTasks;
+    public VirtualTerminal Terminal { get; }
+    public LongTasks LongTasks { get; }
 
     public StaleCliArguments Options = null!;
     public bool IsVerbose; // TODO: either make readonly for better JIT or force caller to check this before calling Verbose funcs
@@ -187,7 +193,7 @@ class Context : IDisposable
         useDescriptors: false,
         typeNames: new() { ShowTypeNames = false },
         colors: colors,
-        output: s_dumpOutput,
+        output: _dumpOutput,
         tableConfig: new() { ShowTableHeaders = false });
 
     // Other
@@ -198,16 +204,18 @@ class Context : IDisposable
 
     class TerminalDumpOutput : IDumpOutput
     {
+        public TerminalDumpOutput(VirtualTerminal terminal) =>
+            TextWriter = terminal.StandardOut.TextWriter;
+
         // i'd like to adjust the config to have a MemberProvider that skips fields that are set to their default values
         // but that would break the table rendering, where all rows need the same fields. would require a deeper change
         // to dumpify to support that.
 
         public RendererConfig AdjustConfig(in RendererConfig config) => config;
-        public TextWriter TextWriter { get; } = Terminal.StandardOut.TextWriter;
+        public TextWriter TextWriter { get; }
     }
 
     readonly PerfStat[] _stats = EnumUtility.GetNames<PerfStatType>().Select(_ => new PerfStat()).ToArray();
 
-    static readonly IDumpOutput s_dumpOutput = new TerminalDumpOutput();
     static readonly ColorConfig k_verboseDumpColors = new(new DumpColor("#808080"));
 }

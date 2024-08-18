@@ -64,7 +64,7 @@ static class Playback
 
         var jsonStream = recordedPath != null
             ? File.Create(recordedPath)
-            : Terminal.StandardOut.Stream;
+            : ctx.Terminal.StandardOut.Stream;
 
         await using var writer = new StreamWriter(jsonStream);
         writer.AutoFlush = true;

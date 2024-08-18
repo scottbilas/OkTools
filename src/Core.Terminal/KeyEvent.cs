@@ -3,8 +3,10 @@
 // TODO: let's also pack in a little 10-char (null-term) array to store the captured pattern, and have little helpers to access it.
 // sometimes might be nicer when detecting ctrl-c for example, and may help with diagnostics as well when there is a misfire on the key matcher.
 
+public interface ITerminalEvent {}
+
 [PublicAPI]
-public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = false, bool Shift = false, bool Ctrl = false)
+public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = false, bool Shift = false, bool Ctrl = false) : ITerminalEvent
 {
     public KeyEvent(ConsoleKey key, bool alt = false, bool shift = false, bool ctrl = false)
         : this(key, default, alt, shift, ctrl) {}

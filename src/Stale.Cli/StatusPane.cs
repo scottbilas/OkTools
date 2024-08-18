@@ -1,50 +1,42 @@
-﻿using System.Diagnostics;
+﻿using OkTools.Core.Terminal;
 using Spectre.Console;
+using Vezel.Cathode.Text.Control;
 
 class StatusPane
 {
-    readonly Screen _screen;
     readonly string _color;
     string _text = "";
-    int _top;
 
     // FUTURE: get rid of 'color' and do a segment config approach like starship etc.
-    public StatusPane(Screen screen, int top, string color)
+    public StatusPane(int top, int maxWidth, string color)
     {
-        _screen = screen;
         _color = color;
+        MaxWidth = maxWidth;
         Top = top;
     }
 
-    public int Top
-    {
-        get => _top;
-        set
-        {
-            Debug.Assert(value >= 0 && value < _screen.ScreenHeight);
-            _top = value;
-        }
-    }
+    public int Top { get; set; }
+    public int MaxWidth { get; set; }
 
     public void Invalidate() => _text = "";
 
-    public void Print(string text)
+    public void Print(ControlBuilder cb, string text)
     {
         _text = text;
 
-        _screen.Control.PrintMarkup(text.Length <= _screen.ScreenWidth
-            ? $"[{_color}]{text.PadRight(_screen.ScreenWidth).EscapeMarkup()}[/]"
-            : $"[{_color}]{text[..(_screen.ScreenWidth-Constants.WrapText.Length)].EscapeMarkup()}[/]"+
+        cb.PrintMarkup(text.Length <= MaxWidth
+            ? $"[{_color}]{text.PadRight(MaxWidth).EscapeMarkup()}[/]"
+            : $"[{_color}]{text[..(MaxWidth-Constants.WrapText.Length)].EscapeMarkup()}[/]"+
               $"[{Constants.WrapColor}]{Constants.WrapText}[/]");
     }
 
-    public void PrintLine(string text)
+    public void PrintLine(ControlBuilder cb, string text)
     {
-        Print(text);
-        _screen.Control.PrintLine();
+        Print(cb, text);
+        cb.PrintLine();
     }
 
-    public void Update(string text)
+    public void Update(ControlBuilder cb, string text)
     {
         // TODO: maybe find a span to ffwd to and print limited update (for when simple stuff like coords is changing)
         // (but don't overengineer..just very basic test to reduce update size)
@@ -52,7 +44,7 @@ class StatusPane
         if (_text == text)
             return;
 
-        using var _ = _screen.SaveRestoreCursorPos(0, Top);
-        Print(text);
+        using var _ = cb.SaveRestoreCursor(Top, 0);
+        Print(cb, text);
     }
 }

@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Globalization;
 using DocoptNet;
 using Spectre.Console;
-using Vezel.Cathode;
 
 const string programVersion = "0.1";
 
@@ -18,7 +17,7 @@ var logStats = false;
 
 try
 {
-    if (!Terminal.StandardIn.IsInteractive)
+    if (!ctx.Terminal.StandardIn.IsInteractive)
         throw new CliErrorException(CliExitCode.ErrorUsage, "This app requires an interactive terminal");
 
     {
@@ -72,9 +71,9 @@ try
 
         var (exitCode, options) = StaleCliArguments.CreateParser().Parse(
             args, programVersion, StaleCliArguments.Help, StaleCliArguments.Usage,
-            outWriter: Terminal.StandardOut.TextWriter,
-            errWriter: Terminal.StandardError.TextWriter,
-            wrapWidth: Terminal.Size.Width);
+            outWriter: ctx.Terminal.StandardOut.TextWriter,
+            errWriter: ctx.Terminal.StandardError.TextWriter,
+            wrapWidth: ctx.Terminal.Size.Width);
         if (exitCode != null)
             return (int)exitCode.Value;
 
@@ -93,7 +92,7 @@ try
         {
             var child = Playback.StartPlayback(ctx, new PlaybackOptions(ctx.Options));
             await foreach (var capture in child.Captures.ReadAllAsync(ctx.CancelToken))
-                await (capture.IsStdErr ? Terminal.StandardError : Terminal.StandardOut).WriteLineAsync(capture.Line, ctx.CancelToken);
+                await (capture.IsStdErr ? ctx.Terminal.StandardError : ctx.Terminal.StandardOut).WriteLineAsync(capture.Line, ctx.CancelToken);
             return await child.Exited;
         });
     }
