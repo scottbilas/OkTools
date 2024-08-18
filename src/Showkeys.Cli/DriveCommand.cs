@@ -154,7 +154,7 @@ class DriveCommand
                 case { Char: 'l', Modifiers: ConsoleModifiers.Control }:
                     OutControl(cb =>
                     {
-                        using var _ = cb.AutoSaveRestoreCursorState();
+                        using var _ = cb.SaveRestoreCursor();
                         for (var line = _scrollTop; line <= _scrollBottom; ++line)
                         {
                             cb.MoveCursorTo(line, 0);

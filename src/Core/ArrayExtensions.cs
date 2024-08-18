@@ -2,6 +2,13 @@ namespace OkTools.Core;
 
 public static class ArrayExtensions
 {
+    public static ArraySegment<T> WithOffset<T>(this T[] @this, int offset) =>
+        new(@this, offset, @this.Length - offset);
+    public static ArraySegment<T> WithLength<T>(this T[] @this, int length) =>
+        new(@this, 0, length);
+    public static ArraySegment<T> Slice<T>(this T[] @this, int offset, int length) =>
+        new(@this, offset, length);
+
     public static void ShiftLeft<T>(this T[] @this, int count)
     {
         Array.Copy(@this, count, @this, 0, @this.Length - count);

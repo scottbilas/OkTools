@@ -82,8 +82,15 @@ public static class ControlBuilderExtensions
     public static ControlBuilder ReverseLineFeed(this ControlBuilder @this) =>
         @this.Print(ESC).Print(['M']); // this is reverse index (M), not reverse line feed (H), but this is supported much better and does the same thing according to docs
 
-    public static AutoSaveRestoreCursorState AutoSaveRestoreCursorState(this ControlBuilder @this) =>
+    public static AutoSaveRestoreCursorState SaveRestoreCursor(this ControlBuilder @this) =>
         new(@this);
+
+    public static AutoSaveRestoreCursorState SaveRestoreCursor(this ControlBuilder @this, int y, int x)
+    {
+        var saver = @this.SaveRestoreCursor();
+        @this.MoveCursorTo(y, x);
+        return saver;
+    }
 
     // note that this will cause the cursor to move to home position. can't save/restore cursor pos because it is tied
     // to cursor state, and restoring state will kill the new constrain mode.
