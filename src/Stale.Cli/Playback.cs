@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
-using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 
 readonly record struct LineCapture(bool IsStdErr, DateTime When, string Line)

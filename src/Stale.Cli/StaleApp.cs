@@ -195,6 +195,7 @@ class StaleApp : IDisposable
     static readonly Style k_stdErrStyle = new(background: Color.DarkRed);
     static readonly Style k_statusStyle = new(decoration: Decoration.Italic);
     static readonly Style k_userAlertStyle = new(foreground: Color.Yellow);
+    static readonly Style k_endOfTextStyle = new(foreground: Color.Grey);
 
     void ControlFinishLogLine(bool newline)
     {
@@ -218,6 +219,9 @@ class StaleApp : IDisposable
             case OutLineType.Status:
                 _cb.Print(chars.ToString(), k_statusStyle);
                 break;
+            case OutLineType.EndOfText:
+                _cb.Print(chars.ToString(), k_endOfTextStyle);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(lineType));
         }
@@ -228,16 +232,13 @@ class StaleApp : IDisposable
         ControlPrintLogLine(lineType, text.AsMemory(), newline);
 
     // TODO: spinner + timer while child process still running
-    void ControlPrintEndOfText(bool newline) => ControlPrintLogLine(OutLineType.Status, "‡", newline);
+    void ControlPrintEndOfText(bool newline) =>
+        ControlPrintLogLine(OutLineType.EndOfText, _options.PauseEveryLine ? "‡ " + k_pauseText : "‡", newline);
 
-    enum OutLineType { CapturedStdout, CapturedStderr, Status }
+    enum OutLineType { CapturedStdout, CapturedStderr, Status, EndOfText }
 
     ValueTask OutLineAsync(bool stdErrOrOut, ReadOnlyMemory<char> chars) =>
         OutLineAsync(stdErrOrOut ? OutLineType.CapturedStderr : OutLineType.CapturedStdout, chars);
-    ValueTask OutLineAsync(bool stdErrOrOut, string text) =>
-        OutLineAsync(stdErrOrOut, text.AsMemory());
-    ValueTask OutLineAsync(OutLineType lineType, string text) =>
-        OutLineAsync(lineType, text.AsMemory());
 
     async ValueTask OutLineAsync(OutLineType lineType, ReadOnlyMemory<char> chars)
     {
@@ -324,6 +325,8 @@ class StaleApp : IDisposable
             }
         }
     }
+
+    const string k_pauseText = "(paused: enter/space to advance 1/10; q to quit)";
 
     async Task LinePauseAsync()
     {
