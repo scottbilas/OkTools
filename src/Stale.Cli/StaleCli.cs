@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using DocoptNet;
 using Spectre.Console;
+using Vezel.Cathode.IO;
 
 const string programVersion = "0.1";
 

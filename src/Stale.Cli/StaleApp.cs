@@ -6,11 +6,9 @@ using Vezel.Cathode.Text.Control;
 using Color = Spectre.Console.Color;
 using Size = System.Drawing.Size;
 
-class CliExitException : Exception
-{
-    public CliExitException(string message)
-        : base(message) {}
-}
+sealed partial class StaleCliArguments; // make analyzer happy
+
+class CliExitException(string message) : Exception(message);
 
 readonly struct StaleOptions
 {
