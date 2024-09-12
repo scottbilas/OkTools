@@ -26,7 +26,7 @@ record ChildProcess(
         var process = new ChildProcessBuilder()
             .WithFileName(commandPath)
             .WithArguments(args)
-            .WithRedirections(false, true, true)
+            .WithRedirections(true, true, true)
             .WithCreateWindow(false)
             .WithWindowStyle(ProcessWindowStyle.Hidden)
             .WithCancellationToken(ctx.CancelToken)
