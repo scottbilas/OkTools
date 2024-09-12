@@ -69,7 +69,7 @@ class DriveCommand
             {
                 // fills
 
-                case { Char: 'f', Modifiers: 0 }:
+                case { UnmodifiedChar: 'f' }:
                     OutControl(cb => cb.SaveCursorState());
                     PrintPatternLines(_scrollBottom - _scrollTop + 1);
                     OutControl(cb => cb.RestoreCursorState());
@@ -77,71 +77,71 @@ class DriveCommand
                         _pattern = 0;
                     break;
 
-                case { Key: var k and >= ConsoleKey.F1 and <= ConsoleKey.F12, Modifiers: 0 }:
+                case { UnmodifiedKey: var k and >= ConsoleKey.F1 and <= ConsoleKey.F12 }:
                     PrintPatternLines(k - ConsoleKey.F1 + 1);
                     break;
 
-                case { Char: var c and >= '1' and <= '9', Modifiers: 0 }:
+                case { UnmodifiedChar: var c and >= '1' and <= '9' }:
                     PrintPatternWords(c - '0');
                     break;
 
-                case { Char: var c and >= '1' and <= '9', Modifiers: ConsoleModifiers.Alt }:
+                case { Char: var c and >= '1' and <= '9', AltOnly: true }:
                     PrintRandomChars(c - '0');
                     break;
 
-                case { Char: 'h' or '?', Modifiers: 0 }:
+                case { UnmodifiedChar: 'h' or '?' }:
                     Help();
                     break;
 
                 // moves
 
-                case { Key: ConsoleKey.LeftArrow, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.LeftArrow }:
                     OutControl(cb => cb.MoveCursorLeft());
                     break;
-                case { Key: ConsoleKey.RightArrow, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.RightArrow }:
                     OutControl(cb => cb.MoveCursorRight());
                     break;
-                case { Key: ConsoleKey.UpArrow, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.UpArrow }:
                     OutControl(cb => cb.ReverseLineFeed()); // MoveCursorDown/Up does not scroll
                     break;
-                case { Key: ConsoleKey.DownArrow, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.DownArrow }:
                     OutControl(cb => cb.LineFeed()); // MoveCursorDown/Up does not scroll
                     break;
-                case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Shift }:
+                case { Key: ConsoleKey.UpArrow, ShiftOnly: true }:
                     OutControl(cb => cb.MoveCursorTo((_cursorPos.Y-1).ClampMin(0), _cursorPos.X));
                     break;
-                case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Shift }:
+                case { Key: ConsoleKey.DownArrow, ShiftOnly: true }:
                     OutControl(cb => cb.MoveCursorTo((_cursorPos.Y+1).ClampMaxExcl(_terminalSize.Height), _cursorPos.X));
                     break;
 
-                case { Key: ConsoleKey.Home, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.Home }:
                     OutControl(cb => cb.MoveCursorLineStart());
                     break;
-                case { Key: ConsoleKey.Home, Modifiers: ConsoleModifiers.Control }:
+                case { Key: ConsoleKey.Home, CtrlOnly: true }:
                     OutControl(cb => cb.MoveCursorHome());
                     break;
 
-                case { Key: ConsoleKey.End, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.End }:
                     OutControl(cb => cb.MoveCursorLineEnd());
                     break;
-                case { Key: ConsoleKey.End, Modifiers: ConsoleModifiers.Control }:
+                case { Key: ConsoleKey.End, CtrlOnly: true }:
                     OutControl(cb => cb.MoveCursorEnd());
                     break;
 
-                case { Key: ConsoleKey.Enter, Modifiers: 0 }:
+                case { UnmodifiedKey: ConsoleKey.Enter }:
                     OutControl(cb => cb.CarriageReturn().LineFeed());
                     break;
 
-                case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Control }:
+                case { Key: ConsoleKey.UpArrow, CtrlOnly: true }:
                     OutControl(cb => cb.MoveBufferDown());
                     break;
-                case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Control }:
+                case { Key: ConsoleKey.DownArrow, CtrlOnly: true }:
                     OutControl(cb => cb.MoveBufferUp());
                     break;
 
                 // control
 
-                case { Char: '\\', Modifiers: 0 }:
+                case { UnmodifiedChar: '\\' }:
                     _cursorConstrainMode = _cursorConstrainMode == CursorConstrainMode.Margin
                         ? CursorConstrainMode.Screen : CursorConstrainMode.Margin;
                     OutControl(cb =>
@@ -151,7 +151,7 @@ class DriveCommand
                     });
                     break;
 
-                case { Char: 'l', Modifiers: ConsoleModifiers.Control }:
+                case { Char: 'l', CtrlOnly: true }:
                     OutControl(cb =>
                     {
                         using var _ = cb.SaveRestoreCursor();
@@ -162,41 +162,41 @@ class DriveCommand
                         }
                     });
                     break;
-                case { Char: 'l', Modifiers: ConsoleModifiers.Alt }:
+                case { Char: 'l', AltOnly: true }:
                     OutControl(cb => cb.ClearScreen());
                     break;
 
-                case { Char: '[', Modifiers: 0 }:
+                case { UnmodifiedChar: '[' }:
                     SetScrollMargin(_cursorPos.Y, _scrollBottom, out error);
                     break;
-                case { Char: ']', Modifiers: 0 }:
+                case { UnmodifiedChar: ']' }:
                     SetScrollMargin(_scrollTop, _cursorPos.Y, out error);
                     break;
 
-                case { Char: '[', Modifiers: ConsoleModifiers.Alt }:
+                case { Char: '[', AltOnly: true }:
                     ResetScrollMargin();
                     break;
 
-                case { Key: ConsoleKey.UpArrow, Modifiers: ConsoleModifiers.Alt }:
+                case { Key: ConsoleKey.UpArrow, AltOnly: true }:
                     SetScrollMargin(_scrollTop, _scrollBottom - 1, out error);
                     break;
-                case { Key: ConsoleKey.DownArrow, Modifiers: ConsoleModifiers.Alt }:
+                case { Key: ConsoleKey.DownArrow, AltOnly: true }:
                     SetScrollMargin(_scrollTop, _scrollBottom + 1, out error);
                     break;
-                case { Key: ConsoleKey.LeftArrow, Modifiers: ConsoleModifiers.Alt }:
+                case { Key: ConsoleKey.LeftArrow, AltOnly: true }:
                     SetScrollMargin(_scrollTop - 1, _scrollBottom, out error);
                     break;
-                case { Key: ConsoleKey.RightArrow, Modifiers: ConsoleModifiers.Alt }:
+                case { Key: ConsoleKey.RightArrow, AltOnly: true }:
                     SetScrollMargin(_scrollTop + 1, _scrollBottom, out error);
                     break;
 
-                case { Char: ' ', Modifiers: 0 }:
+                case { UnmodifiedChar: ' ' }:
                     // do nothing
                     break;
 
-                case { Char: 'c', Modifiers: ConsoleModifiers.Control }:
+                case { Char: 'c', CtrlOnly: true }:
                     return UnixSignal.KeyboardInterrupt.AsCliExitCode();
-                case { Char: 'q', Modifiers: 0 }:
+                case { UnmodifiedChar: 'q' }:
                     return CliExitCode.Success;
             }
 

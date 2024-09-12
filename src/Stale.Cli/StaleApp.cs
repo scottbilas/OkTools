@@ -112,7 +112,7 @@ class StaleApp : IDisposable
         // fire & forget, because ReadKeysAsync routes them into the channel and the `await foreach` will pick that up
         _ctx.LongTasks.RunWeak("Stdin Reader", cancel => AnsiInput.ReadKeysAsync(_ctx.Terminal.TerminalIn, _userEvents.Writer, e =>
         {
-            if (e is { Modifiers: ConsoleModifiers.Control, Key: ConsoleKey.C })
+            if (e is { Key: ConsoleKey.C, CtrlOnly: true })
                 _ctx.Cancel();
             return e;
         }, cancel));
@@ -345,12 +345,12 @@ class StaleApp : IDisposable
                     break;
 
                 case KeyEvent keyEvent:
-                    if (keyEvent is { Char: 'q', Modifiers: 0 })
+                    if (keyEvent is { UnmodifiedChar: 'q' })
                         HandleUserQuit();
 
-                    if (keyEvent is { Char: '\r', Modifiers: 0 })
+                    if (keyEvent is { UnmodifiedChar: '\r' })
                         _pauseSkip = 0;
-                    else if (keyEvent is { Char: ' ', Modifiers: 0 })
+                    else if (keyEvent is { UnmodifiedChar: ' ' })
                         _pauseSkip = 9;
                     else
                         continue;

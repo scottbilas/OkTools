@@ -18,6 +18,12 @@ public readonly record struct KeyEvent(ConsoleKey Key, char Char, bool Alt = fal
         : this(default, ch, (modifiers & ConsoleModifiers.Alt) != 0, (modifiers & ConsoleModifiers.Shift) != 0, (modifiers & ConsoleModifiers.Control) != 0) {}
 
     public ConsoleModifiers Modifiers => (Alt ? ConsoleModifiers.Alt : 0) | (Shift ? ConsoleModifiers.Shift : 0) | (Ctrl ? ConsoleModifiers.Control : 0);
+    public bool AltOnly => Modifiers == ConsoleModifiers.Alt;
+    public bool ShiftOnly => Modifiers == ConsoleModifiers.Shift;
+    public bool CtrlOnly => Modifiers == ConsoleModifiers.Control;
+
+    public ConsoleKey UnmodifiedKey => Modifiers == 0 ? Key : ConsoleKey.None;
+    public char UnmodifiedChar => Modifiers == 0 ? Char : (char)0;
 
     public override string ToString()
     {
