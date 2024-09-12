@@ -149,8 +149,14 @@ class StaleApp : IDisposable
                     case ResizeEvent resizeEvent:
                         HandleResize(resizeEvent);
                         break;
-                    case KeyEvent { Char: 'q', Modifiers: 0 }:
+                    case KeyEvent { UnmodifiedChar: 'q' }:
                         HandleUserQuit();
+                        break;
+                    case KeyEvent { UnmodifiedChar: ' ' }:
+                        _pauseSkip = Math.Max(_pauseSkip, 1);
+                        break;
+                    case KeyEvent:
+                        // ignore other key events
                         break;
                     default:
                         throw new InvalidOperationException($"Unknown event type {userEvent.GetType()}");
@@ -188,7 +194,13 @@ class StaleApp : IDisposable
     }
 
     string GetTopStatusText() => $">{_process.Id} $ {_process.Command} {CliUtility.CommandLineArgsToString(_process.Args)}";
-    string GetBottomStatusText() => $"...top={_topStatusPane.Top}, btm={_bottomStatusPane.Top}";
+    string GetBottomStatusText()
+    {
+        var text = $"...top={_topStatusPane.Top}, btm={_bottomStatusPane.Top}";
+        if (_pauseSkip >= 0)
+            text += " (paused)";
+        return text;
+    }
 
     static readonly Style k_stdErrStyle = new(background: Color.DarkRed);
     static readonly Style k_statusStyle = new(decoration: Decoration.Italic);
@@ -351,7 +363,9 @@ class StaleApp : IDisposable
                     if (keyEvent is { UnmodifiedChar: '\r' })
                         _pauseSkip = 0;
                     else if (keyEvent is { UnmodifiedChar: ' ' })
-                        _pauseSkip = 9;
+                        _pauseSkip = _options.PauseEveryLine
+                            ?  9  // for pause every line, space prints 10 at a time
+                            : -1; // for normal operation, it's just pause/resume
                     else
                         continue;
                     break;
