@@ -107,26 +107,6 @@ class Context : IDisposable
             OutMarkupInterp($"[grey]{text}[/]");
     }
 
-    [Conditional("DEBUG")]
-    public void DebugLine(string text)
-    {
-        var frames = new StackTrace(1)
-            .GetFrames()
-            .Reverse()
-            .SelectWhere(frame =>
-            {
-                var name = MiscUtils.ToNiceMethodName(frame.GetMethod()!);
-
-                // "just my code" only
-                return (name, !name.StartsWith("System."));
-            });
-
-        Debug.WriteLine(
-            $"{Environment.CurrentManagedThreadId,2}: "+
-            $"#{Task.CurrentId ?? '-',2} | "+
-            $"{MiscUtils.SequenceDuplicatesAsDots(frames).StringJoin(" ↗ ")} ⦚ {text}");
-    }
-
     // Out
 
     public       void      Out         (string text)                => Terminal.Out(text);

@@ -105,6 +105,16 @@ try
         child = Playback.StartPlayback(ctx, new PlaybackOptions(ctx.Options));
     else
     {
+        // TODO: implement a `--tee TEE` that does a plain copy stdout/err to a different file
+        // TODO: implement a `--record RECORDED` that does the same thing as `record` (streaming structured log to file)
+        //       ^ consider making it always-on, so i can have a `--last-recorded` that will just play back the previous one, which would be nice for when accidental cancel or process ends early or whatever
+        //       ^ also is great for historical analysis
+        //       ^ given the size these things may become, will need to convert the json deserializer in Playback.StartPlayback to stream (no DOM) instead.
+        // TODO: implement a way to launch and monitor multiple processes, as well as monitor (tail) logfiles.
+        //       for example would like to merge bee build, burst compiles, and unity logfile (like when building editor resources).
+        //       obvs will need new ui to support keeping the view sane.
+        // ^ make these configurable with cli flags and config file options
+
         var command = ctx.Options.ArgCommand!;
         IReadOnlyList<string> childArgs = [..ctx.Options.ArgArg];
         child = ChildProcess.ShellExec(ctx, command, childArgs);

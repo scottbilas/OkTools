@@ -1,8 +1,29 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
-static class MiscUtils
+static class DebugUtils
 {
+    [Conditional("DEBUG")]
+    public static void WriteDebugText(string text)
+    {
+        var frames = new StackTrace(1)
+            .GetFrames()
+            .Reverse()
+            .SelectWhere(frame =>
+            {
+                var name = ToNiceMethodName(frame.GetMethod()!);
+
+                // "just my code" only
+                return (name, !name.StartsWith("System."));
+            });
+
+        Debug.WriteLine(
+            $"{Environment.CurrentManagedThreadId,2}: "+
+            $"#{Task.CurrentId ?? '-',2} | "+
+            $"{SequenceDuplicatesAsDots(frames).StringJoin(" ↗ ")} ⦚ {text}");
+    }
+
     public static IEnumerable<string> SequenceDuplicatesAsDots(IEnumerable<string> source)
     {
         var last = "";

@@ -3,7 +3,7 @@ using System.Threading.Channels;
 using Vezel.Cathode.Processes;
 
 record ChildProcess(
-    string Command,
+    NPath Command,
     IReadOnlyList<string> Args,
     ChannelReader<LineCapture> Captures,
     int Id,
