@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "src\Core\Core.csproj", "{C30F4B4B-DDBB-4D66-A7C0-6C71637CEC39}"
 EndProject
@@ -30,7 +30,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.PerfTests", "perftests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyfe.Cli", "src\Lyfe.Cli\Lyfe.Cli.csproj", "{14022DF9-B6B2-45FE-8991-07D3B00EC4DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LyfeCli-Tests", "src\Lyfe.Cli\LyfeCli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyfe.Cli-Tests", "src\Lyfe.Cli\Lyfe.Cli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal", "src\Core.Terminal\Core.Terminal.csproj", "{D6D04E0D-8325-4BDF-B4E8-2CBFF54764DE}"
 EndProject
