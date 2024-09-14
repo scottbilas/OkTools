@@ -12,7 +12,7 @@ public ref struct CharSpanBuilder
     public CharSpanBuilder(int capacity) => _buffer = _array = new char[capacity];
 
     public override string ToString() => new(Span);
-    public static implicit operator ReadOnlySpan<char>(in CharSpanBuilder @this) => @this._used;
+    public static implicit operator ReadOnlySpan<char>(CharSpanBuilder @this) => @this._used;
 
     public int Length
     {
