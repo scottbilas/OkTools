@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal", "src\Core.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal-Tests", "src\Core.Terminal\Core.Terminal-Tests.csproj", "{85998317-0436-45AD-A4CB-278EC8055ADD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stale.Cli-Tests", "src\Stale.Cli\Stale.Cli-Tests.csproj", "{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,5 +82,9 @@ Global
 		{85998317-0436-45AD-A4CB-278EC8055ADD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{85998317-0436-45AD-A4CB-278EC8055ADD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{85998317-0436-45AD-A4CB-278EC8055ADD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
