@@ -3,7 +3,7 @@ using NUnit.Framework.Interfaces;
 using NUnit.Framework.Internal;
 using NUnit.Framework.Internal.Builders;
 
-struct DirectoryBackup : IDisposable
+readonly struct DirectoryBackup : IDisposable
 {
     public DirectoryBackup(string folderPath)
     {
@@ -20,8 +20,7 @@ struct DirectoryBackup : IDisposable
         _backupPath.Delete();
     }
 
-    NPath _backupPath;
-    NPath _fullPath;
+    readonly NPath _backupPath, _fullPath;
 }
 
 [AttributeUsage(AttributeTargets.Assembly)]
@@ -43,7 +42,7 @@ abstract class TestFilesFixture
         .DirectoryMustExist();
 }
 
-// this fixture will create a new directory for each test to use for file tests, and delete it afterwards
+// this fixture will create a new directory for each test to use for file tests, and delete it afterward
 abstract class TempFileSystemFixture
 {
     NPath _rootDir = null!;
@@ -124,7 +123,7 @@ class TestCaseGenericAttribute : TestCaseAttribute, ITestBuilder
         {
             var parms = new TestCaseParameters { RunState = RunState.NotRunnable };
             parms.Properties.Set("_SKIPREASON", $"{nameof(TypeArguments)} should have {method.GetGenericArguments().Length} elements");
-            return new[] { new NUnitTestCaseBuilder().BuildTestMethod(method, suite, parms) };
+            return [new NUnitTestCaseBuilder().BuildTestMethod(method, suite, parms)];
         }
 
         var genMethod = method.MakeGenericMethod(TypeArguments);

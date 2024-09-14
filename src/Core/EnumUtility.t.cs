@@ -7,8 +7,8 @@ class EnumUtilityTests
     enum NonCaseSensitiveUniqueNames { Value, VALUE, value }
     // ReSharper restore UnusedMember.Global UnusedMember.Local InconsistentNaming
 
-    [TestCaseGeneric(TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void GetCount_MatchesFrameworkCall<T>() where T: struct, Enum
     {
         var frameworkNames = Enum.GetNames(typeof(T));
@@ -16,8 +16,8 @@ class EnumUtilityTests
         EnumUtility.GetCount<T>().ShouldBe(frameworkNames.Length);
     }
 
-    [TestCaseGeneric(TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void GetNames_MatchesFrameworkCall<T>() where T: struct, Enum
     {
         var utilNames = EnumUtility.GetNames<T>();
@@ -43,8 +43,8 @@ class EnumUtilityTests
             .Message.ShouldContain("Unexpected case insensitive duplicates");
     }
 
-    [TestCaseGeneric(TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void GetValues_MatchesFrameworkCall<T>() where T: struct, Enum
     {
         var utilValues = EnumUtility.GetValues<T>();
@@ -53,8 +53,8 @@ class EnumUtilityTests
         utilValues.ShouldBe(frameworkValues);
     }
 
-    [TestCaseGeneric(TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void TryParse_WithValidNames_ShouldReturnValues<T>() where T: struct, Enum
     {
         var frameworkNames = Enum.GetNames(typeof(T));
@@ -67,8 +67,8 @@ class EnumUtilityTests
         }
     }
 
-    [TestCaseGeneric(SampleEnum.FourthValue, TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(NonCaseSensitiveUniqueNames.VALUE, TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(SampleEnum.FourthValue, TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(NonCaseSensitiveUniqueNames.VALUE, TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void TryParse_WithInvalidName_ShouldReturnDefault<T>(T defValue) where T: struct, Enum
     {
         EnumUtility.TryParse(null!, defValue).ShouldBe(defValue);
@@ -101,8 +101,8 @@ class EnumUtilityTests
         }
     }
 
-    [TestCaseGeneric(SampleEnum.FourthValue, TypeArguments = new[] { typeof(SampleEnum) })]
-    [TestCaseGeneric(NonCaseSensitiveUniqueNames.VALUE, TypeArguments = new[] { typeof(NonCaseSensitiveUniqueNames) })]
+    [TestCaseGeneric(SampleEnum.FourthValue, TypeArguments = [typeof(SampleEnum)])]
+    [TestCaseGeneric(NonCaseSensitiveUniqueNames.VALUE, TypeArguments = [typeof(NonCaseSensitiveUniqueNames)])]
     public void TryParseIgnoreCase_WithInvalidName_ShouldReturnDefault<T>(T defValue) where T: struct, Enum
     {
         EnumUtility.TryParseIgnoreCase(null!, defValue).ShouldBe(defValue);

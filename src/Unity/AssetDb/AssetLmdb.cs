@@ -139,7 +139,7 @@ public sealed class DumpContext : IDisposable
         _file.Dispose();
     }
 
-    static readonly byte[] k_newline = { (byte)'\n' };
+    static readonly byte[] k_newline = [(byte)'\n'];
 
     public void NextRow()
     {

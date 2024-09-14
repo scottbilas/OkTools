@@ -7,7 +7,7 @@ namespace OkTools.Unity.AssetDb;
 
 public static class ArtifactLmdb
 {
-    static readonly uint[] k_expectedDbVersions = { 0x5CE21767, 0x01F5F63B };
+    static readonly uint[] k_expectedDbVersions = [0x5CE21767, 0x01F5F63B];
 
     public static AssetLmdb OpenLmdb(NPath projectRoot) =>
         new(projectRoot.Combine(UnityProjectConstants.ArtifactDbNPath), k_expectedDbVersions);

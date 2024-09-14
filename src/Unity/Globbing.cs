@@ -35,7 +35,7 @@ static class Globbing
             if (throwOnInvalidPathSpec)
                 throw new FileNotFoundException($"Invalid glob pathspec '{pathSpec}', filename does not exist: {combinedSpec}");
 
-            return Enumerable.Empty<NPath>();
+            return [];
         }
 
         var (basePath, matchPath) = combinedSpec.SplitAtElement(wild);

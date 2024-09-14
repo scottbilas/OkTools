@@ -33,7 +33,7 @@ public class AssetLmdbTableAttribute : Attribute
 
                 return new TableDumpSpec(
                     attr._tableName, attr._csvFields, attr.UniqueKeys,
-                    (c, k, v) => m.Invoke(null, new object[] {c, k, v}));
+                    (c, k, v) => m.Invoke(null, [c, k, v]));
             })
             .Where(s => s != null)
             .Select(m => m!)

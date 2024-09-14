@@ -1,4 +1,4 @@
-﻿using DocoptNet;
+using DocoptNet;
 using DotNetConfig;
 
 public static class Program
@@ -43,7 +43,7 @@ Print help for COMMAND.
     readonly record struct CommandSpec(string Name, string ShortDoc, string FullDoc, Func<CommandContext, CliExitCode> RunAction);
 
     static readonly CommandSpec[] k_commandSpecs =
-    {
+    [
         new("help",       "Print help for any of these commands", k_docUsageHelp, _ => throw new DocoptExitException(k_docUsageHelp)),
         new("unity",      "Run Unity to open a project",          Commands.DocUsageUnity, Commands.RunUnity),
         new("install",    "Install a Unity toolchain",            Commands.DocUsageInstall, Commands.RunInstall),
@@ -54,7 +54,7 @@ Print help for COMMAND.
         new("mr",         "Manage the monorepo",                  Commands.DocUsageMonorepo, Commands.RunMonorepo),
         new("do",         "Dumping ground for random commands",   Commands.DocUsageDo, Commands.RunDo),
         //new("purge", // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
-    };
+    ];
 
     public static int Main(string[] args)
     {

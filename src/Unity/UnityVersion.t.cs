@@ -207,12 +207,11 @@ class UnityVersionTests : TestFilesFixture
     public void FromEditorsYml_WithMultiple_ReturnsParsedVersions()
     {
         var versions = UnityVersion.FromEditorsYml(EditorYml("Multiple.yml")).ToArray();
-        versions.ShouldBe(new[]
-        {
+        versions.ShouldBe([
             new UnityVersion(2020, 3, 25, 'f', 1, "foo", "7017b5c35b85"),
             new UnityVersion(2021, 4, hash: "2341b5c35b85"),
             new UnityVersion(2022, 1, 0, 'b', 2, hash: "af8db9678d92"),
-        });
+        ]);
     }
 
     [Test]

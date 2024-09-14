@@ -11,10 +11,9 @@
         project.ShouldNotBeNull();
 
         var versions = project.GetTestableVersions().ToArray();
-        versions.ShouldBe(new[]
-        {
-            new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85"),
-        });
+        versions.ShouldBe([
+            new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85")
+        ]);
     }
 
     [Test]
@@ -24,12 +23,11 @@
         project.ShouldNotBeNull();
 
         var versions = project.GetTestableVersions().ToArray();
-        versions.ShouldBe(new[]
-        {
+        versions.ShouldBe([
             new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0"),
-            new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85"),
+            new UnityVersion(2020, 3, 25, 'f', 1, "dots", "7017b5c35b85")
 
-        });
+        ]);
     }
 
     [Test]
@@ -39,9 +37,8 @@
         project.ShouldNotBeNull();
 
         var versions = project.GetTestableVersions().ToArray();
-        versions.ShouldBe(new[]
-        {
+        versions.ShouldBe([
             new UnityVersion(2020, 3, 14, 'f', 1, "dots", "86b16565e3c0")
-        });
+        ]);
     }
 }

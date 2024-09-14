@@ -48,7 +48,7 @@ readonly struct OldNPath
 		if (path == "/")
 		{
 			IsRelative = false;
-			Elements = Array.Empty<string>();
+			Elements = [];
 		}
 		else
 		{

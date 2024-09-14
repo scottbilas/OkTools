@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OkFeatures>Core</OkFeatures></PropertyGroup>
-  <Import Project="../../targets/Exe.targets" />
+  <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
     <IsPublishable>false</IsPublishable>
