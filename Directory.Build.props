@@ -22,7 +22,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
-    <NoWarn>CS8524</NoWarn>
+    <NoWarn>$(NoWarn);CS8524</NoWarn>
 
     <!-- language -->
     <Nullable>enable</Nullable>
