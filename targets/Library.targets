@@ -46,7 +46,7 @@
 
 <!-- << OkFeatures >> -->
 
-  <!-- direct features: Core, Cli, NetMulti, T4 -->
+  <!-- direct features: Core, Cli, -Cathode, NetMulti, T4 -->
   <!-- implicit from Tests.targets: Tests (implies Core) -->
   <!-- implicit from Exe.targets: Exe -->
 
@@ -59,6 +59,7 @@
   </PropertyGroup>
 
   <!-- Feature: NetMulti -->
+
   <PropertyGroup Condition=" $(OkFeatures.Contains(';NetMulti;')) ">
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <BuildInParallel>false</BuildInParallel> <!-- seems to collide when parallel 7+8 TODO debug -->
@@ -67,6 +68,7 @@
   </PropertyGroup>
 
   <!-- Feature: Core -->
+
   <ItemGroup Condition=" $(OkFeatures.Contains(';Core;')) ">
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
     <Using Include="OkTools.Core" />
@@ -74,14 +76,21 @@
     <Using Include="OkTools.Core.StaticUtility" Static="true" />
   </ItemGroup>
 
-  <!-- Feature: Cli -->
+  <!-- Feature: Cli and -Cathode -->
+
+  <!-- the '-Cathode' feature is meant to help libraries that are using Cli features, need to transition to Cathode, but
+       haven't yet and are still using Console.* -->
+
   <ItemGroup Condition=" $(OkFeatures.Contains(';Cli;')) ">
     <ProjectReference Include="$(OkSrcRoot)Core.Terminal\Core.Terminal.csproj" />
     <PackageReference Include="docopt.net" />
     <PackageReference Include="Spectre.Console" />
-    <PackageReference Include="Vezel.Cathode" />
+    <PackageReference Include="Vezel.Cathode" Condition=" $(OkFeatures.Contains(';-Cathode;')) == false " />
     <Using Include="OkTools.Core.Terminal.Extensions" />
   </ItemGroup>
+  <PropertyGroup Condition=" $(OkFeatures.Contains(';-Cathode;')) == true ">
+    <NoWarn>$(NoWarn);RS0030</NoWarn>
+  </PropertyGroup>
 
   <!-- Feature: T4 -->
   <!-- TEMPORARILY DISABLED - T4.Build does not support .NET 8 SDK, gets an error from a missing assembly.

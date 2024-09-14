@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>Core;Cli</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Core;Cli;-Cathode</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
     <AssemblyName>okunity</AssemblyName>
-    <NoWarn>$(NoWarn);RS0030</NoWarn> <!-- not ready to convert to vezel yet -->
   </PropertyGroup>
 
   <!-- some experiments i did a while ago...
