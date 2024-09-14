@@ -7,13 +7,10 @@
     <GenerateDependencyFile>true</GenerateDependencyFile> <!-- needed for nunit runner -->
     <RunSettingsFilePath>$(OkSrcRoot).runsettings</RunSettingsFilePath>
     <NoWarn>$(NoWarn);CA1861</NoWarn>
-  </PropertyGroup>
 
-  <ItemGroup>
-    <Using Include="NUnit.Framework" />
-    <Using Include="Shouldly" />
-    <Using Include="System.Text" />
-  </ItemGroup>
+    <OkFeatures>$(OkFeatures);Core;Tests</OkFeatures>
+    <OkBaseProjectFile>$([System.String]::Copy($(MSBuildProjectFile)).Replace('-Tests.csproj', '.csproj'))</OkBaseProjectFile>
+  </PropertyGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'TestUtils'">
     <Compile Include="$(OkSrcRoot)_Include\TestUtils.cs">
@@ -22,6 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="$(OkBaseProjectFile)" />
+
     <PackageReference Include="coverlet.collector">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -30,11 +29,12 @@
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="Shouldly" />
+
+    <Using Include="NUnit.Framework" />
+    <Using Include="Shouldly" />
+    <Using Include="System.Text" />
   </ItemGroup>
 
-  <PropertyGroup>
-    <OkFeatures>$(OkFeatures);Core;Tests</OkFeatures>
-  </PropertyGroup>
   <Import Project="Library.targets" />
 
   <!-- pass location of test data files into an attribute for tests to use -->

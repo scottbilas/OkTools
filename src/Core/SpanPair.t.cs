@@ -1,9 +1,9 @@
 class SpanPairTests
 {
     // keep all of these as functions and not static initializers
-    static int[] EmptyArray => Array.Empty<int>();
-    static int[] FirstArray => new[] { 1, 2 };
-    static int[] SecondArray => new[] { 3, 4, 5 };
+    static int[] EmptyArray => [];
+    static int[] FirstArray => [1, 2];
+    static int[] SecondArray => [3, 4, 5];
     static int[] BothArray => FirstArray.Concat(SecondArray).ToArray();
     static SpanPair<int> EmptyPair => default;
     static SpanPair<int> FirstPair => new(FirstArray);

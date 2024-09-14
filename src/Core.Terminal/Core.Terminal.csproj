@@ -7,6 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="docopt.net" />
+    <PackageReference Include="Spectre.Console" />
     <PackageReference Include="Vezel.Cathode" />
   </ItemGroup>
 

@@ -1,5 +1,7 @@
 using System.Drawing;
 using System.Threading.Channels;
+using Vezel.Cathode;
+using Vezel.Cathode.Text.Control;
 
 partial class Screen : IDisposable
 {

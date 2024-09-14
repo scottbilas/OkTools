@@ -124,7 +124,7 @@ class EnumerableExtensionsTests
         var dummy2 = new InvalidOperationException();
         var enumerable = new object?[] { null, "abc", dummy1, dummy2, null, null, "ghi" };
 
-        enumerable.WhereNotNull().ShouldBe(new object[] { "abc", dummy1, dummy2, "ghi" });
+        enumerable.WhereNotNull().ShouldBe(["abc", dummy1, dummy2, "ghi"]);
     }
 
     [Test]
@@ -163,11 +163,11 @@ class EnumerableExtensionsTests
     [Test]
     public void Flatten()
     {
-        new[] { 1, 2, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
-        new[] { 1 }.Flatten<int>().ShouldBe(new[] { 1 });
+        new[] { 1, 2, 3 }.Flatten<int>().ShouldBe([1, 2, 3]);
+        new[] { 1 }.Flatten<int>().ShouldBe([1]);
         Array.Empty<int>().Flatten<int>().ShouldBeEmpty();
 
-        new object[] { new[] { 1 }, 2, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
-        new object[] { new object[] { 1, new[] { 2 } }, 3 }.Flatten<int>().ShouldBe(new[] { 1, 2, 3 });
+        new object[] { new[] { 1 }, 2, 3 }.Flatten<int>().ShouldBe([1, 2, 3]);
+        new object[] { new object[] { 1, new[] { 2 } }, 3 }.Flatten<int>().ShouldBe([1, 2, 3]);
     }
 }

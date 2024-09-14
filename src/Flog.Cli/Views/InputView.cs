@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Vezel.Cathode.Text.Control;
 
 class InputView : ViewBase
 {

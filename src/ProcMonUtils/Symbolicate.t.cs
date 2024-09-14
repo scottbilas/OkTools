@@ -19,7 +19,7 @@ class SymbolicateTests : PmlTestFixtureBase
         var options = new SymbolicateOptions
         {
             IgnorePmipCreateTimes = true, // don't use filesystem timestamps to determine if an event is in a pmip or not
-            MonoPmipPaths = new[] { PmipPath.ToString() },
+            MonoPmipPaths = [PmipPath.ToString()],
             BakedPath = _pmlBakedPath,
             NtSymbolPath = "",
         };

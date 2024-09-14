@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Threading.Channels;
+using Vezel.Cathode.Text.Control;
 
 enum InputParseResult { Accept, NoMatch, Partial }
 
@@ -138,7 +139,7 @@ class InputParser
     }
 
     static readonly ControlMapping[] k_controlMappings =
-    {
+    [
         // https://invisible-island.net/xterm/ctlseqs/ctlseqs.pdf
 
         new("\x1b[A",    ConsoleKey.UpArrow),
@@ -197,8 +198,8 @@ class InputParser
         new("\xb",       'k',                   ctrl: true),
         new("\xc",       'l',                   ctrl: true),
         new("\x14",      't',                   ctrl: true),
-        new("\x15",      'u',                   ctrl: true),
-    };
+        new("\x15",      'u',                   ctrl: true)
+    ];
 //        .Concat()
 //        .ToArray();
 

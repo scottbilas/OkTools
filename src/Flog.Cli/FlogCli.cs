@@ -1,4 +1,6 @@
-﻿const string programVersion = "0.1";
+﻿using OkTools.Core.Terminal;
+
+const string programVersion = "0.1";
 
 // fine to use console directly here, it's outside of any tui work
 #pragma warning disable RS0030

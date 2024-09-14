@@ -1,4 +1,4 @@
-﻿namespace OkTools.Core;
+﻿namespace OkTools.Core.Extensions;
 
 [PublicAPI]
 public static class TimeSpanExtensions

@@ -88,7 +88,7 @@ partial class OkListTests
     [Test]
     public void IsEmptyAny_MatchesCount()
     {
-        var list = Make(10, new[] { 0, 1, 2 });
+        var list = Make(10, [0, 1, 2]);
         list.Any.ShouldBeTrue();
         list.IsEmpty.ShouldBeFalse();
 
@@ -100,7 +100,7 @@ partial class OkListTests
     [Test]
     public void SetCountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
     {
-        var list1 = Make(10, new[] { "abc", "def" });
+        var list1 = Make(10, ["abc", "def"]);
         list1.Count.ShouldBe(2);
         list1[1].ShouldBe("def");
         list1.Count = 1;
@@ -109,7 +109,7 @@ partial class OkListTests
         list1.Clear();
         list1.PrivateRefAt(0).ShouldBeNull();
 
-        var list2 = Make(10, new[] { "abc", "def" });
+        var list2 = Make(10, ["abc", "def"]);
         list2.Count.ShouldBe(2);
         list2[1].ShouldBe("def");
         list2[0].ShouldBe("abc");
@@ -122,7 +122,7 @@ partial class OkListTests
     [Test]
     public void SetCountOrClear_WithValueTypeAndReduction_OnlyChangesCount()
     {
-        var list1 = Make(10, new[] { 1, 2 });
+        var list1 = Make(10, [1, 2]);
         list1.Count.ShouldBe(2);
         list1[1].ShouldBe(2);
         list1.Count = 1;
@@ -131,7 +131,7 @@ partial class OkListTests
         list1.Clear();
         list1.PrivateRefAt(0).ShouldBe(1);
 
-        var list2 = Make(10, new[] { 1, 2 });
+        var list2 = Make(10, [1, 2]);
         list2.Count.ShouldBe(2);
         list2[1].ShouldBe(2);
         list2[0].ShouldBe(1);
@@ -144,7 +144,7 @@ partial class OkListTests
     [Test]
     public void SetCount_WithValueTypeAndIncrease_ClearsNewItems()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Count.ShouldBe(2);
         list[1].ShouldBe(2);
         list.Count = 1;
@@ -157,7 +157,7 @@ partial class OkListTests
     [Test]
     public void SetCount_WithIncreasePastCapacity_AllocsNewArray()
     {
-        var list = Make(2, new[] { 1, 2 });
+        var list = Make(2, [1, 2]);
         list.Count.ShouldBe(2);
         list[1].ShouldBe(2);
         list.Count = 1;
@@ -188,7 +188,7 @@ partial class OkListTests
     [Test]
     public void SetCountDirect_WithinCapacity_SetsCountWithoutInitializing()
     {
-        var list = Make<string?>(5, new[] { "abc", "def" });
+        var list = Make<string?>(5, ["abc", "def"]);
         list.Count.ShouldBe(2);
         list.SetCountDirect(1);
         Validate(list, "abc");
@@ -229,18 +229,18 @@ partial class OkListTests
     [Test]
     public void Clear_WithTrimBelowCapacity_Reallocs()
     {
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 9).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 3).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 1).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 0).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 9).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 3).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 1).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 0).ShouldBeTrue();
     }
 
     [Test]
     public void Clear_WithTrimAtOrAboveCapacity_DoesNotRealloc()
     {
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 10).ShouldBeFalse();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 11).ShouldBeFalse();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 20).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 10).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 11).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 20).ShouldBeFalse();
     }
 
     [Test]
@@ -267,8 +267,8 @@ partial class OkListTests
     [Test]
     public void EnumeratorGeneric()
     {
-        Make(10, new[] { "abc", "def", "ghi" }).AsEnumerable().ToArray().ShouldBe(new[] { "abc", "def", "ghi" });
-        Make(10, new[] { "abc" }).AsEnumerable().ToArray().ShouldBe(new[] { "abc" });
+        Make(10, ["abc", "def", "ghi"]).AsEnumerable().ToArray().ShouldBe(new[] { "abc", "def", "ghi" });
+        Make(10, ["abc"]).AsEnumerable().ToArray().ShouldBe(new[] { "abc" });
         Make<string>(10).AsEnumerable().ToArray().ShouldBeEmpty();
     }
 
@@ -283,8 +283,8 @@ partial class OkListTests
             return list.ToArray();
         }
 
-        ToArray(Make(10, new[] { "abc", "def", "ghi" })).ShouldBe(new[] { "abc", "def", "ghi" });
-        ToArray(Make(10, new[] { "abc" })).ShouldBe(new[] { "abc" });
+        ToArray(Make(10, ["abc", "def", "ghi"])).ShouldBe(["abc", "def", "ghi"]);
+        ToArray(Make(10, ["abc"])).ShouldBe(["abc"]);
         ToArray(Make<string>(10)).ShouldBeEmpty();
     }
 
@@ -308,7 +308,7 @@ partial class OkListTests
     [Test]
     public void Capacity_WithSameCapacity_DoesNotAlloc()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Count = 1;
         list.PrivateRefAt(1).ShouldBe(2);
         list.Capacity = 10;
@@ -318,7 +318,7 @@ partial class OkListTests
     [Test]
     public void Capacity_WithGreaterCapacity_Reallocs()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Capacity.ShouldBe(10);
         list.Count.ShouldBe(2);
 
@@ -336,7 +336,7 @@ partial class OkListTests
     [Test]
     public void Capacity_WithIncreaseViaAdd_GrowsByHalf()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         list.Count.ShouldBe(10);
         list.Capacity.ShouldBe(10);
 
@@ -348,7 +348,7 @@ partial class OkListTests
     [Test]
     public void Capacity_WithIncreaseViaCapacity_KeepsExact()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5, 6, 7]);
         list.Count.ShouldBe(8);
         list.Capacity.ShouldBe(10);
 
@@ -389,7 +389,7 @@ partial class OkListTests
     [Test]
     public void Indexer_WithValidIndex()
     {
-        var list = Make(10, new[] { new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 } });
+        var list = Make(10, [new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 }]);
         list[0].V.ShouldBe(1);
         list[1].V.ShouldBe(2);
         list[2].V.ShouldBe(3);
@@ -415,7 +415,7 @@ partial class OkListTests
     [Test]
     public void Indexer_WithInvalidIndex_Throws()
     {
-        var list = Make(10, new[] { new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 } });
+        var list = Make(10, [new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 }]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ -1]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[-50]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[  4]);
@@ -437,7 +437,7 @@ partial class OkListTests
     [Test]
     public void Slice_WithEmptyRange_ReturnsEmptySpan()
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         for (var i = 0; i <= list.Count; ++i)
             list[i..i].Length.ShouldBe(0);
     }
@@ -445,7 +445,7 @@ partial class OkListTests
     [Test]
     public void Slice_WithSingleItemRange_ReturnsSingleItemSpan()
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         for (var i = 0; i < list.Count; ++i)
         {
             var spans = list[i..(i+1)];
@@ -458,7 +458,7 @@ partial class OkListTests
     [TestCase(3, 6, "def")]
     public void Slice_WithValidIndices_ReturnsValidSpan(int begin, int end, string expected)
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         list[begin..end].ToArray().SequenceEqual(expected).ShouldBeTrue();
     }
 
@@ -469,7 +469,7 @@ partial class OkListTests
     [TestCase(8, 8)]
     public void Slice_WithInvalidArgs_Throws(int begin, int end)
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         Should.Throw<ArgumentOutOfRangeException>(() => { var _ = list[begin..end]; });
     }
 
@@ -521,11 +521,11 @@ partial class OkListTests
         list.AddRange(array);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 };
+        array = [3, 4, 5];
         list.AddRange(array);
         Validate(list, 1, 2, 3, 4, 5);
 
-        array = Array.Empty<int>();
+        array = [];
         list.AddRange(array);
         Validate(list, 1, 2, 3, 4, 5);
     }
@@ -561,7 +561,7 @@ partial class OkListTests
     [Test]
     public void RemoveAtAndSwapBack()
     {
-        var list = Make(10, new[] { 1, 2, 3 });
+        var list = Make(10, [1, 2, 3]);
         list.RemoveAtAndSwapBack(0);
         Validate(list, 3, 2);
         list.RemoveAtAndSwapBack(0);
@@ -569,7 +569,7 @@ partial class OkListTests
         list.RemoveAtAndSwapBack(0);
         Validate(list);
 
-        list = Make(10, new[] { 1, 2, 3 });
+        list = Make(10, [1, 2, 3]);
         list.RemoveAtAndSwapBack(2);
         Validate(list, 1, 2);
         list.RemoveAtAndSwapBack(1);
@@ -587,7 +587,7 @@ partial class OkListTests
     [Test]
     public void DropBack_WithNonEmpty_Removes()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5]);
         list[^1].ShouldBe(5);
         list.DropBack();
         list[^1].ShouldBe(4);
@@ -612,7 +612,7 @@ partial class OkListTests
     [Test]
     public void PopBack_WithNonEmpty_RemovesAndReturnsItem()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5]);
         list[^1].ShouldBe(5);
         list.PopBack().ShouldBe(5);
         list[^1].ShouldBe(4);
@@ -633,7 +633,7 @@ partial class OkListTests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = Make(10, new[] { 1, 2, 3, 4, 5, 6 });
+        var vlist = Make(10, [1, 2, 3, 4, 5, 6]);
         vlist.DropBack();
         vlist.PopBack().ShouldBe(5);
         vlist.RemoveAtAndSwapBack(1);
@@ -643,7 +643,7 @@ partial class OkListTests
         vlist.PrivateRefAt(4).ShouldBe(5);
         vlist.PrivateRefAt(5).ShouldBe(6);
 
-        var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+        var rlist = Make(10, ["a", "b", "c", "d", "e", "f"]);
 
         rlist.PrivateRefAt(5).ShouldBe("f");
         rlist.DropBack();
@@ -733,7 +733,7 @@ partial class OkDeListTests
     [Test]
     public void IsEmptyAny_MatchesCount()
     {
-        var list = Make(10, new[] { 0, 1, 2 });
+        var list = Make(10, [0, 1, 2]);
         list.Any.ShouldBeTrue();
         list.IsEmpty.ShouldBeFalse();
 
@@ -745,7 +745,7 @@ partial class OkDeListTests
     [Test]
     public void SetCountOrClear_WithRefTypeAndReduction_FreesUnusedObjects()
     {
-        var list1 = Make(10, new[] { "abc", "def" });
+        var list1 = Make(10, ["abc", "def"]);
         list1.Count.ShouldBe(2);
         list1[1].ShouldBe("def");
         list1.Count = 1;
@@ -754,7 +754,7 @@ partial class OkDeListTests
         list1.Clear();
         list1.PrivateRefAt(9).ShouldBeNull();
 
-        var list2 = Make(10, new[] { "abc", "def" });
+        var list2 = Make(10, ["abc", "def"]);
         list2.Count.ShouldBe(2);
         list2[1].ShouldBe("def");
         list2[0].ShouldBe("abc");
@@ -767,7 +767,7 @@ partial class OkDeListTests
     [Test]
     public void SetCountOrClear_WithValueTypeAndReduction_OnlyChangesCount()
     {
-        var list1 = Make(10, new[] { 1, 2 });
+        var list1 = Make(10, [1, 2]);
         list1.Count.ShouldBe(2);
         list1[1].ShouldBe(2);
         list1.Count = 1;
@@ -776,7 +776,7 @@ partial class OkDeListTests
         list1.Clear();
         list1.PrivateRefAt(9).ShouldBe(1);
 
-        var list2 = Make(10, new[] { 1, 2 });
+        var list2 = Make(10, [1, 2]);
         list2.Count.ShouldBe(2);
         list2[1].ShouldBe(2);
         list2[0].ShouldBe(1);
@@ -789,7 +789,7 @@ partial class OkDeListTests
     [Test]
     public void SetCount_WithValueTypeAndIncrease_ClearsNewItems()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Count.ShouldBe(2);
         list[1].ShouldBe(2);
         list.Count = 1;
@@ -802,7 +802,7 @@ partial class OkDeListTests
     [Test]
     public void SetCount_WithIncreasePastCapacity_AllocsNewArray()
     {
-        var list = Make(2, new[] { 1, 2 });
+        var list = Make(2, [1, 2]);
         list.Count.ShouldBe(2);
         list[1].ShouldBe(2);
         list.Count = 1;
@@ -833,7 +833,7 @@ partial class OkDeListTests
     [Test]
     public void SetCountDirect_WithinCapacity_SetsCountWithoutInitializing()
     {
-        var list = Make<string?>(5, new[] { "abc", "def" });
+        var list = Make<string?>(5, ["abc", "def"]);
         list.Count.ShouldBe(2);
         list.SetCountDirect(1);
         Validate(list, "abc");
@@ -874,18 +874,18 @@ partial class OkDeListTests
     [Test]
     public void Clear_WithTrimBelowCapacity_Reallocs()
     {
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 9).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 3).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 1).ShouldBeTrue();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 0).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 9).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 3).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 1).ShouldBeTrue();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 0).ShouldBeTrue();
     }
 
     [Test]
     public void Clear_WithTrimAtOrAboveCapacity_DoesNotRealloc()
     {
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 10).ShouldBeFalse();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 11).ShouldBeFalse();
-        TestRealloc(Make(10, new[] { 1, 2, 3, 4, 5 }), 20).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 10).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 11).ShouldBeFalse();
+        TestRealloc(Make(10, [1, 2, 3, 4, 5]), 20).ShouldBeFalse();
     }
 
     [Test]
@@ -912,8 +912,8 @@ partial class OkDeListTests
     [Test]
     public void EnumeratorGeneric()
     {
-        Make(10, new[] { "abc", "def", "ghi" }).AsEnumerable().ToArray().ShouldBe(new[] { "abc", "def", "ghi" });
-        Make(10, new[] { "abc" }).AsEnumerable().ToArray().ShouldBe(new[] { "abc" });
+        Make(10, ["abc", "def", "ghi"]).AsEnumerable().ToArray().ShouldBe(new[] { "abc", "def", "ghi" });
+        Make(10, ["abc"]).AsEnumerable().ToArray().ShouldBe(new[] { "abc" });
         Make<string>(10).AsEnumerable().ToArray().ShouldBeEmpty();
     }
 
@@ -928,8 +928,8 @@ partial class OkDeListTests
             return list.ToArray();
         }
 
-        ToArray(Make(10, new[] { "abc", "def", "ghi" })).ShouldBe(new[] { "abc", "def", "ghi" });
-        ToArray(Make(10, new[] { "abc" })).ShouldBe(new[] { "abc" });
+        ToArray(Make(10, ["abc", "def", "ghi"])).ShouldBe(["abc", "def", "ghi"]);
+        ToArray(Make(10, ["abc"])).ShouldBe(["abc"]);
         ToArray(Make<string>(10)).ShouldBeEmpty();
     }
 
@@ -953,7 +953,7 @@ partial class OkDeListTests
     [Test]
     public void Capacity_WithSameCapacity_DoesNotAlloc()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Count = 1;
         list.PrivateRefAt(0).ShouldBe(2);
         list.Capacity = 10;
@@ -963,7 +963,7 @@ partial class OkDeListTests
     [Test]
     public void Capacity_WithGreaterCapacity_Reallocs()
     {
-        var list = Make(10, new[] { 1, 2 });
+        var list = Make(10, [1, 2]);
         list.Capacity.ShouldBe(10);
         list.Count.ShouldBe(2);
 
@@ -982,7 +982,7 @@ partial class OkDeListTests
     [Test]
     public void Capacity_WithIncreaseViaAdd_GrowsByHalf()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         list.Count.ShouldBe(10);
         list.Capacity.ShouldBe(10);
 
@@ -994,7 +994,7 @@ partial class OkDeListTests
     [Test]
     public void Capacity_WithIncreaseViaCapacity_KeepsExact()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5, 6, 7]);
         list.Count.ShouldBe(8);
         list.Capacity.ShouldBe(10);
 
@@ -1035,7 +1035,7 @@ partial class OkDeListTests
     [Test]
     public void Indexer_WithValidIndex()
     {
-        var list = Make(10, new[] { new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 } });
+        var list = Make(10, [new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 }]);
         list[0].V.ShouldBe(1);
         list[1].V.ShouldBe(2);
         list[2].V.ShouldBe(3);
@@ -1061,7 +1061,7 @@ partial class OkDeListTests
     [Test]
     public void Indexer_WithInvalidIndex_Throws()
     {
-        var list = Make(10, new[] { new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 } });
+        var list = Make(10, [new S { V = 1 }, new S { V = 2 }, new S { V = 3 }, new S { V = 4 }]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[ -1]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[-50]);
         Should.Throw<ArgumentOutOfRangeException>(() => _ = list[  4]);
@@ -1083,7 +1083,7 @@ partial class OkDeListTests
     [Test]
     public void Slice_WithEmptyRange_ReturnsEmptySpan()
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         for (var i = 0; i <= list.Count; ++i)
             list[i..i].Length.ShouldBe(0);
     }
@@ -1091,7 +1091,7 @@ partial class OkDeListTests
     [Test]
     public void Slice_WithSingleItemRange_ReturnsSingleItemSpan()
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         for (var i = 0; i < list.Count; ++i)
         {
             var spans = list[i..(i+1)];
@@ -1107,7 +1107,7 @@ partial class OkDeListTests
     [TestCase(3, 6, "def")]
     public void Slice_WithValidIndices_ReturnsValidSpan(int begin, int end, string expected)
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         list[begin..end].ToArray().SequenceEqual(expected).ShouldBeTrue();
     }
 
@@ -1118,7 +1118,7 @@ partial class OkDeListTests
     [TestCase(8, 8)]
     public void Slice_WithInvalidArgs_Throws(int begin, int end)
     {
-        var list = Make(10, new[] { 'a', 'b', 'c', 'd', 'e', 'f', 'g' });
+        var list = Make(10, ['a', 'b', 'c', 'd', 'e', 'f', 'g']);
         Should.Throw<ArgumentOutOfRangeException>(() => { var _ = list[begin..end]; });
     }
 
@@ -1170,11 +1170,11 @@ partial class OkDeListTests
         list.AddRange(array);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 };
+        array = [3, 4, 5];
         list.AddRange(array);
         Validate(list, 1, 2, 3, 4, 5);
 
-        array = Array.Empty<int>();
+        array = [];
         list.AddRange(array);
         Validate(list, 1, 2, 3, 4, 5);
     }
@@ -1210,7 +1210,7 @@ partial class OkDeListTests
     [Test]
     public void RemoveAtAndSwapBack()
     {
-        var list = Make(10, new[] { 1, 2, 3 });
+        var list = Make(10, [1, 2, 3]);
         list.RemoveAtAndSwapBack(0);
         Validate(list, 3, 2);
         list.RemoveAtAndSwapBack(0);
@@ -1218,7 +1218,7 @@ partial class OkDeListTests
         list.RemoveAtAndSwapBack(0);
         Validate(list);
 
-        list = Make(10, new[] { 1, 2, 3 });
+        list = Make(10, [1, 2, 3]);
         list.RemoveAtAndSwapBack(2);
         Validate(list, 1, 2);
         list.RemoveAtAndSwapBack(1);
@@ -1236,7 +1236,7 @@ partial class OkDeListTests
     [Test]
     public void DropBack_WithNonEmpty_Removes()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5]);
         list[^1].ShouldBe(5);
         list.DropBack();
         list[^1].ShouldBe(4);
@@ -1261,7 +1261,7 @@ partial class OkDeListTests
     [Test]
     public void PopBack_WithNonEmpty_RemovesAndReturnsItem()
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 });
+        var list = Make(10, [0, 1, 2, 3, 4, 5]);
         list[^1].ShouldBe(5);
         list.PopBack().ShouldBe(5);
         list[^1].ShouldBe(4);
@@ -1282,7 +1282,7 @@ partial class OkDeListTests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = Make(10, new[] { 1, 2, 3, 4, 5, 6 });
+        var vlist = Make(10, [1, 2, 3, 4, 5, 6]);
         vlist.DropBack();
         vlist.PopBack().ShouldBe(5);
         vlist.RemoveAtAndSwapBack(1);
@@ -1292,7 +1292,7 @@ partial class OkDeListTests
         vlist.PrivateRefAt(1).ShouldBe(5);
         vlist.PrivateRefAt(2).ShouldBe(6);
 
-        var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+        var rlist = Make(10, ["a", "b", "c", "d", "e", "f"]);
 
         rlist.PrivateRefAt(2).ShouldBe("f");
         rlist.DropBack();

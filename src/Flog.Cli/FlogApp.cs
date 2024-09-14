@@ -1,4 +1,5 @@
 ﻿using OkTools.Flog;
+using Vezel.Cathode;
 
 class FlogApp : IDisposable
 {

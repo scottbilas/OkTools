@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 public static class FileStreamNativeExtensions
 {

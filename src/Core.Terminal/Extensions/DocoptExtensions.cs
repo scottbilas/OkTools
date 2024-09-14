@@ -1,15 +1,11 @@
 using DocoptNet;
 
+namespace OkTools.Core.Terminal.Extensions;
+
 // ReSharper disable MethodHasAsyncOverload
 
-class HelpCommandResult : IHelpResult
-{
-    public string Help { get; }
-
-    public HelpCommandResult(string help) { Help = help.TrimStart(); }
-}
-
-static class DocoptExtensions
+[PublicAPI]
+public static class DocoptExtensions
 {
     class InputErrorResult : IInputErrorResult
     {

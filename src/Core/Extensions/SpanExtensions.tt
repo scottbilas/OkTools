@@ -1,6 +1,6 @@
 ﻿<#@ output extension=".cs" #>
 <# // https://github.com/jgiannuzzi/T4.Build/issues/7    #@ output extension=".gen.cs" #>
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 <# foreach (var type in new[] { "ReadOnlySpan", "Span" }) { #>
 public static class <#=type#>Extensions

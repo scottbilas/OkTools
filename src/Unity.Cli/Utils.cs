@@ -2,7 +2,7 @@
 using DotNetConfig;
 using OkTools.Unity;
 
-static class Extensions
+static class MiscExtensions
 {
     // DocoptNet extensions
 

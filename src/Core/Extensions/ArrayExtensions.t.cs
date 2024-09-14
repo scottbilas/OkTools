@@ -8,26 +8,26 @@
         // no fill
 
         array.ShiftLeft(2);
-        array.ShouldBe(new[] { 3, 4, 5, 4, 5 });
+        array.ShouldBe([3, 4, 5, 4, 5]);
         array.ShiftLeft(0);
-        array.ShouldBe(new[] { 3, 4, 5, 4, 5 });
+        array.ShouldBe([3, 4, 5, 4, 5]);
 
         array.ShiftRight(3);
-        array.ShouldBe(new[] { 3, 4, 5, 3, 4 });
+        array.ShouldBe([3, 4, 5, 3, 4]);
         array.ShiftRight(0);
-        array.ShouldBe(new[] { 3, 4, 5, 3, 4 });
+        array.ShouldBe([3, 4, 5, 3, 4]);
 
         // fill
 
         array.ShiftLeft(1, 10);
-        array.ShouldBe(new[] { 4, 5, 3, 4, 10 });
+        array.ShouldBe([4, 5, 3, 4, 10]);
         array.ShiftLeft(0, 10);
-        array.ShouldBe(new[] { 4, 5, 3, 4, 10 });
+        array.ShouldBe([4, 5, 3, 4, 10]);
 
         array.ShiftRight(2, 20);
-        array.ShouldBe(new[] { 20, 20, 4, 5, 3 });
+        array.ShouldBe([20, 20, 4, 5, 3]);
         array.ShiftRight(0, 10);
-        array.ShouldBe(new[] { 20, 20, 4, 5, 3 });
+        array.ShouldBe([20, 20, 4, 5, 3]);
     }
 
     [Test]
@@ -38,26 +38,26 @@
         // no fill
 
         array.Shift(-2);
-        array.ShouldBe(new[] { 3, 4, 5, 4, 5 });
+        array.ShouldBe([3, 4, 5, 4, 5]);
         array.Shift(0);
-        array.ShouldBe(new[] { 3, 4, 5, 4, 5 });
+        array.ShouldBe([3, 4, 5, 4, 5]);
 
         array.Shift(3);
-        array.ShouldBe(new[] { 3, 4, 5, 3, 4 });
+        array.ShouldBe([3, 4, 5, 3, 4]);
         array.Shift(0);
-        array.ShouldBe(new[] { 3, 4, 5, 3, 4 });
+        array.ShouldBe([3, 4, 5, 3, 4]);
 
         // fill
 
         array.Shift(-1, 10);
-        array.ShouldBe(new[] { 4, 5, 3, 4, 10 });
+        array.ShouldBe([4, 5, 3, 4, 10]);
         array.Shift(0, 10);
-        array.ShouldBe(new[] { 4, 5, 3, 4, 10 });
+        array.ShouldBe([4, 5, 3, 4, 10]);
 
         array.Shift(2, 20);
-        array.ShouldBe(new[] { 20, 20, 4, 5, 3 });
+        array.ShouldBe([20, 20, 4, 5, 3]);
         array.Shift(0, 10);
-        array.ShouldBe(new[] { 20, 20, 4, 5, 3 });
+        array.ShouldBe([20, 20, 4, 5, 3]);
     }
 
     [Test]

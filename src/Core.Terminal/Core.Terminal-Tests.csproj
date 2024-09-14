@@ -1,7 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Cli</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Tests.targets" />
-
-  <ItemGroup>
-    <ProjectReference Include="Core.Terminal.csproj" />
-  </ItemGroup>
 </Project>

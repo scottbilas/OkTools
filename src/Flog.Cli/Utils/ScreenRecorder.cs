@@ -9,7 +9,7 @@ class ScreenRecorder
 {
     public enum ShowType { None, Count, Chars }
 
-    (int count, int chars)[] _cells = Array.Empty<(int, int)>();
+    (int count, int chars)[] _cells = [];
     ShowType _show;
     Int2 _size = Int2.Zero;
     Int2 _nextSize; // from OnResize, which may fire on another thread

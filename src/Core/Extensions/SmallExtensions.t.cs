@@ -6,10 +6,10 @@ class RefTypeExtensionsTests
         const string item = "test";
 
         var enumerable = item.WrapInEnumerable();
-        enumerable.ShouldBe(new[] { item });
+        enumerable.ShouldBe([item]);
 
         enumerable = item.WrapInEnumerableOrEmpty();
-        enumerable.ShouldBe(new[] { item });
+        enumerable.ShouldBe([item]);
     }
 
     [Test]
@@ -17,7 +17,7 @@ class RefTypeExtensionsTests
     {
         string? item = null;
         var enumerable = item.WrapInEnumerable();
-        enumerable.ShouldBe(new[] { item });
+        enumerable.ShouldBe([item]);
     }
 
     [Test]
@@ -25,7 +25,7 @@ class RefTypeExtensionsTests
     {
         string? item = null;
         var enumerable = item.WrapInEnumerableOrEmpty();
-        enumerable.ShouldBe(Enumerable.Empty<string>());
+        enumerable.ShouldBe([]);
     }
 }
 

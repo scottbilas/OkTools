@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Core;Cli</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
@@ -16,13 +16,6 @@
     <PackageReference Include="DotNetConfig" />
     <PackageReference Include="PInvoke.Kernel32" />
     <PackageReference Include="System.Interactive" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Vezel.Cathode" />
-    <Using Include="Vezel.Cathode" />
-    <Using Include="Vezel.Cathode.Text" />
-    <Using Include="Vezel.Cathode.Text.Control" />
   </ItemGroup>
 
 </Project>

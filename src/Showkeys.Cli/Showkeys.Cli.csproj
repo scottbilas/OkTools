@@ -1,17 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Core;Cli</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
     <AssemblyName>showkeys</AssemblyName>
     <RuntimeIdentifiers>win-x64;linux-x64;osx-arm64</RuntimeIdentifiers>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Core.Terminal\Core.Terminal.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Vezel.Cathode" />
-  </ItemGroup>
-
 </Project>

@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 [PublicAPI]
 public static class EnumerableExtensions
@@ -11,7 +11,7 @@ public static class EnumerableExtensions
         @this == null || !@this.Any();
 
     public static IEnumerable<T> OrEmpty<T>(this IEnumerable<T>? @this) =>
-        @this ?? Enumerable.Empty<T>();
+        @this ?? [];
 
     public static IReadOnlyList<T> OrEmpty<T>(this IReadOnlyList<T>? @this) =>
         @this ?? Array.Empty<T>();

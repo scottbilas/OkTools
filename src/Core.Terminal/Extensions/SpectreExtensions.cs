@@ -3,8 +3,10 @@ using Spectre.Console.Advanced;
 using Spectre.Console.Rendering;
 using Vezel.Cathode.Text.Control;
 
+namespace OkTools.Core.Terminal.Extensions;
+
 [PublicAPI]
-static class SpectreExtensions
+public static class SpectreExtensions
 {
     // ControlBuilder
 

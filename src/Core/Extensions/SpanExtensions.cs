@@ -1,4 +1,4 @@
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 public static class ReadOnlySpanExtensions
 {

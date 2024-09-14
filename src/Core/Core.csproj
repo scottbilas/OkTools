@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>T4;Net78</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>T4;NetMulti</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <RootNamespace>OkTools.Core</RootNamespace>
-    <TargetFrameworks>netstandard2.1;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netstandard2.1</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <DefineConstants>$(DefineConstants);NICEIO_PUBLIC</DefineConstants>
@@ -24,8 +24,15 @@
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
   <ItemGroup>
+    <Using Include="OkTools.Core" />
+    <Using Include="OkTools.Core.Extensions" />
+
     <None Include="README.md" Pack="true" PackagePath="/" />
     <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
+    <None Update="WideTypes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>WideTypes.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -38,6 +45,12 @@
 
     <!-- this is needed to make the compiler happy for usage of 'dynamic' -->
     <PackageReference Include="Microsoft.CSharp" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="WideTypes.cs">
+      <DependentUpon>WideTypes.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
 
 </Project>

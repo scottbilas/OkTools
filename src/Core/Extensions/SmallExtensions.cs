@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 [PublicAPI]
 public static class ObjectExtensions
@@ -32,7 +32,7 @@ public static class RefTypeExtensions
         { yield return @this; }
 
     public static IEnumerable<T> WrapInEnumerableOrEmpty<T>(this T? @this) where T: class =>
-        ReferenceEquals(@this, null) ? Enumerable.Empty<T>() : WrapInEnumerable(@this);
+        ReferenceEquals(@this, null) ? [] : WrapInEnumerable(@this);
 
     /// <summary>Return the result of `operation` on the given object if non-null, otherwise just return null</summary>
     public static T? OrNull<T>(this T? @this, Func<T, T> operation) where T: class =>

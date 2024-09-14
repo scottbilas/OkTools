@@ -44,37 +44,46 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <!-- extensions -->
+<!-- << OkFeatures >> -->
 
-  <!-- ensure we can always test for ';feature;' -->
+  <!-- direct features: Core, Cli, NetMulti, T4 -->
+  <!-- implicit from Tests.targets: Tests (implies Core) -->
+  <!-- implicit from Exe.targets: Exe -->
+
+  <!-- prepare OkFeatures -->
   <PropertyGroup>
+    <!-- ensure we can always test for ';feature;' -->
     <OkFeatures>;$(OkFeatures);</OkFeatures>
+    <!-- remove any whitespace that slipped in -->
+    <OkFeatures>$([System.String]::Copy('$(OkFeatures)').Replace(' ',''))</OkFeatures>
   </PropertyGroup>
 
-  <!--Net78 -->
-  <PropertyGroup Condition=" $(OkFeatures.Contains(';Net78;')) ">
+  <!-- Feature: NetMulti -->
+  <PropertyGroup Condition=" $(OkFeatures.Contains(';NetMulti;')) ">
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
     <BuildInParallel>false</BuildInParallel> <!-- seems to collide when parallel 7+8 TODO debug -->
     <TargetFramework />
     <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
   </PropertyGroup>
 
-  <!--Core -->
-  <ItemGroup Condition=" $(OkFeatures.Contains(';Core;')) or $(OkFeatures.Contains(';Docopt;')) ">
+  <!-- Feature: Core -->
+  <ItemGroup Condition=" $(OkFeatures.Contains(';Core;')) ">
     <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
     <Using Include="OkTools.Core" />
+    <Using Include="OkTools.Core.Extensions" />
     <Using Include="OkTools.Core.StaticUtility" Static="true" />
   </ItemGroup>
 
-  <!--Docopt -->
-  <ItemGroup Condition=" $(OkFeatures.Contains(';Docopt;')) ">
+  <!-- Feature: Cli -->
+  <ItemGroup Condition=" $(OkFeatures.Contains(';Cli;')) ">
+    <ProjectReference Include="$(OkSrcRoot)Core.Terminal\Core.Terminal.csproj" />
     <PackageReference Include="docopt.net" />
-    <Compile Include="$(OkSrcRoot)_Include\DocoptExtensions.cs">
-      <Link>_Include\DocoptExtensions.cs</Link>
-    </Compile>
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Vezel.Cathode" />
+    <Using Include="OkTools.Core.Terminal.Extensions" />
   </ItemGroup>
 
-  <!--T4 -->
+  <!-- Feature: T4 -->
   <!-- TEMPORARILY DISABLED - T4.Build does not support .NET 8 SDK, gets an error from a missing assembly.
        just go with manual Rider-based T4 for now. -->
   <!--Choose>
@@ -110,15 +119,15 @@
         <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
       </PropertyGroup>
       <ItemGroup>
-        <Compile Include="*.t.cs" />
+        <Compile Include="**\*.t.cs" />
         <None Remove="*" />
         <None Remove="TestFiles\**" />
       </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
-        <Compile Remove="*.t.*" />
-        <None Remove="*.t.*" />
+        <Compile Remove="**\*.t.*" />
+        <None Remove="**\*.t.*" />
       </ItemGroup>
     </Otherwise>
   </Choose>

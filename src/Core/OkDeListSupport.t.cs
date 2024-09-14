@@ -111,7 +111,7 @@ partial class OkDeListTests
     [Test]
     public void PrivateGetFields()
     {
-        var list = Make(5, new[] { 1, 2 }, false);
+        var list = Make(5, [1, 2], false);
         var saved = list.PrivateGetFields();
 
         list.Add(3);

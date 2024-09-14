@@ -2,27 +2,7 @@
 using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Text.Control.ControlConstants;
 
-namespace OkTools.Core.Terminal;
-
-public readonly struct AutoSaveRestoreCursorState : IDisposable
-{
-    readonly ControlBuilder _cb;
-
-    public AutoSaveRestoreCursorState(ControlBuilder cb) =>
-        (_cb = cb).SaveCursorState();
-    public void Dispose() =>
-        _cb.RestoreCursorState();
-}
-
-public enum CursorConstrainMode
-{
-    // [Default] Origin is upper-left of screen. Cursor positioning will ignore any configured margin, though some
-    // operations such as MoveCursorTo() will constrain to the margin, if configured.
-    Screen,
-
-    // Origin is upper-left of margin. All cursor operations will be constrained to the current margin.
-    Margin
-}
+namespace OkTools.Core.Terminal.Extensions;
 
 [PublicAPI]
 public static class ControlBuilderExtensions

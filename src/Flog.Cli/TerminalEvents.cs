@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using Vezel.Cathode;
 
 interface ITerminalEvent;
 

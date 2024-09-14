@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>Core;Docopt</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Core;Cli</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Exe.targets" />
 
   <PropertyGroup>
@@ -20,11 +20,9 @@
 
   <ItemGroup>
     <AdditionalFiles Include="BannedSymbols.txt" />
-    <ProjectReference Include="..\Core.Terminal\Core.Terminal.csproj" />
     <PackageReference Include="Dumpify" />
-    <PackageReference Include="Spectre.Console" />
 
-    <PackageReference Include="Vezel.Cathode" />
+    
     <!--Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\obj\src\core\release\Vezel.Cathode.dll"/>
     <Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\bin\src\common\release\Vezel.Cathode.Common.dll"/>
     <Reference Include="C:\proj\ok\_research\Vezel.Cathode\out\bin\src\native\debug_win-x64\Vezel.Cathode.Native.dll"/-->

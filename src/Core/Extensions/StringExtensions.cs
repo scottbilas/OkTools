@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace OkTools.Core;
+namespace OkTools.Core.Extensions;
 
 [PublicAPI]
 public static class StringExtensions

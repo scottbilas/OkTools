@@ -81,7 +81,7 @@ public readonly ref struct SpanPair<T>
     public T[] ToArray()
     {
         if (Length == 0)
-            return Array.Empty<T>();
+            return [];
 
         var destination = new T[Length];
         Span0.CopyTo(destination);

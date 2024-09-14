@@ -225,11 +225,11 @@ partial class OkDeListTests
         list.AddRangeFront(array);
         Validate(list, 1, 2);
 
-        array = new[] { 3, 4, 5 };
+        array = [3, 4, 5];
         list.AddRangeFront(array);
         Validate(list, 3, 4, 5, 1, 2);
 
-        array = Array.Empty<int>();
+        array = [];
         list.AddRangeFront(array);
         Validate(list, 3, 4, 5, 1, 2);
     }
@@ -274,7 +274,7 @@ partial class OkDeListTests
         rlist.RemoveAtAndSwapFront(0);
         Validate(rlist);
 
-        var flist = Make(10, new[] { 1, 2, 3 }, wrap);
+        var flist = Make(10, [1, 2, 3], wrap);
         flist.RemoveAtAndSwapFront(2);
         Validate(flist, 2, 1);
         flist.RemoveAtAndSwapFront(1);
@@ -292,7 +292,7 @@ partial class OkDeListTests
     [TestCase(true), TestCase(false)]
     public void DropFront_WithNonEmpty_Removes(bool wrap)
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 }, wrap);
+        var list = Make(10, [0, 1, 2, 3, 4, 5], wrap);
         list[0].ShouldBe(0);
         list.DropFront();
         list[0].ShouldBe(1);
@@ -317,7 +317,7 @@ partial class OkDeListTests
     [TestCase(true), TestCase(false)]
     public void PopFront_WithNonEmpty_RemovesAndReturnsItem(bool wrap)
     {
-        var list = Make(10, new[] { 0, 1, 2, 3, 4, 5 }, wrap);
+        var list = Make(10, [0, 1, 2, 3, 4, 5], wrap);
         list[0].ShouldBe(0);
         list.PopFront().ShouldBe(0);
         list[0].ShouldBe(1);
@@ -338,7 +338,7 @@ partial class OkDeListTests
     {
         // these ensure that we're using underlying valuetype-sensitive clear
 
-        var vlist = Make(10, new[] { 1, 2, 3, 4, 5, 6 });
+        var vlist = Make(10, [1, 2, 3, 4, 5, 6]);
         vlist.DropFront();
         vlist.PopFront().ShouldBe(2);
         vlist.RemoveAtAndSwapFront(1);
@@ -348,7 +348,7 @@ partial class OkDeListTests
         vlist.PrivateRefAt(8).ShouldBe(2);
         vlist.PrivateRefAt(9).ShouldBe(3);
 
-        var rlist = Make(10, new[] { "a", "b", "c", "d", "e", "f" });
+        var rlist = Make(10, ["a", "b", "c", "d", "e", "f"]);
 
         rlist.PrivateRefAt(7).ShouldBe("a");
         rlist.DropFront();
@@ -368,7 +368,7 @@ partial class OkDeListTests
     [TestCase(true), TestCase(false)]
     public void Rotate_WithModuloZero_DoesNothing(bool wrap)
     {
-        var list = Make(5, new[] { 1, 2, 3 }, wrap);
+        var list = Make(5, [1, 2, 3], wrap);
         var saved = list.PrivateGetFields();
 
         list.Rotate(0);
@@ -446,16 +446,16 @@ partial class OkDeListTests
         }
     }
 
-    static (int, int[])[] RotateCaseSource => new[]
-    {
-        (-4, new[] { 5, 1, 2, 3, 4 }), // 12345 rot -4 ->    51234
-        (-3, new[] { 4, 5, 1, 2, 3 }), // 12345 rot -3 ->   45123
-        (-2, new[] { 3, 4, 5, 1, 2 }), // 12345 rot -2 ->  34512
-        (-1, new[] { 2, 3, 4, 5, 1 }), // 12345 rot -1 -> 23451
-        ( 0, new[] { 1, 2, 3, 4, 5 }), // 12345 rot           12345 (identity)
-        (+1, new[] { 5, 1, 2, 3, 4 }), // 12345 rot +1 ->    51234
-        (+2, new[] { 4, 5, 1, 2, 3 }), // 12345 rot +2 ->   45123
-        (+3, new[] { 3, 4, 5, 1, 2 }), // 12345 rot +3 ->  34512
-        (+4, new[] { 2, 3, 4, 5, 1 }), // 12345 rot +4 -> 23451
-    };
+    static (int, int[])[] RotateCaseSource =>
+    [
+        (-4, [5, 1, 2, 3, 4]), // 12345 rot -4 ->    51234
+        (-3, [4, 5, 1, 2, 3]), // 12345 rot -3 ->   45123
+        (-2, [3, 4, 5, 1, 2]), // 12345 rot -2 ->  34512
+        (-1, [2, 3, 4, 5, 1]), // 12345 rot -1 -> 23451
+        ( 0, [1, 2, 3, 4, 5]), // 12345 rot           12345 (identity)
+        (+1, [5, 1, 2, 3, 4]), // 12345 rot +1 ->    51234
+        (+2, [4, 5, 1, 2, 3]), // 12345 rot +2 ->   45123
+        (+3, [3, 4, 5, 1, 2]), // 12345 rot +3 ->  34512
+        (+4, [2, 3, 4, 5, 1]), // 12345 rot +4 -> 23451
+    ];
 }

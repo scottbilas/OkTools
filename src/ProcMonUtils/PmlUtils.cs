@@ -10,9 +10,9 @@ namespace OkTools.ProcMonUtils;
 class SymCache : IDisposable
 {
     readonly DbgHelpInstance _simpleSymbolHandler;
-    readonly HashSet<string> _symbolsForModuleCache = new();
+    readonly HashSet<string> _symbolsForModuleCache = [];
     readonly Dictionary<ulong, (DbgHelp.SYMBOL_INFO symbol, int offset)> _symbolFromAddressCache = new();
-    readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = new();
+    readonly List<MonoJitSymbolDb> _monoJitSymbolDbs = [];
 
     public SymCache(SymbolicateOptions options) =>
         _simpleSymbolHandler = new DbgHelpInstance(options.NtSymbolPath);
@@ -117,7 +117,7 @@ public static class PmlUtils
         {
             var (pid, _) = MonoJitSymbolDb.ParsePmipFilename(pmipPath);
             if (!pmipFileDb.TryGetValue(pid, out var pmipFiles))
-                pmipFileDb.Add(pid, pmipFiles = new List<NPath>());
+                pmipFileDb.Add(pid, pmipFiles = []);
             pmipFiles.Add(pmipPath);
         }
 
@@ -315,7 +315,7 @@ public class PmlBakedWriter
         ++_frameCounts[eventIndex];
     }
 
-    static readonly char[] k_badChars = { '\n', '\r', '\t' };
+    static readonly char[] k_badChars = ['\n', '\r', '\t'];
 
     int ToStringIndex(string str)
     {
