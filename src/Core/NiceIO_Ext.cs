@@ -200,10 +200,20 @@ partial class NPath
         }
     }
 
+    // TODO: align this with SelfOrParentContaining..
     public NPath? TryFindFileInSelfAndParents(string filename)
     {
         var subPath = filename.ToNPath();
         return SelfAndRecursiveParents.FirstOrDefault(p => p.FileExists(subPath))?.Combine(subPath);
+    }
+
+    public NPath? SelfOrParentContaining(NPath needle, bool returnAppended = false)
+    {
+        var test = Combine(needle);
+        if (test.Exists())
+            return returnAppended ? test : this;
+
+        return ParentContaining(needle, returnAppended);
     }
 
     public NPath FindFileInSelfAndParents(string filename) =>

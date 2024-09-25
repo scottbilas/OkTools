@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
@@ -5,6 +6,14 @@ namespace OkTools.Core;
 [PublicAPI]
 public static class CliUtility
 {
+    #if NETSTANDARD
+    #pragma warning disable CA1839
+    public static string ProgramName => Process.GetCurrentProcess().MainModule!.FileName.ToNPath().FileNameWithoutExtension;
+    #pragma warning restore CA1839
+    #else
+    public static string ProgramName => Path.GetFileNameWithoutExtension(Environment.ProcessPath!);
+    #endif
+
     public static IEnumerable<string> ParseCommandLineArgs(string commandLine) => Regex
         .Matches(commandLine, """(?<=^|\s)(?:"(?:\\.|[^"\\])*"?|[^\s"]+)""")
         .AsEnumerable()

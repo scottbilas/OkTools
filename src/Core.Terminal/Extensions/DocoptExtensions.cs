@@ -19,6 +19,7 @@ public static class DocoptExtensions
         IReadOnlyCollection<string> args,
         string programVersion, string help, string usage,
         Func<T, object?>? postParse = null,
+        TextUtility.Replacer? macroReplacer = null,
         TextWriter? outWriter = null,
         TextWriter? errWriter = null,
         int? wrapWidth = null)
@@ -100,11 +101,10 @@ public static class DocoptExtensions
                     throw new InvalidOperationException($"Unexpected result type {result.GetType().FullName}");
             }
 
-            static string FormatHelp(string helpText, string version)
-            {
-                var programName = Path.GetFileNameWithoutExtension(Environment.ProcessPath!);
-                return string.Format(helpText, programName, version);
-            }
+            string FormatHelp(string helpText, string version) =>
+                macroReplacer != null
+                    ? TextUtility.ReplaceMacros(helpText, macroReplacer)
+                    : string.Format(helpText, CliUtility.ProgramName, version);
         }
         catch (Exception x)
         {
