@@ -115,6 +115,23 @@ public static class StringExtensions
         .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 #       endif
 
+    static string ToStringIfNeeded(string original, ReadOnlySpan<char> span) =>
+        span.Length == original.Length ? original : span.ToString();
+
+    public static string Trim(this string @this, int startIndex) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex).Trim());
+    public static string Trim(this string @this, char trimChar, int startIndex) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex).Trim(trimChar));
+    public static string Trim(this string @this, ReadOnlySpan<char> trimChars, int startIndex) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex).Trim(trimChars));
+
+    public static string Trim(this string @this, int startIndex, int length) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex, length).Trim());
+    public static string Trim(this string @this, char trimChar, int startIndex, int length) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex, length).Trim(trimChar));
+    public static string Trim(this string @this, ReadOnlySpan<char> trimChars, int startIndex, int length) =>
+        ToStringIfNeeded(@this, @this.AsSpan(startIndex, length).Trim(trimChars));
+
     public static string StringJoin<T>(this IEnumerable<T> @this, string separator) =>
         string.Join(separator, @this);
     public static string StringJoin<T>(this IEnumerable<T> @this, char separator) =>

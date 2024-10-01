@@ -169,6 +169,21 @@ class StringExtensionsTests
         Should.Throw<ArgumentException>(() => "abc def".Truncate(0, "ghi"));
     }
 
+    [TestCase(""), TestCase("abc"), TestCase("abc def")]
+    public void Trim_WithNoChange_DoesNotAlloc(string str)
+    {
+        var trimmed1 = str.Trim();
+        var trimmed2 = str.Trim(0);
+        var trimmed3 = str.Trim(0, str.Length);
+
+        ReferenceEquals(str, trimmed1).ShouldBeTrue();
+        ReferenceEquals(str, trimmed2).ShouldBeTrue();
+        ReferenceEquals(str, trimmed3).ShouldBeTrue();
+
+        // sanity check
+        ReferenceEquals(str, str.AsSpan().ToString()).ShouldBe(str.Length == 0);
+    }
+
     [Test]
     public void StringJoin_WithEmpty_ReturnsEmptyString()
     {
