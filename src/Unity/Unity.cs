@@ -48,7 +48,7 @@ public static class Unity
 
         foreach (var unityProcess in Process.GetProcessesByName(UnityConstants.UnityProcessName))
         {
-            var workingDir = NativeWindows.SafeGetProcessCurrentDirectory(unityProcess.Id)?.ToNPath();
+            var workingDir = "";//NativeWindows.SafeGetProcessCurrentDirectory(unityProcess.Id)?.ToNPath();
             if (workingDir == projectPath)
                 matches.Add(unityProcess);
             else
@@ -63,7 +63,7 @@ public static class Unity
     {
         foreach (var unityProcess in unityProcesses.Where(p => p.MainWindowHandle != default))
         {
-            var unityCommandLine = NativeWindows.SafeGetProcessCommandLine(unityProcess.Id);
+            var unityCommandLine = "";//NativeWindows.SafeGetProcessCommandLine(unityProcess.Id);
             if (unityCommandLine == null)
                 continue;
 
