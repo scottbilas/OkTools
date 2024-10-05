@@ -55,3 +55,12 @@ struct HashDBValue // Modules/AssetDatabase/Editor/V2/HashDB.h
 
     public DateTime TimeAsDateTime => new(time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
 }
+
+struct HashDBValueNoFileSize // Modules/AssetDatabase/Editor/V2/HashDB.h
+{
+    public Hash128 hash;
+    public long    time;
+    public bool isUntrusted;
+
+    public DateTime TimeAsDateTime => new(time); // C++ DateTime not binary compatible because extra field in C# version, but easy to convert (they both use the same ticks epoch+resolution)
+}

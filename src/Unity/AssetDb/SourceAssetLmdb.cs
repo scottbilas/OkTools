@@ -8,7 +8,7 @@ namespace OkTools.Unity.AssetDb;
 
 public static class SourceAssetLmdb
 {
-    static readonly uint[] k_expectedDbVersions = [9, 10, 0x218FD4A3];
+    static readonly uint[] k_expectedDbVersions = [9, 10, 0x218FD4A3, 0xB7728EEA];
     public static AssetLmdb OpenLmdb(NPath projectRoot) =>
         new(projectRoot.Combine(UnityProjectConstants.SourceAssetDbNPath), k_expectedDbVersions);
 
@@ -99,7 +99,7 @@ public static class SourceAssetLmdb
             dump.Json!.WriteString(unityGuid.ToString(), path);
     }
 
-    [AssetLmdbTable("hash", "Path,Hash,Time,FileSize,IsUntrusted", UniqueKeys = true)]
+    [AssetLmdbTable("hash", "Path,Hash,Time,FileSize,IsUntrusted", UniqueKeys = true, VersionCompatibility =  [9, 10, 0x218FD4A3])]
     public static void DumpPathToHash(DumpContext dump, DirectBuffer key, DirectBuffer value)
     {
         // HashDB.cpp: HashDB::m_pPathToHash
@@ -116,6 +116,28 @@ public static class SourceAssetLmdb
             dump.Json.WriteString("Hash", hash.hash.ToString());
             dump.Json.WriteString("Time", hash.TimeAsDateTime);
             dump.Json.WriteNumber("FileSize", hash.fileSize);
+            dump.Json.WriteBoolean("IsUntrusted", hash.isUntrusted);
+
+            dump.Json.WriteEndObject();
+        }
+    }
+
+    [AssetLmdbTable("hash", "Path,Hash,Time,FileSize,IsUntrusted", UniqueKeys = true, VersionCompatibility =  [0xB7728EEA])]
+    public static void DumpPathToHash2(DumpContext dump, DirectBuffer key, DirectBuffer value)
+    {
+        // HashDB.cpp: HashDB::m_pPathToHash
+
+        var path = key.ToAsciiString();
+        var hash = value.ReadExpectEnd<HashDBValueNoFileSize>();
+
+        if (dump.Csv != null)
+            dump.Csv.Write($"{path},{hash.hash},{hash.TimeAsDateTime},{hash.isUntrusted},");
+        else
+        {
+            dump.Json!.WriteStartObject(path);
+
+            dump.Json.WriteString("Hash", hash.hash.ToString());
+            dump.Json.WriteString("Time", hash.TimeAsDateTime);
             dump.Json.WriteBoolean("IsUntrusted", hash.isUntrusted);
 
             dump.Json.WriteEndObject();

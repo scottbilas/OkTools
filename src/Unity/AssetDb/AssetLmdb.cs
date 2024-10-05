@@ -21,7 +21,7 @@ public class AssetLmdb : LmdbDatabase
             var supportedVersionsText = supportedVersions
                 .Select(NiceUint)
                 .StringJoin(", ");
-            throw new InvalidOperationException($"Unsupported {Name} version {NiceUint(DbVersion)} (supported: {supportedVersionsText})");
+            throw new InvalidOperationException($"Unsupported {Name} version {NiceUint(DbVersion)} ({DbVersion}) (supported: {supportedVersionsText})");
         }
     }
 
@@ -94,7 +94,7 @@ public class AssetLmdb : LmdbDatabase
 [UsedImplicitly]
 public record AssetLmdbInfo(string Name, string Version, string[] TableNames);
 
-public record TableDumpSpec(string TableName, string CsvFields, bool UniqueKeys, Action<DumpContext, DirectBuffer, DirectBuffer> Dump);
+public record TableDumpSpec(string TableName, string CsvFields, bool UniqueKeys, uint[]? VersionCompatibliity, Action<DumpContext, DirectBuffer, DirectBuffer> Dump);
 
 public struct DumpConfig
 {

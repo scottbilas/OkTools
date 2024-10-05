@@ -23,7 +23,7 @@ public static class DirectBufferExtensions
     public static T ReadExpectEnd<T>(this in DirectBuffer @this) where T : unmanaged
     {
         if (@this.Length != Unsafe.SizeOf<T>())
-            throw new InvalidOperationException("Did not consume entire value");
+            throw new InvalidOperationException($"Did not consume entire value. Expected {@this.Length}, actual: {Unsafe.SizeOf<T>()}");
 
         return @this.Read<T>(0);
     }

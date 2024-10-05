@@ -16,6 +16,8 @@ public class AssetLmdbTableAttribute : Attribute
 
     public bool UniqueKeys { get; set; }
 
+    public uint[]? VersionCompatibility { get; set; }
+
     public static TableDumpSpec[] CreateTableDumpSpecs(Type type)
     {
         var expected = new[] { typeof(DumpContext), typeof(DirectBuffer), typeof(DirectBuffer) };
@@ -32,7 +34,7 @@ public class AssetLmdbTableAttribute : Attribute
                     throw new InvalidOperationException($"Method {m.DeclaringType}.{m.Name} is not `void {m.Name}(DumpContext, DirectBuffer, DirectBuffer)`");
 
                 return new TableDumpSpec(
-                    attr._tableName, attr._csvFields, attr.UniqueKeys,
+                    attr._tableName, attr._csvFields, attr.UniqueKeys, attr.VersionCompatibility,
                     (c, k, v) => m.Invoke(null, [c, k, v]));
             })
             .Where(s => s != null)

@@ -98,11 +98,16 @@ Options:
 
                     foreach (var spec in specs)
                     {
+
                         if (!config.OptCombined)
                         {
                             var path = outDir.Combine($"{db.Name}-{spec.TableName}");
                             dump = new DumpContext(path, config);
                         }
+
+                        // Data size in tables can vary with DbVersions. We filter them out here
+                        if (spec.VersionCompatibliity != null && !spec.VersionCompatibliity.Contains(db.DbVersion))
+                            continue;
 
                         db.DumpTable(dump!, db, spec);
 
