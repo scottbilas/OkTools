@@ -41,4 +41,10 @@
     <ProjectReference Include="$(OkSrcRoot)Unity\Unity.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+  <None Include="$(OkSrcRoot)/../native/libspreads_lmdb.dylib">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+</ItemGroup>
+
 </Project>
