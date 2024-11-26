@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using DocoptNet;
-using OkTools.Core.Terminal;
 
 #pragma warning disable RS0030 // vezel.cathode warning about Console (haven't converted to vezel yet)
 

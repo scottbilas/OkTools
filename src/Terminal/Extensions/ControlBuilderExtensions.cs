@@ -2,7 +2,7 @@
 using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Text.Control.ControlConstants;
 
-namespace OkTools.Core.Terminal.Extensions;
+namespace OkTools.Terminal.Extensions;
 
 [PublicAPI]
 public static class ControlBuilderExtensions

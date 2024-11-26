@@ -1,4 +1,4 @@
-﻿namespace OkTools.Core.Terminal;
+﻿namespace OkTools.Terminal;
 
 // TODO: let's also pack in a little 10-char (null-term) array to store the captured pattern, and have little helpers to access it.
 // sometimes might be nicer when detecting ctrl-c for example, and may help with diagnostics as well when there is a misfire on the key matcher.

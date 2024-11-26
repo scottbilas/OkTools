@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Dumpify;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using Vezel.Cathode;

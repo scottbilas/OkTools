@@ -3,7 +3,7 @@ using Spectre.Console.Advanced;
 using Spectre.Console.Rendering;
 using Vezel.Cathode.Text.Control;
 
-namespace OkTools.Core.Terminal.Extensions;
+namespace OkTools.Terminal.Extensions;
 
 [PublicAPI]
 public static class SpectreExtensions

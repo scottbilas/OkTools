@@ -41,7 +41,7 @@ public struct Hash128
 }
 
 [PublicAPI]
-public unsafe struct UnityGUID
+public unsafe struct UnityGUID : IEquatable<UnityGUID>
 {
     // Be aware that because of endianness and because we store a GUID as four integers instead
     // of as the DWORD, WORD, and BYTE groupings as used by Microsoft, the individual bytes
@@ -79,6 +79,20 @@ public unsafe struct UnityGUID
             }
         });
     }
+
+    public bool Equals(UnityGUID other) =>
+        _data[0] == other._data[0] &&
+        _data[1] == other._data[1] &&
+        _data[2] == other._data[2] &&
+        _data[3] == other._data[3];
+
+    public override bool Equals(object? obj) =>
+        obj is UnityGUID other && Equals(other);
+    public override int GetHashCode() =>
+        HashCode.Combine(_data[0], _data[1], _data[2], _data[3]);
+
+    public static bool operator ==(UnityGUID left, UnityGUID right) => left.Equals(right);
+    public static bool operator !=(UnityGUID left, UnityGUID right) => !left.Equals(right);
 }
 
 // IMPORTANT: these assume "this" is a pointer into blob memory. only arrive at these through other structs or

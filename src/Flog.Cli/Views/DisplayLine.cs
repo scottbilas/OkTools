@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-[DebuggerDisplay("\"{Span.Slice(0, Length <= 30 ? Length : 30)}\" (len={Length}, remain={m_chars.Length - Length})")]
+[DebuggerDisplay("\"{Span.Slice(0, Length <= 30 ? Length : 30)}\" (len={Length}, remain={_chars.Length - Length})")]
 readonly struct DisplayLine
 {
     DisplayLine(int lineIndex, string chars, int begin, int end)
@@ -10,23 +10,23 @@ readonly struct DisplayLine
         Debug.Assert(end >= 0 && end <= chars.Length);
 
         LineIndex = lineIndex;
-        m_chars = chars;
-        m_begin = begin;
-        m_end = end;
+        _chars = chars;
+        _begin = begin;
+        _end = end;
     }
 
     public readonly int LineIndex;
 
-    readonly string m_chars;
-    readonly int m_begin, m_end;
+    readonly string _chars;
+    readonly int _begin, _end;
 
-    public bool IsValid => m_chars != null;
-    public int Length => m_end - m_begin;
-    public int Remain => m_chars.Length - m_end;
-    public ReadOnlySpan<char> Span => m_chars.AsSpan(m_begin, Length);
+    public bool IsValid => _chars != null;
+    public int Length => _end - _begin;
+    public int Remain => _chars.Length - _end;
+    public ReadOnlySpan<char> Span => _chars.AsSpan(_begin, Length);
 
-    public bool NeedsLeadingTruncateMarker => m_begin != 0;
-    public bool NeedsTrailingTruncateMarker => m_end != m_chars.Length;
+    public bool NeedsLeadingTruncateMarker => _begin != 0;
+    public bool NeedsTrailingTruncateMarker => _end != _chars.Length;
 
     public DisplayLine RemainTruncated(int maxWidth, int truncMarkerWidth)
     {
@@ -36,7 +36,7 @@ readonly struct DisplayLine
         if (width > maxWidth)
             width = maxWidth - truncMarkerWidth;
 
-        return new(LineIndex, m_chars, m_end, m_end + width);
+        return new(LineIndex, _chars, _end, _end + width);
     }
 
     public static DisplayLine NewTruncated(int lineIndex, string line, int maxWidth, int truncMarkerWidth)

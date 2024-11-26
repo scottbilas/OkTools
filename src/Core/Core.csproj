@@ -7,7 +7,7 @@
     <RootNamespace>OkTools.Core</RootNamespace>
     <TargetFrameworks>$(TargetFrameworks);netstandard2.1</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- just doing spot-docs -->
     <DefineConstants>$(DefineConstants);NICEIO_PUBLIC</DefineConstants>
 
     <!-- because it's a package, avoid adding requirements -->

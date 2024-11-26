@@ -1,5 +1,5 @@
 ﻿using System.Drawing;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 using Vezel.Cathode.Text.Control;
 
 interface IEvent;

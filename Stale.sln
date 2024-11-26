@@ -30,9 +30,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog", "src\Flog\Flog.cspro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flog.Cli", "src\Flog.Cli\Flog.Cli.csproj", "{8B492F02-DFFE-49A0-91FA-2F7D6DAFC96B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal", "src\Core.Terminal\Core.Terminal.csproj", "{97404C8D-5AF4-4421-952C-0942D453D692}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terminal", "src\Terminal\Terminal.csproj", "{97404C8D-5AF4-4421-952C-0942D453D692}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal-Tests", "src\Core.Terminal\Core.Terminal-Tests.csproj", "{85998317-0436-45AD-A4CB-278EC8055ADD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terminal-Tests", "src\Terminal\Terminal-Tests.csproj", "{85998317-0436-45AD-A4CB-278EC8055ADD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stale.Cli-Tests", "src\Stale.Cli\Stale.Cli-Tests.csproj", "{3D3084A6-EE49-4911-9C26-BAA0CDF997DC}"
 EndProject

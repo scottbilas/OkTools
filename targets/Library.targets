@@ -62,9 +62,7 @@
 
   <PropertyGroup Condition=" $(OkFeatures.Contains(';NetMulti;')) ">
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
-    <BuildInParallel>false</BuildInParallel> <!-- seems to collide when parallel 7+8 TODO debug -->
-    <TargetFramework />
-    <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
 
   <!-- Feature: Core -->
@@ -82,11 +80,11 @@
        haven't yet and are still using Console.* -->
 
   <ItemGroup Condition=" $(OkFeatures.Contains(';Cli;')) ">
-    <ProjectReference Include="$(OkSrcRoot)Core.Terminal\Core.Terminal.csproj" />
+    <ProjectReference Include="$(OkSrcRoot)Terminal\Terminal.csproj" />
     <PackageReference Include="docopt.net" />
     <PackageReference Include="Spectre.Console" />
     <PackageReference Include="Vezel.Cathode" Condition=" $(OkFeatures.Contains(';-Cathode;')) == false " />
-    <Using Include="OkTools.Core.Terminal.Extensions" />
+    <Using Include="OkTools.Terminal.Extensions" />
   </ItemGroup>
   <PropertyGroup Condition=" $(OkFeatures.Contains(';-Cathode;')) == true ">
     <NoWarn>$(NoWarn);RS0030</NoWarn>

@@ -7,6 +7,8 @@ using OkTools.ProcMonUtils;
 using OkTools.Unity;
 using TextCopy;
 
+// ReSharper disable InconsistentNaming
+
 static partial class Commands
 {
     // TODO: not loving this constructive platform-specific help stuff..

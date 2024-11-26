@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Threading.Channels;
-using Vezel.Cathode.Text.Control;
 
+using static Vezel.Cathode.Text.Control.ControlConstants;
 enum InputParseResult { Accept, NoMatch, Partial }
 
 class InputParser
@@ -74,7 +74,7 @@ class InputParser
                 break;
 
             var b = _input.Read();
-            if (b != ControlConstants.ESC)
+            if (b != ESC)
             {
                 // unrecognized sequence or timeout, so push to app to figure it out
                 await _events.WriteAsync(new CharEvent((char)b, _inEscape, false));
@@ -142,66 +142,64 @@ class InputParser
     [
         // https://invisible-island.net/xterm/ctlseqs/ctlseqs.pdf
 
-        new("\x1b[A",    ConsoleKey.UpArrow),
-        new("\x1b[1;5A", ConsoleKey.UpArrow,    ctrl: true),
-        new("\x1b[B",    ConsoleKey.DownArrow),
-        new("\x1b[1;5B", ConsoleKey.DownArrow,  ctrl: true),
-        new("\x1b[C",    ConsoleKey.RightArrow),
-        new("\x1b[1;5C", ConsoleKey.RightArrow, ctrl: true),
-        new("\x1b[D",    ConsoleKey.LeftArrow),
-        new("\x1b[1;5D", ConsoleKey.LeftArrow,  ctrl: true),
+        new(CSI+"A",    ConsoleKey.UpArrow),
+        new(CSI+"1;5A", ConsoleKey.UpArrow,    ctrl: true),
+        new(CSI+"B",    ConsoleKey.DownArrow),
+        new(CSI+"1;5B", ConsoleKey.DownArrow,  ctrl: true),
+        new(CSI+"C",    ConsoleKey.RightArrow),
+        new(CSI+"1;5C", ConsoleKey.RightArrow, ctrl: true),
+        new(CSI+"D",    ConsoleKey.LeftArrow),
+        new(CSI+"1;5D", ConsoleKey.LeftArrow,  ctrl: true),
 
-        new("\x1b[H",    ConsoleKey.Home),
-        new("\x1b[F",    ConsoleKey.End),
+        new(CSI+"H",    ConsoleKey.Home),
+        new(CSI+"F",    ConsoleKey.End),
 
-        new("\x1b[2~",   ConsoleKey.Insert),
-        new("\x1b[3~",   ConsoleKey.Delete),
+        new(CSI+"2~",   ConsoleKey.Insert),
+        new(CSI+"3~",   ConsoleKey.Delete),
 
-        new("\x1b[5~",   ConsoleKey.PageUp),
-        new("\x1b[6~",   ConsoleKey.PageDown),
+        new(CSI+"5~",   ConsoleKey.PageUp),
+        new(CSI+"6~",   ConsoleKey.PageDown),
 
         new("\x7f",      ConsoleKey.Backspace),
         new("\r",        ConsoleKey.Enter),
 
-        new("\x1bOP",    ConsoleKey.F1),
-        new("\x1bOQ",    ConsoleKey.F2),
-        new("\x1bOR",    ConsoleKey.F3),
-        new("\x1bOS",    ConsoleKey.F4),
-        new("\x1b[15~",  ConsoleKey.F5),
-        new("\x1b[17~",  ConsoleKey.F6),
-        new("\x1b[18~",  ConsoleKey.F7),
-        new("\x1b[19~",  ConsoleKey.F8),
-        new("\x1b[20~",  ConsoleKey.F9),
-        new("\x1b[21~",  ConsoleKey.F10),
-        new("\x1b[23~",  ConsoleKey.F11),
-        new("\x1b[24~",  ConsoleKey.F12),
+        new(ESC+"OP",    ConsoleKey.F1),
+        new(ESC+"OQ",    ConsoleKey.F2),
+        new(ESC+"OR",    ConsoleKey.F3),
+        new(ESC+"OS",    ConsoleKey.F4),
+        new(CSI+"15~",  ConsoleKey.F5),
+        new(CSI+"17~",  ConsoleKey.F6),
+        new(CSI+"18~",  ConsoleKey.F7),
+        new(CSI+"19~",  ConsoleKey.F8),
+        new(CSI+"20~",  ConsoleKey.F9),
+        new(CSI+"21~",  ConsoleKey.F10),
+        new(CSI+"23~",  ConsoleKey.F11),
+        new(CSI+"24~",  ConsoleKey.F12),
 
-        new("\x1b[15;2~",  ConsoleKey.F5, shift: true),
-        new("\x1b[17;2~",  ConsoleKey.F6, shift: true),
-        new("\x1b[18;2~",  ConsoleKey.F7, shift: true),
-        new("\x1b[19;2~",  ConsoleKey.F8, shift: true),
-        new("\x1b[20;2~",  ConsoleKey.F9, shift: true),
-        new("\x1b[21;2~",  ConsoleKey.F10, shift: true),
-        new("\x1b[23;2~",  ConsoleKey.F11, shift: true),
-        new("\x1b[24;2~",  ConsoleKey.F12, shift: true),
+        new(CSI+"15;2~",  ConsoleKey.F5, shift: true),
+        new(CSI+"17;2~",  ConsoleKey.F6, shift: true),
+        new(CSI+"18;2~",  ConsoleKey.F7, shift: true),
+        new(CSI+"19;2~",  ConsoleKey.F8, shift: true),
+        new(CSI+"20;2~",  ConsoleKey.F9, shift: true),
+        new(CSI+"21;2~",  ConsoleKey.F10, shift: true),
+        new(CSI+"23;2~",  ConsoleKey.F11, shift: true),
+        new(CSI+"24;2~",  ConsoleKey.F12, shift: true),
 
         // TODO: do a better way of mapping this
         // note that ^M == \r == Enter key..could be we really do want Console+CharKey unified..or maybe ctrl-keys are
         // *always* a ConsoleKey because they're ctrl sequences. also less confusing when trying to figure out what to
         // match against on the receiving side (don't have to look up what ^J or ^M or \r means).
-        new("\x1",       'a',                   ctrl: true),
-        new("\x2",       'b',                   ctrl: true),
-        new("\x3",       'c',                   ctrl: true),
-        new("\x4",       'd',                   ctrl: true),
-        new("\x5",       'e',                   ctrl: true),
-        new("\x6",       'f',                   ctrl: true),
-        new("\xb",       'k',                   ctrl: true),
-        new("\xc",       'l',                   ctrl: true),
-        new("\x14",      't',                   ctrl: true),
-        new("\x15",      'u',                   ctrl: true)
+        new("\x1",  'a', ctrl: true),
+        new("\x2",  'b', ctrl: true),
+        new("\x3",  'c', ctrl: true),
+        new("\x4",  'd', ctrl: true),
+        new("\x5",  'e', ctrl: true),
+        new("\x6",  'f', ctrl: true),
+        new("\xb",  'k', ctrl: true),
+        new("\xc",  'l', ctrl: true),
+        new("\x14", 't', ctrl: true),
+        new("\x15", 'u', ctrl: true)
     ];
-//        .Concat()
-//        .ToArray();
 
     async Task<InputParseResult> ParseControlKey()
     {

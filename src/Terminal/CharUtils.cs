@@ -1,4 +1,4 @@
-﻿namespace OkTools.Core.Terminal;
+﻿namespace OkTools.Terminal;
 
 public static class CharUtils
 {

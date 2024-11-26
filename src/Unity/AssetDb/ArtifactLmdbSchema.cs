@@ -106,11 +106,21 @@ struct BlobImage
 
 enum FileIdentifierType { kInvalidType = -1, kNonAssetType = 0, kDeprecatedCachedAssetType = 1, kSerializedAssetType = 2, kMetaAssetType = 3, kAssetTypeCount = 4 }
 
-struct BlobPPtr
+struct BlobPPtr : IEquatable<BlobPPtr>
 {
     public UnityGUID                 guid;
     public LocalIdentifierInFileType localIdentifier;
     public FileIdentifierType        type;
+
+    public bool Equals(BlobPPtr other) =>
+        guid.Equals(other.guid) && localIdentifier == other.localIdentifier && type == other.type;
+    public override bool Equals(object? obj) =>
+        obj is BlobPPtr other && Equals(other);
+    public override int GetHashCode() =>
+        HashCode.Combine(guid, localIdentifier, type);
+
+    public static bool operator ==(BlobPPtr left, BlobPPtr right) => left.Equals(right);
+    public static bool operator !=(BlobPPtr left, BlobPPtr right) => !left.Equals(right);
 }
 
 struct BlobProperty
@@ -241,12 +251,12 @@ enum AssetType
     // Used to indicate that the asset is unknown to an asset importer
     kUnknownAsset = 0,
     // An importer imports the data from the asset path (e.g. texture) and converts it into a serialized representation.
-    // Nothing can be modified in the inspector and it will only be saved after a reimport.
-    // Imported assets, e.g fbx file, as well as generated default assets.
+    // Nothing can be modified in the inspector, and it will only be saved after a reimport.
+    // Imported assets, e.g. fbx file, as well as generated default assets.
     kCopyAsset = 1 << 0,
-    // A serialized asset, that is modified in the editor and stored in the assets path.
+    // A serialized asset, that is modified in the editor and stored in the `assets` path.
     // Automatically saved with the project when saving.
-    // Unity native assets, e.g material.
+    // Unity native assets, e.g. material.
     kSerializedAsset = 1 << 1,
     // This has folder semantics (No extra data, may contain children)
     kFolderAsset = 1 << 2,
@@ -262,7 +272,7 @@ enum BuildTargetPlatform
     kBuildValidPlayer = 1,
 
     kFirstValidStandaloneTarget = 2,
-    // We don't support building for these any more, but we still need the constants for asset bundle
+    // We don't support building for these anymore, but we still need the constants for asset bundle
     // backwards compatibility.
     kBuildDeprecatedStandaloneOSXPPC = 3,
 

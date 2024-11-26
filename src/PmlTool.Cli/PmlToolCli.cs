@@ -1,5 +1,5 @@
 ﻿using DocoptNet;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 
 const string programVersion = "0.1";
 

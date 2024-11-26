@@ -32,9 +32,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyfe.Cli", "src\Lyfe.Cli\Ly
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lyfe.Cli-Tests", "src\Lyfe.Cli\Lyfe.Cli-Tests.csproj", "{C875B7D7-7FF4-4732-9FE0-A7A35D077F94}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal", "src\Core.Terminal\Core.Terminal.csproj", "{D6D04E0D-8325-4BDF-B4E8-2CBFF54764DE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terminal", "src\Terminal\Terminal.csproj", "{D6D04E0D-8325-4BDF-B4E8-2CBFF54764DE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Terminal-Tests", "src\Core.Terminal\Core.Terminal-Tests.csproj", "{CB4C57D5-478F-4066-BC7A-2C2F42F36109}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Terminal-Tests", "src\Terminal\Terminal-Tests.csproj", "{CB4C57D5-478F-4066-BC7A-2C2F42F36109}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stale.Cli-Tests", "src\Stale.Cli\Stale.Cli-Tests.csproj", "{12C369B7-DF63-4E2A-8638-AAAEB8F7CAAC}"
 EndProject

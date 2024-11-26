@@ -1,4 +1,4 @@
-﻿using OkTools.Core.Terminal;
+﻿using OkTools.Terminal;
 
 class KeyEventTests
 {

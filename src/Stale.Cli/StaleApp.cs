@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using System.Threading.Channels;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 using Spectre.Console;
 using Vezel.Cathode.Text.Control;
 using Color = Spectre.Console.Color;

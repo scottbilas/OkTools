@@ -1,7 +1,7 @@
 using System.Drawing;
 using System.Runtime.CompilerServices;
 using DocoptNet;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Terminal;
 
@@ -19,7 +19,7 @@ const string help = """
 
     Options:
       --dotnet  Use the built-in dotnet Console key reader in cooked mode, rather than Cathode (ansi sequences, raw mode).
-      --ansi    Use OkTools.Core.Terminal.AnsiInputReaderReader to receive key events.
+      --ansi    Use OkTools.Terminal.AnsiInputReaderReader to receive key events.
       --save    Save the screen before entering drive mode and restore it afterwards.
     """;
 

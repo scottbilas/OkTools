@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
-using OkTools.Core.Terminal;
+using OkTools.Terminal;
 using Vezel.Cathode;
 using Vezel.Cathode.Text.Control;
 

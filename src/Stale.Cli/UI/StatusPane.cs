@@ -1,4 +1,4 @@
-﻿using OkTools.Core.Terminal;
+﻿using OkTools.Terminal;
 using Spectre.Console;
 using Vezel.Cathode.Text.Control;
 

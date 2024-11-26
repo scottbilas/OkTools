@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OkFeatures>Core;NetMulti</OkFeatures></PropertyGroup>
+  <Import Project="$(OkTargetsRoot)Library.targets" />
+
+  <PropertyGroup>
+    <RootNamespace>OkTools.Terminal</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- just doing spot-docs -->
+
+    <!-- because it's a package, avoid adding requirements -->
+    <EnablePreviewFeatures>false</EnablePreviewFeatures>
+  </PropertyGroup>
+
+  <!-- nuget -->
+  <PropertyGroup>
+    <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
+    <Title>Some OK terminal utility functions</Title>
+    <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
+    <PackageVersion>1.0.0</PackageVersion>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="docopt.net" />
+    <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="Vezel.Cathode" />
+  </ItemGroup>
+
+</Project>

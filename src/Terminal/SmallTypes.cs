@@ -1,7 +1,7 @@
 ﻿using DocoptNet;
 using Vezel.Cathode.Text.Control;
 
-namespace OkTools.Core.Terminal;
+namespace OkTools.Terminal;
 
 [PublicAPI]
 public readonly struct AutoSaveRestoreCursorState : IDisposable

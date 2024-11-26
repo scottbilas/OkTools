@@ -1,6 +1,4 @@
-﻿using System.Reflection;
-
-class CliUtilityTests
+﻿class CliUtilityTests
 {
     [Test]
     public void ParseCommandLineArgs_CommandLineArgsToString()

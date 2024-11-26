@@ -1,6 +1,6 @@
 using DocoptNet;
 
-namespace OkTools.Core.Terminal.Extensions;
+namespace OkTools.Terminal.Extensions;
 
 // ReSharper disable MethodHasAsyncOverload
 

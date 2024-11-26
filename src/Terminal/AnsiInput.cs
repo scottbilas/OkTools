@@ -5,7 +5,7 @@ using System.Threading.Channels;
 using Vezel.Cathode.IO;
 using static Vezel.Cathode.Text.Control.ControlConstants;
 
-namespace OkTools.Core.Terminal;
+namespace OkTools.Terminal;
 
 // i can get rid of most of this class once this is implemented:
 // https://github.com/vezel-dev/cathode/issues/59 "Implement a control sequence parser"
