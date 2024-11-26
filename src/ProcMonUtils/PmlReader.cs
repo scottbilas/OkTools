@@ -92,11 +92,12 @@ public sealed class PmlReader : IDisposable
 
         var processCount = _reader.ReadInt32();
         SeekCurrent(processCount * 4); // jump over the process indexes array
-        //var processDataOffsets = new int[processCount]; // never used this..forget why it's here
-        //for (var iprocess = 0; iprocess < processDataOffsets.Length; ++iprocess)
-        //    processDataOffsets[iprocess] = _reader.ReadInt32();
+        // ReSharper disable once CollectionNeverQueried.Local
+        var processDataOffsets = new int[processCount];
+        for (var iprocess = 0; iprocess < processDataOffsets.Length; ++iprocess)
+            processDataOffsets[iprocess] = _reader.ReadInt32();
         PmlProcess? systemProcess = null;
-        for (var iprocess = 0; iprocess < processCount/*processDataOffsets.Length*/; ++iprocess)
+        for (var iprocess = 0; iprocess < processDataOffsets.Length; ++iprocess)
         {
             var processIndex = _reader.ReadInt32(); // The process index (for events to use as a reference to the process)
             var processId = _reader.ReadInt32(); // Process id
