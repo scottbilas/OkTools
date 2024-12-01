@@ -171,16 +171,15 @@ Debugging Options:
                 unityProject = tryUnityProject;
                 projectPath = unityProject.Path;
 
-                // should never happen, unless i am debugging something in a project :)
                 string? projectVersion = null;
-                try
+                if (unityProject.HasProjectVersionTxt()) // missing projectversion.txt can be for test and monorepo projects
                 {
-                    projectVersion = unityProject.GetVersion().ToString();
+                    try
+                    {
+                        projectVersion = unityProject.GetVersion().ToString();
+                    }
+                    catch (UnityVersionFormatException) { projectVersion = "<invalid format>"; }
                 }
-                catch (UnityVersionFormatException) { projectVersion = "<invalid format>"; }
-                // these are ok, for test projects
-                catch (FileNotFoundException) {}
-                catch (DirectoryNotFoundException) {}
 
                 if (projectVersion != null)
                     Console.Write($"Loading project at {unityProject.Path}; expects {projectVersion}");

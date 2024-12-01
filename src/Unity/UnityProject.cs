@@ -21,7 +21,7 @@ public class UnityProject : IStructuredOutput
         var output = Expando.From(new
         {
             Path,
-            Version = GetVersion().ToString(),
+            Version = HasProjectVersionTxt() ? GetVersion().ToString() : "<missing ProjectVersion.txt>",
             Created = GetCreationTime().ToNiceAge(true),
             LastOpened = GetLastOpenedTime()?.ToNiceAge(true) ?? "never",
         });
@@ -51,10 +51,14 @@ public class UnityProject : IStructuredOutput
         return UnityVersion.FromUnityProjectVersionTxt(projectVersionNPath);
     }
 
+    public bool HasProjectVersionTxt() =>
+        _projectRoot.Combine(UnityProjectConstants.ProjectVersionTxtNPath).FileExists();
+
     public IEnumerable<UnityVersion> GetTestableVersions()
     {
-        var projectVersion = GetVersion();
-        yield return projectVersion;
+        var projectVersion = HasProjectVersionTxt() ? GetVersion() : null;
+        if (projectVersion != null)
+            yield return projectVersion;
 
         var editorsYml = _projectRoot.ParentContaining(UnityConstants.EditorsYmlFileName, true);
         if (editorsYml is null)
