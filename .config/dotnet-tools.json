@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "publicapigenerator.tool": {
+      "version": "11.1.0",
+      "commands": [
+        "generate-public-api"
+      ],
+      "rollForward": false
+    }
+  }
+}

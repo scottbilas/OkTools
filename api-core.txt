@@ -1,0 +1,1532 @@
+[assembly: System.Reflection.AssemblyMetadata("Microsoft.Windows.CsWin32", "0.3.49-beta+91f5c15987")]
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/scottbilas/OkTools")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Core-Tests")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v9.0", FrameworkDisplayName=".NET 9.0")]
+public static class DebugDump
+{
+    public static string ToArgString(this string? @this) { }
+    public static string ToDumpString(this object @this, string? name = null, bool quiet = true, System.Func<System.Reflection.PropertyInfo, bool>? filter = null, int? wrapWidth = default, int maxWrapLines = 0) { }
+    public static string ToEscapedString(this string @this) { }
+}
+namespace OkTools.Core
+{
+    public class ArrayUtility
+    {
+        public ArrayUtility() { }
+        public static int BinarySearch<TElement, TSelected>(System.Collections.Generic.IReadOnlyList<TElement> array, TSelected value, System.Func<TElement, TSelected> selector)
+            where TSelected : System.IComparable<TSelected> { }
+    }
+    public struct Bool2 : System.IEquatable<OkTools.Core.Bool2>
+    {
+        public bool X;
+        public bool Y;
+        public Bool2(bool v) { }
+        public Bool2(System.ValueTuple<bool, bool> xy) { }
+        public Bool2(bool x, bool y) { }
+        public System.Boolean& this[int index] { get; }
+        public static OkTools.Core.Bool2& False { get; }
+        public static OkTools.Core.Bool2& True { get; }
+        public bool All() { }
+        public bool Any() { }
+        public bool Equals(OkTools.Core.Bool2 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static bool operator !=(in OkTools.Core.Bool2 left, in OkTools.Core.Bool2 right) { }
+        public static OkTools.Core.Bool2 operator &(in OkTools.Core.Bool2 left, in OkTools.Core.Bool2 right) { }
+        public static bool operator ==(in OkTools.Core.Bool2 left, in OkTools.Core.Bool2 right) { }
+        public static OkTools.Core.Bool2 operator |(in OkTools.Core.Bool2 left, in OkTools.Core.Bool2 right) { }
+    }
+    public struct Bool3 : System.IEquatable<OkTools.Core.Bool3>
+    {
+        public bool X;
+        public bool Y;
+        public bool Z;
+        public Bool3(bool v) { }
+        public Bool3(System.ValueTuple<bool, bool, bool> xyz) { }
+        public Bool3(bool x, bool y, bool z) { }
+        public System.Boolean& this[int index] { get; }
+        public static OkTools.Core.Bool3& False { get; }
+        public static OkTools.Core.Bool3& True { get; }
+        public bool All() { }
+        public bool Any() { }
+        public bool Equals(OkTools.Core.Bool3 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static bool operator !=(in OkTools.Core.Bool3 left, in OkTools.Core.Bool3 right) { }
+        public static OkTools.Core.Bool3 operator &(in OkTools.Core.Bool3 left, in OkTools.Core.Bool3 right) { }
+        public static bool operator ==(in OkTools.Core.Bool3 left, in OkTools.Core.Bool3 right) { }
+        public static OkTools.Core.Bool3 operator |(in OkTools.Core.Bool3 left, in OkTools.Core.Bool3 right) { }
+    }
+    public struct Bool4 : System.IEquatable<OkTools.Core.Bool4>
+    {
+        public bool W;
+        public bool X;
+        public bool Y;
+        public bool Z;
+        public Bool4(bool v) { }
+        public Bool4(System.ValueTuple<bool, bool, bool, bool> xyzw) { }
+        public Bool4(bool x, bool y, bool z, bool w) { }
+        public System.Boolean& this[int index] { get; }
+        public static OkTools.Core.Bool4& False { get; }
+        public static OkTools.Core.Bool4& True { get; }
+        public bool All() { }
+        public bool Any() { }
+        public bool Equals(OkTools.Core.Bool4 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static bool operator !=(in OkTools.Core.Bool4 left, in OkTools.Core.Bool4 right) { }
+        public static OkTools.Core.Bool4 operator &(in OkTools.Core.Bool4 left, in OkTools.Core.Bool4 right) { }
+        public static bool operator ==(in OkTools.Core.Bool4 left, in OkTools.Core.Bool4 right) { }
+        public static OkTools.Core.Bool4 operator |(in OkTools.Core.Bool4 left, in OkTools.Core.Bool4 right) { }
+    }
+    public struct Byte2 : System.IEquatable<OkTools.Core.Byte2>
+    {
+        public byte X;
+        public byte Y;
+        public Byte2(byte v) { }
+        public Byte2(System.ValueTuple<byte, byte> xy) { }
+        public Byte2(byte x, byte y) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Byte& this[int index] { get; }
+        public static OkTools.Core.Byte2& MaxValue { get; }
+        public static OkTools.Core.Byte2& MinValue { get; }
+        public static OkTools.Core.Byte2& One { get; }
+        public static OkTools.Core.Byte2& Zero { get; }
+        public void Deconstruct(out byte x, out byte y) { }
+        public bool Equals(OkTools.Core.Byte2 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Byte2 op_Implicit(System.ValueTuple<byte, byte> xy) { }
+        public static OkTools.Core.Bool2 operator !=(in OkTools.Core.Byte2 left, in OkTools.Core.Byte2 right) { }
+        public static OkTools.Core.Byte2 operator *(in OkTools.Core.Byte2 a, byte d) { }
+        public static OkTools.Core.Byte2 operator *(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Byte2 operator +(in OkTools.Core.Byte2 a, byte d) { }
+        public static OkTools.Core.Byte2 operator +(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Byte2 operator -(in OkTools.Core.Byte2 i) { }
+        public static OkTools.Core.Byte2 operator -(in OkTools.Core.Byte2 a, byte d) { }
+        public static OkTools.Core.Byte2 operator -(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Byte2 operator /(in OkTools.Core.Byte2 a, byte d) { }
+        public static OkTools.Core.Byte2 operator /(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator <(byte a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Byte2 a, byte b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator <=(byte a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Byte2 a, byte b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator ==(in OkTools.Core.Byte2 left, in OkTools.Core.Byte2 right) { }
+        public static OkTools.Core.Bool2 operator >(byte a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Byte2 a, byte b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator >=(byte a, in OkTools.Core.Byte2 b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Byte2 a, byte b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Byte2 a, in OkTools.Core.Byte2 b) { }
+    }
+    public struct Byte3 : System.IEquatable<OkTools.Core.Byte3>
+    {
+        public byte X;
+        public byte Y;
+        public byte Z;
+        public Byte3(byte v) { }
+        public Byte3(System.ValueTuple<byte, byte, byte> xyz) { }
+        public Byte3(byte x, byte y, byte z) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Byte& this[int index] { get; }
+        public static OkTools.Core.Byte3& MaxValue { get; }
+        public static OkTools.Core.Byte3& MinValue { get; }
+        public static OkTools.Core.Byte3& One { get; }
+        public static OkTools.Core.Byte3& Zero { get; }
+        public void Deconstruct(out byte x, out byte y, out byte z) { }
+        public bool Equals(OkTools.Core.Byte3 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Byte3 op_Implicit(System.ValueTuple<byte, byte, byte> xyz) { }
+        public static OkTools.Core.Bool3 operator !=(in OkTools.Core.Byte3 left, in OkTools.Core.Byte3 right) { }
+        public static OkTools.Core.Byte3 operator *(in OkTools.Core.Byte3 a, byte d) { }
+        public static OkTools.Core.Byte3 operator *(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Byte3 operator +(in OkTools.Core.Byte3 a, byte d) { }
+        public static OkTools.Core.Byte3 operator +(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Byte3 operator -(in OkTools.Core.Byte3 i) { }
+        public static OkTools.Core.Byte3 operator -(in OkTools.Core.Byte3 a, byte d) { }
+        public static OkTools.Core.Byte3 operator -(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Byte3 operator /(in OkTools.Core.Byte3 a, byte d) { }
+        public static OkTools.Core.Byte3 operator /(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator <(byte a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Byte3 a, byte b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator <=(byte a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Byte3 a, byte b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator ==(in OkTools.Core.Byte3 left, in OkTools.Core.Byte3 right) { }
+        public static OkTools.Core.Bool3 operator >(byte a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Byte3 a, byte b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator >=(byte a, in OkTools.Core.Byte3 b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Byte3 a, byte b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Byte3 a, in OkTools.Core.Byte3 b) { }
+    }
+    public struct Byte4 : System.IEquatable<OkTools.Core.Byte4>
+    {
+        public byte W;
+        public byte X;
+        public byte Y;
+        public byte Z;
+        public Byte4(byte v) { }
+        public Byte4(System.ValueTuple<byte, byte, byte, byte> xyzw) { }
+        public Byte4(byte x, byte y, byte z, byte w) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Byte& this[int index] { get; }
+        public static OkTools.Core.Byte4& MaxValue { get; }
+        public static OkTools.Core.Byte4& MinValue { get; }
+        public static OkTools.Core.Byte4& One { get; }
+        public static OkTools.Core.Byte4& Zero { get; }
+        public void Deconstruct(out byte x, out byte y, out byte z, out byte w) { }
+        public bool Equals(OkTools.Core.Byte4 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Byte4 op_Implicit(System.ValueTuple<byte, byte, byte, byte> xyzw) { }
+        public static OkTools.Core.Bool4 operator !=(in OkTools.Core.Byte4 left, in OkTools.Core.Byte4 right) { }
+        public static OkTools.Core.Byte4 operator *(in OkTools.Core.Byte4 a, byte d) { }
+        public static OkTools.Core.Byte4 operator *(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Byte4 operator +(in OkTools.Core.Byte4 a, byte d) { }
+        public static OkTools.Core.Byte4 operator +(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Byte4 operator -(in OkTools.Core.Byte4 i) { }
+        public static OkTools.Core.Byte4 operator -(in OkTools.Core.Byte4 a, byte d) { }
+        public static OkTools.Core.Byte4 operator -(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Byte4 operator /(in OkTools.Core.Byte4 a, byte d) { }
+        public static OkTools.Core.Byte4 operator /(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator <(byte a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Byte4 a, byte b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator <=(byte a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Byte4 a, byte b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator ==(in OkTools.Core.Byte4 left, in OkTools.Core.Byte4 right) { }
+        public static OkTools.Core.Bool4 operator >(byte a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Byte4 a, byte b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator >=(byte a, in OkTools.Core.Byte4 b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Byte4 a, byte b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Byte4 a, in OkTools.Core.Byte4 b) { }
+    }
+    [System.Obsolete("Types with embedded references are not supported in this version of your compiler" +
+        ".", true)]
+    [System.Runtime.CompilerServices.CompilerFeatureRequired("RefStructs")]
+    [System.Runtime.CompilerServices.IsByRefLike]
+    public struct CharSpanBuilder
+    {
+        public CharSpanBuilder(char[] array) { }
+        public CharSpanBuilder(int capacity) { }
+        public CharSpanBuilder(System.Span<char> buffer) { }
+        public System.ArraySegment<char> Chars { get; }
+        public int Length { get; set; }
+        public System.Span<char> Span { get; }
+        public int UnusedLength { get; }
+        public System.Span<char> UnusedSpan { get; }
+        public void Append(char value) { }
+        public void Append(int value) { }
+        public void Append(System.ReadOnlySpan<char> value) { }
+        public void Append(char value, int count) { }
+        public int AppendTrunc(System.ReadOnlySpan<char> value) { }
+        public void Clear() { }
+        public void FillTo(char value, int width) { }
+        public override string ToString() { }
+        public void TrimEnd() { }
+        public bool TryAppend(char value) { }
+        public bool TryAppend(int value) { }
+        public bool TryAppend(System.ReadOnlySpan<char> value) { }
+        public bool TryAppend(char value, int count) { }
+        public static System.ReadOnlySpan<char> op_Implicit(OkTools.Core.CharSpanBuilder @this) { }
+    }
+    public class CliErrorException : System.Exception
+    {
+        public CliErrorException(OkTools.Core.CliExitCode code, string message) { }
+        public CliErrorException(OkTools.Core.CliExitCode code, string message, System.Exception innerException) { }
+        public OkTools.Core.CliExitCode Code { get; }
+    }
+    public enum CliExitCode
+    {
+        Success = 0,
+        Help = 0,
+        ErrorGeneral = 1,
+        ErrorUsage = 64,
+        ErrorDataErr = 65,
+        ErrorNoInput = 66,
+        ErrorNoUser = 67,
+        ErrorNoHost = 68,
+        ErrorUnavailable = 69,
+        ErrorSoftware = 70,
+        ErrorOsErr = 71,
+        ErrorOsFile = 72,
+        ErrorCantCreate = 73,
+        ErrorIoErr = 74,
+        ErrorTempFail = 75,
+        ErrorProtocol = 76,
+        ErrorNoPerm = 77,
+        ErrorConfig = 78,
+        ErrorCommandInvokedCannotExecute = 126,
+        ErrorCommandNotFound = 127,
+    }
+    public static class CliUtility
+    {
+        public static string ProgramName { get; }
+        public static string CommandLineArgsToString(System.Collections.Generic.IEnumerable<string> args) { }
+        public static System.Collections.Generic.IEnumerable<string> ParseCommandLineArgs(string commandLine) { }
+        public static System.Collections.Generic.IEnumerable<string> SelectStdinLines() { }
+    }
+    [System.Diagnostics.DebuggerDisplay("Count = {Count}")]
+    [System.Diagnostics.DebuggerTypeProxy(typeof(OkTools.Core.DefaultDictionary<TKey, TValue>.DebugView))]
+    public sealed class DefaultDictionary<TKey, TValue> : System.Collections.Generic.ICollection<System.Collections.Generic.KeyValuePair<TKey, TValue>>, System.Collections.Generic.IDictionary<TKey, TValue>, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<TKey, TValue>>, System.Collections.Generic.IReadOnlyDictionary<TKey, TValue>, System.Collections.IEnumerable
+        where TKey :  notnull
+    {
+        public DefaultDictionary(System.Func<TValue> getDefValue) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue) { }
+        public DefaultDictionary(TValue defValue) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, int capacity) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, int capacity) { }
+        public DefaultDictionary(TValue defValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary) { }
+        public DefaultDictionary(TValue defValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection) { }
+        public DefaultDictionary(TValue defValue, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(TValue defValue, int capacity) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TValue> getDefValue, int capacity, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(System.Func<TKey, TValue> getDefValue, int capacity, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(TValue defValue, System.Collections.Generic.IDictionary<TKey, TValue> dictionary, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(TValue defValue, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> collection, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public DefaultDictionary(TValue defValue, int capacity, System.Collections.Generic.IEqualityComparer<TKey>? comparer) { }
+        public int Count { get; }
+        public bool IsReadOnly { get; }
+        public TValue this[TKey key] { get; set; }
+        public System.Collections.Generic.ICollection<TKey> Keys { get; }
+        public System.Collections.Generic.ICollection<TValue> Values { get; }
+        public void Add(System.Collections.Generic.KeyValuePair<TKey, TValue> item) { }
+        public void Add(TKey key) { }
+        public void Add(TKey key, TValue value) { }
+        public void Clear() { }
+        public bool Contains(System.Collections.Generic.KeyValuePair<TKey, TValue> item) { }
+        public bool ContainsKey(TKey key) { }
+        public void CopyTo(System.Collections.Generic.KeyValuePair<TKey, TValue>[] array, int arrayIndex) { }
+        public System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<TKey, TValue>> GetEnumerator() { }
+        public bool Remove(System.Collections.Generic.KeyValuePair<TKey, TValue> item) { }
+        public bool Remove(TKey key) { }
+        public bool TryGetValue(TKey key, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TValue value) { }
+    }
+    public static class DelegateComparer
+    {
+        public static System.Collections.Generic.IComparer<T>? Create<T>(System.Func<T?, T?, int>? comparer) { }
+    }
+    public sealed class DelegateDisposable : System.IDisposable
+    {
+        public DelegateDisposable(System.Action disposeAction) { }
+        public void Dispose() { }
+    }
+    public enum DeleteMode
+    {
+        Normal = 0,
+        Soft = 1,
+    }
+    public class EmptyDictionary<TKey, TValue> : System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>>, System.Collections.Generic.IReadOnlyCollection<System.Collections.Generic.KeyValuePair<TKey, TValue>>, System.Collections.Generic.IReadOnlyDictionary<TKey, TValue>, System.Collections.IEnumerable
+        where TKey :  notnull
+    {
+        public static readonly System.Collections.Generic.IReadOnlyDictionary<TKey, TValue> Instance;
+        public int Count { get; }
+        public TValue this[TKey key] { get; }
+        public System.Collections.Generic.IEnumerable<TKey> Keys { get; }
+        public System.Collections.Generic.IEnumerable<TValue> Values { get; }
+        public bool ContainsKey(TKey key) { }
+        public System.Collections.Generic.IEnumerator<System.Collections.Generic.KeyValuePair<TKey, TValue>> GetEnumerator() { }
+        public bool TryGetValue(TKey key, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TValue value) { }
+    }
+    public static class EnumUtility
+    {
+        public static int GetCount<T>()
+            where T :  struct, System.Enum { }
+        public static System.Collections.Generic.IReadOnlyList<string> GetLowercaseNames<T>()
+            where T :  struct, System.Enum { }
+        public static System.Collections.Generic.IReadOnlyList<string> GetNames<T>()
+            where T :  struct, System.Enum { }
+        public static System.Collections.Generic.IReadOnlyList<T> GetValues<T>()
+            where T :  struct, System.Enum { }
+        public static T TryParse<T>(string enumName, T defaultValue = default)
+            where T :  struct, System.Enum { }
+        public static T TryParseIgnoreCase<T>(string enumName, T defaultValue = default)
+            where T :  struct, System.Enum { }
+        public static T? TryParseIgnoreCaseOr<T>(string enumName)
+            where T :  struct, System.Enum { }
+        public static T? TryParseOr<T>(string enumName)
+            where T :  struct, System.Enum { }
+    }
+    public static class Expando
+    {
+        public static void Add([System.Runtime.CompilerServices.Dynamic] object dst, object src) { }
+        [return: System.Runtime.CompilerServices.Dynamic]
+        public static object From(object obj) { }
+    }
+    public struct Int2 : System.IEquatable<OkTools.Core.Int2>
+    {
+        public int X;
+        public int Y;
+        public Int2(int v) { }
+        public Int2(System.ValueTuple<int, int> xy) { }
+        public Int2(int x, int y) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int32& this[int index] { get; }
+        public static OkTools.Core.Int2& MaxValue { get; }
+        public static OkTools.Core.Int2& MinValue { get; }
+        public static OkTools.Core.Int2& One { get; }
+        public static OkTools.Core.Int2& Zero { get; }
+        public void Deconstruct(out int x, out int y) { }
+        public bool Equals(OkTools.Core.Int2 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Int2 op_Implicit(System.ValueTuple<int, int> xy) { }
+        public static OkTools.Core.Bool2 operator !=(in OkTools.Core.Int2 left, in OkTools.Core.Int2 right) { }
+        public static OkTools.Core.Int2 operator *(in OkTools.Core.Int2 a, int d) { }
+        public static OkTools.Core.Int2 operator *(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int2 operator +(in OkTools.Core.Int2 a, int d) { }
+        public static OkTools.Core.Int2 operator +(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int2 operator -(in OkTools.Core.Int2 i) { }
+        public static OkTools.Core.Int2 operator -(in OkTools.Core.Int2 a, int d) { }
+        public static OkTools.Core.Int2 operator -(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int2 operator /(in OkTools.Core.Int2 a, int d) { }
+        public static OkTools.Core.Int2 operator /(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator <(int a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Int2 a, int b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator <=(int a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Int2 a, int b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator ==(in OkTools.Core.Int2 left, in OkTools.Core.Int2 right) { }
+        public static OkTools.Core.Bool2 operator >(int a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Int2 a, int b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator >=(int a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Int2 a, int b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+    }
+    public struct Int3 : System.IEquatable<OkTools.Core.Int3>
+    {
+        public int X;
+        public int Y;
+        public int Z;
+        public Int3(int v) { }
+        public Int3(System.ValueTuple<int, int, int> xyz) { }
+        public Int3(int x, int y, int z) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int32& this[int index] { get; }
+        public static OkTools.Core.Int3& MaxValue { get; }
+        public static OkTools.Core.Int3& MinValue { get; }
+        public static OkTools.Core.Int3& One { get; }
+        public static OkTools.Core.Int3& Zero { get; }
+        public void Deconstruct(out int x, out int y, out int z) { }
+        public bool Equals(OkTools.Core.Int3 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Int3 op_Implicit(System.ValueTuple<int, int, int> xyz) { }
+        public static OkTools.Core.Bool3 operator !=(in OkTools.Core.Int3 left, in OkTools.Core.Int3 right) { }
+        public static OkTools.Core.Int3 operator *(in OkTools.Core.Int3 a, int d) { }
+        public static OkTools.Core.Int3 operator *(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int3 operator +(in OkTools.Core.Int3 a, int d) { }
+        public static OkTools.Core.Int3 operator +(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int3 operator -(in OkTools.Core.Int3 i) { }
+        public static OkTools.Core.Int3 operator -(in OkTools.Core.Int3 a, int d) { }
+        public static OkTools.Core.Int3 operator -(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int3 operator /(in OkTools.Core.Int3 a, int d) { }
+        public static OkTools.Core.Int3 operator /(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator <(int a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Int3 a, int b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator <=(int a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Int3 a, int b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator ==(in OkTools.Core.Int3 left, in OkTools.Core.Int3 right) { }
+        public static OkTools.Core.Bool3 operator >(int a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Int3 a, int b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator >=(int a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Int3 a, int b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+    }
+    public struct Int4 : System.IEquatable<OkTools.Core.Int4>
+    {
+        public int W;
+        public int X;
+        public int Y;
+        public int Z;
+        public Int4(int v) { }
+        public Int4(System.ValueTuple<int, int, int, int> xyzw) { }
+        public Int4(int x, int y, int z, int w) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int32& this[int index] { get; }
+        public static OkTools.Core.Int4& MaxValue { get; }
+        public static OkTools.Core.Int4& MinValue { get; }
+        public static OkTools.Core.Int4& One { get; }
+        public static OkTools.Core.Int4& Zero { get; }
+        public void Deconstruct(out int x, out int y, out int z, out int w) { }
+        public bool Equals(OkTools.Core.Int4 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Int4 op_Implicit(System.ValueTuple<int, int, int, int> xyzw) { }
+        public static OkTools.Core.Bool4 operator !=(in OkTools.Core.Int4 left, in OkTools.Core.Int4 right) { }
+        public static OkTools.Core.Int4 operator *(in OkTools.Core.Int4 a, int d) { }
+        public static OkTools.Core.Int4 operator *(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int4 operator +(in OkTools.Core.Int4 a, int d) { }
+        public static OkTools.Core.Int4 operator +(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int4 operator -(in OkTools.Core.Int4 i) { }
+        public static OkTools.Core.Int4 operator -(in OkTools.Core.Int4 a, int d) { }
+        public static OkTools.Core.Int4 operator -(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int4 operator /(in OkTools.Core.Int4 a, int d) { }
+        public static OkTools.Core.Int4 operator /(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator <(int a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Int4 a, int b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator <=(int a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Int4 a, int b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator ==(in OkTools.Core.Int4 left, in OkTools.Core.Int4 right) { }
+        public static OkTools.Core.Bool4 operator >(int a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Int4 a, int b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator >=(int a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Int4 a, int b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+    }
+    public struct Long2 : System.IEquatable<OkTools.Core.Long2>
+    {
+        public long X;
+        public long Y;
+        public Long2(long v) { }
+        public Long2(System.ValueTuple<long, long> xy) { }
+        public Long2(long x, long y) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int64& this[int index] { get; }
+        public static OkTools.Core.Long2& MaxValue { get; }
+        public static OkTools.Core.Long2& MinValue { get; }
+        public static OkTools.Core.Long2& One { get; }
+        public static OkTools.Core.Long2& Zero { get; }
+        public void Deconstruct(out long x, out long y) { }
+        public bool Equals(OkTools.Core.Long2 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Long2 op_Implicit(System.ValueTuple<long, long> xy) { }
+        public static OkTools.Core.Bool2 operator !=(in OkTools.Core.Long2 left, in OkTools.Core.Long2 right) { }
+        public static OkTools.Core.Long2 operator *(in OkTools.Core.Long2 a, long d) { }
+        public static OkTools.Core.Long2 operator *(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Long2 operator +(in OkTools.Core.Long2 a, long d) { }
+        public static OkTools.Core.Long2 operator +(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Long2 operator -(in OkTools.Core.Long2 i) { }
+        public static OkTools.Core.Long2 operator -(in OkTools.Core.Long2 a, long d) { }
+        public static OkTools.Core.Long2 operator -(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Long2 operator /(in OkTools.Core.Long2 a, long d) { }
+        public static OkTools.Core.Long2 operator /(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator <(long a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Long2 a, long b) { }
+        public static OkTools.Core.Bool2 operator <(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator <=(long a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Long2 a, long b) { }
+        public static OkTools.Core.Bool2 operator <=(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator ==(in OkTools.Core.Long2 left, in OkTools.Core.Long2 right) { }
+        public static OkTools.Core.Bool2 operator >(long a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Long2 a, long b) { }
+        public static OkTools.Core.Bool2 operator >(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator >=(long a, in OkTools.Core.Long2 b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Long2 a, long b) { }
+        public static OkTools.Core.Bool2 operator >=(in OkTools.Core.Long2 a, in OkTools.Core.Long2 b) { }
+    }
+    public struct Long3 : System.IEquatable<OkTools.Core.Long3>
+    {
+        public long X;
+        public long Y;
+        public long Z;
+        public Long3(long v) { }
+        public Long3(System.ValueTuple<long, long, long> xyz) { }
+        public Long3(long x, long y, long z) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int64& this[int index] { get; }
+        public static OkTools.Core.Long3& MaxValue { get; }
+        public static OkTools.Core.Long3& MinValue { get; }
+        public static OkTools.Core.Long3& One { get; }
+        public static OkTools.Core.Long3& Zero { get; }
+        public void Deconstruct(out long x, out long y, out long z) { }
+        public bool Equals(OkTools.Core.Long3 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Long3 op_Implicit(System.ValueTuple<long, long, long> xyz) { }
+        public static OkTools.Core.Bool3 operator !=(in OkTools.Core.Long3 left, in OkTools.Core.Long3 right) { }
+        public static OkTools.Core.Long3 operator *(in OkTools.Core.Long3 a, long d) { }
+        public static OkTools.Core.Long3 operator *(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Long3 operator +(in OkTools.Core.Long3 a, long d) { }
+        public static OkTools.Core.Long3 operator +(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Long3 operator -(in OkTools.Core.Long3 i) { }
+        public static OkTools.Core.Long3 operator -(in OkTools.Core.Long3 a, long d) { }
+        public static OkTools.Core.Long3 operator -(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Long3 operator /(in OkTools.Core.Long3 a, long d) { }
+        public static OkTools.Core.Long3 operator /(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator <(long a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Long3 a, long b) { }
+        public static OkTools.Core.Bool3 operator <(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator <=(long a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Long3 a, long b) { }
+        public static OkTools.Core.Bool3 operator <=(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator ==(in OkTools.Core.Long3 left, in OkTools.Core.Long3 right) { }
+        public static OkTools.Core.Bool3 operator >(long a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Long3 a, long b) { }
+        public static OkTools.Core.Bool3 operator >(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator >=(long a, in OkTools.Core.Long3 b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Long3 a, long b) { }
+        public static OkTools.Core.Bool3 operator >=(in OkTools.Core.Long3 a, in OkTools.Core.Long3 b) { }
+    }
+    public struct Long4 : System.IEquatable<OkTools.Core.Long4>
+    {
+        public long W;
+        public long X;
+        public long Y;
+        public long Z;
+        public Long4(long v) { }
+        public Long4(System.ValueTuple<long, long, long, long> xyzw) { }
+        public Long4(long x, long y, long z, long w) { }
+        public bool IsOne { get; }
+        public bool IsZero { get; }
+        public System.Int64& this[int index] { get; }
+        public static OkTools.Core.Long4& MaxValue { get; }
+        public static OkTools.Core.Long4& MinValue { get; }
+        public static OkTools.Core.Long4& One { get; }
+        public static OkTools.Core.Long4& Zero { get; }
+        public void Deconstruct(out long x, out long y, out long z, out long w) { }
+        public bool Equals(OkTools.Core.Long4 other) { }
+        public override bool Equals(object? obj) { }
+        public override int GetHashCode() { }
+        public object ToDump() { }
+        public override string ToString() { }
+        public static OkTools.Core.Long4 op_Implicit(System.ValueTuple<long, long, long, long> xyzw) { }
+        public static OkTools.Core.Bool4 operator !=(in OkTools.Core.Long4 left, in OkTools.Core.Long4 right) { }
+        public static OkTools.Core.Long4 operator *(in OkTools.Core.Long4 a, long d) { }
+        public static OkTools.Core.Long4 operator *(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Long4 operator +(in OkTools.Core.Long4 a, long d) { }
+        public static OkTools.Core.Long4 operator +(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Long4 operator -(in OkTools.Core.Long4 i) { }
+        public static OkTools.Core.Long4 operator -(in OkTools.Core.Long4 a, long d) { }
+        public static OkTools.Core.Long4 operator -(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Long4 operator /(in OkTools.Core.Long4 a, long d) { }
+        public static OkTools.Core.Long4 operator /(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator <(long a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Long4 a, long b) { }
+        public static OkTools.Core.Bool4 operator <(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator <=(long a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Long4 a, long b) { }
+        public static OkTools.Core.Bool4 operator <=(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator ==(in OkTools.Core.Long4 left, in OkTools.Core.Long4 right) { }
+        public static OkTools.Core.Bool4 operator >(long a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Long4 a, long b) { }
+        public static OkTools.Core.Bool4 operator >(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator >=(long a, in OkTools.Core.Long4 b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Long4 a, long b) { }
+        public static OkTools.Core.Bool4 operator >=(in OkTools.Core.Long4 a, in OkTools.Core.Long4 b) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{_path}")]
+    [System.Runtime.Serialization.DataContract]
+    public class NPath : System.IComparable, System.IEquatable<OkTools.Core.NPath>
+    {
+        public NPath(string path) { }
+        public System.IO.FileAttributes Attributes { get; set; }
+        public int Depth { get; }
+        public string DriveLetter { get; }
+        public string[] Elements { get; }
+        public string Extension { get; }
+        public System.ReadOnlySpan<char> ExtensionSpan { get; }
+        public string ExtensionWithDot { get; }
+        public System.IO.FileInfo FileInfo { get; }
+        public string FileName { get; }
+        public System.ReadOnlySpan<char> FileNameSpan { get; }
+        public string FileNameWithoutExtension { get; }
+        public bool IsCurrentDir { get; }
+        public bool IsRelative { get; }
+        public bool IsRoot { get; }
+        public bool IsSymbolicLink { get; }
+        public bool IsUNC { get; }
+        public OkTools.Core.NPath Parent { get; }
+        public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> RecursiveParents { get; }
+        public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> SelfAndRecursiveParents { get; }
+        public string UNCServerName { get; }
+        public static OkTools.Core.NPath CurrentDirectory { get; }
+        public static OkTools.Core.NPath HomeDirectory { get; }
+        public static OkTools.Core.NPath LocalAppDataDirectory { get; }
+        public static OkTools.Core.NPath ProgramFilesDirectory { get; }
+        public static OkTools.Core.NPath RoamingAppDataDirectory { get; }
+        public static OkTools.Core.NPath SystemTemp { get; }
+        public static OkTools.Core.NPath SystemTempDirectory { get; }
+        public OkTools.Core.NPath ChangeExtension(string extension) { }
+        public OkTools.Core.NPath ChangeFilename(string newFilename) { }
+        public OkTools.Core.NPath ChangeFilenameOnly(System.Func<string, string> filenameOnlyModifier) { }
+        public OkTools.Core.NPath ChangeFilenameOnly(string filenameOnly) { }
+        public OkTools.Core.NPath Combine(OkTools.Core.NPath append) { }
+        public OkTools.Core.NPath Combine(params OkTools.Core.NPath[] append) { }
+        public OkTools.Core.NPath Combine(string append) { }
+        public OkTools.Core.NPath Combine(string append1, string append2) { }
+        public int CompareTo(object obj) { }
+        public OkTools.Core.NPath[] Contents(bool recurse = false) { }
+        public OkTools.Core.NPath[] Contents(string filter, bool recurse = false) { }
+        public OkTools.Core.NPath Copy(OkTools.Core.NPath dest) { }
+        public OkTools.Core.NPath Copy(OkTools.Core.NPath dest, System.Func<OkTools.Core.NPath, bool> fileFilter) { }
+        public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> CopyFiles(OkTools.Core.NPath destination, bool recurse, System.Func<OkTools.Core.NPath, bool> fileFilter = null) { }
+        public OkTools.Core.NPath CreateDirectory() { }
+        public OkTools.Core.NPath CreateDirectory(OkTools.Core.NPath directory) { }
+        public OkTools.Core.NPath CreateFile() { }
+        public OkTools.Core.NPath CreateFile(OkTools.Core.NPath file) { }
+        public OkTools.Core.NPath CreateSymbolicLink(OkTools.Core.NPath targetPath, bool targetIsFile = true) { }
+        public void Delete(OkTools.Core.DeleteMode deleteMode = 0) { }
+        public OkTools.Core.NPath DeleteContents() { }
+        public OkTools.Core.NPath DeleteIfExists(OkTools.Core.DeleteMode deleteMode = 0) { }
+        public OkTools.Core.NPath[] Directories(bool recurse = false) { }
+        public OkTools.Core.NPath[] Directories(string filter, bool recurse = false) { }
+        public bool DirectoryExists(OkTools.Core.NPath append = null) { }
+        public OkTools.Core.NPath DirectoryMustExist() { }
+        public OkTools.Core.NPath EnsureDirectoryExists(OkTools.Core.NPath append = null) { }
+        public OkTools.Core.NPath EnsureParentDirectoryExists() { }
+        public bool Equals(OkTools.Core.NPath p) { }
+        public override bool Equals(object obj) { }
+        public bool Exists(OkTools.Core.NPath append = null) { }
+        public bool FileExists(OkTools.Core.NPath append = null) { }
+        public OkTools.Core.NPath FileMustExist() { }
+        public OkTools.Core.NPath[] Files(bool recurse = false) { }
+        public OkTools.Core.NPath[] Files(string[] extensions, bool recurse = false) { }
+        public OkTools.Core.NPath[] Files(string filter, bool recurse = false) { }
+        public OkTools.Core.NPath FindFileInSelfAndParents(string filename) { }
+        public long GetFileSize() { }
+        public override int GetHashCode() { }
+        public System.DateTime GetLastWriteTimeUtc() { }
+        public bool HasDirectory(string dir) { }
+        public bool HasExtension(string extension) { }
+        public bool HasExtension(params string[] extensions) { }
+        public string InQuotes(OkTools.Core.SlashMode slashMode = 1) { }
+        public string InQuotesResolved(OkTools.Core.SlashMode slashMode = 1) { }
+        public bool IsChildOf(OkTools.Core.NPath potentialBasePath) { }
+        public bool IsSameAsOrChildOf(OkTools.Core.NPath potentialBasePath) { }
+        public OkTools.Core.NPath MakeAbsolute(OkTools.Core.NPath base = null) { }
+        public OkTools.Core.NPath MakeRelative() { }
+        public OkTools.Core.NPath MakeRelative(OkTools.Core.NPath relativeTo) { }
+        public OkTools.Core.NPath Move(OkTools.Core.NPath dest) { }
+        public OkTools.Core.NPath Move(OkTools.Core.NPath dest, bool overwrite) { }
+        public OkTools.Core.NPath Move(string dest, bool overwrite) { }
+        public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> MoveFiles(OkTools.Core.NPath destination, bool recurse, System.Func<OkTools.Core.NPath, bool> fileFilter = null) { }
+        public OkTools.Core.NPath MustExist() { }
+        public System.IO.Stream OpenReadShared() { }
+        public System.IO.Stream OpenReadWriteShared() { }
+        public System.IO.StreamReader OpenReaderShared() { }
+        public OkTools.Core.NPath ParentContaining(OkTools.Core.NPath needle) { }
+        public OkTools.Core.NPath? ParentContaining(OkTools.Core.NPath needle, bool returnAppended) { }
+        public OkTools.Core.NPath? ParentContaining(string needle, bool returnAppended) { }
+        public byte[] ReadAllBytes() { }
+        public string[] ReadAllLines() { }
+        public string ReadAllText() { }
+        public System.Collections.Generic.IEnumerable<string> ReadLines() { }
+        public System.Text.RegularExpressions.Match RegexContentsMatch(string rxPattern) { }
+        public System.Text.RegularExpressions.Match RegexContentsMatch(System.Text.RegularExpressions.Regex rx) { }
+        public System.Text.RegularExpressions.MatchCollection RegexContentsMatches(string rxPattern) { }
+        public System.Text.RegularExpressions.MatchCollection RegexContentsMatches(System.Text.RegularExpressions.Regex rx) { }
+        public OkTools.Core.NPath RelativeTo(OkTools.Core.NPath path) { }
+        public OkTools.Core.NPath ReplaceAllText(string contents) { }
+        public OkTools.Core.NPath ResolveWithFileSystem() { }
+        public OkTools.Core.NPath[] SafeDirectories(bool recurse = false) { }
+        public OkTools.Core.NPath[] SafeDirectories(string filter, bool recurse = false) { }
+        public OkTools.Core.NPath? SelfOrParentContaining(OkTools.Core.NPath needle, bool returnAppended = false) { }
+        public OkTools.Core.NPath SetLastWriteTimeUtc(System.DateTime lastWriteTimeUtc) { }
+        public OkTools.Core.NPath ShellExpand() { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "basePath",
+                "subPath"})]
+        public System.ValueTuple<OkTools.Core.NPath, OkTools.Core.NPath> SplitAtElement(int elementIndex) { }
+        public OkTools.Core.NPath TildeCollapse() { }
+        public OkTools.Core.NPath TildeExpand() { }
+        public string ToCliArgString(OkTools.Core.SlashMode slashMode = 1) { }
+        public string ToDisplayString(OkTools.Core.NPath? tryRelativeTo) { }
+        public override string ToString() { }
+        public string ToString(OkTools.Core.SlashMode slashMode) { }
+        public OkTools.Core.NPath? TryFindFileInSelfAndParents(string filename) { }
+        public OkTools.Core.NPath WriteAllBytes(byte[] bytes) { }
+        public OkTools.Core.NPath WriteAllLines(string[] contents) { }
+        public OkTools.Core.NPath WriteAllText(string contents) { }
+        public static OkTools.Core.NPath CreateTempDirectory(string prefix = "") { }
+        public static System.IDisposable SetCurrentDirectory(OkTools.Core.NPath directory) { }
+        public static System.IDisposable WithFileSystem(OkTools.Core.NPath.FileSystem fileSystem) { }
+        [System.Obsolete("Obsolete. If you need this behaviour you can implement a custom NPath.FileSystem " +
+            "and install it with NPath.WithFileSystem()", true)]
+        public static System.IDisposable WithFrozenCurrentDirectory(OkTools.Core.NPath frozenCurrentDirectory) { }
+        public static string op_Implicit(OkTools.Core.NPath path) { }
+        public static OkTools.Core.NPath op_Implicit(string input) { }
+        public static bool operator !=(OkTools.Core.NPath a, OkTools.Core.NPath b) { }
+        public static bool operator <(OkTools.Core.NPath? left, OkTools.Core.NPath? right) { }
+        public static bool operator <=(OkTools.Core.NPath? left, OkTools.Core.NPath? right) { }
+        public static bool operator ==(OkTools.Core.NPath a, OkTools.Core.NPath b) { }
+        public static bool operator >(OkTools.Core.NPath? left, OkTools.Core.NPath? right) { }
+        public static bool operator >=(OkTools.Core.NPath? left, OkTools.Core.NPath? right) { }
+        public abstract class FileSystem : System.IDisposable
+        {
+            protected FileSystem() { }
+            public static OkTools.Core.NPath.FileSystem Active { get; }
+            public abstract void CreateSymbolicLink(OkTools.Core.NPath fromPath, OkTools.Core.NPath targetPath, bool targetIsFile);
+            public abstract void Directory_CreateDirectory(OkTools.Core.NPath path);
+            public abstract void Directory_Delete(OkTools.Core.NPath path, bool b);
+            public abstract bool Directory_Exists(OkTools.Core.NPath path);
+            public abstract OkTools.Core.NPath Directory_GetCurrentDirectory();
+            public abstract OkTools.Core.NPath[] Directory_GetDirectories(OkTools.Core.NPath path, string filter, System.IO.SearchOption searchOptions);
+            public abstract OkTools.Core.NPath[] Directory_GetFiles(OkTools.Core.NPath path, string filter, System.IO.SearchOption searchOptions);
+            public abstract void Directory_Move(OkTools.Core.NPath path, OkTools.Core.NPath destPath);
+            public abstract void Directory_SetCurrentDirectory(OkTools.Core.NPath directoryPath);
+            public virtual void Dispose() { }
+            public abstract void File_Copy(OkTools.Core.NPath path, OkTools.Core.NPath destinationPath, bool overWrite);
+            public abstract void File_Delete(OkTools.Core.NPath path);
+            public abstract bool File_Exists(OkTools.Core.NPath path);
+            public abstract System.IO.FileAttributes File_GetAttributes(OkTools.Core.NPath path);
+            public abstract System.DateTime File_GetLastWriteTimeUtc(OkTools.Core.NPath path);
+            public abstract long File_GetSize(OkTools.Core.NPath path);
+            public abstract void File_Move(OkTools.Core.NPath path, OkTools.Core.NPath destinationPath);
+            public abstract byte[] File_ReadAllBytes(OkTools.Core.NPath path);
+            public abstract string[] File_ReadAllLines(OkTools.Core.NPath path);
+            public abstract string File_ReadAllText(OkTools.Core.NPath path);
+            public abstract void File_SetAttributes(OkTools.Core.NPath path, System.IO.FileAttributes value);
+            public abstract void File_SetLastWriteTimeUtc(OkTools.Core.NPath path, System.DateTime lastWriteTimeUtc);
+            public abstract void File_WriteAllBytes(OkTools.Core.NPath path, byte[] bytes);
+            public abstract void File_WriteAllLines(OkTools.Core.NPath path, string[] contents);
+            public abstract void File_WriteAllText(OkTools.Core.NPath path, string contents);
+            public abstract bool IsSymbolicLink(OkTools.Core.NPath path);
+            public abstract OkTools.Core.NPath Resolve(OkTools.Core.NPath path);
+        }
+        public abstract class RelayingFileSystem : OkTools.Core.NPath.FileSystem
+        {
+            protected RelayingFileSystem(OkTools.Core.NPath.FileSystem baseFileSystem) { }
+            protected OkTools.Core.NPath.FileSystem BaseFileSystem { get; }
+            public override void CreateSymbolicLink(OkTools.Core.NPath fromPath, OkTools.Core.NPath targetPath, bool targetIsFile) { }
+            public override void Directory_CreateDirectory(OkTools.Core.NPath path) { }
+            public override void Directory_Delete(OkTools.Core.NPath path, bool b) { }
+            public override bool Directory_Exists(OkTools.Core.NPath path) { }
+            public override OkTools.Core.NPath Directory_GetCurrentDirectory() { }
+            public override OkTools.Core.NPath[] Directory_GetDirectories(OkTools.Core.NPath path, string filter, System.IO.SearchOption searchOptions) { }
+            public override OkTools.Core.NPath[] Directory_GetFiles(OkTools.Core.NPath path, string filter, System.IO.SearchOption searchOptions) { }
+            public override void Directory_Move(OkTools.Core.NPath path, OkTools.Core.NPath destPath) { }
+            public override void Directory_SetCurrentDirectory(OkTools.Core.NPath directoryPath) { }
+            public override void File_Copy(OkTools.Core.NPath path, OkTools.Core.NPath destinationPath, bool overWrite) { }
+            public override void File_Delete(OkTools.Core.NPath path) { }
+            public override bool File_Exists(OkTools.Core.NPath path) { }
+            public override System.IO.FileAttributes File_GetAttributes(OkTools.Core.NPath path) { }
+            public override System.DateTime File_GetLastWriteTimeUtc(OkTools.Core.NPath path) { }
+            public override long File_GetSize(OkTools.Core.NPath path) { }
+            public override void File_Move(OkTools.Core.NPath path, OkTools.Core.NPath destinationPath) { }
+            public override byte[] File_ReadAllBytes(OkTools.Core.NPath path) { }
+            public override string[] File_ReadAllLines(OkTools.Core.NPath path) { }
+            public override string File_ReadAllText(OkTools.Core.NPath path) { }
+            public override void File_SetAttributes(OkTools.Core.NPath path, System.IO.FileAttributes value) { }
+            public override void File_SetLastWriteTimeUtc(OkTools.Core.NPath path, System.DateTime lastWriteTimeUtc) { }
+            public override void File_WriteAllBytes(OkTools.Core.NPath path, byte[] bytes) { }
+            public override void File_WriteAllLines(OkTools.Core.NPath path, string[] contents) { }
+            public override void File_WriteAllText(OkTools.Core.NPath path, string contents) { }
+            public override bool IsSymbolicLink(OkTools.Core.NPath path) { }
+            public override OkTools.Core.NPath Resolve(OkTools.Core.NPath path) { }
+        }
+    }
+    public static class NPathExtensions
+    {
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.NPath> Copy(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> self, OkTools.Core.NPath dest) { }
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.NPath> Delete(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> self) { }
+        public static System.Collections.Generic.IEnumerable<string> InQuotes(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> self, OkTools.Core.SlashMode slashMode = 1) { }
+        public static string[] InQuotesResolved(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> paths) { }
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.NPath> Move(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> self, OkTools.Core.NPath dest) { }
+        public static OkTools.Core.NPath[] ResolveWithFileSystem(this System.Collections.Generic.IEnumerable<OkTools.Core.NPath> paths) { }
+        public static OkTools.Core.NPath ToNPath(this string path) { }
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.NPath> ToNPaths(this System.Collections.Generic.IEnumerable<string> paths) { }
+    }
+    [System.Runtime.Versioning.SupportedOSPlatform("windows5.1.2600")]
+    public static class NativeWindows
+    {
+        public static string GetProcessCommandLine(int processId) { }
+        public static string GetProcessCurrentDirectory(int processId) { }
+        public static string? SafeGetProcessCommandLine(int processId) { }
+        public static string? SafeGetProcessCurrentDirectory(int processId) { }
+    }
+    [System.Runtime.Versioning.SupportedOSPlatform("windows5.1.2600")]
+    public class NtStatusException : System.Exception { }
+    [System.Diagnostics.DebuggerDisplay("count:{Count}, capacity:{Capacity}")]
+    public class OkDeList<T> : System.Collections.Generic.IEnumerable<T>, System.Collections.Generic.IReadOnlyCollection<T>, System.Collections.Generic.IReadOnlyList<T>, System.Collections.IEnumerable
+    {
+        public OkDeList(int capacity) { }
+        public OkDeList(int? capacity, int count) { }
+        public bool Any { get; }
+        [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "seg0",
+                "seg1"})]
+        public System.ValueTuple<System.ArraySegment<T>, System.ArraySegment<T>> AsArraySegments { get; }
+        [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "mem0",
+                "mem1"})]
+        public System.ValueTuple<System.Memory<T>, System.Memory<T>> AsMemories { get; }
+        public OkTools.Core.SpanPair<T> AsSpans { get; }
+        public int Capacity { get; set; }
+        public int Count { get; set; }
+        public bool IsEmpty { get; }
+        public T& this[int index] { get; }
+        public void Add(T item) { }
+        public void AddFront(T item) { }
+        public void AddRange(System.ReadOnlySpan<T> items) { }
+        public void AddRange(params T[] items) { }
+        public void AddRangeFront(System.ReadOnlySpan<T> items) { }
+        public void AddRangeFront(params T[] items) { }
+        public void Clear() { }
+        public void Clear(int trimCapacityTo) { }
+        public void DropBack() { }
+        public void DropFront() { }
+        public void Fill(in T value) { }
+        public void FillDefault() { }
+        public System.Collections.Generic.IEnumerator<T> GetEnumerator() { }
+        public T PopBack() { }
+        public T PopFront() { }
+        public void RemoveAtAndSwapBack(int index) { }
+        public void RemoveAtAndSwapFront(int index) { }
+        public void Rotate(int count) { }
+        public void SetCountDirect(int count) { }
+        public OkTools.Core.SpanPair<T> Slice(int start, int length) { }
+        public void TrimCapacity(int minimum) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("count:{Count}, capacity:{Capacity}")]
+    public class OkList<T> : System.Collections.Generic.IEnumerable<T>, System.Collections.Generic.IReadOnlyCollection<T>, System.Collections.Generic.IReadOnlyList<T>, System.Collections.IEnumerable
+    {
+        public OkList(int capacity) { }
+        public OkList(int? capacity, int count) { }
+        public bool Any { get; }
+        public System.ArraySegment<T> AsArraySegment { get; }
+        public System.Memory<T> AsMemory { get; }
+        public System.Span<T> AsSpan { get; }
+        public int Capacity { get; set; }
+        public int Count { get; set; }
+        public bool IsEmpty { get; }
+        public T& this[int index] { get; }
+        public void Add(T item) { }
+        public void AddRange(System.ReadOnlySpan<T> items) { }
+        public void AddRange(params T[] items) { }
+        public void Clear() { }
+        public void Clear(int trimCapacityTo) { }
+        public void DropBack() { }
+        public void Fill(in T value) { }
+        public void FillDefault() { }
+        public System.Collections.Generic.IEnumerator<T> GetEnumerator() { }
+        public T PopBack() { }
+        public void RemoveAtAndSwapBack(int index) { }
+        public void SetCountDirect(int count) { }
+        public System.Span<T> Slice(int start, int length) { }
+        public void TrimCapacity(int minimum) { }
+    }
+    public static class PatchUtility
+    {
+        public static bool IsDiff(string candidate) { }
+    }
+    public static class SafeFile
+    {
+        public const string BakExtension = ".bak~";
+        public const string TmpExtension = ".tmp~";
+        public static void AtomicWrite(string path, System.Action<string> write) { }
+        public static void ForceDeleteFile(string path) { }
+        public static void SetReadOnly(string path, bool set = true) { }
+    }
+    public static class ShellExecUtility
+    {
+        public static bool ConfigureProcessExitToAlsoKillChildProcesses() { }
+        public static int Execute(string exePath, System.Collections.Generic.IEnumerable<object>? processArgs, string? workingDirectory, System.Action<string, OkTools.Core.ShellExecUtility.StdChannel>? onLine, System.Collections.Generic.IEnumerable<string>? stdinLines = null) { }
+        public static int Execute(string exePath, System.Collections.Generic.IEnumerable<object>? processArgs, string workingDirectory, System.Collections.Generic.ICollection<string> stdout, System.Collections.Generic.ICollection<string> stderr, System.Collections.Generic.IEnumerable<string>? stdin = null) { }
+        public static OkTools.Core.NPath ResolveExecutablePath(string path, string? pathEnv = null) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "exe",
+                "args"})]
+        public static System.ValueTuple<OkTools.Core.NPath, string[]> ResolveShellCommand(string path) { }
+        public static OkTools.Core.NPath? TryResolveExecutableExtension(string basePath) { }
+        public static OkTools.Core.NPath? TryResolveExecutablePath(string pathToResolve, string? pathEnv = null) { }
+        public enum StdChannel
+        {
+            Stdout = 0,
+            Stderr = 1,
+        }
+    }
+    public enum SlashMode
+    {
+        Native = 0,
+        Forward = 1,
+        Backward = 2,
+    }
+    [System.Obsolete("Types with embedded references are not supported in this version of your compiler" +
+        ".", true)]
+    [System.Runtime.CompilerServices.CompilerFeatureRequired("RefStructs")]
+    [System.Runtime.CompilerServices.IsByRefLike]
+    public readonly struct SpanPair<T>
+    {
+        public readonly System.Span<T> Span0;
+        public readonly System.Span<T> Span1;
+        public SpanPair(System.Span<T> span0, System.Span<T> span1 = default) { }
+        public bool Any { get; }
+        public bool IsEmpty { get; }
+        public T& this[int index] { get; }
+        public int Length { get; }
+        public void Clear() { }
+        public override bool Equals(object? obj) { }
+        public void Fill(T value) { }
+        public OkTools.Core.SpanPair<T>.Enumerator GetEnumerator() { }
+        public override int GetHashCode() { }
+        public OkTools.Core.SpanPair<T> Slice(int start) { }
+        public OkTools.Core.SpanPair<T> Slice(int start, int length) { }
+        public T[] ToArray() { }
+        public override string ToString() { }
+        public static bool operator !=(OkTools.Core.SpanPair<T> left, OkTools.Core.SpanPair<T> right) { }
+        public static bool operator ==(OkTools.Core.SpanPair<T> left, OkTools.Core.SpanPair<T> right) { }
+        [System.Obsolete("Types with embedded references are not supported in this version of your compiler" +
+            ".", true)]
+        [System.Runtime.CompilerServices.CompilerFeatureRequired("RefStructs")]
+        [System.Runtime.CompilerServices.IsByRefLike]
+        public struct Enumerator
+        {
+            public T& Current { get; }
+            public bool MoveNext() { }
+        }
+    }
+    public static class StaticUtility
+    {
+        public static OkTools.Core.Int2 Abs(in OkTools.Core.Int2 a) { }
+        public static OkTools.Core.Int3 Abs(in OkTools.Core.Int3 a) { }
+        public static OkTools.Core.Int4 Abs(in OkTools.Core.Int4 a) { }
+        public static T[] Arr<T>(params T[] items) { }
+        public static int LengthSq(in OkTools.Core.Int2 a) { }
+        public static int LengthSq(in OkTools.Core.Int3 a) { }
+        public static int LengthSq(in OkTools.Core.Int4 a) { }
+        public static int LengthSq(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static int LengthSq(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static int LengthSq(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int2 Max(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Max(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Max(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static void Maximize(ref OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static void Maximize(ref OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static void Maximize(ref OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static int MaximizeWith(ref this int @this, int other) { }
+        public static OkTools.Core.Int2 Midpoint(in OkTools.Core.Int2 a) { }
+        public static OkTools.Core.Int3 Midpoint(in OkTools.Core.Int3 a) { }
+        public static OkTools.Core.Int4 Midpoint(in OkTools.Core.Int4 a) { }
+        public static OkTools.Core.Int2 Midpoint(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Midpoint(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Midpoint(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int2 Min(in OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Min(in OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Min(in OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static void Minimize(ref OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static void Minimize(ref OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static void Minimize(ref OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static int MinimizeWith(ref this int @this, int other) { }
+    }
+    public class StreamableBuffer<T> : System.Buffers.IBufferWriter<T>
+        where T :  struct
+    {
+        public StreamableBuffer(int capacity = 128) { }
+        public bool HasUnread { get; }
+        public bool HasWritable { get; }
+        public int TotalCapacity { get; }
+        public int UnreadCount { get; }
+        public System.Memory<T> UnreadMemory { get; }
+        public System.Span<T> UnreadSpan { get; }
+        public int WritableCount { get; }
+        public System.Memory<T> WritableMemory { get; }
+        public System.Span<T> WritableSpan { get; }
+        public void AdvanceReader() { }
+        public void AdvanceWriter(int count) { }
+        public System.Memory<T> GetUnreadMemory(int size) { }
+        public System.Span<T> GetUnreadSpan(int size) { }
+        public System.Memory<T> GetWritableMemory(int size) { }
+        public System.Span<T> GetWritableSpan(int size) { }
+        public T Peek() { }
+        public T Read() { }
+        public void Reset() { }
+        public void Reset(int capacity) { }
+        public void SeekReader(int offset) { }
+        public T? TryPeek() { }
+        public T TryPeek(T defValue) { }
+        public void Write(System.ReadOnlyMemory<T> memory) { }
+        public void Write(T value) { }
+    }
+    [System.Diagnostics.DebuggerDisplay("{ToDebugString()}")]
+    public readonly struct StringSegment : System.IEquatable<OkTools.Core.StringSegment>, System.IEquatable<System.ReadOnlyMemory<char>>, System.IEquatable<System.ReadOnlySpan<char>>, System.IEquatable<string>
+    {
+        public static readonly OkTools.Core.StringSegment Empty;
+        public StringSegment(string str) { }
+        public StringSegment(string str, int offset, int length) { }
+        public StringSegment(in OkTools.Core.StringSegment src, int start, int length) { }
+        public bool Any { get; }
+        public bool IsEmpty { get; }
+        public char this[int index] { get; }
+        public int Length { get; }
+        public int SegmentEnd { get; }
+        public int SegmentStart { get; }
+        public System.ReadOnlySpan<char> Span { get; }
+        public string String { get; }
+        public System.ReadOnlySpan<char> AsSpan(int start) { }
+        public System.ReadOnlySpan<char> AsSpan(int start, int length) { }
+        public int Compare(OkTools.Core.StringSegment other, System.StringComparison comparison = 4) { }
+        public int Compare(System.ReadOnlyMemory<char> other, System.StringComparison comparison = 4) { }
+        public int Compare(System.ReadOnlySpan<char> other, System.StringComparison comparison = 4) { }
+        public int Compare(string other, System.StringComparison comparison = 4) { }
+        public bool EndsWith(char value) { }
+        public bool EndsWith(System.ReadOnlySpan<char> value) { }
+        public bool EndsWith(System.ReadOnlySpan<char> value, System.StringComparison comparison) { }
+        public bool Equals(OkTools.Core.StringSegment other) { }
+        public bool Equals(System.ReadOnlyMemory<char> other) { }
+        public bool Equals(System.ReadOnlySpan<char> other) { }
+        public override bool Equals(object? obj) { }
+        public bool Equals(string? other) { }
+        public bool Equals(OkTools.Core.StringSegment other, System.StringComparison comparison) { }
+        public bool Equals(System.ReadOnlyMemory<char> other, System.StringComparison comparison) { }
+        public bool Equals(System.ReadOnlySpan<char> other, System.StringComparison comparison) { }
+        public bool Equals(string other, System.StringComparison comparison) { }
+        public override int GetHashCode() { }
+        public int GetTrimEnd() { }
+        public int GetTrimStart() { }
+        public int IndexOf(char value) { }
+        public int IndexOf(string value) { }
+        public int IndexOf(char value, int startIndex) { }
+        public int IndexOf(string value, int startIndex) { }
+        public int IndexOf(char value, int startIndex, int count) { }
+        public int IndexOf(string value, int startIndex, int count) { }
+        public System.Text.RegularExpressions.Match Match(System.Text.RegularExpressions.Regex regex) { }
+        public OkTools.Core.StringSegment Slice(int start, int length) { }
+        public bool StartsWith(char value) { }
+        public bool StartsWith(System.ReadOnlySpan<char> value) { }
+        public bool StartsWith(System.ReadOnlySpan<char> value, System.StringComparison comparison) { }
+        public string ToDebugString() { }
+        public override string ToString() { }
+        public OkTools.Core.StringSegment Trim() { }
+        public OkTools.Core.StringSegment TrimEnd() { }
+        public OkTools.Core.StringSegment TrimStart() { }
+        public static System.ReadOnlySpan<char> op_Implicit(OkTools.Core.StringSegment value) { }
+        public static OkTools.Core.StringSegment op_Implicit(string value) { }
+        public static bool operator !=(OkTools.Core.StringSegment left, OkTools.Core.StringSegment right) { }
+        public static bool operator !=(OkTools.Core.StringSegment left, string right) { }
+        public static bool operator !=(string left, OkTools.Core.StringSegment right) { }
+        public static bool operator ==(OkTools.Core.StringSegment left, OkTools.Core.StringSegment right) { }
+        public static bool operator ==(OkTools.Core.StringSegment left, string right) { }
+        public static bool operator ==(string left, OkTools.Core.StringSegment right) { }
+    }
+    public static class StringSegmentOperations
+    {
+        public static void Append(this System.Text.StringBuilder @this, OkTools.Core.StringSegment segment) { }
+    }
+    public static class Sys
+    {
+        public static readonly OkTools.Core.SysArchitecture Architecture;
+        public static readonly OkTools.Core.SysPlatform Platform;
+        public static bool IsSudo() { }
+    }
+    public enum SysArchitecture : byte
+    {
+        X64 = 0,
+        Arm64 = 1,
+    }
+    public enum SysPlatform : byte
+    {
+        Windows = 0,
+        Mac = 1,
+        Linux = 2,
+    }
+    public static class TextUtility
+    {
+        public static OkTools.Core.TextUtility.MacroReplacer CreateMacroReplacer([System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Macro",
+                "WriteAction"})] System.Collections.Generic.IEnumerable<System.ValueTuple<string, System.Action<System.IO.TextWriter>>> replacers) { }
+        public static OkTools.Core.TextUtility.MacroReplacer CreateMacroReplacer([System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Macro",
+                "Replacement"})] System.Collections.Generic.IEnumerable<System.ValueTuple<string, string>> replacements) { }
+        public static OkTools.Core.TextUtility.MacroReplacer CreateMacroReplacer<TUserData>([System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "name",
+                "userData"})] System.Collections.Generic.IEnumerable<System.ValueTuple<string, TUserData>> macros, System.Action<System.IO.TextWriter, TUserData> applyAction) { }
+        public static string DetectEolType(string text, int stopAfterWindow = 50) { }
+        public static bool IsValidMacroName(OkTools.Core.StringSegment macroName) { }
+        public static bool IsWildcardPattern(string patternToTest) { }
+        public static OkTools.Core.StringSegment ReplaceMacros(OkTools.Core.StringSegment source, OkTools.Core.TextUtility.MacroReplacer replacer) { }
+        public static OkTools.Core.StringSegment ReplaceMacros(OkTools.Core.StringSegment source, [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Macro",
+                "WriteAction"})] System.ValueTuple<string, System.Action<System.IO.TextWriter>>[] replacers) { }
+        public static OkTools.Core.StringSegment ReplaceMacros(OkTools.Core.StringSegment source, [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "Macro",
+                "Replacement"})] System.ValueTuple<string, string>[] replacements) { }
+        public static int ReplaceMacros(OkTools.Core.StringSegment source, System.IO.TextWriter writer, OkTools.Core.TextUtility.MacroReplacer replacer) { }
+        public static int ToFourCc(string text) { }
+        public static System.Text.RegularExpressions.Regex WildcardToRegex(string wildcard, System.Text.RegularExpressions.RegexOptions rxOptions = 1) { }
+        public static string WildcardToRegexText(string wildcard) { }
+        public delegate bool MacroReplacer(OkTools.Core.StringSegment macroName, System.IO.TextWriter writer);
+    }
+    public enum UnixSignal
+    {
+        None = 0,
+        Lost = 1,
+        KeyboardInterrupt = 2,
+        KeyboardQuit = 3,
+        Abort = 6,
+        Kill = 9,
+        Terminate = 15,
+    }
+    public static class UnixSignalUtils
+    {
+        public static OkTools.Core.CliExitCode FromSignal(int signal) { }
+    }
+    public class UnreachableCodeException : System.Exception
+    {
+        public UnreachableCodeException() { }
+        public UnreachableCodeException(string message) { }
+    }
+}
+namespace OkTools.Core.Extensions
+{
+    public static class ArrayExtensions
+    {
+        public static void Shift<T>(this T[] @this, int count) { }
+        public static void Shift<T>(this T[] @this, int count, T fill) { }
+        public static void ShiftLeft<T>(this T[] @this, int count) { }
+        public static void ShiftLeft<T>(this T[] @this, int count, T fill) { }
+        public static void ShiftRight<T>(this T[] @this, int count) { }
+        public static void ShiftRight<T>(this T[] @this, int count, T fill) { }
+        public static System.ArraySegment<T> Slice<T>(this T[] @this, int offset, int length) { }
+        public static System.ArraySegment<T> WithLength<T>(this T[] @this, int length) { }
+        public static System.ArraySegment<T> WithOffset<T>(this T[] @this, int offset) { }
+    }
+    public static class ByteArrayExtensions
+    {
+        public static string ToHexString(this System.ReadOnlySpan<byte> @this) { }
+        public static string ToHexString(this System.Span<byte> @this) { }
+        public static string ToHexString(this byte[] @this) { }
+    }
+    public static class CharExtensions
+    {
+        public static char ToLower(this char @this) { }
+        public static char ToUpper(this char @this) { }
+    }
+    public static class ComparableExtensions
+    {
+        public static T Clamp<T>(this T @this, T min, T max)
+            where T : System.IComparable<T> { }
+    }
+    public static class DateTimeExtensions
+    {
+        public static string ToNiceAge(this System.DateTime @this, bool ago = false) { }
+    }
+    public static class DictionaryExtensions
+    {
+        public static System.Collections.Generic.IDictionary<TKey, TValue> AddOrUpdateRange<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> items) { }
+        public static System.Collections.Generic.IDictionary<TKey, TValue> AddOrUpdateRange<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "key",
+                "value"})] System.Collections.Generic.IEnumerable<System.ValueTuple<TKey, TValue>> items) { }
+        public static System.Collections.Generic.IDictionary<TKey, TValue> AddRange<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<TKey, TValue>> items) { }
+        public static System.Collections.Generic.IDictionary<TKey, TValue> AddRange<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "key",
+                "value"})] System.Collections.Generic.IEnumerable<System.ValueTuple<TKey, TValue>> items) { }
+        public static TValue GetOrAdd<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, TKey key, System.Func<TKey, TValue> createFunc) { }
+        public static TValue? GetOrAdd<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue?> @this, TKey key, TValue? defaultValue = default) { }
+        public static TValue? GetValueOr<TKey, TValue>(this System.Collections.Generic.IDictionary<TKey, TValue> @this, TKey key, TValue? defaultValue = default) { }
+        public static bool TryGetValue<TValue>(this System.Collections.Generic.Dictionary<string, TValue> @this, System.ReadOnlySpan<char> key, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TValue value) { }
+    }
+    public static class EnumerableExtensions
+    {
+        public static bool Any<T>(this System.Collections.Generic.ICollection<T> @this) { }
+        public static System.Collections.Generic.IList<T> EnsureList<T>(this System.Collections.Generic.IEnumerable<T> items) { }
+        public static T First<T>(this System.Collections.Generic.IReadOnlyList<T> @this) { }
+        public static System.Collections.Generic.IEnumerable<object> Flatten(this System.Collections.IEnumerable @this) { }
+        public static System.Collections.Generic.IEnumerable<T> Flatten<T>(this System.Collections.IEnumerable @this) { }
+        public static int IndexOf<T>(this System.Collections.Generic.IEnumerable<T> @this, System.Func<T, bool> predicate) { }
+        public static bool IsDistinct<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static bool IsEmpty<T>(this System.Collections.Generic.ICollection<T> @this) { }
+        public static bool IsNullOrEmpty<T>(this System.Collections.Generic.IEnumerable<T>? @this) { }
+        public static T Last<T>(this System.Collections.Generic.IReadOnlyList<T> @this) { }
+        public static System.Collections.Generic.IEnumerable<T> OrEmpty<T>(this System.Collections.Generic.IEnumerable<T>? @this) { }
+        public static System.Collections.Generic.IReadOnlyList<T> OrEmpty<T>(this System.Collections.Generic.IReadOnlyList<T>? @this) { }
+        public static System.Linq.IOrderedEnumerable<T> Ordered<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static System.Collections.Generic.IEnumerable<T> SelectItem<T>([System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "item",
+                "index",
+                "isLast"})] this System.Collections.Generic.IEnumerable<System.ValueTuple<T, int, bool>> @this) { }
+        public static System.Collections.Generic.IEnumerable<T> SelectMany<T>(this System.Collections.Generic.IEnumerable<System.Collections.Generic.IEnumerable<T>> @this) { }
+        public static System.Collections.Generic.IEnumerable<TResult> SelectWhere<TSource, TResult>(this System.Collections.Generic.IEnumerable<TSource> @this, [System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "shouldSelect",
+                "selected"})] System.Func<TSource, System.ValueTuple<bool, TResult>> selectWhere) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "item",
+                "index",
+                "isLast"})]
+        public static System.Collections.Generic.IEnumerable<System.ValueTuple<T, int, bool>> SelectWithPositions<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "item",
+                "index",
+                "isLast"})]
+        public static System.Collections.Generic.IEnumerable<System.ValueTuple<TResult, int, bool>> SelectWithPositions<TSource, TResult>(this System.Collections.Generic.IEnumerable<TSource> @this, System.Func<TSource, TResult> selector) { }
+        public static T SingleOr<T>(this System.Collections.Generic.IEnumerable<T> @this, System.Func<T> defaultValueGenerator) { }
+        public static T SingleOr<T>(this System.Collections.Generic.IEnumerable<T> @this, T defaultValue) { }
+        public static System.Collections.Generic.Queue<T> ToQueue<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static bool TryFirst<T>(this System.Collections.Generic.IEnumerable<T> @this, out T? found) { }
+        public static bool TryFirst<T>(this System.Collections.Generic.IReadOnlyList<T> @this, out T? found) { }
+        public static bool TryFirst<T>(this System.Collections.Generic.IEnumerable<T> @this, System.Func<T, bool> predicate, out T? found) { }
+        public static bool TryLast<T>(this System.Collections.Generic.IEnumerable<T> @this, out T? found) { }
+        public static bool TryLast<T>(this System.Collections.Generic.IReadOnlyList<T> @this, out T? found) { }
+        public static bool TryLast<T>(this System.Collections.Generic.IEnumerable<T> @this, System.Func<T, bool> predicate, out T? found) { }
+        public static System.Collections.Generic.IReadOnlyList<T> UnDefer<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static System.Collections.Generic.IEnumerable<T> WhereNotNull<T>(this System.Collections.Generic.IEnumerable<T?> @this)
+            where T :  class { }
+        public static System.Collections.Generic.IEnumerable<T> WhereNotNull<T>(this System.Collections.Generic.IEnumerable<T?> @this)
+            where T :  struct { }
+        public static System.Linq.ParallelQuery<T> WhereNotNull<T>(this System.Linq.ParallelQuery<T?> @this)
+            where T :  class { }
+        public static System.Linq.ParallelQuery<T> WhereNotNull<T>(this System.Linq.ParallelQuery<T?> @this)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "item",
+                "index"})]
+        public static System.Collections.Generic.IEnumerable<System.ValueTuple<T, int>> WithIndex<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+    }
+    public static class ExceptionExtensions
+    {
+        public static T WithData<T>(this T @this, object key, object value)
+            where T : System.Exception { }
+    }
+    public static class FileStreamNativeExtensions
+    {
+        public static bool WasFileDeleted(this System.IO.FileStream @this) { }
+    }
+    public static class Int4Extensions
+    {
+        public static OkTools.Core.Int2 Abs(in this OkTools.Core.Int2 a) { }
+        public static OkTools.Core.Int3 Abs(in this OkTools.Core.Int3 a) { }
+        public static OkTools.Core.Int4 Abs(in this OkTools.Core.Int4 a) { }
+        public static int LengthSq(in this OkTools.Core.Int2 a) { }
+        public static int LengthSq(in this OkTools.Core.Int3 a) { }
+        public static int LengthSq(in this OkTools.Core.Int4 a) { }
+        public static int LengthSq(in this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static int LengthSq(in this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static int LengthSq(in this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int2 Max(in this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Max(in this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Max(in this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static void Maximize(ref this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static void Maximize(ref this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static void Maximize(ref this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int2 Midpoint(in this OkTools.Core.Int2 a) { }
+        public static OkTools.Core.Int3 Midpoint(in this OkTools.Core.Int3 a) { }
+        public static OkTools.Core.Int4 Midpoint(in this OkTools.Core.Int4 a) { }
+        public static OkTools.Core.Int2 Midpoint(in this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Midpoint(in this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Midpoint(in this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static OkTools.Core.Int2 Min(in this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static OkTools.Core.Int3 Min(in this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static OkTools.Core.Int4 Min(in this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+        public static void Minimize(ref this OkTools.Core.Int2 a, in OkTools.Core.Int2 b) { }
+        public static void Minimize(ref this OkTools.Core.Int3 a, in OkTools.Core.Int3 b) { }
+        public static void Minimize(ref this OkTools.Core.Int4 a, in OkTools.Core.Int4 b) { }
+    }
+    public static class IntExtensions
+    {
+        public static int ClampMax(this int @this, int max) { }
+        public static int ClampMaxExcl(this int @this, int max) { }
+        public static int ClampMin(this int @this, int min) { }
+    }
+    public static class ListExtensions
+    {
+        public static void AddRange<T>(this System.Collections.Generic.List<T> @this, System.ReadOnlySpan<T> items) { }
+        public static void DropBack<T>(this System.Collections.Generic.IList<T> @this) { }
+        public static T PopBack<T>(this System.Collections.Generic.IList<T> @this) { }
+        public static void SetRange<T>(this System.Collections.Generic.List<T> @this, System.Collections.Generic.IEnumerable<T> collection) { }
+    }
+    public static class ObjectExtensions
+    {
+        public static T? As<T>(this object @this)
+            where T :  class { }
+        public static bool Is<T>(this object @this)
+            where T :  class { }
+        public static bool IsNot<T>(this object @this)
+            where T :  class { }
+        public static T To<T>(this object @this)
+            where T :  class { }
+        public static T ToBase<T>(this T @this) { }
+    }
+    public static class ReadOnlySpanExtensions
+    {
+        public static System.ReadOnlySpan<T> Slice<T>(this System.ReadOnlySpan<T> @this, int start) { }
+        public static System.ReadOnlySpan<T> SliceSafe<T>(this System.ReadOnlySpan<T> @this, int start) { }
+        public static System.ReadOnlySpan<T> SliceSafe<T>(this System.ReadOnlySpan<T> @this, int start, int length) { }
+    }
+    public static class RefTypeExtensions
+    {
+        public static T? OrNull<T>(this T? @this, System.Func<T, T> operation)
+            where T :  class { }
+        public static System.Collections.Generic.IEnumerable<T> WrapInEnumerable<T>(this T @this) { }
+        public static System.Collections.Generic.IEnumerable<T> WrapInEnumerableOrEmpty<T>(this T? @this)
+            where T :  class { }
+    }
+    public static class SpanExtensions
+    {
+        public static System.Span<T> Slice<T>(this System.Span<T> @this, int start) { }
+        public static System.Span<T> SliceSafe<T>(this System.Span<T> @this, int start) { }
+        public static System.Span<T> SliceSafe<T>(this System.Span<T> @this, int start, int length) { }
+    }
+    public static class StreamableBufferExtensions
+    {
+        public static bool AdvanceIfNextEquals<T>(OkTools.Core.StreamableBuffer<T> @this, T value)
+            where T :  struct, System.IEquatable<T> { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<T, T> Peek2<T>(this OkTools.Core.StreamableBuffer<T> @this)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<T, T, T> Peek3<T>(this OkTools.Core.StreamableBuffer<T> @this)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<T, T>? TryPeek2<T>(this OkTools.Core.StreamableBuffer<T> @this)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<T, T> TryPeek2<T>(this OkTools.Core.StreamableBuffer<T> @this, T defValue)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<T, T, T>? TryPeek3<T>(this OkTools.Core.StreamableBuffer<T> @this)
+            where T :  struct { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<T, T, T> TryPeek3<T>(this OkTools.Core.StreamableBuffer<T> @this, T defValue)
+            where T :  struct { }
+        public static void Write<T>(this OkTools.Core.StreamableBuffer<T> @this, System.Buffers.ReadOnlySequence<T> sequence)
+            where T :  struct { }
+    }
+    public static class StringBuilderExtensions
+    {
+        public static bool Any(this System.Text.StringBuilder @this) { }
+        public static System.Text.StringBuilder AppendLf(this System.Text.StringBuilder @this) { }
+        public static System.Text.StringBuilder AppendLf(this System.Text.StringBuilder @this, string? value) { }
+        public static bool IsEmpty(this System.Text.StringBuilder @this) { }
+    }
+    public static class StringExtensions
+    {
+        public static bool Any(this string @this) { }
+        public static System.ReadOnlySpan<char> AsSpanSafe(this string @this, int start) { }
+        public static System.ReadOnlySpan<char> AsSpanSafe(this string @this, int start, int maxLength) { }
+        public static OkTools.Core.StringSegment AsStringSegment(this string @this) { }
+        public static bool EqualsIgnoreCase(this string @this, string other) { }
+        public static string ExpandTabs(this string @this, int tabWidth, System.Text.StringBuilder? buffer = null) { }
+        public static int IndexOfNot(this string @this, char value) { }
+        public static int IndexOfNot(this string @this, char value, int startIndex) { }
+        public static int IndexOfNot(this string @this, char value, int startIndex, int count) { }
+        public static bool IsEmpty(this string @this) { }
+        public static bool IsNullOrEmpty(this string? @this) { }
+        public static bool IsNullOrWhiteSpace(this string? @this) { }
+        public static int LastIndexOfNot(this string @this, char value) { }
+        public static int LastIndexOfNot(this string @this, char value, int startIndex) { }
+        public static int LastIndexOfNot(this string @this, char value, int startIndex, int count) { }
+        public static string Left(this string @this, int maxChars) { }
+        public static string Mid(this string @this, int offset, int maxChars = -1) { }
+        public static System.Text.RegularExpressions.Match RegexMatch(this string @this, string rxPattern) { }
+        public static System.Text.RegularExpressions.Match RegexMatch(this string @this, System.Text.RegularExpressions.Regex rx) { }
+        public static System.Text.RegularExpressions.MatchCollection RegexMatches(this string @this, string rxPattern) { }
+        public static System.Text.RegularExpressions.MatchCollection RegexMatches(this string @this, System.Text.RegularExpressions.Regex rx) { }
+        public static string RegexReplace(this string @this, string rxPattern, string replacement) { }
+        public static string RegexReplace(this string @this, string rxPattern, System.Text.RegularExpressions.MatchEvaluator evaluator) { }
+        public static string RegexReplace(this string @this, System.Text.RegularExpressions.Regex rx, string replacement) { }
+        public static string RegexReplace(this string @this, System.Text.RegularExpressions.Regex rx, System.Text.RegularExpressions.MatchEvaluator evaluator) { }
+        public static string RegexReplace(this string @this, string rxPattern, string replacement, System.Text.RegularExpressions.RegexOptions options) { }
+        public static string RegexReplace(this string @this, string rxPattern, System.Text.RegularExpressions.MatchEvaluator evaluator, System.Text.RegularExpressions.RegexOptions options) { }
+        public static string RegexReplace(this string @this, string rxPattern, string replacement, System.Text.RegularExpressions.RegexOptions options, System.TimeSpan matchTimeout) { }
+        public static string RegexReplace(this string @this, string rxPattern, System.Text.RegularExpressions.MatchEvaluator evaluator, System.Text.RegularExpressions.RegexOptions options, System.TimeSpan matchTimeout) { }
+        public static string Right(this string @this, int maxChars) { }
+        public static System.Collections.Generic.IEnumerable<string> SelectLines(this string @this) { }
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.StringSegment> SelectLinesAsSegments(this OkTools.Core.StringSegment @this) { }
+        public static System.Collections.Generic.IEnumerable<OkTools.Core.StringSegment> SelectLinesAsSegments(this string @this) { }
+        public static System.Collections.Generic.IEnumerable<string> SelectToLower(this System.Collections.Generic.IEnumerable<string> @this) { }
+        public static System.Collections.Generic.IEnumerable<string> SelectToStrings<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static System.Collections.Generic.IEnumerable<string> SelectToUpper(this System.Collections.Generic.IEnumerable<string> @this) { }
+        public static string SimpleEscape(this string @this) { }
+        public static string[] SplitTrimRemoveEmpty(this string @this) { }
+        public static string StringJoin(this System.Runtime.CompilerServices.ITuple @this) { }
+        public static string StringJoin(this System.Runtime.CompilerServices.ITuple @this, char separator) { }
+        public static string StringJoin(this System.Runtime.CompilerServices.ITuple @this, string separator) { }
+        public static string StringJoin<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
+        public static string StringJoin<T>(this System.Collections.Generic.IEnumerable<T> @this, char separator) { }
+        public static string StringJoin<T>(this System.Collections.Generic.IEnumerable<T> @this, string separator) { }
+        public static string ToLowerFirstChar(this string @this) { }
+        public static string ToUpperFirstChar(this string @this) { }
+        public static string Trim(this string @this, int startIndex) { }
+        public static string Trim(this string @this, char trimChar, int startIndex) { }
+        public static string Trim(this string @this, int startIndex, int length) { }
+        public static string Trim(this string @this, System.ReadOnlySpan<char> trimChars, int startIndex) { }
+        public static string Trim(this string @this, char trimChar, int startIndex, int length) { }
+        public static string Trim(this string @this, System.ReadOnlySpan<char> trimChars, int startIndex, int length) { }
+        public static string Truncate(this string @this, int maxChars, string trailer = "...") { }
+        public static bool WildcardMatch(this string @this, string wildcardPattern, System.Text.RegularExpressions.RegexOptions rxOptions = 1) { }
+    }
+    public static class StringSegmentExtensions
+    {
+        public static OkTools.Core.StringSegment Slice(this OkTools.Core.StringSegment @this, int start) { }
+        public static OkTools.Core.StringSegment SliceSafe(this OkTools.Core.StringSegment @this, int start) { }
+        public static OkTools.Core.StringSegment SliceSafe(this OkTools.Core.StringSegment @this, int start, int length) { }
+    }
+    public static class TimeSpanExtensions
+    {
+        public static int Microseconds(this System.TimeSpan @this) { }
+        public static System.TimeSpan Sum(this System.Collections.Generic.IEnumerable<System.TimeSpan> @this) { }
+        public static string ToNiceAge(this System.TimeSpan @this, bool ago = false) { }
+        public static string ToNiceString(this System.TimeSpan @this, bool limitGranularityToSeconds = false) { }
+        public static string ToNiceString(this System.TimeSpan? @this, bool limitGranularityToSeconds = false) { }
+        public static double TotalMicroseconds(this System.TimeSpan @this) { }
+    }
+    public static class TupleExtensions
+    {
+        public static System.Collections.Generic.IEnumerable<object?> SelectObjects(this System.Runtime.CompilerServices.ITuple @this) { }
+    }
+    public static class UnixSignalExtensions
+    {
+        public static OkTools.Core.CliExitCode AsCliExitCode(this OkTools.Core.UnixSignal @this) { }
+    }
+}
