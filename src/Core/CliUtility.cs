@@ -1,4 +1,7 @@
 using System.Text.RegularExpressions;
+#if NETSTANDARD
+using System.Diagnostics;
+#endif
 
 namespace OkTools.Core;
 

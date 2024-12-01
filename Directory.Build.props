@@ -10,7 +10,7 @@
     <Copyright>Copyright © $(Authors)</Copyright>
 
     <!-- framework -->
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
@@ -21,8 +21,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisLevel>8</AnalysisLevel>
-    <NoWarn>$(NoWarn);CS8524</NoWarn>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <NoWarn>$(NoWarn);CS8524;NU1900</NoWarn>
 
     <!-- language -->
     <Nullable>enable</Nullable>
