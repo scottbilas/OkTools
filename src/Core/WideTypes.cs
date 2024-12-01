@@ -1,3 +1,5 @@
+﻿// DO NOT MODIFY, THIS FILE IS GENERATED
+
 namespace OkTools.Core
 {
     // the purpose of these types is programmer convenience, not SIMD. if you want SIMD types,

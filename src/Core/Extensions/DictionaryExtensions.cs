@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace OkTools.Core.Extensions;
 
 [PublicAPI]
@@ -55,5 +57,14 @@ public static class DictionaryExtensions
             @this[key] = value;
 
         return @this;
+    }
+
+    public static bool TryGetValue<TValue>(this Dictionary<string, TValue> @this, ReadOnlySpan<char> key, [MaybeNullWhen(false)] out TValue value)
+    {
+#       if NET9_0_OR_GREATER
+        return @this.GetAlternateLookup<ReadOnlySpan<char>>().TryGetValue(key, out value);
+#       else
+        return @this.TryGetValue(key.ToString(), out value); // have to alloc :/
+#       endif
     }
 }

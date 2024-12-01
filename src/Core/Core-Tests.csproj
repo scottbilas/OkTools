@@ -7,4 +7,15 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>$(NoWarn);CA1311</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="SpanExtensions.t.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SpanExtensions.t.cs</LastGenOutput>
+    </None>
+    <Compile Update="SpanExtensions.t.cs">
+      <DependentUpon>SpanExtensions.t.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
 </Project>

@@ -49,6 +49,44 @@ public static class EnumerableExtensions
         return value;
     }
 
+    public static IEnumerable<(T item, int index, bool isLast)> SelectWithPositions<T>(this IEnumerable<T> @this)
+    {
+        using var enumerator = @this.GetEnumerator();
+        if (!enumerator.MoveNext())
+            yield break;
+
+        for (var index = 0;;++index)
+        {
+            var current = enumerator.Current;
+            var isLast = !enumerator.MoveNext();
+            yield return (current, index, isLast);
+            if (isLast)
+                break;
+        }
+    }
+
+    public static IEnumerable<(TResult item, int index, bool isLast)> SelectWithPositions<TSource, TResult>(this IEnumerable<TSource> @this, Func<TSource, TResult> selector)
+    {
+        using var enumerator = @this.GetEnumerator();
+        if (!enumerator.MoveNext())
+            yield break;
+
+        for (var index = 0;;++index)
+        {
+            var current = selector(enumerator.Current);
+            var isLast = !enumerator.MoveNext();
+            yield return (current, index, isLast);
+            if (isLast)
+                break;
+        }
+    }
+
+    public static IEnumerable<T> SelectItem<T>(this IEnumerable<(T item, int index, bool isLast)> @this)
+    {
+        foreach (var item in @this)
+            yield return item.item;
+    }
+
     public static T First<T>(this IReadOnlyList<T> @this) =>
         @this[0];
     public static T Last<T>(this IReadOnlyList<T> @this) =>
@@ -140,17 +178,21 @@ public static class EnumerableExtensions
 
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: class =>
         @this.Where(item => item is not null)!;
-
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: struct =>
+        @this.Where(item => item.HasValue).Select(item => item!.Value);
+
+    public static ParallelQuery<T> WhereNotNull<T>(this ParallelQuery<T?> @this) where T: class =>
+        @this.Where(item => item is not null)!;
+    public static ParallelQuery<T> WhereNotNull<T>(this ParallelQuery<T?> @this) where T: struct =>
         @this.Where(item => item.HasValue).Select(item => item!.Value);
 
     public static IEnumerable<TResult> SelectWhere<TSource, TResult>(
         this IEnumerable<TSource> @this,
-        Func<TSource, (TResult selected, bool shouldSelect)> selectWhere)
+        Func<TSource, (bool shouldSelect, TResult selected)> selectWhere)
     {
         foreach (var item in @this)
         {
-            var (selected, shouldSelect) = selectWhere(item);
+            var (shouldSelect, selected) = selectWhere(item);
             if (shouldSelect)
                 yield return selected;
         }

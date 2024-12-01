@@ -26,7 +26,7 @@ public static class StringExtensions
         if (count < 0 || count > @this.Length - startIndex)
             throw new ArgumentOutOfRangeException(nameof(count), $"Out of range 0 <= {count} <= {@this.Length - startIndex}");
 
-        for (var (i, iend) = (startIndex, startIndex + count); i != iend; ++i)
+        for (var (i, ie) = (startIndex, startIndex + count); i != ie; ++i)
         {
             if (@this[i] != value)
                 return i;
@@ -105,6 +105,9 @@ public static class StringExtensions
     public static ReadOnlySpan<char> AsSpanSafe(this string @this, int start) =>
         @this.AsSpanSafe(start, @this.Length);
 
+    public static StringSegment AsStringSegment(this string @this) =>
+        new(@this);
+
     public static IEnumerable<string> SelectToStrings<T>(this IEnumerable<T> @this) =>
         @this.Select(v => v?.ToString()).WhereNotNull();
 
@@ -146,18 +149,65 @@ public static class StringExtensions
     public static string StringJoin(this ITuple @this) =>
         string.Join("", @this.SelectObjects());
 
-    public static string RegexReplace(this string @this, string pattern, string replacement) =>
-        Regex.Replace(@this, pattern, replacement);
-    public static string RegexReplace(this string @this, string pattern, string replacement, RegexOptions options) =>
-        Regex.Replace(@this, pattern, replacement, options);
-    public static string RegexReplace(this string @this, string pattern, string replacement, RegexOptions options, TimeSpan matchTimeout) =>
-        Regex.Replace(@this, pattern, replacement, options, matchTimeout);
-    public static string RegexReplace(this string @this, string pattern, MatchEvaluator evaluator) =>
-        Regex.Replace(@this, pattern, evaluator);
-    public static string RegexReplace(this string @this, string pattern, MatchEvaluator evaluator, RegexOptions options) =>
-        Regex.Replace(@this, pattern, evaluator, options);
-    public static string RegexReplace(this string @this, string pattern, MatchEvaluator evaluator, RegexOptions options, TimeSpan matchTimeout) =>
-        Regex.Replace(@this, pattern, evaluator, options, matchTimeout);
+    public static IEnumerable<string> SelectLines(this string @this)
+    {
+        var reader = new StringReader(@this);
+        while (reader.ReadLine() is { } line)
+            yield return line;
+    }
+
+    public static IEnumerable<StringSegment> SelectLinesAsSegments(this StringSegment @this)
+    {
+        for (var iter = @this;;)
+        {
+            var end = iter.IndexOf('\n');
+            if (end < 0)
+            {
+                if (iter.Any)
+                    yield return iter;
+                yield break;
+            }
+
+            var trim = 0;
+            if (end > 0 && iter[end-1] == '\r')
+                trim = 1;
+            yield return iter[..(end-trim)];
+
+            iter = iter[(end+1)..];
+        }
+    }
+
+    public static IEnumerable<StringSegment> SelectLinesAsSegments(this string @this) =>
+        SelectLinesAsSegments(@this.AsStringSegment());
+
+    public static bool WildcardMatch(this string @this, string wildcardPattern, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
+        TextUtility.WildcardToRegex(wildcardPattern, rxOptions).IsMatch(@this);
+
+    public static Match RegexMatch(this string @this, string rxPattern) =>
+        Regex.Match(@this, rxPattern);
+    public static MatchCollection RegexMatches(this string @this, string rxPattern) =>
+        Regex.Matches(@this, rxPattern);
+    public static Match RegexMatch(this string @this, Regex rx) =>
+        rx.Match(@this);
+    public static MatchCollection RegexMatches(this string @this, Regex rx) =>
+        rx.Matches(@this);
+
+    public static string RegexReplace(this string @this, string rxPattern, string replacement) =>
+        Regex.Replace(@this, rxPattern, replacement);
+    public static string RegexReplace(this string @this, string rxPattern, string replacement, RegexOptions options) =>
+        Regex.Replace(@this, rxPattern, replacement, options);
+    public static string RegexReplace(this string @this, string rxPattern, string replacement, RegexOptions options, TimeSpan matchTimeout) =>
+        Regex.Replace(@this, rxPattern, replacement, options, matchTimeout);
+    public static string RegexReplace(this string @this, string rxPattern, MatchEvaluator evaluator) =>
+        Regex.Replace(@this, rxPattern, evaluator);
+    public static string RegexReplace(this string @this, string rxPattern, MatchEvaluator evaluator, RegexOptions options) =>
+        Regex.Replace(@this, rxPattern, evaluator, options);
+    public static string RegexReplace(this string @this, string rxPattern, MatchEvaluator evaluator, RegexOptions options, TimeSpan matchTimeout) =>
+        Regex.Replace(@this, rxPattern, evaluator, options, matchTimeout);
+    public static string RegexReplace(this string @this, Regex rx, string replacement) =>
+        rx.Replace(@this, replacement);
+    public static string RegexReplace(this string @this, Regex rx, MatchEvaluator evaluator) =>
+        rx.Replace(@this, evaluator);
 
     public static string ToLowerFirstChar(this string @this)
     {
@@ -196,7 +246,7 @@ public static class StringExtensions
         if (tabCount == 0)
             return @this;
 
-        // more early-out and a bit silly scenarios, but why not..
+        // more early-out and a bit silly scenarios, but why not...
         if (tabWidth == 0)
             return @this.Replace("\t", "");
         if (tabWidth == 1)

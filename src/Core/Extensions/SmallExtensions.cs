@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace OkTools.Core.Extensions;
 
@@ -105,5 +106,28 @@ public static class TupleExtensions
     {
         for (var i = 0; i < @this.Length; ++i)
             yield return @this[i];
+    }
+}
+
+[PublicAPI]
+public static class StringBuilderExtensions
+{
+    public static StringBuilder AppendLf(this StringBuilder @this) =>
+        @this.Append('\n');
+    public static StringBuilder AppendLf(this StringBuilder @this, string? value)
+        { @this.Append(value); return @this.Append('\n'); }
+    public static bool IsEmpty(this StringBuilder @this) =>
+        @this.Length == 0;
+    public static bool Any(this StringBuilder @this) =>
+        @this.Length != 0;
+}
+
+[PublicAPI]
+public static class ExceptionExtensions
+{
+    public static T WithData<T>(this T @this, object key, object value) where T : Exception
+    {
+        @this.Data[key] = value;
+        return @this;
     }
 }

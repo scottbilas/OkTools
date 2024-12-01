@@ -234,4 +234,28 @@ partial class NPath
         File.Open(ToString(SlashMode.Native), FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
     public StreamReader OpenReaderShared() =>
         new(OpenReadShared());
+
+    public Match RegexContentsMatch(string rxPattern) =>
+        ReadAllText().RegexMatch(rxPattern);
+    public Match RegexContentsMatch(Regex rx) =>
+        ReadAllText().RegexMatch(rx);
+    public MatchCollection RegexContentsMatches(string rxPattern) =>
+        ReadAllText().RegexMatches(rxPattern);
+    public MatchCollection RegexContentsMatches(Regex rx) =>
+        ReadAllText().RegexMatches(rx);
+
+    public string ToDisplayString(NPath? tryRelativeTo)
+    {
+        var relPath = tryRelativeTo != null ? MakeRelative(tryRelativeTo) : this;
+        if (relPath.IsRelative)
+        {
+            var str = relPath.TildeCollapse().ToString(SlashMode.Forward);
+
+            // starts to get really unreadable with more than this many
+            if (!str.StartsWith("../../../../", StringComparison.Ordinal))
+                return str;
+        }
+
+        return TildeCollapse().ToString(SlashMode.Forward);
+    }
 }

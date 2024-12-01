@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace OkTools.Core;
+namespace OkTools.Terminal;
 
 public class DocoptReflowOptions
 {
@@ -10,16 +10,10 @@ public class DocoptReflowOptions
     public int DesiredWrapWidth;
     public int MinWrapWidth;
     public int IndentFallback = 15;
-    public string Eol = "\n";
 }
 
-[PublicAPI]
-public static class DocoptUtility
+public static partial class DocoptUtils
 {
-    // TODO: nothing about this should be specific to docopt.
-    //       can use blank lines to mean sections, detecting alignment, and - most importantly - the
-    //       "end of last double space" rule to mean the indent point for wrapping.
-
     // TODO: Reflow loop rewrite!
     // - Get rid of the Select, move to phases.
     // - Operate on current and next section, don't "correct the prev".
@@ -28,10 +22,15 @@ public static class DocoptUtility
     // - Simplify in general
     // - The "extra indent" should become FirstLineIndent and WrapIndent (how to indent wrapped lines in the same block)
 
-    public static string Reflow(string text, int wrapWidth) => Reflow(text, new DocoptReflowOptions { DesiredWrapWidth = wrapWidth});
-    public static string Reflow(string text) => Reflow(text, new DocoptReflowOptions());
+    public static string Reflow(string text, int wrapWidth = 0) =>
+        Reflow(text, new DocoptReflowOptions { DesiredWrapWidth = wrapWidth });
+    public static string Reflow(string text, DocoptReflowOptions options) =>
+        Reflow(text.SelectLinesAsSegments(), options).StringJoin('\n');
 
-    public static string Reflow(string text, DocoptReflowOptions options)
+    public static IEnumerable<StringSegment> Reflow(IEnumerable<StringSegment> lines, int wrapWidth = 0) =>
+        Reflow(lines, new DocoptReflowOptions { DesiredWrapWidth = wrapWidth });
+
+    public static IEnumerable<StringSegment> Reflow(IEnumerable<StringSegment> lines, DocoptReflowOptions options)
     {
         // TODO: support a line break marker, such as a backslash at the end of a line. This would tell reflow not to join
         //       that line with the next.
@@ -47,26 +46,38 @@ public static class DocoptUtility
         if (options.MinWrapWidth < 0 || options.MinWrapWidth >= wrapWidth)
             throw new ArgumentOutOfRangeException($"{nameof(options.MinWrapWidth)} out of range 0 <= {options.MinWrapWidth} < {wrapWidth}");
 
-        var result = new StringBuilder();
+        // TODO: avoid building into stringbuilder if possible and try to just return the segment if unmodified (will be true most of the time for typical case)
+        var line = new StringBuilder();
+        StringSegment Eol(int newIndent = 0)
+        {
+            var text = line.ToString();
+
+            line.Clear();
+
+            if (newIndent != 0)
+                line.Append(' ', newIndent);
+
+            return new(text);
+        }
 
         var needEol = false;
-        foreach (var section in SelectSections(text).ToArray()) // ToArray is to force _extraIndent to work (needs to modify the prev)
+        foreach (var section in SelectSections(lines).ToArray()) // ToArray is to force _extraIndent to work (needs to modify the prev)
         {
             if (needEol)
             {
-                result.Append(options.Eol);
                 needEol = false;
+                yield return Eol();
             }
 
             if (!section.Text.Any)
             {
-                result.Append(options.Eol);
+                yield return Eol();
                 continue;
             }
 
             // do the indent here so its whitespace doesn't get caught up in the calculations below
             // (TODO: this breaks very narrow wrapping..)
-            result.Append(section.Text[..section.TotalIndent].Span);
+            line.Append(section.Text[..section.TotalIndent].Span);
             var sectionText = section.Text[section.TotalIndent..];
 
             // special: if we have a really wide column indent, let's fall back to non aligned
@@ -75,8 +86,7 @@ public static class DocoptUtility
             if (options.IndentFallback != 0 && wrapWidth - indent < options.IndentFallback)
             {
                 indent = section.Text.GetTrimStart() + 1;
-                result.Append(options.Eol);
-                result.Append(' ', indent);
+                yield return Eol(indent);
             }
 
             for (;;)
@@ -96,103 +106,25 @@ public static class DocoptUtility
                 }
 
                 // write what will fit and advance
-                result.Append(sectionText[..write].TrimEnd());
+                line.Append(sectionText[..write].TrimEnd().Span);
                 sectionText = sectionText[write..].TrimStart();
                 if (!sectionText.Any)
                     break;
 
-                result.Append(options.Eol);
-                result.Append(' ', indent);
+                yield return Eol(indent);
             }
 
             needEol = true;
         }
 
-        return result.ToString();
+        yield return Eol();
     }
 
-    record Section(StringSegment Text, int Indent)
-    {
-        int _extraIndent;
-
-        public Section(StringSegment text) : this(text.TrimEnd(), 0)
-        {
-            var indentMatch = Text.Match(k_indentRx0);
-            if (indentMatch.Success)
-                Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
-            else
-            {
-                indentMatch = Text.Match(k_indentRx1);
-                if (indentMatch.Success)
-                    Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
-                else
-                    Indent = Text.GetTrimStart();
-            }
-        }
-
-        public int TotalIndent => Indent + _extraIndent;
-        bool HasPrefix => Text.GetTrimStart() < Indent; // TODO: "extra indent" and "prefix" concepts do the same thing; join them
-
-        // note that this may modify the previous section if we detect duplicate leading words
-        public Section? MergeWith(Section other)
-        {
-            if (Text.IsEmpty || other.Text.IsEmpty || Indent != other.Indent || other.HasPrefix)
-                return null;
-
-            if (!HasPrefix)
-            {
-                // if the leading word is identical (common with program name in 'usage' lines), do not merge
-                var end = Text[Indent..].IndexOf(' ');
-                if (end >= 0)
-                {
-                    var wordLen = end + 1; // include the space
-                    var text0 = Text[Indent..(Indent+wordLen)];
-                    var text1 = other.Text[Indent..(Indent+wordLen)];
-                    if (text0.StringEquals(text1))
-                    {
-                        _extraIndent = other._extraIndent = wordLen;
-                        return null;
-                    }
-                }
-            }
-
-            // $$$ TODO: get rid of this silliness
-            var newText = Text.ToString() + ' ' + other.Text.TrimStart();
-            return this with { Text = new StringSegment(newText) };
-        }
-
-        public override string ToString() => $"{Text.ToDebugString()}; indent={Indent}, prefix={HasPrefix}";
-    }
-
-    // these regexes find where we should indent to upon wrapping, in priority order.
-    //
-    // - align to the right side of a "docopt divider" (>= 2 spaces). higher pri to catch bulleted option lists.
-    static readonly Regex k_indentRx0 = new(@"\S {2,}");
-    // - align to the text part of a bullet point, number, or comment: * - // # 1.
-    static readonly Regex k_indentRx1 = new(@"^ *([-*#]|//|\d+\.) ");
-
-    static IEnumerable<StringSegment> SelectLines(string text)
-    {
-        for (var start = 0; start != text.Length;)
-        {
-            var end = text.IndexOf('\n', start);
-
-            var next = end;
-            if (end < 0)
-                end = next = text.Length;
-            else
-                ++next;
-
-            yield return new StringSegment(text, start, end - start);
-            start = next;
-        }
-    }
-
-    static IEnumerable<Section> SelectSections(string text)
+    static IEnumerable<Section> SelectSections(IEnumerable<StringSegment> lines)
     {
         Section? lastSection = null;
 
-        foreach (var line in SelectLines(text))
+        foreach (var line in lines)
         {
             var newSection = new Section(line);
 
@@ -213,5 +145,67 @@ public static class DocoptUtility
 
         if (lastSection != null)
             yield return lastSection;
+    }
+
+    partial record Section(StringSegment Text, int Indent)
+    {
+        int _extraIndent;
+
+        public Section(StringSegment text) : this(text.TrimEnd(), 0)
+        {
+            var indentMatch = Text.Match(IndentRx0());
+            if (indentMatch.Success)
+                Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
+            else
+            {
+                indentMatch = Text.Match(IndentRx1());
+                if (indentMatch.Success)
+                    Indent = indentMatch.Index - Text.SegmentStart + indentMatch.Length;
+                else
+                    Indent = Text.GetTrimStart();
+            }
+        }
+
+        // these regexes find where we should indent to upon wrapping, in priority order.
+        //
+        // - align to the right side of a "docopt divider" (>= 2 spaces). higher pri to catch bulleted option lists.
+        [GeneratedRegex(@"\S {2,}")]
+        private static partial Regex IndentRx0();
+        // - align to the text part of a bullet point, number, or comment: * - // # 1.
+        [GeneratedRegex(@"^ *([-*#]|//|\d+\.) ")]
+        private static partial Regex IndentRx1();
+
+        public int TotalIndent => Indent + _extraIndent;
+        bool HasPrefix => Text.GetTrimStart() < Indent; // TODO: "extra indent" and "prefix" concepts do the same thing; join them
+
+        // note that this may modify the previous section if we detect duplicate leading words
+        public Section? MergeWith(Section other)
+        {
+            if (Text.IsEmpty || other.Text.IsEmpty || Indent != other.Indent || other.HasPrefix)
+                return null;
+
+            if (!HasPrefix)
+            {
+                // if the leading word is identical (common with program name in 'usage' lines), do not merge
+                var end = Text[Indent..].IndexOf(' ');
+                if (end >= 0)
+                {
+                    var wordLen = end + 1; // include the space
+                    var text0 = Text[Indent..(Indent+wordLen)];
+                    var text1 = other.Text.SliceSafe(Indent, wordLen);
+                    if (text0.Equals(text1))
+                    {
+                        _extraIndent = other._extraIndent = wordLen;
+                        return null;
+                    }
+                }
+            }
+
+            // $$$ TODO: get rid of this silliness
+            var newText = Text.ToString() + ' ' + other.Text.TrimStart();
+            return this with { Text = new StringSegment(newText) };
+        }
+
+        public override string ToString() => $"{Text.ToDebugString()}; indent={Indent}, prefix={HasPrefix}";
     }
 }

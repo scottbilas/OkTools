@@ -1,35 +1,40 @@
 ﻿<#@ output extension=".cs" #>
 <# // https://github.com/jgiannuzzi/T4.Build/issues/7    #@ output extension=".gen.cs" #>
+// DO NOT MODIFY, THIS FILE IS GENERATED
+
 namespace OkTools.Core.Extensions;
 
-<# foreach (var type in new[] { "ReadOnlySpan", "Span" }) { #>
-public static class <#=type#>Extensions
+<# foreach (var (type, ptype) in new[] {("ReadOnlySpan", "<T>"), ("Span", "<T>"), ("StringSegment", "")}) { #>
+[PublicAPI]
+public static partial class <#=type#>Extensions
 {
-    public static <#=type#><T> SliceSafe<T>(this <#=type#><T> @this, int start, int length)
+    public static <#=type#><#=ptype#> Slice<#=ptype#>(this <#=type#><#=ptype#> @this, int start) =>
+        @this.Slice(start, @this.Length - start);
+
+    public static <#=type#><#=ptype#> SliceSafe<#=ptype#>(this <#=type#><#=ptype#> @this, int start, int length)
     {
         if (start < 0)
         {
-            length += start;
+            length -= -start;
             start = 0;
         }
 
-        if (start + length > @this.Length)
-            length = @this.Length - start;
-
-        if (length <= 0)
-            return default;
+        if (start >= @this.Length || length <= 0)
+            return new();
+        if (start + length >= @this.Length)
+            return @this.Slice(start);
 
         return @this.Slice(start, length);
     }
 
-    public static <#=type#><T> SliceSafe<T>(this <#=type#><T> @this, int start)
+    public static <#=type#><#=ptype#> SliceSafe<#=ptype#>(this <#=type#><#=ptype#> @this, int start)
     {
         if (start < 0)
-            start = 0;
-        else if (start >= @this.Length)
-            return default;
+            return @this;
+        if (start >= @this.Length)
+            return new();
 
-        return @this[start..];
+        return @this.Slice(start);
     }
 }
 

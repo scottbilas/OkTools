@@ -12,13 +12,20 @@ public static class StringSegmentOperations
         @this.Append(segment.String, segment.SegmentStart, segment.Length);
 }
 
+// TODO: consider getting rid of this in favor of ReadOnlyMemory<char> extensions
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString()}")]
-public readonly struct StringSegment : IEquatable<StringSegment>
+public readonly struct StringSegment :
+    IEquatable<StringSegment>,
+#   if NET9_0_OR_GREATER
+    IEquatable<ReadOnlySpan<char>>,
+#   endif
+    IEquatable<ReadOnlyMemory<char>>,
+    IEquatable<string>
 {
     // TODO: TESTS
 
-    readonly string _string;
+    readonly string? _string; // nullable because we're a struct
     readonly int _offset, _length;
 
     public StringSegment(string str)
@@ -50,14 +57,14 @@ public readonly struct StringSegment : IEquatable<StringSegment>
 
     public string ToDebugString()
     {
-        var str = _string
+        var str = String
             .Substring(_offset, _length)
             .Replace("\r", "\\r")
             .Replace("\n", "\\n");
         return $"'{str}' (start={_offset}, end={SegmentEnd}, len={_length})";
     }
 
-    public override string ToString() => _string[SegmentStart..SegmentEnd];
+    public override string ToString() => _length > 0 ? _string!.Substring(_offset, _length) : ""; // no alloc if full string
 
     public ReadOnlySpan<char> Span => _string.AsSpan(_offset, _length);
 
@@ -79,7 +86,7 @@ public readonly struct StringSegment : IEquatable<StringSegment>
 
     public int    SegmentStart => _offset;
     public int    SegmentEnd   => _offset + _length;
-    public string String       => _string;
+    public string String       => _string ?? "";
     public int    Length       => _length;
     public bool   IsEmpty      => _length == 0;
     public bool   Any          => _length != 0;
@@ -92,11 +99,24 @@ public readonly struct StringSegment : IEquatable<StringSegment>
         {
             if (index < 0 || index >= _length)
                 throw new ArgumentOutOfRangeException(nameof(index), $"Out of range 0 <= {index} < {_length}");
-            return _string[_offset + index];
+            return _string![_offset + index];
         }
     }
 
     public StringSegment Slice(int start, int length) => new(this, start, length);
+
+    public bool StartsWith(char value) =>
+        _length != 0 && _string![_offset] == value;
+    public bool StartsWith(ReadOnlySpan<char> value) =>
+        Span.StartsWith(value);
+    public bool StartsWith(ReadOnlySpan<char> value, StringComparison comparison) =>
+        Span.StartsWith(value, comparison);
+    public bool EndsWith(char value) =>
+        _length != 0 && _string![_offset + _length - 1] == value;
+    public bool EndsWith(ReadOnlySpan<char> value) =>
+        Span.EndsWith(value);
+    public bool EndsWith(ReadOnlySpan<char> value, StringComparison comparison) =>
+        Span.EndsWith(value, comparison);
 
     public int IndexOf(char value) =>
         Span.IndexOf(value);
@@ -105,12 +125,19 @@ public readonly struct StringSegment : IEquatable<StringSegment>
     public int IndexOf(char value, int startIndex, int count) =>
         AsSpan(startIndex, count).IndexOf(value) + startIndex;
 
+    public int IndexOf(string value) =>
+        Span.IndexOf(value);
+    public int IndexOf(string value, int startIndex) =>
+        AsSpan(startIndex).IndexOf(value) + startIndex;
+    public int IndexOf(string value, int startIndex, int count) =>
+        AsSpan(startIndex, count).IndexOf(value) + startIndex;
+
     public int GetTrimStart()
     {
         var i = 0;
         for (; i != _length; ++i)
         {
-            if (!char.IsWhiteSpace(_string[_offset + i]))
+            if (!char.IsWhiteSpace(_string![_offset + i]))
                 break;
         }
         return i;
@@ -121,39 +148,59 @@ public readonly struct StringSegment : IEquatable<StringSegment>
         var i = _length;
         for (; i > 0; --i)
         {
-            if (!char.IsWhiteSpace(_string[_offset + i-1]))
+            if (!char.IsWhiteSpace(_string![_offset + i-1]))
                 break;
         }
 
         return i;
     }
 
+    public static implicit operator StringSegment(string value) => new(value);
+    public static implicit operator ReadOnlySpan<char>(StringSegment value) => value.Span;
+
     public StringSegment TrimStart() => this[GetTrimStart()..];
     public StringSegment TrimEnd()   => this[..GetTrimEnd()];
     public StringSegment Trim()      => this[GetTrimStart()..GetTrimEnd()];
 
-    public Match Match(Regex regex) => regex.Match(_string, _offset, _length);
+    public Match Match(Regex regex) => regex.Match(String, _offset, _length);
 
-    public bool StringEquals(StringSegment other, StringComparison comparison = StringComparison.Ordinal) =>
-        _length == other._length && StringCompare(other) == 0;
+    public int Compare(StringSegment other, StringComparison comparison = StringComparison.Ordinal) =>
+        Span.CompareTo(other.Span, comparison);
+    public int Compare(ReadOnlyMemory<char> other, StringComparison comparison = StringComparison.Ordinal) =>
+        Span.CompareTo(other.Span, comparison);
+    public int Compare(ReadOnlySpan<char> other, StringComparison comparison = StringComparison.Ordinal) =>
+        Span.CompareTo(other, comparison);
+    public int Compare(string other, StringComparison comparison = StringComparison.Ordinal) =>
+        Span.CompareTo(other.AsSpan(), comparison);
 
-    public int StringCompare(StringSegment other, StringComparison comparison = StringComparison.Ordinal) =>
-        string.Compare(_string, _offset, other._string, other._offset, _length, comparison);
+    public bool Equals(StringSegment other, StringComparison comparison) =>
+        Span.Equals(other.Span, comparison);
+    public bool Equals(ReadOnlyMemory<char> other, StringComparison comparison) =>
+        Span.Equals(other.Span, comparison);
+    public bool Equals(ReadOnlySpan<char> other, StringComparison comparison) =>
+        Span.Equals(other, comparison);
+    public bool Equals(string other, StringComparison comparison) =>
+        Span.Equals(other.AsSpan(), comparison);
 
     public bool Equals(StringSegment other) =>
-        ReferenceEquals(_string, other._string) && _offset == other._offset && _length == other._length;
-    public bool Equals(string other, StringComparison comparison = StringComparison.Ordinal) =>
-        string.Compare(_string, _offset, other, 0, Math.Max(_length, other.Length), comparison) == 0;
+        Span.Equals(other.Span, StringComparison.Ordinal);
+    public bool Equals(ReadOnlyMemory<char> other) =>
+        Span.Equals(other.Span, StringComparison.Ordinal);
+    public bool Equals(ReadOnlySpan<char> other) =>
+        Span.Equals(other, StringComparison.Ordinal);
+    public bool Equals(string? other) =>
+        other != null && Span.Equals(other.AsSpan(), StringComparison.Ordinal);
 
     public override bool Equals(object? obj) =>
         obj switch
         {
-            StringSegment other when Equals(other) => true,
-            string other when Equals(other) => true,
+            StringSegment other => Equals(other),
+            ReadOnlyMemory<char> other => Equals(other),
+            string other => Equals(other),
             _ => false,
         };
 
-    public override int GetHashCode() => HashCode.Combine(_string, _offset, _length);
+    public override int GetHashCode() => HashCode.Combine(String, _offset, _length);
 
     public static bool operator ==(StringSegment left, StringSegment right) => left.Equals(right);
     public static bool operator !=(StringSegment left, StringSegment right) => !left.Equals(right);

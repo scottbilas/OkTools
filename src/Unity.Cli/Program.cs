@@ -1,5 +1,6 @@
 using DocoptNet;
 using DotNetConfig;
+using OkTools.Terminal;
 
 public static class Program
 {
@@ -108,12 +109,12 @@ Print help for COMMAND.
         }
         catch (DocoptExitException x)
         {
-            Console.WriteLine(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
+            Console.WriteLine(DocoptUtils.Reflow(x.Message, Console.WindowWidth));
             return (int)CliExitCode.Help;
         }
         catch (CliErrorException x)
         {
-            Console.Error.Write(DocoptUtility.Reflow(x.Message, Console.WindowWidth));
+            Console.Error.Write(DocoptUtils.Reflow(x.Message, Console.WindowWidth));
             if (!x.Message.EndsWith('\n'))
                 Console.Error.WriteLine();
             return (int)x.Code;

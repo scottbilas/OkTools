@@ -2,11 +2,30 @@ using DocoptNet;
 
 namespace OkTools.Terminal.Extensions;
 
-// ReSharper disable MethodHasAsyncOverload
-
 [PublicAPI]
 public static class DocoptExtensions
 {
+    public static string? TryGetUsage(this DocoptInputErrorException @this)
+    {
+        if (@this.Data.Contains("Usage") && @this.Data["Usage"] is string usage && usage != "")
+            return usage;
+
+        return null;
+    }
+
+    public static TArgs ParseToArguments<TArgs>(this IBaselineParser<TArgs> @this, IReadOnlyList<string> args) =>
+        @this.Parse(args) switch
+        {
+            IArgumentsResult<TArgs> argsResult =>
+                argsResult.Arguments,
+            IInputErrorResult errorResult =>
+                throw new DocoptInputErrorException(errorResult.Error).WithData("Usage", errorResult.Usage),
+            var unknownResult =>
+                throw new InvalidOperationException("Unknown result from parser: " + unknownResult.GetType().FullName)
+        };
+
+    public static bool Any(this StringList @this) => @this.Count != 0;
+
     class InputErrorResult : IInputErrorResult
     {
         public InputErrorResult(string error) { Error = error; }
@@ -19,15 +38,16 @@ public static class DocoptExtensions
         IReadOnlyCollection<string> args,
         string programVersion, string help, string usage,
         Func<T, object?>? postParse = null,
-        TextUtility.Replacer? macroReplacer = null,
+        TextUtility.MacroReplacer? macroReplacer = null,
         TextWriter? outWriter = null,
         TextWriter? errWriter = null,
         int? wrapWidth = null)
     {
-        // vezel warns about this, but if using vezel we should set outWriter/errWriter
+        outWriter ??= Vezel.Cathode.Terminal.StandardOut.TextWriter;
+        errWriter ??= Vezel.Cathode.Terminal.StandardError.TextWriter;
+
+        // figure out how to do this with cathode
 #       pragma warning disable RS0030
-        outWriter ??= Console.Out;
-        errWriter ??= Console.Error;
         wrapWidth ??= !Console.IsOutputRedirected ? Console.WindowWidth : 0;
 #       pragma warning restore RS0030
 
@@ -63,13 +83,13 @@ public static class DocoptExtensions
 
                 case IHelpResult helpResult:
                     var helpText = FormatHelp(helpResult.Help, programVersion);
-                    outWriter.WriteLine(DocoptUtility.Reflow(helpText, wrapWidth.Value));
+                    outWriter.WriteLine(DocoptUtils.Reflow(helpText.ToString(), wrapWidth.Value));
                     rc.code = CliExitCode.Help;
                     break;
 
                 case IVersionResult:
                     var shortDescription = FormatHelp(help[..help.IndexOf('\n')].Trim(), programVersion);
-                    outWriter.WriteLine(shortDescription);
+                    outWriter.WriteLine(shortDescription.ToString());
                     rc.code = CliExitCode.Help;
                     break;
 
@@ -92,7 +112,7 @@ public static class DocoptExtensions
                         errWriter.WriteLine();
 
                     var usageText = FormatHelp(usage, programVersion);
-                    errWriter.WriteLine(DocoptUtility.Reflow(usageText, wrapWidth.Value));
+                    errWriter.WriteLine(DocoptUtils.Reflow(usageText.ToString(), wrapWidth.Value));
 
                     rc.code = CliExitCode.ErrorUsage;
                     break;
@@ -101,7 +121,7 @@ public static class DocoptExtensions
                     throw new InvalidOperationException($"Unexpected result type {result.GetType().FullName}");
             }
 
-            string FormatHelp(string helpText, string version) =>
+            StringSegment FormatHelp(string helpText, string version) =>
                 macroReplacer != null
                     ? TextUtility.ReplaceMacros(helpText, macroReplacer)
                     : string.Format(helpText, CliUtility.ProgramName, version);
@@ -116,4 +136,5 @@ public static class DocoptExtensions
 
         return rc;
     }
+
 }

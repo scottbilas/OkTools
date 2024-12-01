@@ -1,4 +1,5 @@
 using System.Collections;
+// ReSharper disable UseArrayEmptyMethod
 
 class EnumerableExtensionsTests
 {
@@ -49,6 +50,34 @@ class EnumerableExtensionsTests
 
         public int Count => count;
         public T this[int i] => i == index ? value : throw new InvalidOperationException();
+    }
+
+    static IEnumerable SelectWithPositionsCases() => new TestCaseData[] {
+        new(new char[0], new (char, int, bool)[0]),
+        new(new[] { 'a' },
+            new[] { ('a', 0, true) }),
+        new(new[] { 'a','b','c' },
+            new[] { ('a', 0, false), ('b', 1, false), ('c', 2, true) })
+    };
+
+    [TestCaseSource(nameof(SelectWithPositionsCases))]
+    public void SelectWithPositions(char[] items, (char c, int i, bool l)[] expected)
+    {
+        items.SelectWithPositions().ShouldBe(expected);
+    }
+
+    static IEnumerable SelectWithPositionsSelectorCases() => new TestCaseData[] {
+        new(new char[0], new (string, int, bool)[0]),
+        new(new[] { 'a' },
+            new[] { ("a", 0, true) }),
+        new(new[] { 'a','b','c' },
+            new[] { ("a", 0, false), ("b", 1, false), ("c", 2, true) })
+    };
+
+    [TestCaseSource(nameof(SelectWithPositionsSelectorCases))]
+    public void SelectWithPositions_WithSelector(char[] items, (string c, int i, bool l)[] expected)
+    {
+        items.SelectWithPositions(c => c.ToString()).ShouldBe(expected);
     }
 
     [Test]

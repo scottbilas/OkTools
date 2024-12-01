@@ -1,5 +1,6 @@
 // ReSharper disable StringLiteralTypo
 
+[Parallelizable]
 class StringExtensionsTests
 {
     [Test]
@@ -209,6 +210,38 @@ class StringExtensionsTests
 
         enumerable.StringJoin(" ==> ").ShouldBe("abc ==> 57 ==> -14 ==> z");
         enumerable.StringJoin('\n').ShouldBe("abc\n57\n-14\nz");
+    }
+
+    static (string, string[])[] SelectLinesCases() =>
+    [
+        ("", []),
+        ("\n", [ "" ]),
+        ("\r\n", [ "" ]),
+        ("\n\r\n", [ "", "" ]),
+        ("\r\n\r\n", [ "", "" ]),
+        ("abc", [ "abc" ]),
+        ("abc\ndef\n\nghi", [ "abc", "def", "", "ghi" ]),
+        ("abc\ndefgh\n\n \r\njklm\n", [ "abc", "defgh", "", " ", "jklm" ]),
+        ("abc\ndefghi\n\nnopr\r\n", [ "abc", "defghi", "", "nopr" ]),
+        ("  help      Print\n  diff      Build\n  manifest  Build project manifests for Unity to generate dll's for diff reports.\n  codedom   Dump a C# file annotated with node/token kinds for codedom debugging.",
+        ["  help      Print",
+         "  diff      Build",
+         "  manifest  Build project manifests for Unity to generate dll's for diff reports.",
+         "  codedom   Dump a C# file annotated with node/token kinds for codedom debugging."]),
+    ];
+
+    [TestCaseSource(nameof(SelectLinesCases))]
+    public void SelectLines((string str, string[] expected) data)
+    {
+        var strs = data.str.SelectLines().ToArray();
+        strs.ShouldBe(data.expected);
+    }
+
+    [TestCaseSource(nameof(SelectLinesCases))]
+    public void SelectLinesAsSegments((string str, string[] expected) data)
+    {
+        var segs = data.str.SelectLinesAsSegments().Select(s => s.ToString()).ToArray();
+        segs.ShouldBe(data.expected);
     }
 
     [TestCase("", "")]

@@ -1,27 +1,15 @@
 partial class TextUtilityTests
 {
-    static string Replace(string source, params (string name, Action<TextWriter> replacer)[] replacements)
-    {
-        var dictReplacer = TextUtility.CreateMacroReplacer(0, replacements);
-        var arrayReplacer = TextUtility.CreateMacroReplacer(1000, replacements);
-
-        // check the two types of replacers work the same
-        var dictResult = TextUtility.ReplaceMacros(source, dictReplacer);
-        var arrayResult = TextUtility.ReplaceMacros(source, arrayReplacer);
-        arrayResult.ShouldBe(dictResult);
-
-        return dictResult;
-    }
-
     [TestCase("{{macro}}", "value")]
     [TestCase("{{spaces are ok}}{{macro}}{{another}}", "yes they arevalue**result**")]
     [TestCase("xyzzy\n{{macro}}{{macro}}**more", "xyzzy\nvaluevalue**more")]
     public void ReplaceMacros_Basics(string text, string expected)
     {
-        Replace(text,
+        var result = TextUtility.ReplaceMacros(text, [
                 ("macro", w => w.Write("value")),
                 ("another", w => w.Write("**result**")),
-                ("spaces are ok", w => w.Write("yes they are")))
+                ("spaces are ok", w => w.Write("yes they are"))]);
+        result
             .ShouldBe(expected);
     }
 
@@ -33,7 +21,7 @@ partial class TextUtilityTests
     {
         Should
             .Throw<FormatException>(() =>
-                Replace(text, ("valid", _ => {})))
+                TextUtility.ReplaceMacros(text, [("valid", _ => { })]))
             .Message.ShouldContain("was not closed");
     }
 
@@ -45,7 +33,7 @@ partial class TextUtilityTests
     {
         Should
             .Throw<FormatException>(() =>
-                Replace(text, ("valid", _ => {})))
+                TextUtility.ReplaceMacros(text, [("valid", _ => { })]))
             .Message.ShouldContain("Unrecognized macro");
     }
 
@@ -55,10 +43,10 @@ partial class TextUtilityTests
     [TestCase(" abc  \n   foobar  ")]
     public void ReplaceMacros_WithNoMacro_ReturnsSame(string text)
     {
-        var replaced = Replace(text);
+        var replaced = TextUtility.ReplaceMacros(text, [("xyzzy", "jooky")]);
         replaced.ShouldBe(text);
 
         // we should get the exact same string back if no work was done on it
-        ReferenceEquals(replaced, text).ShouldBeTrue();
+        ReferenceEquals(replaced.ToString(), text).ShouldBeTrue();
     }
 }

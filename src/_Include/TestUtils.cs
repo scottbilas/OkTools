@@ -7,7 +7,7 @@ readonly struct DirectoryBackup : IDisposable
 {
     public DirectoryBackup(string folderPath)
     {
-        _backupPath = Path.GetTempPath().ToNPath().Combine(Environment.ProcessId.ToString());
+        _backupPath = NPath.SystemTempDirectory.Combine(Environment.ProcessId.ToString());
         _fullPath = folderPath.ToNPath().MakeAbsolute();
 
         Directory.CreateDirectory(_backupPath.ToString()!);

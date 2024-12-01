@@ -17,24 +17,18 @@
   <!-- nuget -->
   <PropertyGroup>
     <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
-    <Title>Some OK core utility functions</Title>
+    <Title>Some OK core utility functions.</Title>
     <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
-    <PackageVersion>1.0.18</PackageVersion>
+    <PackageVersion>1.0.19</PackageVersion>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
   <ItemGroup>
-    <Using Include="OkTools.Core" />
-    <Using Include="OkTools.Core.Extensions" />
-
     <None Include="README.md" Pack="true" PackagePath="/" />
     <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
-    <None Update="WideTypes.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>WideTypes.cs</LastGenOutput>
-    </None>
   </ItemGroup>
 
+  <!-- dependencies -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.CsWin32">
       <PrivateAssets>all</PrivateAssets>
@@ -47,9 +41,21 @@
     <PackageReference Include="Microsoft.CSharp" Condition="'$(TargetFramework)' == 'netstandard2.1'" />
   </ItemGroup>
 
+  <!-- t4 (TODO: move into Library.targets, also get build-based gen working again)-->
   <ItemGroup>
+    <None Update="WideTypes.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>WideTypes.cs</LastGenOutput>
+    </None>
     <Compile Update="WideTypes.cs">
       <DependentUpon>WideTypes.tt</DependentUpon>
+    </Compile>
+    <None Update="Extensions\SpanExtensions.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>SpanExtensions.cs</LastGenOutput>
+    </None>
+    <Compile Update="Extensions\SpanExtensions.cs">
+      <DependentUpon>SpanExtensions.tt</DependentUpon>
     </Compile>
   </ItemGroup>
 

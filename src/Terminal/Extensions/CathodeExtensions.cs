@@ -1,8 +1,18 @@
-﻿using System.Text;
+﻿namespace OkTools.Terminal.Extensions;
+
+using System.Text;
 using Vezel.Cathode.Text.Control;
 using static Vezel.Cathode.Text.Control.ControlConstants;
+using Terminal = Vezel.Cathode.Terminal;
 
-namespace OkTools.Terminal.Extensions;
+[PublicAPI]
+public static class TerminalUtils
+{
+    public static bool IsFullyInteractive =>
+        Terminal.StandardIn.IsInteractive &&
+        Terminal.StandardOut.IsInteractive &&
+        Terminal.StandardError.IsInteractive;
+}
 
 [PublicAPI]
 public static class ControlBuilderExtensions

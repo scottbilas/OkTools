@@ -1,13 +1,14 @@
-﻿class DocoptUtilityTests
+﻿using OkTools.Terminal;
+
+class DocoptUtilsReflowTests
 {
-    static string Reflow(string text, int width, int minWrapWidth = 0, string eol = "\n") =>
-        DocoptUtility.Reflow(text,
+    static string Reflow(string text, int width, int minWrapWidth = 0) =>
+        DocoptUtils.Reflow(text,
             new DocoptReflowOptions
             {
                 DesiredWrapWidth = width,
                 MinWrapWidth = minWrapWidth,
                 IndentFallback = 0,
-                Eol = eol,
             });
 
     [Test]
@@ -280,9 +281,6 @@
         Reflow(
             "some text\nother text\r\nstill more", 10).ShouldBe(
             "some text\nother text\nstill more");
-        Reflow(
-            "some text\nother text\r\nstill more", 10, eol: "\r\n").ShouldBe(
-            "some text\r\nother text\r\nstill more");
     }
 
     [Test]

@@ -1,11 +1,11 @@
-﻿using System.Buffers;
+﻿namespace OkTools.Terminal;
+
+using System.Buffers;
 using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Vezel.Cathode.IO;
 using static Vezel.Cathode.Text.Control.ControlConstants;
-
-namespace OkTools.Terminal;
 
 // i can get rid of most of this class once this is implemented:
 // https://github.com/vezel-dev/cathode/issues/59 "Implement a control sequence parser"
@@ -369,14 +369,5 @@ public static class AnsiInput
 
             _ => default
         };
-    }
-
-    static int CountSame<T>(ReadOnlySpan<T> span1, ReadOnlySpan<T> span2) where T : IEquatable<T>
-    {
-        var count = 0;
-        while (count < span1.Length && count < span2.Length && span1[count].Equals(span2[count]))
-            ++count;
-
-        return count;
     }
 }

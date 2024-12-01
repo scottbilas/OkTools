@@ -140,6 +140,7 @@
       <ItemGroup>
         <Compile Include="**\*.t.cs" />
         <None Remove="*" />
+        <None Include="**\*.t.tt" />
         <None Remove="TestFiles\**" />
       </ItemGroup>
     </When>
