@@ -91,6 +91,16 @@
     <NoWarn>$(NoWarn);RS0030</NoWarn>
   </PropertyGroup>
 
+  <!-- Feature: BannedSymbols -->
+
+  <ItemGroup Condition=" $(OkFeatures.Contains(';BannedSymbols;')) ">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- put this in the csproj also: <AdditionalFiles Include="BannedSymbols.txt"/> -->
+  </ItemGroup>
+
   <!-- Feature: T4 -->
   <!-- TEMPORARILY DISABLED - T4.Build does not support .NET 8 SDK, gets an error from a missing assembly.
        just go with manual Rider-based T4 for now. -->

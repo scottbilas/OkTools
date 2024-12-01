@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>Core;NetMulti</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>Core;NetMulti;BannedSymbols</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
@@ -25,6 +25,7 @@
     <None Include="../../LICENSE.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <!-- dependencies -->
   <ItemGroup>
     <PackageReference Include="docopt.net" />
     <PackageReference Include="Spectre.Console" />

@@ -1,0 +1,6 @@
+// https://github.com/dotnet/roslyn-analyzers/blob/main/src/Microsoft.CodeAnalysis.BannedApiAnalyzers/BannedApiAnalyzers.Help.md
+
+T:System.IO.Path;Use NiceIO NPath instead
+T:System.IO.Directory;Use NiceIO NPath instead
+M:System.Text.StringBuilder.AppendLine;Use AppendLf instead
+M:System.Text.StringBuilder.AppendLine(System.String);Use AppendLf instead

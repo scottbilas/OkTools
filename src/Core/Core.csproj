@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup><OkFeatures>T4;NetMulti</OkFeatures></PropertyGroup>
+  <PropertyGroup><OkFeatures>T4;NetMulti;BannedSymbols</OkFeatures></PropertyGroup>
   <Import Project="$(OkTargetsRoot)Library.targets" />
 
   <PropertyGroup>
