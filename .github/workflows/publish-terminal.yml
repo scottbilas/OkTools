@@ -1,0 +1,33 @@
+name: Publish NuGet Package
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ release-terminal-* ]
+
+# TODO: trigger on commit desc '/publish'
+# TODO: switch to https://github.com/xoofx/dotnet-releaser
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4.1.0
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run tests
+        run: |
+          dotnet test --nologo -l:"console;verbosity=normal" src\Terminal\Terminal-Tests.csproj -c Release
+
+      - name: Pack nuget
+        run: dotnet pack src\Terminal\Terminal.csproj -c Release
+
+      - name: Publish NuGet package
+        run: |
+          dotnet nuget push publish\Terminal\*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

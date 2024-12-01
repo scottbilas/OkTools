@@ -66,10 +66,11 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
 
-  <!-- Feature: Core -->
+  <!-- Feature: Core(Package) -->
 
   <ItemGroup Condition=" $(OkFeatures.Contains(';Core;')) ">
-    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" />
+    <ProjectReference Include="$(OkSrcRoot)Core\Core.csproj" Condition=" '$(_IsPublishing)' != 'true' " />
+    <PackageReference Include="OkTools.Core" Condition=" '$(_IsPublishing)' == 'true' " />
     <Using Include="OkTools.Core" />
     <Using Include="OkTools.Core.Extensions" />
     <Using Include="OkTools.Core.StaticUtility" Static="true" />

@@ -3,7 +3,7 @@ name: Publish NuGet Package
 on:
   workflow_dispatch:
   push:
-    tags: [ release-* ]
+    tags: [ release-core-* ]
 
 # TODO: trigger on commit desc '/publish'
 # TODO: switch to https://github.com/xoofx/dotnet-releaser
