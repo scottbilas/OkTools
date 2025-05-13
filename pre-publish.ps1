@@ -8,6 +8,7 @@ param (
     [switch]$SkipBuild,
     [switch]$SkipTests,
     [switch]$SkipPack,
+    [switch]$SkipApi,
     [switch]$All)
 
 Set-StrictMode -Version Latest
@@ -34,28 +35,45 @@ function dowit($wat) {
         iee dotnet pack src/$wat/$wat.csproj -c Release
     }
 
-    "*** GENERATE PUBLIC API ***"
+    if (!$SkipApi) {
+        "*** GENERATE PUBLIC API ***"
 
-    iee dotnet tool restore
+        if ($wat -eq 'Terminal') {
+            write-warning "Currently getting errors when generate-public-api on Terminal. Skipping."
+            return
+        }
 
-    $old = $env:MSBUILDTERMINALLOGGER
-    try {
-        $env:MSBUILDTERMINALLOGGER = 'off'
-        "Running generate-public-api for $wat..."
-        $out = iee dotnet tool run generate-public-api --target-frameworks net9.0 --assembly (resolve-path artifacts\build\bin\$wat\net9.0\OkTools.$wat.dll) | out-string
+        iee dotnet tool restore
+
+        $old = $env:MSBUILDTERMINALLOGGER
+        try {
+            $env:MSBUILDTERMINALLOGGER = 'off'
+            "Running generate-public-api for $wat..."
+            $out = iee dotnet tool run generate-public-api --target-frameworks net9.0 --assembly (resolve-path artifacts\build\bin\$wat\net9.0\OkTools.$wat.dll) | out-string
+        }
+        finally {
+            $env:MSBUILDTERMINALLOGGER = $old
+        }
+
+        # MSBUILDTERMINALLOGGER=off ought to mask this, but keep the fix in case running a version of dotnet with the issue
+        $esc = [char]27
+        $out = $out.replace("$esc]9;4;3;$esc\$esc]9;4;0;$esc\", '')
+        $out = $out.replace("`r`n", "`n")
+
+        set-content api-$($wat.ToLower()).txt $out -nonew
     }
-    finally {
-        $env:MSBUILDTERMINALLOGGER = $old
-    }
 
-    # MSBUILDTERMINALLOGGER=off ought to mask this, but keep the fix in case running a version of dotnet with the issue
-    $esc = [char]27
-    $out = $out.replace("$esc]9;4;3;$esc\$esc]9;4;0;$esc\", '')
-    $out = $out.replace("`r`n", "`n")
-
-    set-content api-$($wat.ToLower()).txt $out -nonew
     ""
 }
 
 if ($Core) { dowit Core }
 if ($Terminal) { dowit Terminal }
+
+function ver($wat) {
+    $xml = [xml](get-content src/$wat/$wat.csproj)
+    $ver = $xml.SelectSingleNode("//PropertyGroup/PackageVersion").InnerText
+    "$wat version: $ver"
+}
+
+if ($Core) { ver Core }
+if ($Terminal) { ver Terminal }
