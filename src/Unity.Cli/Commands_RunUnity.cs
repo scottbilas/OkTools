@@ -261,8 +261,8 @@ Debugging Options:
             var foundToolchains = FindAllToolchains(context.Config, false).MakeNice().Memoize();
 
             var detectedToolchain = testableVersions
-                .WithIndex()
-                .SelectMany(v => foundToolchains.Select(t => (version: v.item, vindex: v.index, toolchain: t)))
+                .Index()
+                .SelectMany(v => foundToolchains.Select(t => (version: v.Item, vindex: v.Index, toolchain: t)))
                 .FirstOrDefault(i => i.toolchain.Version == i.version);
 
             if (detectedToolchain == default)

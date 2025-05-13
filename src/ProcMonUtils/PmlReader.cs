@@ -274,7 +274,8 @@ public sealed class PmlReader : IDisposable
         if (count == 0)
             return array;
 
-        if (_reader.BaseStream.Read(MemoryMarshal.Cast<T, byte>(array)) != sizeof(T)*count)
+        var bytes = MemoryMarshal.Cast<T, byte>((Span<T>)array);
+        if (_reader.BaseStream.Read(bytes) != sizeof(T)*count)
             throw new IOException("Unexpected EOF");
 
         return array;

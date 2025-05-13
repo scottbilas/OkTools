@@ -42,7 +42,7 @@ class ScreenRecorder
     public void Process(ReadOnlySpan<char> span)
     {
         var nextSize = _nextSize;
-        if ((nextSize != _size).Any())
+        if ((nextSize != _size).Any)
         {
             _cells = new (int, int)[nextSize.X * nextSize.Y];
             _size = nextSize;

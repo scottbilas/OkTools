@@ -31,7 +31,7 @@ public static partial class DocoptUtils
         {
             var wrapWidth = cliContext.WrapWidth == 0 ? DocoptReflowOptions.DefaultWrapWidth : cliContext.WrapWidth.Value;
             if (cliContext.MaxWrapWidth != null)
-                wrapWidth.MinimizeWith(cliContext.MaxWrapWidth.Value);
+                Minimize(ref wrapWidth, cliContext.MaxWrapWidth.Value);
 
             helpLines = Reflow(helpLines, wrapWidth);
         }
