@@ -1,5 +1,9 @@
 ﻿using System.Text;
 
+#if !NETSTANDARD
+using System.Buffers;
+#endif
+
 namespace OkTools.Core;
 
 using SimpleReplacer = (string Macro, Action<TextWriter> WriteAction);
