@@ -1,10 +1,7 @@
 ﻿namespace OkTools.Terminal;
 
 using Spectre.Console;
-
 using Terminal = Vezel.Cathode.Terminal;
-using SimpleMacro = (string macroName, string replacement);
-using MacroWriter = (string macroName, Action<CliContext, TextWriter> writeAction);
 
 public enum DebugLevel
 {
@@ -63,13 +60,13 @@ public class CliContext
             // this can happen if the console isn't attached (like during early stages of a unit test)
         }
 
-        IEnumerable<SimpleMacro> simpleMacros =
+        IEnumerable<SimpleTextMacro> simpleMacros =
         [
             ("cliapp.name", _config.ProgramName),
             ("cliapp.version", _config.ProgramVersion),
         ];
 
-        IEnumerable<MacroWriter> macroWriters =
+        IEnumerable<SimpleMacroWriter> macroWriters =
         [
             ("commands.help", (_, w) =>
             {
@@ -87,11 +84,19 @@ public class CliContext
             macroWriters = macroWriters.Concat(_config.MacroWriters);
 
         // TODO: can i fix up the api so it can infer the types?
-        _macroReplacer = TextUtility.CreateMacroReplacer(Enumerable.Concat(
-            simpleMacros.Select<SimpleMacro, (string, Action<TextWriter>)>(
+        var staticMacroReplacer = TextUtility.CreateMacroReplacer(Enumerable.Concat(
+            simpleMacros.Select<SimpleTextMacro, (string, Action<TextWriter>)>(
                 item => (item.macroName, writer => writer.Write(item.replacement))),
-            macroWriters.Select<MacroWriter, (string, Action<TextWriter>)>(
+            macroWriters.Select<SimpleMacroWriter, (string, Action<TextWriter>)>(
                 item => (item.macroName, writer => item.writeAction(this, writer)))));
+
+        if (_config.MacroReplacer != null)
+        {
+            _macroReplacer = (name, writer) =>
+                staticMacroReplacer(name, writer) || _config.MacroReplacer(name, writer);
+        }
+        else
+            _macroReplacer = staticMacroReplacer;
 
         InitLogging(default, default);
     }

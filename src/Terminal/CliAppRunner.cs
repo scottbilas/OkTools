@@ -3,10 +3,7 @@ namespace OkTools.Terminal;
 using System.Globalization;
 using System.Text;
 using DocoptNet;
-
 using Terminal = Vezel.Cathode.Terminal;
-using SimpleMacro = (string macroName, string replacement);
-using MacroWriter = (string macroName, Action<CliContext, TextWriter> writeAction);
 
 public class CliAppConfig
 {
@@ -14,8 +11,13 @@ public class CliAppConfig
     public required IReadOnlyList<CliCommandSpec> Commands { get; init; }
 
     public string ProgramName { get; init; } = CliUtility.ProgramName;
-    public IReadOnlyList<SimpleMacro>? SimpleMacros { get; init; }
-    public IReadOnlyList<MacroWriter>? MacroWriters { get; init; }
+
+    // static name, static replacement
+    public IReadOnlyList<SimpleTextMacro>? SimpleMacros { get; init; }
+    // static name, dynamic replacement
+    public IReadOnlyList<SimpleMacroWriter>? MacroWriters { get; init; }
+    // fully dynamic processing (processed after SimpleMacros and MacroWriters)
+    public TextUtility.MacroReplacer? MacroReplacer { get; init; }
 
     public CliCommandSpec? TryGetCommand(string name) =>
         Commands.FirstOrDefault(c => c.Name == name);
@@ -26,17 +28,22 @@ public class CliAppConfig
 public static class CliAppRunner
 {
     // do not want docopt doing any extra special stuff here for help/version, we do it fully ourselves
-    public static Task<int> Run<TArgs>(CliAppConfig config, IHelpFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs) where TArgs : ICliDocoptArgs =>
-        Run(config, parser.DisableHelp(), cliArgs);
-    public static Task<int> Run<TArgs>(CliAppConfig config, IVersionFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs) where TArgs : ICliDocoptArgs =>
-        Run(config, parser.DisableVersion(), cliArgs);
+    public static Task<int> Run<TArgs>(CliAppConfig config, IHelpFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs => Run(config, parser.DisableHelp(), cliArgs);
+    public static Task<int> Run<TArgs>(CliAppConfig config, IVersionFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs => Run(config, parser.DisableVersion(), cliArgs);
+    public static Task<int> Run<TArgs>(CliAppConfig config, IBaselineParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs => Run(new CliContext(config), parser, cliArgs);
 
-    public static async Task<int> Run<TArgs>(CliAppConfig config, IBaselineParser<TArgs> parser, IReadOnlyList<string> cliArgs) where TArgs : ICliDocoptArgs
+    public static Task<int> Run<TContext, TArgs>(TContext ctx, IHelpFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs where TContext : CliContext => Run(ctx, parser.DisableHelp(), cliArgs);
+    public static Task<int> Run<TContext, TArgs>(TContext ctx, IVersionFeaturingParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs where TContext : CliContext => Run(ctx, parser.DisableVersion(), cliArgs);
+    public static async Task<int> Run<TContext, TArgs>(TContext ctx, IBaselineParser<TArgs> parser, IReadOnlyList<string> cliArgs)
+        where TArgs : ICliDocoptArgs where TContext : CliContext
     {
         CultureInfo.DefaultThreadCurrentCulture   = CultureInfo.InvariantCulture;
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-        var ctx = new CliContext(config);
 
         PauseLevel pauseLevel = default;
 
