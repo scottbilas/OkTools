@@ -70,6 +70,7 @@ Options:
   --no-hub                [windows-only] Run `okunity do hidehub --killhub` before launching Unity, which will kill the Hub if running and also prevent the auto-launch of the Hub that Unity does (note that this change has global impact, check `help do` for more info on this)
   --no-burst              Completely disable Burst
   --no-activate-existing  Don't activate an existing Unity main window if found running on the project
+  --no-bug-reporter       Prevent the Unity Bug Reporter coming up on a crash
 
   (*) The high bit will also be set to differentiate from normal CLI exit codes.
 
@@ -314,6 +315,12 @@ Debugging Options:
             {"UNITY_MIXED_CALLSTACK", 1},
             {"UNITY_EXT_LOGGING", 1} // alternative to UNITY_EXT_LOGGING: "-timestamps" on command line
         };
+
+        if (context.GetConfigBool("no-bug-reporter"))
+        {
+            //TODO status "Disabling Unity Bug Reporter"
+            unityEnv["UNITY_DONOTSTARTBUGREPORTER"] = 1;
+        }
 
         var enableManagedDebugging = context.GetConfigBool("enable-debugging");
         if (context.GetConfigBool("wait-attach-managed"))
