@@ -1,9 +1,10 @@
-using System.Collections;
-
 namespace OkTools.Core.Extensions;
 
+using System.Collections;
+using System.Numerics;
+
 [PublicAPI]
-public static class EnumerableExtensions
+public static partial class EnumerableExtensions
 {
     // traits
 
@@ -49,6 +50,8 @@ public static class EnumerableExtensions
         return value;
     }
 
+    // select variants
+
     public static IEnumerable<(T item, int index, bool isLast)> SelectWithPositions<T>(this IEnumerable<T> @this)
     {
         using var enumerator = @this.GetEnumerator();
@@ -86,6 +89,8 @@ public static class EnumerableExtensions
         foreach (var item in @this)
             yield return item.item;
     }
+
+    // first/last
 
     public static T First<T>(this IReadOnlyList<T> @this) =>
         @this[0];
@@ -176,6 +181,11 @@ public static class EnumerableExtensions
 
     // filtering and searching
 
+    public static IEnumerable<T> WhereNot<T>(this IEnumerable<T> @this, Func<T, bool> predicate) =>
+        @this.Where(v => !predicate(v));
+    public static IEnumerable<T> WhereNot<T>(this IEnumerable<T> @this, Func<T, int, bool> predicate) =>
+        @this.Where((v, i) => !predicate(v, i));
+
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: class =>
         @this.Where(item => item is not null)!;
     public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T?> @this) where T: struct =>
@@ -185,6 +195,9 @@ public static class EnumerableExtensions
         @this.Where(item => item is not null)!;
     public static ParallelQuery<T> WhereNotNull<T>(this ParallelQuery<T?> @this) where T: struct =>
         @this.Where(item => item.HasValue).Select(item => item!.Value);
+
+    public static IEnumerable<T> SelectWhereIndex<T>(this IEnumerable<T> @this, Func<int, bool> predicate) =>
+        @this.Where((_, i) => predicate(i));
 
     public static IEnumerable<TResult> SelectWhere<TSource, TResult>(
         this IEnumerable<TSource> @this,
@@ -197,6 +210,9 @@ public static class EnumerableExtensions
                 yield return selected;
         }
     }
+
+    public static IEnumerable<T> SelectStride<T>(this IEnumerable<T> @this, int step, int start = 0) =>
+        @this.SelectWhereIndex(i => i % step == start);
 
     public static int IndexOf<T>(this IEnumerable<T> @this, Func<T, bool> predicate)
     {
@@ -233,15 +249,7 @@ public static class EnumerableExtensions
     public static IEnumerable<object> Flatten(this IEnumerable @this) =>
         @this.Flatten<object>();
 
-    public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> @this) =>
-        @this.Select((item, index) => (item, index));
-
     // copy to collection
-
-#   if !NET8_0_OR_GREATER
-    public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this IEnumerable<(TKey key, TValue value)> @this) where TKey: notnull =>
-        @this.ToDictionary(item => item.key, item => item.value);
-#   endif
 
     public static Queue<T> ToQueue<T>(this IEnumerable<T> @this) =>
         new(@this);
@@ -264,4 +272,17 @@ public static class EnumerableExtensions
         var seen = new HashSet<T>();
         return @this.All(item => seen.Add(item));
     }
+
+    // math
+
+#   if NET8_0_OR_GREATER
+    public static T Product<T>(this IEnumerable<T> @this) where T : INumber<T> =>
+        @this.Aggregate(T.One, (a, b) => a * b);
+#   endif
+
+    // grouping
+
+    public static IEnumerable<TResult> GroupJoin<TItem, TResult>(
+        this IEnumerable<TItem> outer, IEnumerable<TItem> inner, Func<TItem, IEnumerable<TItem>, TResult> resultSelector) =>
+            outer.GroupJoin(inner, k => k, k => k, resultSelector);
 }

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections;
+using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -21,7 +22,8 @@ public readonly struct StringSegment :
     IEquatable<ReadOnlySpan<char>>,
 #   endif
     IEquatable<ReadOnlyMemory<char>>,
-    IEquatable<string>
+    IEquatable<string>,
+    IEnumerable<char>
 {
     // TODO: TESTS
 
@@ -201,6 +203,14 @@ public readonly struct StringSegment :
         };
 
     public override int GetHashCode() => HashCode.Combine(String, _offset, _length);
+
+    public IEnumerator<char> GetEnumerator()
+    {
+        for (var i = 0; i < _length; ++i)
+            yield return _string![_offset + i];
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static bool operator ==(StringSegment left, StringSegment right) => left.Equals(right);
     public static bool operator !=(StringSegment left, StringSegment right) => !left.Equals(right);

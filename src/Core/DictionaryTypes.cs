@@ -53,6 +53,10 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         { _dict = new Dictionary<TKey, TValue>(collection); _getDefValue = getDefValue; }
     public DefaultDictionary(Func<TKey, TValue> getDefValue, IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey>? comparer)
         { _dict = new Dictionary<TKey, TValue>(collection, comparer); _getDefValue = getDefValue; }
+    public DefaultDictionary(Func<TKey, TValue> getDefValue, IEnumerable<(TKey, TValue)> collection)
+        { _dict = new Dictionary<TKey, TValue>(collection.Select(i => new KeyValuePair<TKey, TValue>(i.Item1, i.Item2))); _getDefValue = getDefValue; }
+    public DefaultDictionary(Func<TKey, TValue> getDefValue, IEnumerable<(TKey, TValue)> collection, IEqualityComparer<TKey>? comparer)
+        { _dict = new Dictionary<TKey, TValue>(collection.Select(i => new KeyValuePair<TKey, TValue>(i.Item1, i.Item2)), comparer); _getDefValue = getDefValue; }
 
     public DefaultDictionary(Func<TValue> getDefValue)
         : this(_ => getDefValue()) {}
@@ -70,6 +74,10 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
         : this(_ => getDefValue(), collection) {}
     public DefaultDictionary(Func<TValue> getDefValue, IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey>? comparer)
         : this(_ => getDefValue(), collection, comparer) {}
+    public DefaultDictionary(Func<TValue> getDefValue, IEnumerable<(TKey, TValue)> collection)
+        : this(_ => getDefValue(), collection) {}
+    public DefaultDictionary(Func<TValue> getDefValue, IEnumerable<(TKey, TValue)> collection, IEqualityComparer<TKey>? comparer)
+        : this(_ => getDefValue(), collection, comparer) {}
 
     public DefaultDictionary(TValue defValue)
         : this(_ => defValue) {}
@@ -86,6 +94,10 @@ public sealed class DefaultDictionary<TKey, TValue> : IDictionary<TKey, TValue>,
     public DefaultDictionary(TValue defValue, IEnumerable<KeyValuePair<TKey, TValue>> collection)
         : this(_ => defValue, collection) {}
     public DefaultDictionary(TValue defValue, IEnumerable<KeyValuePair<TKey, TValue>> collection, IEqualityComparer<TKey>? comparer)
+        : this(_ => defValue, collection, comparer) {}
+    public DefaultDictionary(TValue defValue, IEnumerable<(TKey, TValue)> collection)
+        : this(_ => defValue, collection) {}
+    public DefaultDictionary(TValue defValue, IEnumerable<(TKey, TValue)> collection, IEqualityComparer<TKey>? comparer)
         : this(_ => defValue, collection, comparer) {}
 
     public int Count => _dict.Count;

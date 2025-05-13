@@ -142,7 +142,7 @@ public static class ShellExecUtility
 
         // search path, with current dir first
         return pathEnv
-            .SplitTrimRemoveEmpty()
+            .SplitTrimRemoveEmpty(';')
             .Prepend(".")
             .Select(p => TryResolveExecutableExtension(p.ToNPath().Combine(npathToResolve)))
             .FirstOrDefault(p => p != null);

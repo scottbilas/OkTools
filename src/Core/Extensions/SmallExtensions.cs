@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace OkTools.Core.Extensions;
 
@@ -107,6 +108,9 @@ public static class TupleExtensions
         for (var i = 0; i < @this.Length; ++i)
             yield return @this[i];
     }
+
+    public static (T1 a, T2 b) Swap<T1, T2>(this (T2 x, T1 y) @this) =>
+        (@this.y, @this.x);
 }
 
 [PublicAPI]
@@ -130,4 +134,15 @@ public static class ExceptionExtensions
         @this.Data[key] = value;
         return @this;
     }
+}
+
+[PublicAPI]
+public static class MatchExtensions
+{
+    public static IEnumerable<string> GroupValues(this Match @this) =>
+#       if NETSTANDARD
+        @this.Groups.Skip(1).Select(g => g.Value);
+#       else
+        @this.Groups.Values.Skip(1).Select(g => g.Value);
+#       endif
 }

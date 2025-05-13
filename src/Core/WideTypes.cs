@@ -938,6 +938,9 @@ namespace OkTools.Core
         public static bool operator ==(in Bool2 left, in Bool2 right) => left.Equals(right);
         public static bool operator !=(in Bool2 left, in Bool2 right) => !left.Equals(right);
 
+        public static bool operator ==(in Bool2 left, bool right) => left == new Bool2(right);
+        public static bool operator !=(in Bool2 left, bool right) => left != new Bool2(right);
+
         public static Bool2 operator |(in Bool2 left, in Bool2 right) =>
             new(left.X || right.X, left.Y || right.Y);
         public static Bool2 operator &(in Bool2 left, in Bool2 right) =>
@@ -988,6 +991,9 @@ namespace OkTools.Core
         public static bool operator ==(in Bool3 left, in Bool3 right) => left.Equals(right);
         public static bool operator !=(in Bool3 left, in Bool3 right) => !left.Equals(right);
 
+        public static bool operator ==(in Bool3 left, bool right) => left == new Bool3(right);
+        public static bool operator !=(in Bool3 left, bool right) => left != new Bool3(right);
+
         public static Bool3 operator |(in Bool3 left, in Bool3 right) =>
             new(left.X || right.X, left.Y || right.Y, left.Z || right.Z);
         public static Bool3 operator &(in Bool3 left, in Bool3 right) =>
@@ -1037,6 +1043,9 @@ namespace OkTools.Core
 
         public static bool operator ==(in Bool4 left, in Bool4 right) => left.Equals(right);
         public static bool operator !=(in Bool4 left, in Bool4 right) => !left.Equals(right);
+
+        public static bool operator ==(in Bool4 left, bool right) => left == new Bool4(right);
+        public static bool operator !=(in Bool4 left, bool right) => left != new Bool4(right);
 
         public static Bool4 operator |(in Bool4 left, in Bool4 right) =>
             new(left.X || right.X, left.Y || right.Y, left.Z || right.Z, left.W || right.W);

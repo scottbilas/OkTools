@@ -155,6 +155,9 @@ namespace OkTools.Core
         public static bool operator ==(in <#=type#> left, in <#=type#> right) => left.Equals(right);
         public static bool operator !=(in <#=type#> left, in <#=type#> right) => !left.Equals(right);
 
+        public static bool operator ==(in <#=type#> left, bool right) => left == new <#=type#>(right);
+        public static bool operator !=(in <#=type#> left, bool right) => left != new <#=type#>(right);
+
         public static <#=type#> operator |(in <#=type#> left, in <#=type#> right) =>
             new(<#=Fields(f => $"left.{f} || right.{f}")#>);
         public static <#=type#> operator &(in <#=type#> left, in <#=type#> right) =>

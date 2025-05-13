@@ -111,11 +111,32 @@ public static class StringExtensions
     public static IEnumerable<string> SelectToStrings<T>(this IEnumerable<T> @this) =>
         @this.Select(v => v?.ToString()).WhereNotNull();
 
-    public static string[] SplitTrimRemoveEmpty(this string @this) => @this
+    public static string[] SplitTrimRemoveEmpty(this string @this, string split) => @this
 #       if NETSTANDARD
-        .Split(';').Select(p => p.Trim()).Where(p => p != "").ToArray();
+        .Split(split).Select(p => p.Trim()).Where(p => p != "").ToArray();
 #       else
-        .Split(";", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        .Split(split, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+#       endif
+
+    public static string[] SplitTrimRemoveEmpty(this string @this, char split) => @this
+#       if NETSTANDARD
+        .Split(split).Select(p => p.Trim()).Where(p => p != "").ToArray();
+#       else
+        .Split(split, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+#       endif
+
+    public static string[] SplitTrim(this string @this, string split) => @this
+#       if NETSTANDARD
+        .Split(split).Select(p => p.Trim()).ToArray();
+#       else
+        .Split(split, StringSplitOptions.TrimEntries);
+#       endif
+
+    public static string[] SplitTrim(this string @this, char split) => @this
+#       if NETSTANDARD
+        .Split(split).Select(p => p.Trim()).ToArray();
+#       else
+        .Split(split, StringSplitOptions.TrimEntries);
 #       endif
 
     static string ToStringIfNeeded(string original, ReadOnlySpan<char> span) =>
@@ -149,48 +170,76 @@ public static class StringExtensions
     public static string StringJoin(this ITuple @this) =>
         string.Join("", @this.SelectObjects());
 
-    public static IEnumerable<string> SelectLines(this string @this)
+    public static IEnumerable<string> SelectLines(this string @this, bool trimLines = false, bool skipEmptyLines = false)
     {
         var reader = new StringReader(@this);
         while (reader.ReadLine() is { } line)
+        {
+            if (trimLines)
+                line = line.Trim();
+            if (skipEmptyLines && line.IsEmpty())
+                continue;
+
             yield return line;
+        }
     }
 
-    public static IEnumerable<StringSegment> SelectLinesAsSegments(this StringSegment @this)
+    public static IEnumerable<StringSegment> SelectLinesAsSegments(this StringSegment @this, bool trimLines = false)
     {
+        StringSegment DoTrim(StringSegment segment) => trimLines ? segment.Trim() : segment;
+
         for (var iter = @this;;)
         {
             var end = iter.IndexOf('\n');
             if (end < 0)
             {
                 if (iter.Any)
-                    yield return iter;
+                    yield return DoTrim(iter);
                 yield break;
             }
 
             var trim = 0;
             if (end > 0 && iter[end-1] == '\r')
                 trim = 1;
-            yield return iter[..(end-trim)];
+            yield return DoTrim(iter[..(end-trim)]);
 
             iter = iter[(end+1)..];
         }
     }
 
-    public static IEnumerable<StringSegment> SelectLinesAsSegments(this string @this) =>
-        SelectLinesAsSegments(@this.AsStringSegment());
+    public static IEnumerable<StringSegment> SelectLinesAsSegments(this string @this, bool trimLines = false) =>
+        SelectLinesAsSegments(@this.AsStringSegment(), trimLines);
 
-    public static bool WildcardMatch(this string @this, string wildcardPattern, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
+    public static bool WildcardMatch(this string @this, string wildcardPattern, RegexOptions rxOptions) =>
         TextUtility.WildcardToRegex(wildcardPattern, rxOptions).IsMatch(@this);
+    public static bool WildcardMatch(this string @this, string wildcardPattern) =>
+        TextUtility.WildcardToRegex(wildcardPattern).IsMatch(@this);
 
     public static Match RegexMatch(this string @this, string rxPattern) =>
         Regex.Match(@this, rxPattern);
-    public static MatchCollection RegexMatches(this string @this, string rxPattern) =>
-        Regex.Matches(@this, rxPattern);
+    public static Match RegexMatch(this string @this, string rxPattern, RegexOptions rxOptions) =>
+        Regex.Match(@this, rxPattern, rxOptions);
     public static Match RegexMatch(this string @this, Regex rx) =>
         rx.Match(@this);
-    public static MatchCollection RegexMatches(this string @this, Regex rx) =>
+
+    public static IReadOnlyList<Match> RegexMatches(this string @this, string rxPattern) =>
+        Regex.Matches(@this, rxPattern);
+    public static IReadOnlyList<Match> RegexMatches(this string @this, string rxPattern, RegexOptions rxOptions) =>
+        Regex.Matches(@this, rxPattern, rxOptions);
+    public static IReadOnlyList<Match> RegexMatches(this string @this, Regex rx) =>
         rx.Matches(@this);
+
+    public static string[] RegexSplit(this string @this, string rxPattern) =>
+        Regex.Split(@this, rxPattern);
+    public static string[] RegexSplit(this string @this, string rxPattern, RegexOptions options) =>
+        Regex.Split(@this, rxPattern, options);
+
+    public static string[] RegexSplit(this string @this, Regex rx) =>
+        rx.Split(@this);
+    public static string[] RegexSplit(this string @this, Regex rx, int count) =>
+        rx.Split(@this, count);
+    public static string[] RegexSplit(this string @this, Regex rx, int count, int startAt) =>
+        rx.Split(@this, count, startAt);
 
     public static string RegexReplace(this string @this, string rxPattern, string replacement) =>
         Regex.Replace(@this, rxPattern, replacement);

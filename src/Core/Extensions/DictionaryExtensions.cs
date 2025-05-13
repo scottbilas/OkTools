@@ -67,4 +67,76 @@ public static class DictionaryExtensions
         return @this.TryGetValue(key.ToString(), out value); // have to alloc :/
 #       endif
     }
+
+    // this IDictionary<TKey, TValue>
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IDictionary<TKey, TValue> @this, Func<TKey, TValue> getDefValue) where TKey: notnull =>
+            new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IDictionary<TKey, TValue> @this, Func<TValue> getDefValue) where TKey: notnull =>
+            new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IDictionary<TKey, TValue> @this, TValue defValue) where TKey: notnull =>
+            new DefaultDictionary<TKey, TValue>(defValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IDictionary<TKey, TValue> @this) where TKey: notnull where TValue: struct =>
+            new DefaultDictionary<TKey, TValue>(default(TValue), @this);
+
+    // this IEnumerable<KeyValuePair<TKey, TValue>>
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<KeyValuePair<TKey, TValue>> @this, Func<TKey, TValue> getDefValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<KeyValuePair<TKey, TValue>> @this, Func<TValue> getDefValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<KeyValuePair<TKey, TValue>> @this, TValue defValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(defValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<KeyValuePair<TKey, TValue>> @this) where TKey: notnull where TValue: struct =>
+        new DefaultDictionary<TKey, TValue>(default(TValue), @this);
+
+    // this IEnumerable<(TKey, TValue)>
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<(TKey, TValue)> @this, Func<TKey, TValue> getDefValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<(TKey, TValue)> @this, Func<TValue> getDefValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(getDefValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<(TKey, TValue)> @this, TValue defValue) where TKey: notnull =>
+        new DefaultDictionary<TKey, TValue>(defValue, @this);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<(TKey, TValue)> @this) where TKey: notnull where TValue: struct =>
+        new DefaultDictionary<TKey, TValue>(default(TValue), @this);
+
+    // this IEnumerable<TSource>
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TSource, TKey, TValue>(
+        this IEnumerable<TSource> @this, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector, Func<TKey, TValue> getDefValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), valueSelector(v))).ToDefaultDictionary(getDefValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<TValue> @this, Func<TValue, TKey> keySelector, Func<TKey, TValue> getDefValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), v)).ToDefaultDictionary(getDefValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TSource, TKey, TValue>(
+        this IEnumerable<TSource> @this, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector, Func<TValue> getDefValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), valueSelector(v))).ToDefaultDictionary(getDefValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<TValue> @this, Func<TValue, TKey> keySelector, Func<TValue> getDefValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), v)).ToDefaultDictionary(getDefValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TSource, TKey, TValue>(
+        this IEnumerable<TSource> @this, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector, TValue defValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), valueSelector(v))).ToDefaultDictionary(defValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<TValue> @this, Func<TValue, TKey> keySelector, TValue defValue) where TKey: notnull =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), v)).ToDefaultDictionary(defValue);
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TSource, TKey, TValue>(
+        this IEnumerable<TSource> @this, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector) where TKey: notnull where TValue: struct =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), valueSelector(v))).ToDefaultDictionary();
+    public static IDictionary<TKey, TValue> ToDefaultDictionary<TKey, TValue>(
+        this IEnumerable<TValue> @this, Func<TValue, TKey> keySelector) where TKey: notnull where TValue: struct =>
+        @this.Select(v => new KeyValuePair<TKey, TValue>(keySelector(v), v)).ToDefaultDictionary();
+
+    public static IDictionary<TKey, List<TValue>> ToDefaultDictionary<TKey, TValue>(
+        this IDictionary<TKey, List<TValue>> @this) where TKey: notnull =>
+        @this.ToDefaultDictionary(_ => []);
 }
