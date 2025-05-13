@@ -88,9 +88,23 @@ partial class TextUtilityTests
     [TestCase("abc", "abc",  true)]
     [TestCase("abc", "ab",   false)]
     [TestCase("abc", "ab?",  true)]
-    public void WildcardToRegexText(string test, string wildcard, bool expected)
+    public void WildcardToRegexText(string test, string pattern, bool expected)
     {
-        var regexText = TextUtility.WildcardToRegexText(wildcard);
+        var regexText = TextUtility.WildcardToRegexText(pattern);
+        Regex.IsMatch(test, regexText).ShouldBe(expected);
+    }
+
+    [TestCase("abc", ";",       false)]
+    [TestCase("abc", "*;*",     true)]
+    [TestCase("abc", ";*",      true)]
+    [TestCase("abc", "*;",      true)]
+    [TestCase("abc", "a*;*d*",  true)]
+    [TestCase("abc", "*d*;a*",  true)]
+    [TestCase("abc", "*d*;*c",  true)]
+    [TestCase("abc", "*d*;*e*", false)]
+    public void WildcardToRegexTextMulti(string test, string patterns, bool expected)
+    {
+        var regexText = TextUtility.WildcardToRegexText(patterns.Split(';'));
         Regex.IsMatch(test, regexText).ShouldBe(expected);
     }
 }
