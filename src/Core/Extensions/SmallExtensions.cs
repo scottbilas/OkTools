@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -30,10 +31,27 @@ public static class IntExtensions
 [PublicAPI]
 public static class RefTypeExtensions
 {
-    public static IEnumerable<T> WrapInEnumerable<T>(this T @this)
-        { yield return @this; }
+    class Single<T>(T item) : IReadOnlyList<T>
+    {
+        public T this[int index]
+        {
+            get
+            {
+                if (index != 0)
+                    throw new ArgumentOutOfRangeException();
+                return item;
+            }
+        }
 
-    public static IEnumerable<T> WrapInEnumerableOrEmpty<T>(this T? @this) where T: class =>
+        public int Count => 1;
+        public IEnumerator<T> GetEnumerator() { yield return item; }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
+
+    public static IReadOnlyList<T> WrapInEnumerable<T>(this T @this) => new Single<T>(@this);
+
+    public static IReadOnlyList<T> WrapInEnumerableOrEmpty<T>(this T? @this) where T: class =>
         ReferenceEquals(@this, null) ? [] : WrapInEnumerable(@this);
 
     /// <summary>Return the result of `operation` on the given object if non-null, otherwise just return null</summary>

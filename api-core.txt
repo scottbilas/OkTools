@@ -1547,8 +1547,8 @@ namespace OkTools.Core.Extensions
     {
         public static T? OrNull<T>(this T? @this, System.Func<T, T> operation)
             where T :  class { }
-        public static System.Collections.Generic.IEnumerable<T> WrapInEnumerable<T>(this T @this) { }
-        public static System.Collections.Generic.IEnumerable<T> WrapInEnumerableOrEmpty<T>(this T? @this)
+        public static System.Collections.Generic.IReadOnlyList<T> WrapInEnumerable<T>(this T @this) { }
+        public static System.Collections.Generic.IReadOnlyList<T> WrapInEnumerableOrEmpty<T>(this T? @this)
             where T :  class { }
     }
     public static class SpanExtensions
