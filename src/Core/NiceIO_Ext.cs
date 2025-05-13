@@ -239,9 +239,9 @@ partial class NPath
         ReadAllText().RegexMatch(rxPattern);
     public Match RegexContentsMatch(Regex rx) =>
         ReadAllText().RegexMatch(rx);
-    public MatchCollection RegexContentsMatches(string rxPattern) =>
+    public IReadOnlyList<Match> RegexContentsMatches(string rxPattern) =>
         ReadAllText().RegexMatches(rxPattern);
-    public MatchCollection RegexContentsMatches(Regex rx) =>
+    public IReadOnlyList<Match> RegexContentsMatches(Regex rx) =>
         ReadAllText().RegexMatches(rx);
 
     public string ToDisplayString(NPath? tryRelativeTo)
