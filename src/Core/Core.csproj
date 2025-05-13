@@ -19,7 +19,7 @@
     <GeneratePackageOnBuild>$(_IsPublishing)</GeneratePackageOnBuild>
     <Title>Some OK core utility functions.</Title>
     <RepositoryUrl>https://github.com/scottbilas/OkTools</RepositoryUrl>
-    <PackageVersion>1.1.1</PackageVersion>
+    <PackageVersion>1.1.2</PackageVersion>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>

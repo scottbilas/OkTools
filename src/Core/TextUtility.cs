@@ -55,12 +55,19 @@ public static partial class TextUtility
         return text[0] | (text[1] << 8) | (text[2] << 16) | (text[3] << 24);
     }
 
-    public static string WildcardToRegexText(string wildcard) =>
-        "^" + Regex.Escape(wildcard).Replace(@"\*", ".*").Replace(@"\?", ".") + "$";
+    public static string WildcardToRegexText(string wildcardPattern) =>
+        $"^{InnerWildcardToRegexText(wildcardPattern)}$";
+    public static string WildcardToRegexText(IEnumerable<string> wildcardPatterns) =>
+        $"^({wildcardPatterns.Select(InnerWildcardToRegexText).StringJoin('|')})$";
 
-    public static Regex WildcardToRegex(string wildcard, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
-        new(WildcardToRegexText(wildcard), rxOptions);
+    public static Regex WildcardToRegex(string wildcardPattern, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
+        new(WildcardToRegexText(wildcardPattern), rxOptions);
+    public static Regex WildcardToRegex(IEnumerable<string> wildcardPatterns, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
+        new(WildcardToRegexText(wildcardPatterns), rxOptions);
 
     public static bool IsWildcardPattern(string patternToTest) =>
         patternToTest.Any(c => c is '*' or '?');
+
+    static string InnerWildcardToRegexText(string wildcardPattern) =>
+        Regex.Escape(wildcardPattern).Replace(@"\*", ".*").Replace(@"\?", ".");
 }

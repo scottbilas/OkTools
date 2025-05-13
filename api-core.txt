@@ -1189,8 +1189,10 @@ namespace OkTools.Core
                 "Replacement"})] System.ValueTuple<string, string>[] replacements) { }
         public static int ReplaceMacros(OkTools.Core.StringSegment source, System.IO.TextWriter writer, OkTools.Core.TextUtility.MacroReplacer replacer) { }
         public static int ToFourCc(string text) { }
-        public static System.Text.RegularExpressions.Regex WildcardToRegex(string wildcard, System.Text.RegularExpressions.RegexOptions rxOptions = 1) { }
-        public static string WildcardToRegexText(string wildcard) { }
+        public static System.Text.RegularExpressions.Regex WildcardToRegex(System.Collections.Generic.IEnumerable<string> wildcardPatterns, System.Text.RegularExpressions.RegexOptions rxOptions = 1) { }
+        public static System.Text.RegularExpressions.Regex WildcardToRegex(string wildcardPattern, System.Text.RegularExpressions.RegexOptions rxOptions = 1) { }
+        public static string WildcardToRegexText(System.Collections.Generic.IEnumerable<string> wildcardPatterns) { }
+        public static string WildcardToRegexText(string wildcardPattern) { }
         public delegate bool MacroReplacer(OkTools.Core.StringSegment macroName, System.IO.TextWriter writer);
     }
     public enum UnixSignal
