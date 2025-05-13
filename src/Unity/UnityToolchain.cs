@@ -83,6 +83,8 @@ public class UnityToolchain : IStructuredOutput
         // unity, and unlike unity, it uses different dll names when built in debug. so if you have a debug unity with a
         // release bug reporter, this will report the wrong thing. best i can do for now.. :/
         {
+            // TODO: examine IL of UnityEditor.Unsupported.IsNativeCodeBuiltInReleaseMode(), it's a simple 1-or-0 return
+
             var bugReporterDir = _editorExePath.Parent.Combine("BugReporter").DirectoryMustExist();
             var hasDebug = bugReporterDir.Combine("Qt5Cored.dll").FileExists();
             var hasRelease = bugReporterDir.Combine("Qt5Core.dll").FileExists();
@@ -92,7 +94,11 @@ public class UnityToolchain : IStructuredOutput
             else if (!hasDebug && hasRelease)
                 EditorBuildConfig = UnityEditorBuildConfig.Release;
             else
-                throw new InvalidDataException("Could not determine editor build config using presence of BugReporter/Qt5Core*.dll");
+            {
+                // update 13-mar-2025: we stopped using qt5 apparently, so fall back to the old method :/
+                EditorBuildConfig = _editorExePath.FileInfo.Length / (1024.0 * 1024) < 500
+                    ? UnityEditorBuildConfig.Release : UnityEditorBuildConfig.Debug;
+            }
         }
 
         // same deal as editor buildconfig regarding hard coded size matching
