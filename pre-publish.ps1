@@ -1,8 +1,16 @@
+#requires -Version 7
+#requires -Module Native
+
 [CmdletBinding()]
 param (
     [switch]$Core,
     [switch]$Terminal,
+    [switch]$SkipBuild,
+    [switch]$SkipTests,
+    [switch]$SkipPack,
     [switch]$All)
+
+Set-StrictMode -Version Latest
 
 if ($All)
 {
@@ -12,32 +20,42 @@ if ($All)
 
 $rc = 0
 
-filter fix-bug {
-    # https://github.com/dotnet/msbuild/issues/10998
-    $esc = [char]27
-    $_.replace("$esc]9;4;3;$esc\$esc]9;4;0;$esc\", '')
-}
-
 function dowit($wat) {
-    "*** BUILDING $($wat.ToUpper()) ***"
-    dotnet build src/$wat/$wat.csproj -c Release --nologo
-    if (!$LASTEXITCODE) {
-        dotnet test src/$wat/$wat-Tests.csproj --nologo
+    if (!$SkipBuild) {
+        "*** BUILDING $($wat.ToUpper()) ***"
+        iee dotnet build src/$wat/$wat.csproj -c Release --nologo
     }
-    if (!$LASTEXITCODE) {
-        dotnet pack src/$wat/$wat.csproj -c Release
+    if (!$SkipTests) {
+        "*** TESTING $($wat.ToUpper()) ***"
+        iee dotnet test src/$wat/$wat-Tests.csproj --nologo
     }
-    if (!$LASTEXITCODE) {
-        dotnet tool restore
+    if (!$SkipPack) {
+        "*** PACKING $($wat.ToUpper()) ***"
+        iee dotnet pack src/$wat/$wat.csproj -c Release
     }
-    if (!$LASTEXITCODE) {
-        dotnet tool run generate-public-api --target-frameworks net9.0 --assembly (resolve-path artifacts\build\bin\$wat\net9.0\OkTools.$wat.dll) | fix-bug > api-$($wat.ToLower()).txt
+
+    "*** GENERATE PUBLIC API ***"
+
+    iee dotnet tool restore
+
+    $old = $env:MSBUILDTERMINALLOGGER
+    try {
+        $env:MSBUILDTERMINALLOGGER = 'off'
+        "Running generate-public-api for $wat..."
+        $out = iee dotnet tool run generate-public-api --target-frameworks net9.0 --assembly (resolve-path artifacts\build\bin\$wat\net9.0\OkTools.$wat.dll) | out-string
     }
-    if ($LASTEXITCODE) { $rc = 1 }
+    finally {
+        $env:MSBUILDTERMINALLOGGER = $old
+    }
+
+    # MSBUILDTERMINALLOGGER=off ought to mask this, but keep the fix in case running a version of dotnet with the issue
+    $esc = [char]27
+    $out = $out.replace("$esc]9;4;3;$esc\$esc]9;4;0;$esc\", '')
+    $out = $out.replace("`r`n", "`n")
+
+    set-content api-$($wat.ToLower()).txt $out -nonew
     ""
 }
 
 if ($Core) { dowit Core }
 if ($Terminal) { dowit Terminal }
-
-exit $rc
