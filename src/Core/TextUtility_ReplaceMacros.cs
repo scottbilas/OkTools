@@ -1,5 +1,4 @@
-﻿using System.Buffers;
-using System.Text;
+﻿using System.Text;
 
 namespace OkTools.Core;
 
@@ -8,6 +7,7 @@ using SimpleReplacement = (string Macro, string Replacement);
 
 public static partial class TextUtility
 {
+    // return true to say "handled"
     public delegate bool MacroReplacer(StringSegment macroName, TextWriter writer);
 
     public static StringSegment ReplaceMacros(StringSegment source, SimpleReplacer[] replacers) =>

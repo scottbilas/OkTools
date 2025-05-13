@@ -922,19 +922,17 @@ namespace OkTools.Core
         {
             get
             {
-                if (index < 0 || index > 1)
+                if (index is < 0 or > 1)
                     ThrowArgumentOutOfRange(index);
                 fixed (bool* i = &X) { return ref i[index]; }
             }
         }
 
-        public bool Equals(Bool2 other) =>
+        public readonly bool Equals(Bool2 other) =>
             X == other.X && Y == other.Y;
-
-        public override bool Equals(object? obj) =>
+        public readonly override bool Equals(object? obj) =>
             obj is Bool2 other && Equals(other);
-
-        public override int GetHashCode() =>
+        public readonly override int GetHashCode() =>
             (X?1:0) << 0 | (Y?1:0) << 1;
 
         public static bool operator ==(in Bool2 left, in Bool2 right) => left.Equals(right);
@@ -945,16 +943,16 @@ namespace OkTools.Core
         public static Bool2 operator &(in Bool2 left, in Bool2 right) =>
             new(left.X && right.X, left.Y && right.Y);
 
-        public override string ToString() => $"{X}, {Y}";
-        public object ToDump() => ToString(); // linqpad
+        public readonly override string ToString() => $"{X}, {Y}";
+        public readonly object ToDump() => ToString(); // linqpad
 
         static readonly Bool2 k_false = new(false), k_true = new(true);
 
         public static ref readonly Bool2 False => ref k_false;
         public static ref readonly Bool2 True => ref k_true;
 
-        public bool All() => X && Y;
-        public bool Any() => X || Y;
+        public readonly bool All => X && Y;
+        public readonly bool Any => X || Y;
     }
 
     public struct Bool3 : IEquatable<Bool3>
@@ -974,19 +972,17 @@ namespace OkTools.Core
         {
             get
             {
-                if (index < 0 || index > 2)
+                if (index is < 0 or > 2)
                     ThrowArgumentOutOfRange(index);
                 fixed (bool* i = &X) { return ref i[index]; }
             }
         }
 
-        public bool Equals(Bool3 other) =>
+        public readonly bool Equals(Bool3 other) =>
             X == other.X && Y == other.Y && Z == other.Z;
-
-        public override bool Equals(object? obj) =>
+        public readonly override bool Equals(object? obj) =>
             obj is Bool3 other && Equals(other);
-
-        public override int GetHashCode() =>
+        public readonly override int GetHashCode() =>
             (X?1:0) << 0 | (Y?1:0) << 1 | (Z?1:0) << 2;
 
         public static bool operator ==(in Bool3 left, in Bool3 right) => left.Equals(right);
@@ -997,16 +993,16 @@ namespace OkTools.Core
         public static Bool3 operator &(in Bool3 left, in Bool3 right) =>
             new(left.X && right.X, left.Y && right.Y, left.Z && right.Z);
 
-        public override string ToString() => $"{X}, {Y}, {Z}";
-        public object ToDump() => ToString(); // linqpad
+        public readonly override string ToString() => $"{X}, {Y}, {Z}";
+        public readonly object ToDump() => ToString(); // linqpad
 
         static readonly Bool3 k_false = new(false), k_true = new(true);
 
         public static ref readonly Bool3 False => ref k_false;
         public static ref readonly Bool3 True => ref k_true;
 
-        public bool All() => X && Y && Z;
-        public bool Any() => X || Y || Z;
+        public readonly bool All => X && Y && Z;
+        public readonly bool Any => X || Y || Z;
     }
 
     public struct Bool4 : IEquatable<Bool4>
@@ -1026,19 +1022,17 @@ namespace OkTools.Core
         {
             get
             {
-                if (index < 0 || index > 3)
+                if (index is < 0 or > 3)
                     ThrowArgumentOutOfRange(index);
                 fixed (bool* i = &X) { return ref i[index]; }
             }
         }
 
-        public bool Equals(Bool4 other) =>
+        public readonly bool Equals(Bool4 other) =>
             X == other.X && Y == other.Y && Z == other.Z && W == other.W;
-
-        public override bool Equals(object? obj) =>
+        public readonly override bool Equals(object? obj) =>
             obj is Bool4 other && Equals(other);
-
-        public override int GetHashCode() =>
+        public readonly override int GetHashCode() =>
             (X?1:0) << 0 | (Y?1:0) << 1 | (Z?1:0) << 2 | (W?1:0) << 3;
 
         public static bool operator ==(in Bool4 left, in Bool4 right) => left.Equals(right);
@@ -1049,16 +1043,16 @@ namespace OkTools.Core
         public static Bool4 operator &(in Bool4 left, in Bool4 right) =>
             new(left.X && right.X, left.Y && right.Y, left.Z && right.Z, left.W && right.W);
 
-        public override string ToString() => $"{X}, {Y}, {Z}, {W}";
-        public object ToDump() => ToString(); // linqpad
+        public readonly override string ToString() => $"{X}, {Y}, {Z}, {W}";
+        public readonly object ToDump() => ToString(); // linqpad
 
         static readonly Bool4 k_false = new(false), k_true = new(true);
 
         public static ref readonly Bool4 False => ref k_false;
         public static ref readonly Bool4 True => ref k_true;
 
-        public bool All() => X && Y && Z && W;
-        public bool Any() => X || Y || Z || W;
+        public readonly bool All => X && Y && Z && W;
+        public readonly bool Any => X || Y || Z || W;
     }
 
     public static partial class StaticUtility

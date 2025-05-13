@@ -95,7 +95,7 @@ readonly struct OldNPath
 		{
 			if (input == ".")
 			{
-				if ((stack.Count > 0) && (stack.Last() != "."))
+				if (stack.Count > 0 && stack.Last() != ".")
 					continue;
 			}
 			else if (input == "..")

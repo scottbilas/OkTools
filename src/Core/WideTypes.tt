@@ -139,19 +139,17 @@ namespace OkTools.Core
         {
             get
             {
-                if (index < 0 || index > <#=size-1#>)
+                if (index is < 0 or > <#=size-1#>)
                     ThrowArgumentOutOfRange(index);
                 fixed (bool* i = &X) { return ref i[index]; }
             }
         }
 
-        public bool Equals(<#=type#> other) =>
+        public readonly bool Equals(<#=type#> other) =>
             <#=Fields(f => $"{f} == other.{f}", " && ")#>;
-
-        public override bool Equals(object? obj) =>
+        public readonly override bool Equals(object? obj) =>
             obj is <#=type#> other && Equals(other);
-
-        public override int GetHashCode() =>
+        public readonly override int GetHashCode() =>
             <#=Listify(fields.Select((b, i) => $"({b}?1:0) << {i}"), " | ")#>;
 
         public static bool operator ==(in <#=type#> left, in <#=type#> right) => left.Equals(right);
@@ -162,16 +160,16 @@ namespace OkTools.Core
         public static <#=type#> operator &(in <#=type#> left, in <#=type#> right) =>
             new(<#=Fields(f => $"left.{f} && right.{f}")#>);
 
-        public override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
-        public object ToDump() => ToString(); // linqpad
+        public readonly override string ToString() => $"<#=Fields(f => "{" + f + "}")#>";
+        public readonly object ToDump() => ToString(); // linqpad
 
         static readonly <#=type#> k_false = new(false), k_true = new(true);
 
         public static ref readonly <#=type#> False => ref k_false;
         public static ref readonly <#=type#> True => ref k_true;
 
-        public bool All() => <#=Fields(f => $"{f}", " && ")#>;
-        public bool Any() => <#=Fields(f => $"{f}", " || ")#>;
+        public readonly bool All => <#=Fields(f => $"{f}", " && ")#>;
+        public readonly bool Any => <#=Fields(f => $"{f}", " || ")#>;
     }
 
 <#  }#>
