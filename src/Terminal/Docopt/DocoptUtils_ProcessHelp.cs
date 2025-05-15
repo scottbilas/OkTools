@@ -6,8 +6,8 @@ public static partial class DocoptUtils
 {
     public class FullHelpOptions
     {
-        public required bool ShowFullHelp;
-        public Func<bool /*available*/, string>? FullHelpAvailableMessage;
+        public bool Show;
+        public Func<bool /*available*/, string>? AvailableMessage;
         /*
          * if (available)
             var extra = helpArgs.ArgCommand != null ? $" {helpArgs.ArgCommand}": "";
@@ -18,14 +18,39 @@ public static partial class DocoptUtils
          */
     }
 
-    public static void DisplayHelp(CliContext cliContext, string helpText, FullHelpOptions? fullHelpOptions = null)
+    public class HelpStyles
+    {
+        public string HeadingStart  = "[underline blue]";
+        public string HeadingStop   = "[/]";
+        public string OptionStart   = "[yellow]";
+        public string OptionStop    = "[/]";
+        public string ArgumentStart = "[yellow]";
+        public string ArgumentStop  = "[/]";
+        public string ChoiceStart   = "[italic]";
+        public string ChoiceStop    = "[/]";
+        public string ErrorStart    = "[red]";
+        public string ErrorStop     = "[/]";
+        public string CodeStart     = "[aqua]";
+        public string CodeStop      = "[/]";
+
+        public static readonly HelpStyles Default = new();
+    }
+
+    public class HelpOptions
+    {
+        public FullHelpOptions? FullOptions;
+        public HelpStyles Styles = new();
+        public bool NoStyle;
+    }
+
+    public static void DisplayHelp(CliContext cliContext, string helpText, HelpOptions? helpOptions = null)
     {
         var helpLines = cliContext
             .ReplaceMacros(helpText)
             .SelectLinesAsSegments();
 
-        if (fullHelpOptions != null)
-            helpLines = FilterHelp(helpLines, fullHelpOptions);
+        if (helpOptions is { FullOptions: not null })
+            helpLines = FilterFullHelp(helpLines, helpOptions.FullOptions);
 
         if (cliContext.WrapWidth != null)
         {
@@ -36,11 +61,22 @@ public static partial class DocoptUtils
             helpLines = Reflow(helpLines, wrapWidth);
         }
 
-        if (cliContext.Colored.SupportsColor)
+        var styles = helpOptions?.Styles ?? HelpStyles.Default;
+
+        if (helpOptions?.NoStyle != true && cliContext.Colored.SupportsColor)
         {
             var helpArray = helpLines.ToArray();
-            foreach (var line in Colorize(helpArray, helpArray.Length > 15))
-                cliContext.Colored.MarkupLine(line);
+            foreach (var line in Colorize(helpArray, helpArray.Length > 15, styles))
+            {
+                try
+                {
+                    cliContext.Colored.MarkupLine(line);
+                }
+                catch (InvalidOperationException x)
+                {
+                    throw new InvalidOperationException($"{x}: {helpText}", x);
+                }
+            }
         }
         else
         {
@@ -49,7 +85,7 @@ public static partial class DocoptUtils
         }
     }
 
-    static IEnumerable<StringSegment> FilterHelp(IEnumerable<StringSegment> help, FullHelpOptions options)
+    static IEnumerable<StringSegment> FilterFullHelp(IEnumerable<StringSegment> help, FullHelpOptions options)
     {
         var insideFullHelpSection = false;
         var includedFullHelp = false;
@@ -81,19 +117,19 @@ public static partial class DocoptUtils
                 if (line.isLast && insideFullHelpSection)
                     throw new InvalidOperationException("Full help section was never closed");
 
-                return !insideFullHelpSection || options.ShowFullHelp;
+                return !insideFullHelpSection || options.Show;
             })
             .SelectItem();
 
-        return (options.FullHelpAvailableMessage != null, hadFull: includedFullHelp, options.ShowFullHelp) switch
+        return (options.AvailableMessage != null, hadFull: includedFullHelp, options.Show) switch
         {
-            (true, true, false) => filtered.Concat([default, new(options.FullHelpAvailableMessage!(true))]),
-            (true, false, true) => filtered.Concat([default, new(options.FullHelpAvailableMessage!(false))]),
+            (true, true, false) => filtered.Concat([default, new(options.AvailableMessage!(true))]),
+            (true, false, true) => filtered.Concat([default, new(options.AvailableMessage!(false))]),
             _ => filtered
         };
     }
 
-    static IEnumerable<string> Colorize(IEnumerable<StringSegment> helpLines, bool isBigHelp)
+    static IEnumerable<string> Colorize(IEnumerable<StringSegment> helpLines, bool isBigHelp, HelpStyles styles)
     {
         var lastLine = new StringSegment();
         var codeOpen = false;
@@ -105,7 +141,7 @@ public static partial class DocoptUtils
             {
                 yield return helpLine
                     .ToString().EscapeMarkup()
-                    .RegexReplace("(.*):(.*)", "[underline blue]$1[/]: $2");
+                    .RegexReplace("(.*):(.*)", $"{styles.HeadingStart}$1{styles.HeadingStop}: $2");
             }
             // ordinary text
             else
@@ -126,22 +162,22 @@ public static partial class DocoptUtils
                             .RegexReplace(// -x and --xyz style options
                                 //@"([^a-z]|^)(--[a-z][a-z*-]*|-[a-z])([^a-z]|$)",
                                 @"(?<![a-z])(--([a-z][a-z0-9*-]*|\*[a-z0-9-]*)|-[a-z0-9]|--)(?![a-z0-9])",
-                                "[yellow]$1[/]")
+                                $"{styles.OptionStart}$1{styles.OptionStop}")
                             .RegexReplace(// ARGUMENTS
                                 @"\b[A-Z][A-Z0-9]{2,}\b",
-                                "[yellow]$0[/]")
+                                $"{styles.ArgumentStart}$0{styles.ArgumentStop}")
                             .RegexReplace(// lists of choices
                                 @"  \* (.*):  ",
-                                "  * [italic]$1:[/]  ")
+                                $"  * {styles.ChoiceStart}$1:{styles.ChoiceStop}  ")
                             .RegexReplace(// errors
                                 " ! (.*) !",
-                                " [red]$1[/]");
+                                $" {styles.ErrorStart}$1{styles.ErrorStop}");
                         codeOpen = false;
                     }
                     else
                     {
                         // odd parts are code
-                        parts[i] = "[fuchsia]" + parts[i].EscapeMarkup() + "[/]";
+                        parts[i] = styles.CodeStart + parts[i].EscapeMarkup() + styles.CodeStop;
                         codeOpen = true;
                     }
                 }
