@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
@@ -57,8 +58,13 @@ public static partial class TextUtility
 
     public static string WildcardToRegexText(string wildcardPattern) =>
         $"^{InnerWildcardToRegexText(wildcardPattern)}$";
-    public static string WildcardToRegexText(IEnumerable<string> wildcardPatterns) =>
-        $"^({wildcardPatterns.Select(InnerWildcardToRegexText).StringJoin('|')})$";
+    public static string WildcardToRegexText(IEnumerable<string> wildcardPatterns)
+    {
+        var text = $"^(?:{wildcardPatterns.Select(InnerWildcardToRegexText).StringJoin('|')})$";
+        if (text == "^(?:)$")
+            throw new ArgumentException("Empty wildcard pattern list is ambiguous", nameof(wildcardPatterns));
+        return text;
+    }
 
     public static Regex WildcardToRegex(string wildcardPattern, RegexOptions rxOptions = RegexOptions.IgnoreCase) =>
         new(WildcardToRegexText(wildcardPattern), rxOptions);
@@ -68,6 +74,11 @@ public static partial class TextUtility
     public static bool IsWildcardPattern(string patternToTest) =>
         patternToTest.Any(c => c is '*' or '?');
 
-    static string InnerWildcardToRegexText(string wildcardPattern) =>
-        Regex.Escape(wildcardPattern).Replace(@"\*", ".*").Replace(@"\?", ".");
+    static string InnerWildcardToRegexText(string wildcardPattern)
+    {
+        if (wildcardPattern.Length == 0)
+            throw new ArgumentException("Empty wildcard pattern is ambiguous", nameof(wildcardPattern));
+
+        return Regex.Escape(wildcardPattern).Replace(@"\*", ".*").Replace(@"\?", ".");
+    }
 }

@@ -73,7 +73,12 @@ partial class TextUtilityTests
         Should.Throw<ArgumentException>(() => TextUtility.ToFourCc("abcdef"));
     }
 
-    [TestCase("abc", "",     false)]
+    [Test]
+    public void WildcardToRegexText_WithEmpty_ShouldThrow()
+    {
+        Should.Throw<ArgumentException>(() => TextUtility.WildcardToRegexText(""));
+    }
+
     [TestCase("abc", "*",    true)]
     [TestCase("abc", "*abc", true)]
     [TestCase("abc", "?abc", false)]
@@ -94,10 +99,16 @@ partial class TextUtilityTests
         Regex.IsMatch(test, regexText).ShouldBe(expected);
     }
 
-    [TestCase("abc", ";",       false)]
+    [Test]
+    public void WildcardToRegexTextMulti_WithEmpties_ShouldThrow()
+    {
+        Should.Throw<ArgumentException>(() => TextUtility.WildcardToRegexText([]));
+        Should.Throw<ArgumentException>(() => TextUtility.WildcardToRegexText([""]));
+        Should.Throw<ArgumentException>(() => TextUtility.WildcardToRegexText(["",""]));
+        Should.Throw<ArgumentException>(() => TextUtility.WildcardToRegexText(["","a"]));
+    }
+
     [TestCase("abc", "*;*",     true)]
-    [TestCase("abc", ";*",      true)]
-    [TestCase("abc", "*;",      true)]
     [TestCase("abc", "a*;*d*",  true)]
     [TestCase("abc", "*d*;a*",  true)]
     [TestCase("abc", "*d*;*c",  true)]
