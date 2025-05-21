@@ -8,6 +8,13 @@ public static class DebugDump
     public static string ToDumpString(this object @this, string? name = null, bool quiet = true, System.Func<System.Reflection.PropertyInfo, bool>? filter = null, int? wrapWidth = default, int maxWrapLines = 0) { }
     public static string ToEscapedString(this string @this) { }
 }
+public static class TaskExtensions
+{
+    public static System.Threading.Tasks.Task<System.ValueTuple<T1, T2>> WhenAll<T1, T2>(this System.ValueTuple<System.Threading.Tasks.Task<T1>, System.Threading.Tasks.Task<T2>> @this) { }
+    public static System.Threading.Tasks.Task<System.ValueTuple<T1, T2, T3>> WhenAll<T1, T2, T3>(this System.ValueTuple<System.Threading.Tasks.Task<T1>, System.Threading.Tasks.Task<T2>, System.Threading.Tasks.Task<T3>> @this) { }
+    public static System.Threading.Tasks.Task<System.ValueTuple<T1, T2, T3, T4>> WhenAll<T1, T2, T3, T4>(this System.ValueTuple<System.Threading.Tasks.Task<T1>, System.Threading.Tasks.Task<T2>, System.Threading.Tasks.Task<T3>, System.Threading.Tasks.Task<T4>> @this) { }
+    public static System.Threading.Tasks.Task<System.ValueTuple<T1, T2, T3, T4, T5>> WhenAll<T1, T2, T3, T4, T5>(this System.ValueTuple<System.Threading.Tasks.Task<T1>, System.Threading.Tasks.Task<T2>, System.Threading.Tasks.Task<T3>, System.Threading.Tasks.Task<T4>, System.Threading.Tasks.Task<T5>> @this) { }
+}
 namespace OkTools.Core
 {
     public class ArrayUtility
@@ -1652,6 +1659,72 @@ namespace OkTools.Core.Extensions
         public static System.Collections.Generic.IEnumerable<string> SelectToStrings<T>(this System.Collections.Generic.IEnumerable<T> @this) { }
         public static System.Collections.Generic.IEnumerable<string> SelectToUpper(this System.Collections.Generic.IEnumerable<string> @this) { }
         public static string SimpleEscape(this string @this) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split2(this OkTools.Core.StringSegment @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split2(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split3(this OkTools.Core.StringSegment @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split3(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c",
+                "d"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split4(this OkTools.Core.StringSegment @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c",
+                "d"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split4(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split5(this OkTools.Core.StringSegment @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string[] {
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"})]
+        public static System.ValueTuple<OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment, OkTools.Core.StringSegment> Split5(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string?[]?[] {
+                "a",
+                "b"})]
+        public static System.ValueTuple<T1, T2> SplitParse2<T1, T2>(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string?[]?[] {
+                "a",
+                "b",
+                "c"})]
+        public static System.ValueTuple<T1, T2, T3> SplitParse3<T1, T2, T3>(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string?[]?[] {
+                "a",
+                "b",
+                "c",
+                "d"})]
+        public static System.ValueTuple<T1, T2, T3, T4> SplitParse4<T1, T2, T3, T4>(this string @this, char separator) { }
+        [return: System.Runtime.CompilerServices.TupleElementNames(new string?[]?[] {
+                "a",
+                "b",
+                "c",
+                "d",
+                "e"})]
+        public static System.ValueTuple<T1, T2, T3, T4, T5> SplitParse5<T1, T2, T3, T4, T5>(this string @this, char separator) { }
         public static string[] SplitTrim(this string @this, char split) { }
         public static string[] SplitTrim(this string @this, string split) { }
         public static string[] SplitTrimRemoveEmpty(this string @this, char split) { }
