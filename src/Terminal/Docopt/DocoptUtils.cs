@@ -90,4 +90,28 @@ public static partial class DocoptUtils
         ParseEnumOpt(option, out var result, defaultValue);
         return result;
     }
+
+    // pass in your generated args class instance and it will give back a line of switches and then one line per flag with arg(s).
+    // useful for printing a nice command line for debug purposes.
+    public static IEnumerable<string> DumpArguments(this IEnumerable<KeyValuePair<string, object?>> @this)
+    {
+        var options = @this
+            .Select(kv => kv.Value switch
+            {
+                true => kv.Key,
+                string str => $"{kv.Key} {str}",
+                StringList { Count: > 0 } list => $"{kv.Key} {list.StringJoin(' ')}",
+                null or false or StringList => null,
+                _ => throw new NotSupportedException($"Unknown option value type {kv.Value.GetType().Name}")
+            })
+            .WhereNotNull()
+            .ToArray();
+
+        var switches = options.Where(v => !v.Contains(' ')).OrderBy(v => v.StartsWith('-')).ThenBy(v => v).StringJoin(' ');
+        if (switches.Any())
+            yield return switches;
+
+        foreach (var option in options.Where(v => v.Contains(' ')).Ordered())
+            yield return option;
+    }
 }

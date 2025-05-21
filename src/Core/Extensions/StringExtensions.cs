@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace OkTools.Core.Extensions;
 
 [PublicAPI]
-public static class StringExtensions
+public static partial class StringExtensions
 {
     [ContractAnnotation("null=>true", true), Pure]
     public static bool IsNullOrEmpty(this string? @this) => string.IsNullOrEmpty(@this);
@@ -111,34 +111,6 @@ public static class StringExtensions
     public static IEnumerable<string> SelectToStrings<T>(this IEnumerable<T> @this) =>
         @this.Select(v => v?.ToString()).WhereNotNull();
 
-    public static string[] SplitTrimRemoveEmpty(this string @this, string split) => @this
-#       if NETSTANDARD
-        .Split(split).Select(p => p.Trim()).Where(p => p != "").ToArray();
-#       else
-        .Split(split, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-#       endif
-
-    public static string[] SplitTrimRemoveEmpty(this string @this, char split) => @this
-#       if NETSTANDARD
-        .Split(split).Select(p => p.Trim()).Where(p => p != "").ToArray();
-#       else
-        .Split(split, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-#       endif
-
-    public static string[] SplitTrim(this string @this, string split) => @this
-#       if NETSTANDARD
-        .Split(split).Select(p => p.Trim()).ToArray();
-#       else
-        .Split(split, StringSplitOptions.TrimEntries);
-#       endif
-
-    public static string[] SplitTrim(this string @this, char split) => @this
-#       if NETSTANDARD
-        .Split(split).Select(p => p.Trim()).ToArray();
-#       else
-        .Split(split, StringSplitOptions.TrimEntries);
-#       endif
-
     static string ToStringIfNeeded(string original, ReadOnlySpan<char> span) =>
         span.Length == original.Length ? original : span.ToString();
 
@@ -228,18 +200,6 @@ public static class StringExtensions
         Regex.Matches(@this, rxPattern, rxOptions);
     public static IReadOnlyList<Match> RegexMatches(this string @this, Regex rx) =>
         rx.Matches(@this);
-
-    public static string[] RegexSplit(this string @this, string rxPattern) =>
-        Regex.Split(@this, rxPattern);
-    public static string[] RegexSplit(this string @this, string rxPattern, RegexOptions options) =>
-        Regex.Split(@this, rxPattern, options);
-
-    public static string[] RegexSplit(this string @this, Regex rx) =>
-        rx.Split(@this);
-    public static string[] RegexSplit(this string @this, Regex rx, int count) =>
-        rx.Split(@this, count);
-    public static string[] RegexSplit(this string @this, Regex rx, int count, int startAt) =>
-        rx.Split(@this, count, startAt);
 
     public static string RegexReplace(this string @this, string rxPattern, string replacement) =>
         Regex.Replace(@this, rxPattern, replacement);
