@@ -93,9 +93,9 @@ public static partial class DocoptUtils
 
     // pass in your generated args class instance and it will give back a line of switches and then one line per flag with arg(s).
     // useful for printing a nice command line for debug purposes.
-    public static IEnumerable<string> DumpArguments(this IEnumerable<KeyValuePair<string, object?>> @this)
+    public static IEnumerable<string> DumpArguments(IEnumerable<KeyValuePair<string, object?>> args)
     {
-        var options = @this
+        var options = args
             .Select(kv => kv.Value switch
             {
                 true => kv.Key,
