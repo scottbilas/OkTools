@@ -47,12 +47,9 @@ Print help for COMMAND.
     [
         new("help",       "Print help for any of these commands", k_docUsageHelp, _ => throw new DocoptExitException(k_docUsageHelp)),
         new("unity",      "Run Unity to open a project",          Commands.DocUsageUnity, Commands.RunUnity),
-        new("install",    "Install a Unity toolchain",            Commands.DocUsageInstall, Commands.RunInstall),
         new("toolchains", "Get info on Unity toolchains",         Commands.DocUsageToolchains, Commands.RunToolchains),
         new("projects",   "Get info on Unity projects",           Commands.DocUsageProjects, Commands.RunProjects),
-        new("assetdb",    "Do things with the asset database",    Commands.DocUsageAssetDb, Commands.RunAssetDb),
         new("info",       "Extract Unity-related info from args", Commands.DocUsageInfo, Commands.RunInfo),
-        new("mr",         "Manage the monorepo",                  Commands.DocUsageMonorepo, Commands.RunMonorepo),
         new("do",         "Dumping ground for random commands",   Commands.DocUsageDo, Commands.RunDo),
         //new("purge", // TODO: purge (logs artifacts shaders, everything, nuclear) (with auto warning if any processes running on the project)
     ];
