@@ -27,12 +27,20 @@
     <Using Include="System.Threading.Tasks" />
   </ItemGroup>
 
-  <!-- jetbrains annotations -->
+  <!-- annotations -->
 
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations">
-      <PrivateAssets>all</PrivateAssets> <!-- keep out of nuget packages -->
-    </PackageReference>
+  <ItemGroup Condition=" !$(OkFeatures.Contains(';Tests;')) "> <!-- exclude tests because they get InternalsVisibleTo which will cause collisions -->
+    <!--
+      see matt's comment here for why i have this file
+
+      https://stackoverflow.com/questions/46401170/should-jetbrains-annotations-be-declared-as-a-private-asset-in-my-csproj-files#comment79824714_46403166
+
+      it would be nice if jetbrains published a Jetbrains.Annotations.Source that injected the CS directly, like i'm doing with NiceIO.
+      (maybe i can do this myself at some point..)
+    -->
+    <Compile Include="$(OkSrcRoot)_Include\JetBrains.Annotations.cs">
+      <Link>_Include\JetBrains.Annotations.cs</Link>
+    </Compile>
     <Using Include="JetBrains.Annotations" />
   </ItemGroup>
 

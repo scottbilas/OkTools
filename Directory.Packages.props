@@ -29,10 +29,6 @@
     <PackageVersion Include="YamlDotNet" Version="16.3.0" />
     <PackageVersion Include="docopt.net" Version="0.8.1" />
 
-    <!-- analysis -->
-
-    <PackageVersion Include="JetBrains.Annotations" Version="2024.3.0" />
-
     <!-- builds -->
 
     <PackageVersion Include="T4.Build" Version="0.2.4" />
