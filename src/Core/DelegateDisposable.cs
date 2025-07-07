@@ -1,10 +1,7 @@
 namespace OkTools.Core;
 
 [PublicAPI]
-public sealed class DelegateDisposable : IDisposable
+public struct DelegateDisposable(Action disposeAction) : IDisposable
 {
-    readonly Action _disposeAction;
-
-    public DelegateDisposable(Action disposeAction) => _disposeAction = disposeAction;
-    public void Dispose() => _disposeAction();
+    public readonly void Dispose() => disposeAction();
 }
