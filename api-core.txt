@@ -353,7 +353,7 @@ namespace OkTools.Core
     {
         public static System.Collections.Generic.IComparer<T>? Create<T>(System.Func<T?, T?, int>? comparer) { }
     }
-    public sealed class DelegateDisposable : System.IDisposable
+    public struct DelegateDisposable : System.IDisposable
     {
         public DelegateDisposable(System.Action disposeAction) { }
         public void Dispose() { }
@@ -681,6 +681,7 @@ namespace OkTools.Core
     {
         public NPath(string path) { }
         public System.IO.FileAttributes Attributes { get; set; }
+        public string BackwardString { get; }
         public int Depth { get; }
         public string DriveLetter { get; }
         public string[] Elements { get; }
@@ -691,11 +692,14 @@ namespace OkTools.Core
         public string FileName { get; }
         public System.ReadOnlySpan<char> FileNameSpan { get; }
         public string FileNameWithoutExtension { get; }
+        public System.Diagnostics.FileVersionInfo FileVersionInfo { get; }
+        public string ForwardString { get; }
         public bool IsCurrentDir { get; }
         public bool IsRelative { get; }
         public bool IsRoot { get; }
         public bool IsSymbolicLink { get; }
         public bool IsUNC { get; }
+        public string NativeString { get; }
         public OkTools.Core.NPath Parent { get; }
         public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> RecursiveParents { get; }
         public System.Collections.Generic.IEnumerable<OkTools.Core.NPath> SelfAndRecursiveParents { get; }
@@ -750,6 +754,10 @@ namespace OkTools.Core
         public bool HasDirectory(string dir) { }
         public bool HasExtension(string extension) { }
         public bool HasExtension(params string[] extensions) { }
+        public byte[] HashContents() { }
+        public byte[] HashContents(System.Security.Cryptography.SHA1 sha1) { }
+        public string HashContentsAsString() { }
+        public string HashContentsAsString(System.Security.Cryptography.SHA1 sha1) { }
         public string InQuotes(OkTools.Core.SlashMode slashMode = 1) { }
         public string InQuotesResolved(OkTools.Core.SlashMode slashMode = 1) { }
         public bool IsChildOf(OkTools.Core.NPath potentialBasePath) { }

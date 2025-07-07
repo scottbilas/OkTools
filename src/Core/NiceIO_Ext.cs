@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace OkTools.Core;
@@ -125,8 +127,8 @@ partial class NPath
 	    {
 		    dest.EnsureParentDirectoryExists();
 
-            var srcNativePath = ToString(SlashMode.Native);
-            var dstNativePath = dest.ToString(SlashMode.Native);
+            var srcNativePath = NativeString;
+            var dstNativePath = dest.NativeString;
 
 #           if NETSTANDARD
 
@@ -229,9 +231,9 @@ partial class NPath
         DirectoryExists() ? Directories(filter, recurse) : [];
 
     public Stream OpenReadShared() =>
-        File.Open(ToString(SlashMode.Native), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+        File.Open(NativeString, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
     public Stream OpenReadWriteShared() =>
-        File.Open(ToString(SlashMode.Native), FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
+        File.Open(NativeString, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete);
     public StreamReader OpenReaderShared() =>
         new(OpenReadShared());
 
@@ -249,13 +251,40 @@ partial class NPath
         var relPath = tryRelativeTo != null ? MakeRelative(tryRelativeTo) : this;
         if (relPath.IsRelative)
         {
-            var str = relPath.TildeCollapse().ToString(SlashMode.Forward);
+            var str = relPath.TildeCollapse().ForwardString;
 
             // starts to get really unreadable with more than this many
             if (!str.StartsWith("../../../../", StringComparison.Ordinal))
                 return str;
         }
 
-        return TildeCollapse().ToString(SlashMode.Forward);
+        return TildeCollapse().ForwardString;
     }
+
+    public string NativeString => ToString(SlashMode.Native);
+    public string ForwardString => ToString(SlashMode.Forward);
+    public string BackwardString => ToString(SlashMode.Backward);
+
+    public FileVersionInfo FileVersionInfo =>
+        FileVersionInfo.GetVersionInfo(NativeString);
+
+    public byte[] HashContents(SHA1 sha1)
+    {
+        using var stream = OpenReadShared();
+        return sha1.ComputeHash(stream);
+    }
+
+    public byte[] HashContents()
+    {
+        using var sha1 = SHA1.Create();
+        return HashContents(sha1);
+    }
+
+    public string HashContentsAsString(SHA1 sha1) =>
+        HashBytesToString(HashContents(sha1));
+    public string HashContentsAsString() =>
+        HashBytesToString(HashContents());
+
+    static string HashBytesToString(byte[] hash) =>
+        BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
 }
