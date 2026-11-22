@@ -31,8 +31,8 @@ Modes:
 Requires an authenticated `gh` CLI (GH_TOKEN in Actions).
 
 Examples:
-  uv run close_superseded_updater_prs.py --repo scottbilas/NiceIO --merged-pr 118             # dry run
-  uv run close_superseded_updater_prs.py --repo scottbilas/NiceIO --merged-pr 118 --no-dry-run
+  uv run close_superseded_updater_prs.py --repo scottbilas/OkTools --merged-pr 81             # dry run
+  uv run close_superseded_updater_prs.py --repo scottbilas/OkTools --merged-pr 81 --no-dry-run
 """
 
 import json
