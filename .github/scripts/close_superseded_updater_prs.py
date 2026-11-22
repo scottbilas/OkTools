@@ -1,5 +1,5 @@
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # dependencies = ["docopt-ng>=0.9.0"]
 # ///
 """
@@ -35,8 +35,6 @@ Examples:
   uv run close_superseded_updater_prs.py --repo scottbilas/NiceIO --merged-pr 118 --no-dry-run
 """
 
-from __future__ import annotations
-
 import json
 import os
 import subprocess
@@ -49,10 +47,13 @@ UPDATER_TITLE = "Update GitHub Action Versions"
 UPDATER_BRANCH_PREFIX = "gh-actions-update-"
 UPDATER_BODY_MARKER = "### GitHub Actions Version Updates"
 
+type PR = dict[str, Any]
+"""A pull request in `gh --json` shape."""
+
 PR_FIELDS = "number,state,title,headRefName,body,url,isCrossRepository"
 
 
-def is_updater_pr(pr: dict[str, Any]) -> bool:
+def is_updater_pr(pr: PR) -> bool:
     """`pr` uses `gh --json` field names. Missing/null fields never match."""
     return (
         pr.get("title") == UPDATER_TITLE
@@ -62,7 +63,7 @@ def is_updater_pr(pr: dict[str, Any]) -> bool:
     )
 
 
-def pr_from_event(event: dict[str, Any], repo: str) -> dict[str, Any]:
+def pr_from_event(event: dict[str, Any], repo: str) -> PR:
     """Convert a `pull_request` webhook payload into `gh --json` shape."""
     pr = event["pull_request"]
     head = pr.get("head") or {}
@@ -77,7 +78,7 @@ def pr_from_event(event: dict[str, Any], repo: str) -> dict[str, Any]:
     }
 
 
-def superseded(open_prs: list[dict[str, Any]], cutoff: int) -> list[dict[str, Any]]:
+def superseded(open_prs: list[PR], cutoff: int) -> list[PR]:
     return sorted((p for p in open_prs if is_updater_pr(p) and p["number"] < cutoff), key=lambda p: p["number"])
 
 
