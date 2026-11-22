@@ -121,7 +121,7 @@ def parse_args(argv: list[str] | None) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(line_buffering=True)  # keep our lines ordered with gh's stderr in the Actions log
     args = parse_args(argv)
-    repo: str = args.repo
+    repo: str = args["repo"]
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 
     if event_name == "pull_request":
@@ -137,13 +137,13 @@ def main(argv: list[str] | None = None) -> int:
         dry_run = False
     elif event_name in ("workflow_dispatch", ""):
         cutoff = None
-        dry_run = args.dry_run
-        if args.merged_pr:
-            if not (args.merged_pr.isascii() and args.merged_pr.isdigit() and int(args.merged_pr) > 0):
-                return error(f"Invalid PR number '{args.merged_pr}'")
-            merged = gh_json("pr", "view", args.merged_pr, "--repo", repo, "--json", PR_FIELDS)
+        dry_run = args["dry_run"]
+        if args["merged_pr"]:
+            if not (args["merged_pr"].isascii() and args["merged_pr"].isdigit() and int(args["merged_pr"]) > 0):
+                return error(f"Invalid PR number '{args['merged_pr']}'")
+            merged = gh_json("pr", "view", args["merged_pr"], "--repo", repo, "--json", PR_FIELDS)
             if merged["state"] != "MERGED" or not is_updater_pr(merged):
-                return error(f"PR #{args.merged_pr} is not a merged updater PR; refusing to use it as a cutoff.")
+                return error(f"PR #{args['merged_pr']} is not a merged updater PR; refusing to use it as a cutoff.")
             cutoff = merged["number"]
     else:
         return error(f"Unsupported event '{event_name}'")
