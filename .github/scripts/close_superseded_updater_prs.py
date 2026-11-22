@@ -1,9 +1,20 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = []
+# dependencies = ["docopt-ng>=0.9.0"]
 # ///
 """
 Close open "GitHub Actions Version Updater" PRs that are superseded by a newer, merged updater PR.
+
+Usage:
+  close_superseded_updater_prs.py [--repo=REPO] [--merged-pr=N] [--dry-run | --no-dry-run]
+  close_superseded_updater_prs.py (-h | --help)
+
+Options:
+  --repo=REPO     owner/repo to operate on (default: $GITHUB_REPOSITORY)
+  --merged-pr=N   Manual mode: merged updater PR to use as the cutoff (default: $MERGED_PR)
+  --dry-run       Manual mode: only report what would be closed (default: $DRY_RUN, else true)
+  --no-dry-run    Manual mode: actually close the superseded PRs
+  -h --help       Show this help
 
 A PR only counts as an updater PR (saadmk11/github-actions-version-updater) when ALL of these hold:
   - title is exactly "Update GitHub Action Versions"
@@ -19,19 +30,20 @@ Modes:
 
 Requires an authenticated `gh` CLI (GH_TOKEN in Actions).
 
-Local usage:
+Examples:
   uv run close_superseded_updater_prs.py --repo scottbilas/NiceIO --merged-pr 118             # dry run
   uv run close_superseded_updater_prs.py --repo scottbilas/NiceIO --merged-pr 118 --no-dry-run
 """
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import subprocess
 import sys
 from typing import Any
+
+from docopt import docopt
 
 UPDATER_TITLE = "Update GitHub Action Versions"
 UPDATER_BRANCH_PREFIX = "gh-actions-update-"
@@ -83,32 +95,25 @@ def error(message: str) -> int:
     return 1
 
 
-def parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        "--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="owner/repo (default: $GITHUB_REPOSITORY)"
-    )
-    parser.add_argument(
-        "--merged-pr", default=os.environ.get("MERGED_PR") or None, help="manual mode cutoff PR (default: $MERGED_PR)"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action=argparse.BooleanOptionalAction,
-        default=None,
-        help="manual mode only; default: $DRY_RUN, else true",
-    )
-    args = parser.parse_args(argv)
-    if not args.repo:
-        parser.error("--repo or GITHUB_REPOSITORY is required")
-    if args.dry_run is None:
-        args.dry_run = os.environ.get("DRY_RUN", "true").lower() != "false"
-    return args
+def parse_args(argv: list[str] | None) -> tuple[str, str | None, bool]:
+    """Returns (repo, merged_pr, dry_run); command-line options override the environment."""
+    args = docopt(__doc__, argv=argv)
+    repo = args["--repo"] or os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        sys.exit("error: --repo or GITHUB_REPOSITORY is required")
+    merged_pr = args["--merged-pr"] or os.environ.get("MERGED_PR") or None
+    if args["--dry-run"]:
+        dry_run = True
+    elif args["--no-dry-run"]:
+        dry_run = False
+    else:
+        dry_run = os.environ.get("DRY_RUN", "true").lower() != "false"
+    return repo, merged_pr, dry_run
 
 
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(line_buffering=True)  # keep our lines ordered with gh's stderr in the Actions log
-    args = parse_args(argv)
-    repo: str = args.repo
+    repo, merged_pr, manual_dry_run = parse_args(argv)
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 
     if event_name == "pull_request":
@@ -124,13 +129,13 @@ def main(argv: list[str] | None = None) -> int:
         dry_run = False
     elif event_name in ("workflow_dispatch", ""):
         cutoff = None
-        dry_run = args.dry_run
-        if args.merged_pr:
-            if not (args.merged_pr.isascii() and args.merged_pr.isdigit() and int(args.merged_pr) > 0):
-                return error(f"Invalid PR number '{args.merged_pr}'")
-            merged = gh_json("pr", "view", args.merged_pr, "--repo", repo, "--json", PR_FIELDS)
+        dry_run = manual_dry_run
+        if merged_pr:
+            if not (merged_pr.isascii() and merged_pr.isdigit() and int(merged_pr) > 0):
+                return error(f"Invalid PR number '{merged_pr}'")
+            merged = gh_json("pr", "view", merged_pr, "--repo", repo, "--json", PR_FIELDS)
             if merged["state"] != "MERGED" or not is_updater_pr(merged):
-                return error(f"PR #{args.merged_pr} is not a merged updater PR; refusing to use it as a cutoff.")
+                return error(f"PR #{merged_pr} is not a merged updater PR; refusing to use it as a cutoff.")
             cutoff = merged["number"]
     else:
         return error(f"Unsupported event '{event_name}'")
