@@ -1,0 +1,64 @@
+# Reusable workflow: close open GitHub Actions Version Updater PRs superseded by a merged one.
+# The logic lives in .github/scripts/close_superseded_updater_prs.py next to this file; this job checks out
+# *this* repository at the exact commit of this workflow, so callers in other repos run matching code.
+#
+# Caller (in any repo), triggered on `pull_request: [closed]` and optionally `workflow_dispatch`:
+#
+#   jobs:
+#     close-superseded:
+#       permissions:
+#         contents: read
+#         pull-requests: write
+#       uses: scottbilas/OkTools/.github/workflows/reusable-close-superseded-updater-prs.yml@dev
+#       with:
+#         dry_run: ${{ inputs.dry_run == true }}
+#         merged_pr: ${{ inputs.merged_pr }}
+
+name: Close Superseded Updater PRs (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      dry_run:
+        description: 'workflow_dispatch only: report which PRs would be closed without closing them'
+        type: boolean
+        default: true
+      merged_pr:
+        description: 'workflow_dispatch only: merged updater PR to use as the cutoff (if empty, only list open updater PRs)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  close-superseded:
+    # Cheap pre-filter on the caller's event payload; the script re-validates every field before closing anything.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.merged == true &&
+       github.event.pull_request.title == 'Update GitHub Action Versions' &&
+       startsWith(github.event.pull_request.head.ref, 'gh-actions-update-') &&
+       contains(github.event.pull_request.body, '### GitHub Actions Version Updates'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout cleanup script
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: .okt-cleanup
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v10.4.0
+
+      - name: Close superseded updater PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          MERGED_PR: ${{ inputs.merged_pr }}
+        run: uv run --script .okt-cleanup/.github/scripts/close_superseded_updater_prs.py
