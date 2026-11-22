@@ -1,9 +1,19 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = []
+# dependencies = ["docopt-ng==0.9.0"]
 # ///
 """
 Close open "GitHub Actions Version Updater" PRs that are superseded by a newer, merged updater PR.
+
+Usage:
+  close_superseded_updater_prs.py [options]
+
+Options:
+  --repo=<repo>          owner/repo (default: GITHUB_REPOSITORY)
+  --merged-pr=<number>   manual mode cutoff PR (default: MERGED_PR)
+  --dry-run              manual mode only; default: DRY_RUN, else true
+  --no-dry-run           disable manual-mode dry run
+  -h --help              Show this screen.
 
 A PR only counts as an updater PR (saadmk11/github-actions-version-updater) when ALL of these hold:
   - title is exactly "Update GitHub Action Versions"
@@ -26,12 +36,13 @@ Local usage:
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import subprocess
 import sys
 from typing import Any
+
+from docopt import docopt
 
 UPDATER_TITLE = "Update GitHub Action Versions"
 UPDATER_BRANCH_PREFIX = "gh-actions-update-"
@@ -83,26 +94,28 @@ def error(message: str) -> int:
     return 1
 
 
-def parse_args(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument(
-        "--repo", default=os.environ.get("GITHUB_REPOSITORY"), help="owner/repo (default: $GITHUB_REPOSITORY)"
-    )
-    parser.add_argument(
-        "--merged-pr", default=os.environ.get("MERGED_PR") or None, help="manual mode cutoff PR (default: $MERGED_PR)"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action=argparse.BooleanOptionalAction,
-        default=None,
-        help="manual mode only; default: $DRY_RUN, else true",
-    )
-    args = parser.parse_args(argv)
-    if not args.repo:
-        parser.error("--repo or GITHUB_REPOSITORY is required")
-    if args.dry_run is None:
-        args.dry_run = os.environ.get("DRY_RUN", "true").lower() != "false"
-    return args
+def parse_args(argv: list[str] | None) -> dict[str, Any]:
+    options = docopt(__doc__, argv=argv)
+    repo = options["--repo"]
+    if repo is None:
+        repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        print("error: --repo or GITHUB_REPOSITORY is required", file=sys.stderr)
+        print("Usage: close_superseded_updater_prs.py [options]", file=sys.stderr)
+        raise SystemExit(2)
+
+    merged_pr = options["--merged-pr"]
+    if merged_pr is None:
+        merged_pr = os.environ.get("MERGED_PR") or None
+
+    if options["--dry-run"]:
+        dry_run = True
+    elif options["--no-dry-run"]:
+        dry_run = False
+    else:
+        dry_run = os.environ.get("DRY_RUN", "true").lower() != "false"
+
+    return {"repo": repo, "merged_pr": merged_pr, "dry_run": dry_run}
 
 
 def main(argv: list[str] | None = None) -> int:
