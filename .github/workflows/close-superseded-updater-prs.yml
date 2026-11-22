@@ -44,4 +44,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run }}
           MERGED_PR: ${{ inputs.merged_pr }}
-        run: uv run --script .github/scripts/close_superseded_updater_prs.py
+        run: ./.github/scripts/close_superseded_updater_prs.py

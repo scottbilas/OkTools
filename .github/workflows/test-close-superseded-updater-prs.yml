@@ -24,4 +24,4 @@ jobs:
 
       - uses: astral-sh/setup-uv@v10.4.0
 
-      - run: uv run --script .github/scripts/close_superseded_updater_prs.py self-test
+      - run: ./.github/scripts/close_superseded_updater_prs.py self-test
