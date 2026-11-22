@@ -29,9 +29,9 @@ A PR only counts as an updater PR (saadmk11/github-actions-version-updater) when
 
 Modes:
   - pull_request (from GITHUB_EVENT_NAME/GITHUB_EVENT_PATH): if the closed PR was a merged updater PR, close
-    every open updater PR with a lower number. Never a dry run.
+    every open updater PR with a lower number targeting the same base branch. Never a dry run.
   - manual (workflow_dispatch or local): with --merged-pr N, N must be a merged updater PR and is used as the
-    cutoff; without it, open updater PRs are only listed. Dry run by default.
+    cutoff for the same base branch; without it, open updater PRs are only listed. Dry run by default.
 
 Requires an authenticated `gh` CLI (GH_TOKEN in Actions).
 
@@ -61,7 +61,7 @@ UPDATER_BODY_MARKER = "### GitHub Actions Version Updates"
 type PR = dict[str, Any]
 """A pull request in `gh --json` shape."""
 
-PR_FIELDS = "number,state,title,headRefName,body,url,isCrossRepository"
+PR_FIELDS = "number,state,title,headRefName,baseRefName,body,url,isCrossRepository"
 
 
 def is_updater_pr(pr: PR) -> bool:
@@ -83,14 +83,18 @@ def pr_from_event(event: dict[str, Any], repo: str) -> PR:
         "state": "MERGED" if pr.get("merged") is True else (pr.get("state") or "").upper(),
         "title": pr.get("title"),
         "headRefName": head.get("ref"),
+        "baseRefName": (pr.get("base") or {}).get("ref"),
         "body": pr.get("body"),
         "url": pr.get("html_url"),
         "isCrossRepository": (head.get("repo") or {}).get("full_name") != repo,
     }
 
 
-def superseded(open_prs: list[PR], cutoff: int) -> list[PR]:
-    return sorted((p for p in open_prs if is_updater_pr(p) and p["number"] < cutoff), key=lambda p: p["number"])
+def superseded(open_prs: list[PR], cutoff: int, base: str) -> list[PR]:
+    return sorted(
+        (p for p in open_prs if is_updater_pr(p) and p["number"] < cutoff and p.get("baseRefName") == base),
+        key=lambda p: p["number"],
+    )
 
 
 def gh(*args: str) -> str:
@@ -153,6 +157,9 @@ def main(argv: list[str] | None = None) -> int:
     else:
         return error(f"Unsupported event '{event_name}'")
 
+    if cutoff is not None and not merged.get("baseRefName"):
+        return error(f"Merged PR #{cutoff} has no base branch; refusing to close any PRs.")
+
     open_prs = gh_json("pr", "list", "--repo", repo, "--state", "open", "--limit", "1000", "--json", PR_FIELDS)
 
     if cutoff is None:
@@ -166,9 +173,9 @@ def main(argv: list[str] | None = None) -> int:
             print("  (none)")
         return 0
 
-    to_close = superseded(open_prs, cutoff)
+    to_close = superseded(open_prs, cutoff, merged["baseRefName"])
     if not to_close:
-        print(f"No open updater PRs older than #{cutoff}.")
+        print(f"No open updater PRs targeting {merged['baseRefName']} older than #{cutoff}.")
         return 0
 
     comment = f"Closing as obsolete: superseded by the newer GitHub Actions version updater PR #{cutoff}, which has been merged."
@@ -199,6 +206,7 @@ def _pr(number: int, state: str = "OPEN", **overrides: Any) -> PR:
         "state": state,
         "title": UPDATER_TITLE,
         "headRefName": f"{UPDATER_BRANCH_PREFIX}{number}",
+        "baseRefName": "main",
         "body": f"{UPDATER_BODY_MARKER}\n* actions/checkout v1 -> v2",
         "url": f"https://github.com/{REPO}/pull/{number}",
         "isCrossRepository": False,
@@ -217,8 +225,10 @@ class FakeGh:
     def __call__(self, *args: str) -> str:
         match args:
             case ("pr", "list", *_):
+                assert "baseRefName" in args[args.index("--json") + 1].split(",")
                 return json.dumps([p for p in self.prs if p["state"] == "OPEN"])
             case ("pr", "view", number, *_):
+                assert "baseRefName" in args[args.index("--json") + 1].split(",")
                 found = [p for p in self.prs if str(p["number"]) == number]
                 if not found:
                     raise subprocess.CalledProcessError(1, ["gh", *args])
@@ -276,6 +286,7 @@ class SelfTest(unittest.TestCase):
                 "body": pr["body"],
                 "html_url": pr["url"],
                 "head": {"ref": pr["headRefName"], "repo": {"full_name": head_repo}},
+                "base": {"ref": pr["baseRefName"]},
             }
         }
 
@@ -298,7 +309,23 @@ class SelfTest(unittest.TestCase):
 
     def test_superseded_only_older_matching(self) -> None:
         open_prs = [p for p in self.prs if p["state"] == "OPEN"]
-        self.assertEqual([p["number"] for p in superseded(open_prs, 81)], [77, 80])
+        self.assertEqual([p["number"] for p in superseded(open_prs, 81, "main")], [77, 80])
+
+    def test_mixed_base_cleanup(self) -> None:
+        self.prs.extend([_pr(75, baseRefName="dev"), _pr(76, baseRefName=None)])
+        code, _ = self.run_event(self.event_for(_pr(81)))
+        self.assertEqual((code, self.fake.closed), (0, [77, 80]))
+        self.fake.closed.clear()
+        code, out = self.run_main("--merged-pr=81", "--no-dry-run", GITHUB_EVENT_NAME="workflow_dispatch")
+        self.assertEqual((code, self.fake.closed), (0, [77, 80]))
+        self.assertNotIn("Closing #75", out)
+
+    def test_missing_merged_base_refuses_cleanup(self) -> None:
+        code, _ = self.run_event(self.event_for(_pr(81, baseRefName=None)))
+        self.assertEqual((code, self.fake.closed), (1, []))
+        next(p for p in self.prs if p["number"] == 81)["baseRefName"] = None
+        code, _ = self.run_main("--merged-pr=81", "--no-dry-run", GITHUB_EVENT_NAME="workflow_dispatch")
+        self.assertEqual((code, self.fake.closed), (1, []))
 
     def test_pr_from_event(self) -> None:
         self.assertEqual(pr_from_event(self.event_for(_pr(81)), REPO), _pr(81, "MERGED"))
