@@ -1,0 +1,27 @@
+name: Test Close Superseded Updater PRs
+
+on:
+  push:
+    paths:
+      - .github/scripts/close_superseded_updater_prs.py
+      - .github/workflows/test-close-superseded-updater-prs.yml
+  pull_request:
+    paths:
+      - .github/scripts/close_superseded_updater_prs.py
+      - .github/workflows/test-close-superseded-updater-prs.yml
+
+permissions:
+  contents: read
+
+jobs:
+  self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v10.4.0
+
+      - run: uv run --script .github/scripts/close_superseded_updater_prs.py self-test

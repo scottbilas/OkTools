@@ -7,6 +7,7 @@ Close open "GitHub Actions Version Updater" PRs that are superseded by a newer, 
 
 Usage:
   close_superseded_updater_prs.py [--repo=REPO] [--merged-pr=N] [--dry-run | --no-dry-run]
+  close_superseded_updater_prs.py self-test
   close_superseded_updater_prs.py (-h | --help)
 
 Options:
@@ -15,6 +16,9 @@ Options:
   --dry-run       Manual mode: only report what would be closed (default: $DRY_RUN, else true)
   --no-dry-run    Manual mode: actually close the superseded PRs
   -h --help       Show this help
+
+Commands:
+  self-test       Run the built-in tests (gh is faked; no network or token needed)
 
 A PR only counts as an updater PR (saadmk11/github-actions-version-updater) when ALL of these hold:
   - title is exactly "Update GitHub Action Versions"
@@ -33,13 +37,19 @@ Requires an authenticated `gh` CLI (GH_TOKEN in Actions).
 Examples:
   uv run close_superseded_updater_prs.py --repo scottbilas/OkTools --merged-pr 81             # dry run
   uv run close_superseded_updater_prs.py --repo scottbilas/OkTools --merged-pr 81 --no-dry-run
+  uv run close_superseded_updater_prs.py self-test
 """
 
+import contextlib
+import io
 import json
 import os
 import subprocess
 import sys
+import tempfile
+import unittest
 from typing import Any
+from unittest import mock
 
 from docopt import docopt
 
@@ -96,9 +106,8 @@ def error(message: str) -> int:
     return 1
 
 
-def parse_args(argv: list[str] | None) -> tuple[str, str | None, bool]:
+def resolve_options(args: dict[str, Any]) -> tuple[str, str | None, bool]:
     """Returns (repo, merged_pr, dry_run); command-line options override the environment."""
-    args = docopt(__doc__, argv=argv)
     repo = args["--repo"] or os.environ.get("GITHUB_REPOSITORY")
     if not repo:
         sys.exit("error: --repo or GITHUB_REPOSITORY is required")
@@ -113,8 +122,10 @@ def parse_args(argv: list[str] | None) -> tuple[str, str | None, bool]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    sys.stdout.reconfigure(line_buffering=True)  # keep our lines ordered with gh's stderr in the Actions log
-    repo, merged_pr, manual_dry_run = parse_args(argv)
+    args = docopt(__doc__, argv=argv)
+    if args["self-test"]:
+        return self_test()
+    repo, merged_pr, manual_dry_run = resolve_options(args)
     event_name = os.environ.get("GITHUB_EVENT_NAME", "")
 
     if event_name == "pull_request":
@@ -176,7 +187,215 @@ def main(argv: list[str] | None = None) -> int:
     return 1 if failed else 0
 
 
+# --- self-test -----------------------------------------------------------------------------------------------
+
+REPO = "o/r"
+
+
+def _pr(number: int, state: str = "OPEN", **overrides: Any) -> PR:
+    pr: PR = {
+        "number": number,
+        "state": state,
+        "title": UPDATER_TITLE,
+        "headRefName": f"{UPDATER_BRANCH_PREFIX}{number}",
+        "body": f"{UPDATER_BODY_MARKER}\n* actions/checkout v1 -> v2",
+        "url": f"https://github.com/{REPO}/pull/{number}",
+        "isCrossRepository": False,
+    }
+    return pr | overrides
+
+
+class FakeGh:
+    """Stands in for `gh`, serving PRs from a list and recording mutating calls."""
+
+    def __init__(self, prs: list[PR], fail_close: set[int] = frozenset()) -> None:
+        self.prs = prs
+        self.fail_close = fail_close
+        self.closed: list[int] = []
+
+    def __call__(self, *args: str) -> str:
+        match args:
+            case ("pr", "list", *_):
+                return json.dumps([p for p in self.prs if p["state"] == "OPEN"])
+            case ("pr", "view", number, *_):
+                found = [p for p in self.prs if str(p["number"]) == number]
+                if not found:
+                    raise subprocess.CalledProcessError(1, ["gh", *args])
+                return json.dumps(found[0])
+            case ("pr", "close", number, *rest):
+                assert "--comment" in rest and "--delete-branch" not in rest, rest
+                if int(number) in self.fail_close:
+                    raise subprocess.CalledProcessError(1, ["gh", *args])
+                self.closed.append(int(number))
+                return ""
+            case _:
+                raise AssertionError(f"unexpected gh call: {args}")
+
+
+class SelfTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.prs = [
+            _pr(70, isCrossRepository=True),  # from a fork
+            _pr(71, title="Bump stuff"),
+            _pr(72, headRefName="feature/x"),
+            _pr(73, body=None),
+            _pr(74, body="no marker"),
+            _pr(77),
+            _pr(80),
+            _pr(81, "MERGED"),
+            _pr(82, "MERGED", title="Something else"),
+            _pr(83, "CLOSED"),
+            _pr(90),
+        ]
+        self.fake = FakeGh(self.prs)
+        self.enterContext(mock.patch.dict(os.environ, {"GITHUB_REPOSITORY": REPO}, clear=True))
+        self.enterContext(mock.patch.object(sys.modules[__name__], "gh", self.fake))
+
+    def run_main(self, *argv: str, **env: str) -> tuple[int, str]:
+        os.environ.update(env)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = main(list(argv))
+        return code, out.getvalue()
+
+    def run_event(self, payload: dict[str, Any]) -> tuple[int, str]:
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete_on_close=False) as f:
+            json.dump(payload, f)
+            f.close()
+            return self.run_main(GITHUB_EVENT_NAME="pull_request", GITHUB_EVENT_PATH=f.name)
+
+    @staticmethod
+    def event_for(pr: PR, merged: bool = True, head_repo: str = REPO) -> dict[str, Any]:
+        return {
+            "pull_request": {
+                "number": pr["number"],
+                "state": "closed",
+                "merged": merged,
+                "title": pr["title"],
+                "body": pr["body"],
+                "html_url": pr["url"],
+                "head": {"ref": pr["headRefName"], "repo": {"full_name": head_repo}},
+            }
+        }
+
+    # matching
+
+    def test_is_updater_pr(self) -> None:
+        self.assertTrue(is_updater_pr(_pr(1)))
+        for bad in (
+            {"title": "Update GitHub Action Versions!"},
+            {"title": None},
+            {"headRefName": "main"},
+            {"headRefName": None},
+            {"body": None},
+            {"body": ""},
+            {"isCrossRepository": True},
+            {"isCrossRepository": None},
+        ):
+            with self.subTest(bad=bad):
+                self.assertFalse(is_updater_pr(_pr(1) | bad))
+
+    def test_superseded_only_older_matching(self) -> None:
+        open_prs = [p for p in self.prs if p["state"] == "OPEN"]
+        self.assertEqual([p["number"] for p in superseded(open_prs, 81)], [77, 80])
+
+    def test_pr_from_event(self) -> None:
+        self.assertEqual(pr_from_event(self.event_for(_pr(81)), REPO), _pr(81, "MERGED"))
+        self.assertTrue(pr_from_event(self.event_for(_pr(81), head_repo="fork/r"), REPO)["isCrossRepository"])
+        self.assertEqual(pr_from_event(self.event_for(_pr(81), merged=False), REPO)["state"], "CLOSED")
+
+    # pull_request mode
+
+    def test_merged_updater_closes_older(self) -> None:
+        code, out = self.run_event(self.event_for(_pr(81)))
+        self.assertEqual((code, self.fake.closed), (0, [77, 80]))
+        self.assertNotIn("dry run", out)
+
+    def test_merged_ignores_dry_run_env(self) -> None:
+        os.environ["DRY_RUN"] = "true"
+        self.run_event(self.event_for(_pr(81)))
+        self.assertEqual(self.fake.closed, [77, 80])
+
+    def test_closed_without_merge_does_nothing(self) -> None:
+        code, out = self.run_event(self.event_for(_pr(81), merged=False))
+        self.assertEqual((code, self.fake.closed), (0, []))
+        self.assertIn("without merging", out)
+
+    def test_merged_non_updater_does_nothing(self) -> None:
+        for pr in (_pr(81, title="Other"), _pr(81, body=None)):
+            with self.subTest(pr=pr):
+                code, _ = self.run_event(self.event_for(pr))
+                self.assertEqual((code, self.fake.closed), (0, []))
+        code, _ = self.run_event(self.event_for(_pr(81), head_repo="fork/r"))
+        self.assertEqual((code, self.fake.closed), (0, []))
+
+    def test_close_failure_continues_and_fails(self) -> None:
+        self.fake.fail_close = {77}
+        code, out = self.run_event(self.event_for(_pr(81)))
+        self.assertEqual((code, self.fake.closed), (1, [80]))
+        self.assertIn("::warning::Failed to close #77", out)
+
+    # manual mode
+
+    def test_manual_without_cutoff_lists_only(self) -> None:
+        code, out = self.run_main("--no-dry-run")
+        self.assertEqual((code, self.fake.closed), (0, []))
+        self.assertEqual(
+            [line.split()[0] for line in out.splitlines() if line.startswith("  #")], ["#77", "#80", "#90"]
+        )
+
+    def test_manual_defaults_to_dry_run(self) -> None:
+        code, out = self.run_main("--merged-pr=81")
+        self.assertEqual((code, self.fake.closed), (0, []))
+        self.assertIn("[dry run] Would close #77", out)
+        self.assertIn("[dry run] Would close #80", out)
+
+    def test_manual_dry_run_precedence(self) -> None:
+        for argv, env, closed in (
+            ((), {"DRY_RUN": "false"}, [77, 80]),
+            ((), {"DRY_RUN": "true"}, []),
+            (("--dry-run",), {"DRY_RUN": "false"}, []),
+            (("--no-dry-run",), {"DRY_RUN": "true"}, [77, 80]),
+        ):
+            with self.subTest(argv=argv, env=env):
+                self.fake.closed.clear()
+                self.run_main("--merged-pr", "81", *argv, **env)
+                self.assertEqual(self.fake.closed, closed)
+
+    def test_manual_merged_pr_from_env(self) -> None:
+        code, _ = self.run_main(MERGED_PR="81", DRY_RUN="false")
+        self.assertEqual((code, self.fake.closed), (0, [77, 80]))
+
+    def test_manual_rejects_bad_cutoffs(self) -> None:
+        for merged_pr in ("0", "-1", "1;rm -rf /", "８１", "82", "83", "90"):
+            with self.subTest(merged_pr=merged_pr):
+                code, out = self.run_main("--merged-pr", merged_pr, "--no-dry-run")
+                self.assertEqual((code, self.fake.closed), (1, []))
+                self.assertIn("::error::", out)
+
+    def test_unsupported_event(self) -> None:
+        code, _ = self.run_main(GITHUB_EVENT_NAME="push")
+        self.assertEqual((code, self.fake.closed), (1, []))
+
+    # command line
+
+    def test_cli_errors(self) -> None:
+        for argv in (["--dry-run", "--no-dry-run"], ["--bogus"]):
+            with self.subTest(argv=argv), self.assertRaises(SystemExit), contextlib.redirect_stdout(io.StringIO()):
+                main(argv)
+        del os.environ["GITHUB_REPOSITORY"]
+        with self.assertRaises(SystemExit):
+            main([])
+        self.assertEqual(self.fake.closed, [])
+
+
+def self_test() -> int:
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(SelfTest)
+    return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
+
+
 if __name__ == "__main__":
+    sys.stdout.reconfigure(line_buffering=True)  # keep our lines ordered with gh's stderr in the Actions log
     try:
         sys.exit(main())
     except subprocess.CalledProcessError as e:
