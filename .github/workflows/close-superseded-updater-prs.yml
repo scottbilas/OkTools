@@ -1,0 +1,47 @@
+# Close open GitHub Actions Version Updater PRs that are superseded by a newly merged one.
+# Logic: .github/scripts/close_superseded_updater_prs.py
+
+name: Close Superseded Updater PRs
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only report which PRs would be closed'
+        type: boolean
+        default: true
+      merged_pr:
+        description: 'Merged updater PR to use as the cutoff (if empty, open updater PRs are only listed)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  close-superseded:
+    # Cheap pre-filter; the script re-validates every field before closing anything.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.title == 'Update GitHub Action Versions' &&
+       startsWith(github.event.pull_request.head.ref, 'gh-actions-update-') &&
+       contains(github.event.pull_request.body, '### GitHub Actions Version Updates'))
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v10.4.0
+
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          MERGED_PR: ${{ inputs.merged_pr }}
+        run: ./.github/scripts/close_superseded_updater_prs.py
